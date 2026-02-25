@@ -399,7 +399,22 @@ if [[ "$UPDATE_FAILED" == "true" ]]; then
     exit 1
 fi
 
-# Phase 6: Final validation
+# Phase 6: Bump marketplace minor version
+[[ "$JSON_MODE" != "true" ]] && print_section "Bumping Marketplace Version"
+
+old_version=$(jq -r '.version' "$MARKETPLACE_JSON")
+if ! bump_marketplace_minor_version "$MARKETPLACE_JSON"; then
+    print_error "Failed to bump marketplace version"
+    restore_backup "$backup_path"
+    remove_backup "$backup_path"
+    exit 1
+fi
+new_version=$(jq -r '.version' "$MARKETPLACE_JSON")
+
+[[ "$JSON_MODE" != "true" ]] && print_success "Marketplace version: $old_version -> $new_version"
+[[ "$JSON_MODE" == "true" ]] && add_json_result "info" "Marketplace version bumped: $old_version -> $new_version" ""
+
+# Phase 7: Final validation
 [[ "$JSON_MODE" != "true" ]] && print_section "Final Validation"
 
 if ! validate_marketplace "$MARKETPLACE_JSON" true; then
