@@ -1,0 +1,22 @@
+name: Validate Plugins
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate plugins and marketplace
+        run: bash scripts/ci/validate.sh

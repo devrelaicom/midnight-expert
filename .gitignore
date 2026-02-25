@@ -1,3 +1,7 @@
+# =========================
+# Node.js
+# =========================
+
 # Logs
 logs
 *.log
@@ -137,3 +141,88 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# =========================
+# macOS
+# =========================
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+Icon?
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+.installed.cfg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.venv/
+venv/
+ENV/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+*.mo
+*.pot
+
+# =========================
+# IDE / Editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# =========================
+# General
+# =========================
+*.bak
+*.tmp
+*.temp
+thumbs.db
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# LLMs
+# =========================
+.claude/
+reviews/
+
+# =========================
+# Midnight
+# =========================
+.compact/

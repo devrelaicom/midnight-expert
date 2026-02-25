@@ -1,0 +1,10 @@
+{
+  "name": "midnight-expert",
+  "version": "0.0.1",
+  "description": "A collection of domain-specific plugins that help AI agents become experts in Compact and the Midnight ecosystem",
+  "owner": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "plugins": []
+}
