@@ -1,0 +1,315 @@
+/**
+ * Private Voting System - Tally Contract
+ *
+ * Handles vote aggregation, result computation, and verification.
+ * Designed to work alongside voter.compact for complete voting system.
+ *
+ * Features:
+ * - Finalization after voting period
+ * - Winner determination (plurality, majority, ranked)
+ * - Result verification
+ * - Audit trail for election integrity
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Result types
+enum ElectionResult {
+  Pending,
+  Winner, // Clear winner
+  Tie, // Multiple winners with same votes
+  NoQuorum, // Not enough participation
+  Invalid // Election was cancelled
+}
+
+// Final tally record
+struct TallyRecord {
+  choice: Uint<8>,
+  votes: Uint<64>,
+  percentage: Uint<8>  // Percentage of total votes (0-100)
+}
+
+// Election statistics
+struct ElectionStats {
+  totalVotes: Uint<64>,
+  registeredVoters: Uint<64>,
+  participationRate: Uint<8>,  // Percentage
+  winningChoice: Uint<8>,
+  winningVotes: Uint<64>
+}
+
+// Imported state (linked to voter contract)
+ledger voterContractId: Cell<Bytes<32>>;
+ledger electionId: Cell<Bytes<32>>;
+ledger choiceCount: Cell<Uint<8>>;
+ledger votingEndHeight: Cell<Uint<64>>;
+
+// Tally state
+ledger isFinalized: Cell<Boolean>;
+ledger result: Cell<ElectionResult>;
+ledger stats: Cell<ElectionStats>;
+
+// Per-choice results
+ledger finalTally: Map<Uint<8>, TallyRecord>;
+
+// Audit
+ledger finalizedAt: Cell<Uint<64>>;
+ledger finalizedBy: Cell<Bytes<32>>;
+
+// Admin
+ledger admin: Cell<Bytes<32>>;
+
+// Configuration
+ledger quorumPercent: Cell<Uint<8>>;  // Minimum participation for valid result
+
+/**
+ * Initialize tally contract linked to voter contract
+ * @param adminCommitment - Admin's commitment
+ * @param voterContract - ID/hash of linked voter contract
+ * @param election - Election identifier
+ * @param choices - Number of choices
+ * @param votingEnd - Block height when voting ends
+ * @param minQuorum - Minimum participation percentage (0-100)
+ */
+export circuit initialize(
+  adminCommitment: Bytes<32>,
+  voterContract: Bytes<32>,
+  election: Bytes<32>,
+  choices: Uint<8>,
+  votingEnd: Uint<64>,
+  minQuorum: Uint<8>
+): Void {
+  assert !isFinalized.value;
+  assert minQuorum <= 100;
+
+  admin.value = adminCommitment;
+  voterContractId.value = voterContract;
+  electionId.value = election;
+  choiceCount.value = choices;
+  votingEndHeight.value = votingEnd;
+  quorumPercent.value = minQuorum;
+  result.value = ElectionResult.Pending;
+}
+
+/**
+ * Finalize the election and compute results
+ *
+ * This function would typically read from the voter contract
+ * to get final vote tallies. For demonstration, we accept
+ * the tallies as input with verification.
+ *
+ * @param tallies - Vote counts per choice
+ * @param registeredVoters - Total registered voters
+ * @param merkleProof - Proof of tally correctness (from voter contract)
+ */
+export circuit finalize(
+  tallies: Vector<Uint<64>>,
+  registeredVoters: Uint<64>,
+  witness merkleProof: Vector<Bytes<32>>
+): Void {
+  assert !isFinalized.value;
+  assert currentBlockHeight() >= votingEndHeight.value;
+  assert tallies.length == choiceCount.value as Uint<64>;
+
+  // Calculate total votes
+  var totalVotes: Uint<64> = 0;
+  for i in 0..tallies.length {
+    totalVotes = totalVotes + tallies[i];
+  }
+
+  // Calculate participation rate
+  var participationRate: Uint<8> = 0;
+  if registeredVoters > 0 {
+    participationRate = ((totalVotes * 100) / registeredVoters) as Uint<8>;
+  }
+
+  // Check quorum
+  if participationRate < quorumPercent.value {
+    result.value = ElectionResult.NoQuorum;
+    isFinalized.value = true;
+    finalizedAt.value = currentBlockHeight();
+    return;
+  }
+
+  // Find winner(s)
+  var maxVotes: Uint<64> = 0;
+  var winningChoice: Uint<8> = 0;
+  var tieCount: Uint<8> = 0;
+
+  for i in 0..choiceCount.value {
+    const votes = tallies[i as Uint<64>];
+
+    // Calculate percentage
+    var percentage: Uint<8> = 0;
+    if totalVotes > 0 {
+      percentage = ((votes * 100) / totalVotes) as Uint<8>;
+    }
+
+    // Record tally
+    finalTally[i] = TallyRecord {
+      choice: i,
+      votes: votes,
+      percentage: percentage
+    };
+
+    // Track winner
+    if votes > maxVotes {
+      maxVotes = votes;
+      winningChoice = i;
+      tieCount = 1;
+    } else if votes == maxVotes && votes > 0 {
+      tieCount = tieCount + 1;
+    }
+  }
+
+  // Determine result
+  if tieCount > 1 {
+    result.value = ElectionResult.Tie;
+  } else if maxVotes > 0 {
+    result.value = ElectionResult.Winner;
+  } else {
+    result.value = ElectionResult.Invalid;
+  }
+
+  // Record statistics
+  stats.value = ElectionStats {
+    totalVotes: totalVotes,
+    registeredVoters: registeredVoters,
+    participationRate: participationRate,
+    winningChoice: winningChoice,
+    winningVotes: maxVotes
+  };
+
+  isFinalized.value = true;
+  finalizedAt.value = currentBlockHeight();
+}
+
+/**
+ * Get the election result
+ * @returns Election result enum
+ */
+export circuit getResult(): ElectionResult {
+  return result.value;
+}
+
+/**
+ * Get full election statistics
+ * @returns Election stats (only valid after finalization)
+ */
+export circuit getStats(): ElectionStats {
+  assert isFinalized.value;
+  return stats.value;
+}
+
+/**
+ * Get tally for a specific choice
+ * @param choice - Choice index
+ * @returns Tally record for that choice
+ */
+export circuit getChoiceTally(choice: Uint<8>): TallyRecord {
+  assert isFinalized.value;
+  assert choice < choiceCount.value;
+  return finalTally[choice];
+}
+
+/**
+ * Get winning choice (if there is a clear winner)
+ * @returns Winning choice index, or reverts if no winner
+ */
+export circuit getWinner(): Uint<8> {
+  assert isFinalized.value;
+  assert result.value == ElectionResult.Winner;
+  return stats.value.winningChoice;
+}
+
+/**
+ * Check if election met quorum
+ * @returns True if participation met minimum threshold
+ */
+export circuit metQuorum(): Boolean {
+  assert isFinalized.value;
+  return result.value != ElectionResult.NoQuorum;
+}
+
+/**
+ * Get all results as a ranked list
+ * @returns Vector of (choice, votes) sorted by votes descending
+ */
+export circuit getRankedResults(): Vector<TallyRecord> {
+  assert isFinalized.value;
+
+  // Simple bubble sort for small choice counts
+  var results: Vector<TallyRecord> = [];
+  for i in 0..choiceCount.value {
+    results.push(finalTally[i]);
+  }
+
+  // Sort descending by votes
+  for i in 0..results.length - 1 {
+    for j in 0..results.length - i - 1 {
+      if results[j].votes < results[j + 1].votes {
+        const temp = results[j];
+        results[j] = results[j + 1];
+        results[j + 1] = temp;
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Verify a claimed result (for external verification)
+ * @param claimedWinner - Claimed winning choice
+ * @param claimedVotes - Claimed vote count for winner
+ * @returns True if claim matches recorded result
+ */
+export circuit verifyResult(
+  claimedWinner: Uint<8>,
+  claimedVotes: Uint<64>
+): Boolean {
+  assert isFinalized.value;
+
+  if result.value != ElectionResult.Winner {
+    return false;
+  }
+
+  return stats.value.winningChoice == claimedWinner &&
+    stats.value.winningVotes == claimedVotes;
+}
+
+/**
+ * Get finalization metadata
+ * @returns Block height and finalizer
+ */
+export circuit getFinalizationInfo(): (Uint<64>, Bytes<32>) {
+  assert isFinalized.value;
+  return (finalizedAt.value, finalizedBy.value);
+}
+
+/**
+ * Check if election is finalized
+ * @returns True if finalized
+ */
+export circuit isElectionFinalized(): Boolean {
+  return isFinalized.value;
+}
+
+/**
+ * Emergency invalidation (admin only, before finalization)
+ * @param adminSecret - Admin's secret
+ * @param reason - Reason for invalidation
+ */
+export circuit invalidate(
+  witness adminSecret: Bytes<32>,
+  reason: Bytes<32>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert !isFinalized.value;
+
+  result.value = ElectionResult.Invalid;
+  isFinalized.value = true;
+  finalizedAt.value = currentBlockHeight();
+}

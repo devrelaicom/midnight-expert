@@ -1,0 +1,78 @@
+/**
+ * Counter Pattern
+ *
+ * Demonstrates basic state management with increment/decrement operations.
+ * Use cases: Sequential IDs, vote counts, progress tracking.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Public counter state
+ledger count: Counter;
+
+// Track who can modify (optional access control)
+ledger owner: Cell<Bytes<32>>;
+
+/**
+ * Initialize the counter with an owner
+ * @param ownerCommitment - Hash of owner's secret
+ */
+export circuit initialize(ownerCommitment: Bytes<32>): Void {
+  owner.value = ownerCommitment;
+}
+
+/**
+ * Increment the counter by a specified amount
+ * @param amount - Amount to increment (public)
+ */
+export circuit increment(amount: Uint<64>): Void {
+  assert amount > 0;
+  count.increment(amount);
+}
+
+/**
+ * Decrement the counter by a specified amount
+ * Only owner can decrement (prevents griefing)
+ * @param ownerSecret - Owner's secret for authorization
+ * @param amount - Amount to decrement
+ */
+export circuit decrement(
+  witness ownerSecret: Bytes<32>,
+  amount: Uint<64>
+): Void {
+  // Verify ownership
+  assert hash(ownerSecret) == owner.value;
+
+  // Ensure we don't go negative
+  assert count.value >= amount;
+
+  count.decrement(amount);
+}
+
+/**
+ * Reset counter to zero (owner only)
+ * @param ownerSecret - Owner's secret for authorization
+ */
+export circuit reset(witness ownerSecret: Bytes<32>): Void {
+  assert hash(ownerSecret) == owner.value;
+  count.decrement(count.value);
+}
+
+/**
+ * Read current counter value
+ * @returns Current count
+ */
+export circuit getCount(): Uint<64> {
+  return count.value;
+}
+
+/**
+ * Check if counter exceeds threshold
+ * @param threshold - Value to compare against
+ * @returns True if count > threshold
+ */
+export circuit exceedsThreshold(threshold: Uint<64>): Boolean {
+  return count.value > threshold;
+}

@@ -1,0 +1,152 @@
+/**
+ * Time Lock Pattern
+ *
+ * Actions that can only execute after a specified time/block height.
+ * Use cases: Vesting schedules, delayed withdrawals, governance timeouts.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Locked item structure
+struct LockedItem {
+  beneficiary: Bytes<32>,
+  amount: Uint<64>,
+  unlockHeight: Uint<64>,
+  claimed: Boolean
+}
+
+// Lock storage
+ledger locks: Map<Bytes<32>, LockedItem>;
+ledger lockCount: Counter;
+
+// Owner for administrative functions
+ledger owner: Cell<Bytes<32>>;
+
+/**
+ * Initialize the time lock contract
+ * @param ownerCommitment - Hash of owner's secret
+ */
+export circuit initialize(ownerCommitment: Bytes<32>): Void {
+  owner.value = ownerCommitment;
+}
+
+/**
+ * Create a new time-locked deposit
+ * @param lockId - Unique identifier for this lock
+ * @param beneficiary - Who can claim after unlock
+ * @param amount - Amount to lock
+ * @param lockDuration - Blocks until unlock
+ */
+export circuit createLock(
+  lockId: Bytes<32>,
+  beneficiary: Bytes<32>,
+  amount: Uint<64>,
+  lockDuration: Uint<64>
+): Void {
+  // Ensure lock doesn't exist
+  assert locks[lockId].amount == 0;
+
+  // Calculate unlock height
+  const unlockHeight = currentBlockHeight() + lockDuration;
+
+  // Create lock
+  locks[lockId] = LockedItem {
+    beneficiary: beneficiary,
+    amount: amount,
+    unlockHeight: unlockHeight,
+    claimed: false
+  };
+
+  lockCount.increment(1);
+}
+
+/**
+ * Claim a time-locked amount after unlock time
+ * @param beneficiarySecret - Secret proving beneficiary identity
+ * @param lockId - ID of the lock to claim
+ */
+export circuit claim(
+  witness beneficiarySecret: Bytes<32>,
+  lockId: Bytes<32>
+): Uint<64> {
+  const lock = locks[lockId];
+
+  // Verify beneficiary
+  assert hash(beneficiarySecret) == lock.beneficiary;
+
+  // Verify unlock time has passed
+  assert currentBlockHeight() >= lock.unlockHeight;
+
+  // Verify not already claimed
+  assert !lock.claimed;
+
+  // Mark as claimed
+  locks[lockId].claimed = true;
+
+  // Return amount to transfer
+  return lock.amount;
+}
+
+/**
+ * Check if a lock is claimable
+ * @param lockId - ID of the lock
+ * @returns True if lock exists and is claimable
+ */
+export circuit isClaimable(lockId: Bytes<32>): Boolean {
+  const lock = locks[lockId];
+  return lock.amount > 0 &&
+    !lock.claimed &&
+    currentBlockHeight() >= lock.unlockHeight;
+}
+
+/**
+ * Get remaining time until unlock
+ * @param lockId - ID of the lock
+ * @returns Blocks remaining (0 if already unlocked)
+ */
+export circuit timeRemaining(lockId: Bytes<32>): Uint<64> {
+  const lock = locks[lockId];
+  const current = currentBlockHeight();
+
+  if current >= lock.unlockHeight {
+    return 0;
+  }
+
+  return lock.unlockHeight - current;
+}
+
+/**
+ * Extend lock duration (owner only)
+ * @param ownerSecret - Owner's secret
+ * @param lockId - ID of the lock
+ * @param additionalBlocks - Blocks to add
+ */
+export circuit extendLock(
+  witness ownerSecret: Bytes<32>,
+  lockId: Bytes<32>,
+  additionalBlocks: Uint<64>
+): Void {
+  assert hash(ownerSecret) == owner.value;
+
+  const lock = locks[lockId];
+  assert !lock.claimed;
+
+  locks[lockId].unlockHeight = lock.unlockHeight + additionalBlocks;
+}
+
+/**
+ * Emergency cancel (owner only, returns to beneficiary immediately)
+ * @param ownerSecret - Owner's secret
+ * @param lockId - ID of the lock
+ */
+export circuit emergencyRelease(
+  witness ownerSecret: Bytes<32>,
+  lockId: Bytes<32>
+): Void {
+  assert hash(ownerSecret) == owner.value;
+
+  // Set unlock time to now
+  locks[lockId].unlockHeight = currentBlockHeight();
+}

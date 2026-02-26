@@ -1,0 +1,204 @@
+/**
+ * Multi-Sig Pattern
+ *
+ * N-of-M approval for sensitive operations.
+ * Use cases: Treasury management, critical updates, shared custody.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Proposal structure
+struct Proposal {
+  id: Bytes<32>,
+  action: Bytes<32>, // Hash of action to execute
+  approvalCount: Uint<8>,
+  executed: Boolean,
+  expiresAt: Uint<64>
+}
+
+// Multi-sig configuration
+ledger signers: Set<Bytes<32>>;
+ledger signerCount: Cell<Uint<8>>;
+ledger requiredApprovals: Cell<Uint<8>>;
+
+// Proposals
+ledger proposals: Map<Bytes<32>, Proposal>;
+ledger proposalApprovals: Map<Bytes<32>, Set<Bytes<32>>>; // proposalId -> signers who approved
+
+// Counters
+ledger proposalCount: Counter;
+ledger executedCount: Counter;
+
+// Configuration
+const PROPOSAL_VALIDITY_BLOCKS: Uint<64> = 10000;
+
+/**
+ * Initialize multi-sig wallet
+ * @param initialSigners - Initial set of signer commitments
+ * @param threshold - Number of approvals required
+ */
+export circuit initialize(
+  initialSigners: Vector<Bytes<32>>,
+  threshold: Uint<8>
+): Void {
+  assert initialSigners.length >= threshold;
+  assert threshold > 0;
+
+  for signer in initialSigners {
+    signers.insert(signer);
+  }
+
+  signerCount.value = initialSigners.length as Uint<8>;
+  requiredApprovals.value = threshold;
+}
+
+/**
+ * Create a new proposal
+ * @param signerSecret - Proposer's secret (must be a signer)
+ * @param actionHash - Hash of the action to execute
+ * @returns Proposal ID
+ */
+export circuit createProposal(
+  witness signerSecret: Bytes<32>,
+  actionHash: Bytes<32>
+): Bytes<32> {
+  const signerCommitment = hash(signerSecret);
+  assert signers.member(signerCommitment);
+
+  // Generate proposal ID
+  const proposalId = hash(actionHash, currentBlockHeight(), proposalCount.value);
+
+  // Create proposal
+  proposals[proposalId] = Proposal {
+    id: proposalId,
+    action: actionHash,
+    approvalCount: 1,  // Creator auto-approves
+    executed: false,
+    expiresAt: currentBlockHeight() + PROPOSAL_VALIDITY_BLOCKS
+  };
+
+  // Record creator's approval
+  proposalApprovals[proposalId].insert(signerCommitment);
+
+  proposalCount.increment(1);
+
+  return proposalId;
+}
+
+/**
+ * Approve a proposal
+ * @param signerSecret - Approver's secret
+ * @param proposalId - ID of proposal to approve
+ */
+export circuit approve(
+  witness signerSecret: Bytes<32>,
+  proposalId: Bytes<32>
+): Void {
+  const signerCommitment = hash(signerSecret);
+
+  // Verify signer
+  assert signers.member(signerCommitment);
+
+  // Get proposal
+  var proposal = proposals[proposalId];
+  assert !proposal.executed;
+  assert currentBlockHeight() < proposal.expiresAt;
+
+  // Check not already approved by this signer
+  assert !proposalApprovals[proposalId].member(signerCommitment);
+
+  // Record approval
+  proposalApprovals[proposalId].insert(signerCommitment);
+  proposal.approvalCount = proposal.approvalCount + 1;
+  proposals[proposalId] = proposal;
+}
+
+/**
+ * Execute a proposal (if enough approvals)
+ * @param proposalId - ID of proposal to execute
+ * @returns Action hash if executed
+ */
+export circuit execute(proposalId: Bytes<32>): Bytes<32> {
+  var proposal = proposals[proposalId];
+
+  // Verify conditions
+  assert !proposal.executed;
+  assert currentBlockHeight() < proposal.expiresAt;
+  assert proposal.approvalCount >= requiredApprovals.value;
+
+  // Mark as executed
+  proposal.executed = true;
+  proposals[proposalId] = proposal;
+  executedCount.increment(1);
+
+  // Return action hash (caller verifies and executes)
+  return proposal.action;
+}
+
+/**
+ * Check if proposal can be executed
+ * @param proposalId - ID of proposal
+ * @returns True if proposal has enough approvals and is not expired
+ */
+export circuit canExecute(proposalId: Bytes<32>): Boolean {
+  const proposal = proposals[proposalId];
+
+  return !proposal.executed &&
+    currentBlockHeight() < proposal.expiresAt &&
+    proposal.approvalCount >= requiredApprovals.value;
+}
+
+/**
+ * Get proposal status
+ * @param proposalId - ID of proposal
+ * @returns Proposal details
+ */
+export circuit getProposal(proposalId: Bytes<32>): Proposal {
+  return proposals[proposalId];
+}
+
+/**
+ * Add a new signer (requires multi-sig approval)
+ * @param newSignerCommitment - New signer's commitment
+ * Note: This should be called via execute() with proper proposal
+ */
+export circuit addSigner(newSignerCommitment: Bytes<32>): Void {
+  if !signers.member(newSignerCommitment) {
+    signers.insert(newSignerCommitment);
+    signerCount.value = signerCount.value + 1;
+  }
+}
+
+/**
+ * Remove a signer (requires multi-sig approval)
+ * @param signerCommitment - Signer to remove
+ * Note: Cannot reduce below threshold
+ */
+export circuit removeSigner(signerCommitment: Bytes<32>): Void {
+  assert signerCount.value > requiredApprovals.value;
+
+  if signers.member(signerCommitment) {
+    signers.remove(signerCommitment);
+    signerCount.value = signerCount.value - 1;
+  }
+}
+
+/**
+ * Update threshold (requires multi-sig approval)
+ * @param newThreshold - New approval threshold
+ */
+export circuit updateThreshold(newThreshold: Uint<8>): Void {
+  assert newThreshold > 0;
+  assert newThreshold <= signerCount.value;
+  requiredApprovals.value = newThreshold;
+}
+
+/**
+ * Get multi-sig configuration
+ * @returns Signer count and threshold
+ */
+export circuit getConfig(): (Uint<8>, Uint<8>) {
+  return (signerCount.value, requiredApprovals.value);
+}

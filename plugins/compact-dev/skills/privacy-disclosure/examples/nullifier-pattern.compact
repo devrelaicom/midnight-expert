@@ -1,0 +1,185 @@
+// nullifier-pattern.compact - Nullifier pattern for double-spend prevention
+// Demonstrates how to prevent reuse while maintaining privacy
+
+import { persistentHash, persistentCommit, Maybe } from "CompactStandardLibrary";
+
+// ============================================
+// Ledger State
+// ============================================
+
+// Merkle tree of valid note commitments
+ledger notes: MerkleTree<Bytes<32>>;
+
+// Set of spent nullifiers (prevents double-spending)
+ledger nullifiers: Set<Bytes<32>>;
+
+// Counter for note indices
+ledger note_counter: Counter;
+
+// ============================================
+// Types
+// ============================================
+
+struct Note {
+ owner: Bytes<32>,
+ amount: Uint<64>,
+ secret: Bytes<32>
+}
+
+// ============================================
+// Witnesses
+// ============================================
+
+witness get_note(): Note;
+witness get_merkle_path(index: Uint<32>): Vector<Bytes<32>, 20>;
+witness get_new_owner(): Bytes<32>;
+
+// ============================================
+// Core Functions
+// ============================================
+
+/// Compute note commitment from note data
+circuit compute_note_commitment(note: Note): Bytes<32> {
+ return persistentCommit(
+ note.owner,
+ note.amount as Field,
+ note.secret
+ );
+}
+
+/// Compute nullifier from note data
+/// The nullifier is deterministic but reveals nothing about the note
+circuit compute_nullifier(note: Note): Bytes<32> {
+ // Nullifier = Hash(secret, "nullifier")
+ // - Deterministic: same note always produces same nullifier
+ // - Unlinkable: can't connect nullifier to commitment
+ // - Secure: requires knowledge of secret to compute
+ return persistentHash(note.secret, "nullifier");
+}
+
+// ============================================
+// Deposit (Create Note)
+// ============================================
+
+/// Create a new private note
+export circuit deposit(owner: Bytes<32>, amount: Uint<64>): Bytes<32> {
+ // Create note with provided public data and witness secret
+ const note = get_note();
+
+ // Verify note data matches inputs
+ assert disclose(note.owner) == owner, "Owner mismatch";
+ assert disclose(note.amount) == amount, "Amount mismatch";
+
+ // Compute commitment
+ const commitment = compute_note_commitment(note);
+
+ // Add to Merkle tree
+ notes.insert(commitment);
+ note_counter.increment(1);
+
+ return commitment;
+}
+
+// ============================================
+// Transfer (Spend and Create)
+// ============================================
+
+/// Spend an existing note and create a new one
+/// Proves ownership without revealing which note is spent
+export circuit transfer(
+ merkle_root: Bytes<32>,
+ note_index: Uint<32>,
+ new_amount: Uint<64>
+): (Bytes<32>, Bytes<32>) {
+ // Get witness data
+ const note = get_note();
+ const path = get_merkle_path(note_index);
+ const new_owner = get_new_owner();
+
+ // ========================================
+ // Step 1: Prove note exists in tree
+ // ========================================
+
+ // Compute commitment for the note
+ const commitment = compute_note_commitment(note);
+
+ // Verify Merkle proof
+ const computed_root = merkleTreePathRoot(commitment, path);
+ assert computed_root == merkle_root, "Invalid Merkle proof";
+
+ // ========================================
+ // Step 2: Prevent double-spend
+ // ========================================
+
+ // Compute nullifier
+ const nullifier = compute_nullifier(note);
+
+ // Check not already spent
+ assert !nullifiers.member(nullifier), "Note already spent";
+
+ // Record nullifier
+ nullifiers.insert(nullifier);
+
+ // ========================================
+ // Step 3: Create new note for recipient
+ // ========================================
+
+ // Amount check (can't create more than spent)
+ assert new_amount <= note.amount, "Amount exceeds note value";
+
+ // Get new secret for recipient note
+ const new_note = Note {
+ owner: disclose(new_owner),
+ amount: new_amount,
+ secret: get_note().secret  // Fresh secret from witness
+ };
+
+ // Create new commitment
+ const new_commitment = compute_note_commitment(new_note);
+
+ // Add new note to tree
+ notes.insert(new_commitment);
+ note_counter.increment(1);
+
+ // Return nullifier (public) and new commitment (public)
+ return (nullifier, new_commitment);
+}
+
+// ============================================
+// Query Functions
+// ============================================
+
+/// Check if a nullifier has been used
+export circuit is_spent(nullifier: Bytes<32>): Boolean {
+ return nullifiers.member(nullifier);
+}
+
+/// Get the current Merkle root
+export circuit get_merkle_root(): Bytes<32> {
+ return notes.root();
+}
+
+/// Get total number of notes created
+export circuit get_note_count(): Uint<64> {
+ return note_counter.value();
+}
+
+// ============================================
+// Privacy Analysis
+// ============================================
+
+// What is hidden:
+// - Which note is being spent (commitment not revealed)
+// - Note owner identity (only owner has secret)
+// - Note amount (stays private)
+// - Link between sender and recipient
+
+// What is revealed:
+// - A nullifier (proves a note was spent, but not which one)
+// - A new commitment exists
+// - The Merkle root being validated against
+
+// Security:
+// - Double-spend: Prevented by nullifier uniqueness
+// - Forgery: Prevented by Merkle proof requirement
+// - Theft: Prevented by secret knowledge requirement

@@ -1,0 +1,228 @@
+/**
+ * Upgradeable Pattern
+ *
+ * Pattern for contract logic migration and versioning.
+ * Use cases: Bug fixes, feature additions, protocol upgrades.
+ *
+ * Note: This demonstrates the upgrade pattern. Actual upgrade
+ * mechanism depends on Midnight's contract deployment model.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Version information
+struct Version {
+  major: Uint<16>,
+  minor: Uint<16>,
+  patch: Uint<16>
+}
+
+// Upgrade proposal
+struct UpgradeProposal {
+  newImplementation: Bytes<32>,  // Hash of new implementation
+  newVersion: Version,
+  proposedAt: Uint<64>,
+  activationHeight: Uint<64>,
+  approved: Boolean
+}
+
+// Current state
+ledger currentVersion: Cell<Version>;
+ledger implementationHash: Cell<Bytes<32>>;
+
+// Upgrade management
+ledger pendingUpgrade: Cell<UpgradeProposal>;
+ledger upgradeHistory: Map<Uint<64>, Bytes<32>>; // version index -> impl hash
+ledger upgradeCount: Counter;
+
+// Access control
+ledger admin: Cell<Bytes<32>>;
+ledger upgradeDelay: Cell<Uint<64>>; // Blocks between proposal and activation
+
+// Constants
+const MIN_UPGRADE_DELAY: Uint<64> = 100;
+const NULL_HASH: Bytes<32> = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
+/**
+ * Initialize upgradeable contract
+ * @param adminCommitment - Admin's commitment
+ * @param initialImplementation - Hash of initial implementation
+ * @param delay - Blocks required between upgrade proposal and activation
+ */
+export circuit initialize(
+  adminCommitment: Bytes<32>,
+  initialImplementation: Bytes<32>,
+  delay: Uint<64>
+): Void {
+  assert delay >= MIN_UPGRADE_DELAY;
+
+  admin.value = adminCommitment;
+  implementationHash.value = initialImplementation;
+  upgradeDelay.value = delay;
+
+  currentVersion.value = Version {
+    major: 1,
+    minor: 0,
+    patch: 0
+  };
+
+  // Record in history
+  upgradeHistory[0] = initialImplementation;
+}
+
+/**
+ * Propose an upgrade
+ * @param adminSecret - Admin's secret
+ * @param newImplementation - Hash of new implementation
+ * @param newVersion - Version of new implementation
+ */
+export circuit proposeUpgrade(
+  witness adminSecret: Bytes<32>,
+  newImplementation: Bytes<32>,
+  major: Uint<16>,
+  minor: Uint<16>,
+  patch: Uint<16>
+): Void {
+  assert hash(adminSecret) == admin.value;
+
+  // Ensure version is incrementing
+  const current = currentVersion.value;
+  assert major > current.major ||
+    (major == current.major && minor > current.minor) ||
+    (major == current.major && minor == current.minor && patch > current.patch);
+
+  // Create proposal
+  pendingUpgrade.value = UpgradeProposal {
+    newImplementation: newImplementation,
+    newVersion: Version { major: major, minor: minor, patch: patch },
+    proposedAt: currentBlockHeight(),
+    activationHeight: currentBlockHeight() + upgradeDelay.value,
+    approved: false
+  };
+}
+
+/**
+ * Cancel pending upgrade
+ * @param adminSecret - Admin's secret
+ */
+export circuit cancelUpgrade(witness adminSecret: Bytes<32>): Void {
+  assert hash(adminSecret) == admin.value;
+
+  pendingUpgrade.value = UpgradeProposal {
+    newImplementation: NULL_HASH,
+    newVersion: Version { major: 0, minor: 0, patch: 0 },
+    proposedAt: 0,
+    activationHeight: 0,
+    approved: false
+  };
+}
+
+/**
+ * Execute upgrade after delay period
+ * Can be called by anyone after activation height
+ */
+export circuit executeUpgrade(): Void {
+  const proposal = pendingUpgrade.value;
+
+  // Verify proposal exists
+  assert proposal.newImplementation != NULL_HASH;
+
+  // Verify delay has passed
+  assert currentBlockHeight() >= proposal.activationHeight;
+
+  // Execute upgrade
+  implementationHash.value = proposal.newImplementation;
+  currentVersion.value = proposal.newVersion;
+
+  // Record in history
+  upgradeHistory[upgradeCount.value] = proposal.newImplementation;
+  upgradeCount.increment(1);
+
+  // Clear pending
+  pendingUpgrade.value = UpgradeProposal {
+    newImplementation: NULL_HASH,
+    newVersion: Version { major: 0, minor: 0, patch: 0 },
+    proposedAt: 0,
+    activationHeight: 0,
+    approved: false
+  };
+}
+
+/**
+ * Get current version
+ * @returns Current version tuple
+ */
+export circuit getVersion(): (Uint<16>, Uint<16>, Uint<16>) {
+  const v = currentVersion.value;
+  return (v.major, v.minor, v.patch);
+}
+
+/**
+ * Get current implementation hash
+ * @returns Implementation hash
+ */
+export circuit getImplementation(): Bytes<32> {
+  return implementationHash.value;
+}
+
+/**
+ * Get pending upgrade info
+ * @returns Pending upgrade proposal
+ */
+export circuit getPendingUpgrade(): UpgradeProposal {
+  return pendingUpgrade.value;
+}
+
+/**
+ * Check if upgrade is pending and ready
+ * @returns True if upgrade can be executed
+ */
+export circuit isUpgradeReady(): Boolean {
+  const proposal = pendingUpgrade.value;
+  return proposal.newImplementation != NULL_HASH &&
+    currentBlockHeight() >= proposal.activationHeight;
+}
+
+/**
+ * Get blocks until upgrade can execute
+ * @returns Blocks remaining (0 if ready or no pending)
+ */
+export circuit blocksUntilUpgrade(): Uint<64> {
+  const proposal = pendingUpgrade.value;
+
+  if proposal.newImplementation == NULL_HASH {
+    return 0;
+  }
+
+  const current = currentBlockHeight();
+  if current >= proposal.activationHeight {
+    return 0;
+  }
+
+  return proposal.activationHeight - current;
+}
+
+/**
+ * Update upgrade delay (admin only)
+ * @param adminSecret - Admin's secret
+ * @param newDelay - New delay in blocks
+ */
+export circuit updateUpgradeDelay(
+  witness adminSecret: Bytes<32>,
+  newDelay: Uint<64>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert newDelay >= MIN_UPGRADE_DELAY;
+  upgradeDelay.value = newDelay;
+}
+
+/**
+ * Get historical implementation by index
+ * @param index - Upgrade index
+ * @returns Implementation hash at that version
+ */
+export circuit getHistoricalImplementation(index: Uint<64>): Bytes<32> {
+  return upgradeHistory[index];
+}

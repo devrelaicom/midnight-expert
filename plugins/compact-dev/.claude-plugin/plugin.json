@@ -1,0 +1,24 @@
+{
+  "name": "compact-dev",
+  "version": "0.1.0",
+  "description": "Generates and validates Compact smart contracts for the Midnight Network using interconnected knowledge graphs, an orchestrating agent, and MCP-powered real-time compiler feedback.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "compact",
+    "midnight",
+    "smart-contracts",
+    "zk-proofs",
+    "zero-knowledge",
+    "privacy",
+    "blockchain",
+    "code-generation",
+    "typescript",
+    "ledger-design"
+  ]
+}

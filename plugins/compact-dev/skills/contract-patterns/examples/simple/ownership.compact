@@ -1,0 +1,112 @@
+/**
+ * Ownership Pattern
+ *
+ * Single-owner control with transfer capability.
+ * Use cases: Contract administration, asset ownership, authority delegation.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Current owner commitment (hash of owner's secret)
+ledger owner: Cell<Bytes<32>>;
+
+// Pending owner for two-step transfer
+ledger pendingOwner: Cell<Bytes<32>>;
+
+// Ownership history tracking
+ledger transferCount: Counter;
+
+// Null commitment for empty states
+const NULL_COMMITMENT: Bytes<32> = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
+/**
+ * Initialize ownership
+ * @param ownerCommitment - Hash of initial owner's secret
+ */
+export circuit initialize(ownerCommitment: Bytes<32>): Void {
+  assert owner.value == NULL_COMMITMENT; // Not already initialized
+  owner.value = ownerCommitment;
+  pendingOwner.value = NULL_COMMITMENT;
+}
+
+/**
+ * Verify caller is the owner (modifier pattern)
+ * @param ownerSecret - Owner's secret
+ */
+circuit requireOwner(witness ownerSecret: Bytes<32>): Void {
+  assert hash(ownerSecret) == owner.value;
+}
+
+/**
+ * Initiate ownership transfer (two-step process)
+ * @param ownerSecret - Current owner's secret
+ * @param newOwnerCommitment - Hash of new owner's secret
+ */
+export circuit transferOwnership(
+  witness ownerSecret: Bytes<32>,
+  newOwnerCommitment: Bytes<32>
+): Void {
+  requireOwner(ownerSecret);
+
+  assert newOwnerCommitment != NULL_COMMITMENT;
+  pendingOwner.value = newOwnerCommitment;
+}
+
+/**
+ * Accept ownership transfer
+ * @param newOwnerSecret - New owner's secret (proves they control the commitment)
+ */
+export circuit acceptOwnership(
+  witness newOwnerSecret: Bytes<32>
+): Void {
+  // Verify caller is the pending owner
+  assert hash(newOwnerSecret) == pendingOwner.value;
+  assert pendingOwner.value != NULL_COMMITMENT;
+
+  // Complete transfer
+  owner.value = pendingOwner.value;
+  pendingOwner.value = NULL_COMMITMENT;
+  transferCount.increment(1);
+}
+
+/**
+ * Cancel pending ownership transfer
+ * @param ownerSecret - Current owner's secret
+ */
+export circuit cancelTransfer(
+  witness ownerSecret: Bytes<32>
+): Void {
+  requireOwner(ownerSecret);
+  pendingOwner.value = NULL_COMMITMENT;
+}
+
+/**
+ * Renounce ownership (irreversible!)
+ * @param ownerSecret - Owner's secret
+ */
+export circuit renounceOwnership(
+  witness ownerSecret: Bytes<32>
+): Void {
+  requireOwner(ownerSecret);
+  owner.value = NULL_COMMITMENT;
+  pendingOwner.value = NULL_COMMITMENT;
+}
+
+/**
+ * Check if an address is the current owner
+ * @param commitment - Commitment to check
+ * @returns True if commitment matches owner
+ */
+export circuit isOwner(commitment: Bytes<32>): Boolean {
+  return owner.value == commitment;
+}
+
+/**
+ * Get transfer count for auditing
+ * @returns Number of ownership transfers
+ */
+export circuit getTransferCount(): Uint<64> {
+  return transferCount.value;
+}

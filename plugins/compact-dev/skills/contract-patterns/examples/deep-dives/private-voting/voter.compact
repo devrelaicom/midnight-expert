@@ -1,0 +1,255 @@
+/**
+ * Private Voting System - Voter Contract
+ *
+ * Handles voter registration and anonymous ballot casting.
+ * Uses commitment schemes and nullifiers for privacy.
+ *
+ * Privacy guarantees:
+ * - Voter identity is never revealed on-chain
+ * - Vote choices are aggregated, not individual
+ * - Nullifiers prevent double-voting without linking to identity
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Election configuration
+struct ElectionConfig {
+  electionId: Bytes<32>,
+  choiceCount: Uint<8>,
+  registrationEnd: Uint<64>,
+  votingEnd: Uint<64>,
+  minVoters: Uint<64>
+}
+
+// Election state
+enum ElectionPhase {
+  Setup,
+  Registration,
+  Voting,
+  Finalized
+}
+
+// Ledger state - Election configuration
+ledger config: Cell<ElectionConfig>;
+ledger phase: Cell<ElectionPhase>;
+
+// Voter management
+ledger voterCommitments: Set<Bytes<32>>;
+ledger registeredCount: Counter;
+
+// Nullifier tracking (prevents double voting)
+ledger usedNullifiers: Set<Bytes<32>>;
+
+// Vote tallies (indexed by choice number)
+ledger voteTally: Map<Uint<8>, Counter>;
+
+// Admin
+ledger electionAdmin: Cell<Bytes<32>>;
+
+// Constants
+const MAX_CHOICES: Uint<8> = 10;
+
+/**
+ * Initialize a new election
+ * @param adminCommitment - Election administrator's commitment
+ * @param electionId - Unique election identifier
+ * @param choices - Number of choices/candidates
+ * @param regDuration - Registration phase duration in blocks
+ * @param voteDuration - Voting phase duration in blocks
+ * @param minimumVoters - Minimum voters required for valid election
+ */
+export circuit initializeElection(
+  adminCommitment: Bytes<32>,
+  electionId: Bytes<32>,
+  choices: Uint<8>,
+  regDuration: Uint<64>,
+  voteDuration: Uint<64>,
+  minimumVoters: Uint<64>
+): Void {
+  assert phase.value == ElectionPhase.Setup;
+  assert choices > 0 && choices <= MAX_CHOICES;
+
+  electionAdmin.value = adminCommitment;
+
+  config.value = ElectionConfig {
+    electionId: electionId,
+    choiceCount: choices,
+    registrationEnd: currentBlockHeight() + regDuration,
+    votingEnd: currentBlockHeight() + regDuration + voteDuration,
+    minVoters: minimumVoters
+  };
+
+  // Initialize vote tallies
+  for i in 0..choices {
+    voteTally[i] = Counter { value: 0 };
+  }
+
+  phase.value = ElectionPhase.Registration;
+}
+
+/**
+ * Register as a voter
+ *
+ * The commitment hides the voter's identity:
+ * commitment = hash(identitySecret, randomness)
+ *
+ * @param identitySecret - Voter's secret identity (e.g., hash of credentials)
+ * @param randomness - Random value for commitment binding
+ */
+export circuit register(
+  witness identitySecret: Bytes<32>,
+  witness randomness: Bytes<32>
+): Void {
+  assert phase.value == ElectionPhase.Registration;
+  assert currentBlockHeight() < config.value.registrationEnd;
+
+  // Compute commitment
+  const commitment = hash(identitySecret, randomness);
+
+  // Ensure not already registered
+  assert !voterCommitments.member(commitment);
+
+  // Register voter
+  voterCommitments.insert(commitment);
+  registeredCount.increment(1);
+}
+
+/**
+ * Transition to voting phase
+ * Anyone can call this after registration ends
+ */
+export circuit startVoting(): Void {
+  assert phase.value == ElectionPhase.Registration;
+  assert currentBlockHeight() >= config.value.registrationEnd;
+  assert registeredCount.value >= config.value.minVoters;
+
+  phase.value = ElectionPhase.Voting;
+}
+
+/**
+ * Cast an anonymous ballot
+ *
+ * The voter proves eligibility via their commitment and
+ * generates a nullifier to prevent double-voting:
+ * nullifier = hash(identitySecret, electionId)
+ *
+ * @param identitySecret - Voter's secret identity
+ * @param randomness - Original registration randomness
+ * @param choice - Vote choice (private in witness!)
+ */
+export circuit castBallot(
+  witness identitySecret: Bytes<32>,
+  witness randomness: Bytes<32>,
+  witness choice: Uint<8>
+): Void {
+  assert phase.value == ElectionPhase.Voting;
+  assert currentBlockHeight() < config.value.votingEnd;
+
+  // Validate choice
+  assert choice < config.value.choiceCount;
+
+  // Recompute commitment to prove registration
+  const commitment = hash(identitySecret, randomness);
+  assert voterCommitments.member(commitment);
+
+  // Compute nullifier
+  // Same identity + same election = same nullifier (prevents double vote)
+  // Same identity + different election = different nullifier (allows multi-election)
+  const nullifier = hash(identitySecret, config.value.electionId);
+
+  // Check nullifier hasn't been used
+  assert !usedNullifiers.member(nullifier);
+
+  // Record nullifier and vote
+  usedNullifiers.insert(nullifier);
+
+  // Increment tally for chosen option
+  // Note: choice is in witness, so only the aggregate is public
+  voteTally[choice].increment(1);
+}
+
+/**
+ * Check if a voter is registered (public query)
+ * @param commitment - Voter's commitment
+ * @returns True if registered
+ */
+export circuit isRegistered(commitment: Bytes<32>): Boolean {
+  return voterCommitments.member(commitment);
+}
+
+/**
+ * Check if current user has voted (proves without revealing identity)
+ * @param identitySecret - Voter's secret identity
+ * @returns True if already voted
+ */
+export circuit hasVoted(witness identitySecret: Bytes<32>): Boolean {
+  const nullifier = hash(identitySecret, config.value.electionId);
+  return usedNullifiers.member(nullifier);
+}
+
+/**
+ * Get election configuration
+ * @returns Election config
+ */
+export circuit getConfig(): ElectionConfig {
+  return config.value;
+}
+
+/**
+ * Get current phase
+ * @returns Current election phase
+ */
+export circuit getPhase(): ElectionPhase {
+  return phase.value;
+}
+
+/**
+ * Get registration statistics
+ * @returns Number of registered voters
+ */
+export circuit getRegisteredCount(): Uint<64> {
+  return registeredCount.value;
+}
+
+/**
+ * Get number of votes cast
+ * @returns Total votes (sum across all choices)
+ */
+export circuit getVoteCount(): Uint<64> {
+  var total: Uint<64> = 0;
+  for i in 0..config.value.choiceCount {
+    total = total + voteTally[i].value;
+  }
+  return total;
+}
+
+/**
+ * Admin: Extend registration deadline
+ * @param adminSecret - Admin's secret
+ * @param additionalBlocks - Blocks to add
+ */
+export circuit extendRegistration(
+  witness adminSecret: Bytes<32>,
+  additionalBlocks: Uint<64>
+): Void {
+  assert hash(adminSecret) == electionAdmin.value;
+  assert phase.value == ElectionPhase.Registration;
+
+  var cfg = config.value;
+  cfg.registrationEnd = cfg.registrationEnd + additionalBlocks;
+  cfg.votingEnd = cfg.votingEnd + additionalBlocks;
+  config.value = cfg;
+}
+
+/**
+ * Admin: Emergency cancel (before voting starts)
+ * @param adminSecret - Admin's secret
+ */
+export circuit cancelElection(witness adminSecret: Bytes<32>): Void {
+  assert hash(adminSecret) == electionAdmin.value;
+  assert phase.value != ElectionPhase.Finalized;
+
+  phase.value = ElectionPhase.Setup;
+}

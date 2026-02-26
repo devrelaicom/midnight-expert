@@ -1,0 +1,114 @@
+// commitment-reveal.compact - Commit-reveal pattern for private data
+// Demonstrates safe commitment patterns for hiding and later revealing values
+
+import { persistentCommit, Maybe } from "CompactStandardLibrary";
+
+// ============================================
+// Ledger State
+// ============================================
+
+// Store commitments by user ID
+ledger commitments: Map<Bytes<32>, Bytes<32>>;
+
+// Store revealed values (after reveal phase)
+ledger revealed_values: Map<Bytes<32>, Field>;
+
+// Track which users have revealed
+ledger has_revealed: Set<Bytes<32>>;
+
+// ============================================
+// Witnesses
+// ============================================
+
+witness get_user_id(): Bytes<32>;
+witness get_secret_value(): Field;
+
+// ============================================
+// Phase 1: Commit
+// ============================================
+
+/// Commit to a secret value
+/// The commitment hides the value - it cannot be determined from the commitment
+export circuit commit(): Bytes<32> {
+ const user = get_user_id();
+ const user_disclosed = disclose(user);
+
+ const value = get_secret_value();
+
+ // Create commitment (SAFE: includes nonce)
+ const commitment = persistentCommit(value);
+
+ // Store commitment on chain
+ commitments.insert(user_disclosed, commitment);
+
+ return commitment;
+}
+
+// ============================================
+// Phase 2: Reveal
+// ============================================
+
+/// Reveal the previously committed value
+/// Proves knowledge of the value matching the commitment
+export circuit reveal(): Field {
+ const user = get_user_id();
+ const user_disclosed = disclose(user);
+
+ const value = get_secret_value();
+
+ // Verify user has a commitment
+ const stored_commitment = commitments.lookup(user_disclosed);
+ assert stored_commitment is Maybe::Some(_), "No commitment found";
+
+ // Verify the value matches the commitment
+ const computed_commitment = persistentCommit(value);
+ if stored_commitment is Maybe::Some(commitment) {
+ assert commitment == computed_commitment, "Value does not match commitment";
+ }
+
+ // Check not already revealed
+ assert !has_revealed.member(user_disclosed), "Already revealed";
+
+ // Mark as revealed
+ has_revealed.insert(user_disclosed);
+
+ // Store and return the revealed value
+ // DISCLOSURE: Intentional - this is the reveal phase
+ const disclosed_value = disclose(value);
+ revealed_values.insert(user_disclosed, disclosed_value);
+
+ return disclosed_value;
+}
+
+// ============================================
+// Query Functions
+// ============================================
+
+/// Check if a user has committed
+export circuit has_commitment(user: Bytes<32>): Boolean {
+ const stored = commitments.lookup(user);
+ return stored is Maybe::Some(_);
+}
+
+/// Check if a user has revealed
+export circuit check_revealed(user: Bytes<32>): Boolean {
+ return has_revealed.member(user);
+}
+
+/// Get revealed value (returns 0 if not revealed)
+export circuit get_revealed_value(user: Bytes<32>): Field {
+ const value_opt = revealed_values.lookup(user);
+ return if value_opt is Maybe::Some(v) { v } else { 0 };
+}
+
+// ============================================
+// Verification Helpers
+// ============================================
+
+/// Verify a value matches a commitment (without revealing)
+/// Useful for third-party verification
+export circuit verify_commitment(commitment: Bytes<32>): Boolean {
+ const value = get_secret_value();
+ const computed = persistentCommit(value);
+ return commitment == computed;
+}

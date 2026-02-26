@@ -1,0 +1,180 @@
+/**
+ * Whitelist Pattern
+ *
+ * Membership verification using sets.
+ * Use cases: KYC verification, allowlists, tiered access.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Whitelist storage
+ledger whitelist: Set<Bytes<32>>;
+ledger memberCount: Counter;
+
+// Admin for whitelist management
+ledger admin: Cell<Bytes<32>>;
+
+// Optional: expiration tracking
+ledger expirations: Map<Bytes<32>, Uint<64>>;
+
+// Whitelist status
+ledger isActive: Cell<Boolean>;
+
+/**
+ * Initialize the whitelist
+ * @param adminCommitment - Hash of admin's secret
+ */
+export circuit initialize(adminCommitment: Bytes<32>): Void {
+  admin.value = adminCommitment;
+  isActive.value = true;
+}
+
+/**
+ * Add a member to the whitelist
+ * @param adminSecret - Admin's secret for authorization
+ * @param memberCommitment - Hash of member's identity
+ */
+export circuit addMember(
+  witness adminSecret: Bytes<32>,
+  memberCommitment: Bytes<32>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert isActive.value;
+
+  if !whitelist.member(memberCommitment) {
+    whitelist.insert(memberCommitment);
+    memberCount.increment(1);
+  }
+}
+
+/**
+ * Add member with expiration
+ * @param adminSecret - Admin's secret
+ * @param memberCommitment - Hash of member's identity
+ * @param validBlocks - Number of blocks membership is valid
+ */
+export circuit addMemberWithExpiry(
+  witness adminSecret: Bytes<32>,
+  memberCommitment: Bytes<32>,
+  validBlocks: Uint<64>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert isActive.value;
+
+  if !whitelist.member(memberCommitment) {
+    whitelist.insert(memberCommitment);
+    memberCount.increment(1);
+  }
+
+  expirations[memberCommitment] = currentBlockHeight() + validBlocks;
+}
+
+/**
+ * Remove a member from the whitelist
+ * @param adminSecret - Admin's secret
+ * @param memberCommitment - Member to remove
+ */
+export circuit removeMember(
+  witness adminSecret: Bytes<32>,
+  memberCommitment: Bytes<32>
+): Void {
+  assert hash(adminSecret) == admin.value;
+
+  if whitelist.member(memberCommitment) {
+    whitelist.remove(memberCommitment);
+    memberCount.decrement(1);
+    expirations[memberCommitment] = 0;
+  }
+}
+
+/**
+ * Check if a commitment is whitelisted (public check)
+ * @param memberCommitment - Commitment to check
+ * @returns True if whitelisted and not expired
+ */
+export circuit isMember(memberCommitment: Bytes<32>): Boolean {
+  if !whitelist.member(memberCommitment) {
+    return false;
+  }
+
+  // Check expiration if set
+  const expiry = expirations[memberCommitment];
+  if expiry > 0 && currentBlockHeight() > expiry {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Prove membership privately (without revealing which member)
+ * @param memberSecret - Member's secret
+ * @returns True if member is whitelisted
+ */
+export circuit proveMembership(
+  witness memberSecret: Bytes<32>
+): Boolean {
+  const commitment = hash(memberSecret);
+  return isMember(commitment);
+}
+
+/**
+ * Batch add members
+ * @param adminSecret - Admin's secret
+ * @param members - Array of member commitments
+ */
+export circuit batchAddMembers(
+  witness adminSecret: Bytes<32>,
+  members: Vector<Bytes<32>>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert isActive.value;
+
+  for member in members {
+    if !whitelist.member(member) {
+      whitelist.insert(member);
+      memberCount.increment(1);
+    }
+  }
+}
+
+/**
+ * Pause the whitelist (no new members can be added)
+ * @param adminSecret - Admin's secret
+ */
+export circuit pause(witness adminSecret: Bytes<32>): Void {
+  assert hash(adminSecret) == admin.value;
+  isActive.value = false;
+}
+
+/**
+ * Resume the whitelist
+ * @param adminSecret - Admin's secret
+ */
+export circuit resume(witness adminSecret: Bytes<32>): Void {
+  assert hash(adminSecret) == admin.value;
+  isActive.value = true;
+}
+
+/**
+ * Get total member count
+ * @returns Number of whitelisted members
+ */
+export circuit getMemberCount(): Uint<64> {
+  return memberCount.value;
+}
+
+/**
+ * Transfer admin rights
+ * @param adminSecret - Current admin's secret
+ * @param newAdminCommitment - New admin's commitment
+ */
+export circuit transferAdmin(
+  witness adminSecret: Bytes<32>,
+  newAdminCommitment: Bytes<32>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  admin.value = newAdminCommitment;
+}

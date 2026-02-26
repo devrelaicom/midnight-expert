@@ -1,0 +1,517 @@
+/**
+ * Role-Based Access Registry with Merkle Proofs
+ *
+ * A comprehensive access control system featuring:
+ * - Hierarchical role management
+ * - Merkle tree-based membership verification (gas-efficient)
+ * - Dynamic permission assignment
+ * - Privacy-preserving role verification
+ * - Audit logging and delegation
+ *
+ * Use cases: DAO governance, enterprise access, tiered services
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Permission types
+enum Permission {
+  None,
+  Read,
+  Write,
+  Delete,
+  Grant,
+  Revoke,
+  Admin
+}
+
+// Role definition
+struct Role {
+  id: Bytes<32>,
+  name: Bytes<32>,
+  level: Uint<8>, // Hierarchy level (higher = more privileged)
+  permissions: Uint<16>, // Bitmask of permissions
+  memberRoot: Bytes<32>, // Merkle root of members
+  memberCount: Uint<64>,
+  version: Uint<64>, // Increments on membership change
+  active: Boolean
+}
+
+// Delegation record
+struct Delegation {
+  delegator: Bytes<32>,
+  delegatee: Bytes<32>,
+  roleId: Bytes<32>,
+  permissions: Uint<16>,
+  expiry: Uint<64>,
+  active: Boolean
+}
+
+// Audit log entry
+struct AuditEntry {
+  timestamp: Uint<64>,
+  actor: Bytes<32>,
+  action: Bytes<32>,
+  target: Bytes<32>,
+  details: Bytes<32>
+}
+
+// Role storage
+ledger roles: Map<Bytes<32>, Role>;
+ledger roleList: Map<Uint<8>, Bytes<32>>;
+ledger roleCount: Cell<Uint<8>>;
+
+// Delegation storage
+ledger delegations: Map<Bytes<32>, Delegation>;
+ledger delegationCount: Counter;
+
+// Audit log (circular buffer)
+ledger auditLog: Map<Uint<64>, AuditEntry>;
+ledger auditIndex: Counter;
+const AUDIT_LOG_SIZE: Uint<64> = 1000;
+
+// Super admin (can manage all roles)
+ledger superAdmin: Cell<Bytes<32>>;
+
+// Configuration
+ledger maxDelegationDuration: Cell<Uint<64>>;
+ledger requireDelegationApproval: Cell<Boolean>;
+
+// Permission bit positions
+const PERM_READ: Uint<16> = 1; // 0b0000001
+const PERM_WRITE: Uint<16>  = 2; // 0b0000010
+const PERM_DELETE: Uint<16> = 4; // 0b0000100
+const PERM_GRANT: Uint<16>  = 8; // 0b0001000
+const PERM_REVOKE: Uint<16> = 16; // 0b0010000
+const PERM_ADMIN: Uint<16>  = 32; // 0b0100000
+
+// Null values
+const NULL_BYTES: Bytes<32> = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
+/**
+ * Initialize the registry
+ * @param adminCommitment - Super admin's commitment
+ * @param maxDelegation - Maximum delegation duration in blocks
+ */
+export circuit initialize(
+  adminCommitment: Bytes<32>,
+  maxDelegation: Uint<64>
+): Void {
+  superAdmin.value = adminCommitment;
+  maxDelegationDuration.value = maxDelegation;
+  requireDelegationApproval.value = false;
+
+  // Create default admin role
+  const adminRoleId = hash("ADMIN_ROLE");
+  roles[adminRoleId] = Role {
+    id: adminRoleId,
+    name: hash("Admin"),
+    level: 255,
+    permissions: PERM_READ | PERM_WRITE | PERM_DELETE | PERM_GRANT | PERM_REVOKE | PERM_ADMIN,
+    memberRoot: adminCommitment, // Single-member tree for bootstrap
+    memberCount: 1,
+    version: 1,
+    active: true
+  };
+  roleList[0] = adminRoleId;
+  roleCount.value = 1;
+
+  logAudit(adminCommitment, hash("INITIALIZE"), NULL_BYTES, NULL_BYTES);
+}
+
+/**
+ * Create a new role
+ * @param adminSecret - Admin's secret
+ * @param roleId - Unique role identifier
+ * @param name - Role name hash
+ * @param level - Hierarchy level
+ * @param permissions - Permission bitmask
+ */
+export circuit createRole(
+  witness adminSecret: Bytes<32>,
+  roleId: Bytes<32>,
+  name: Bytes<32>,
+  level: Uint<8>,
+  permissions: Uint<16>
+): Void {
+  // Verify admin
+  requireAdmin(adminSecret);
+
+  // Ensure role doesn't exist
+  assert roles[roleId].id == NULL_BYTES;
+
+  // Create role
+  roles[roleId] = Role {
+    id: roleId,
+    name: name,
+    level: level,
+    permissions: permissions,
+    memberRoot: NULL_BYTES,
+    memberCount: 0,
+    version: 0,
+    active: true
+  };
+  roleList[roleCount.value] = roleId;
+  roleCount.value = roleCount.value + 1;
+
+  logAudit(hash(adminSecret), hash("CREATE_ROLE"), roleId, NULL_BYTES);
+}
+
+/**
+ * Update role membership (set new Merkle root)
+ * @param adminSecret - Admin's secret
+ * @param roleId - Role to update
+ * @param newRoot - New Merkle root of members
+ * @param newCount - New member count
+ */
+export circuit updateRoleMembership(
+  witness adminSecret: Bytes<32>,
+  roleId: Bytes<32>,
+  newRoot: Bytes<32>,
+  newCount: Uint<64>
+): Void {
+  requireAdmin(adminSecret);
+
+  var role = roles[roleId];
+  assert role.active;
+
+  role.memberRoot = newRoot;
+  role.memberCount = newCount;
+  role.version = role.version + 1;
+  roles[roleId] = role;
+
+  logAudit(hash(adminSecret), hash("UPDATE_MEMBERSHIP"), roleId, newRoot);
+}
+
+/**
+ * Verify membership using Merkle proof
+ * @param member - Member commitment to verify
+ * @param roleId - Role to check
+ * @param proof - Merkle proof path
+ * @param proofPositions - Left/right positions for proof
+ * @returns True if member belongs to role
+ */
+export circuit verifyMembership(
+  member: Bytes<32>,
+  roleId: Bytes<32>,
+  witness proof: Vector<Bytes<32>>,
+  witness proofPositions: Vector<Boolean>
+): Boolean {
+  const role = roles[roleId];
+
+  if !role.active {
+    return false;
+  }
+
+  // Compute root from proof
+  var current = member;
+  for i in 0..proof.length {
+    if proofPositions[i] {
+      current = hash(proof[i], current);
+    } else {
+      current = hash(current, proof[i]);
+    }
+  }
+
+  return current == role.memberRoot;
+}
+
+/**
+ * Check if member has specific permission
+ * @param memberSecret - Member's secret
+ * @param roleId - Role to check
+ * @param proof - Merkle proof
+ * @param proofPositions - Proof positions
+ * @param permission - Permission to check
+ * @returns True if member has permission
+ */
+export circuit hasPermission(
+  witness memberSecret: Bytes<32>,
+  roleId: Bytes<32>,
+  witness proof: Vector<Bytes<32>>,
+  witness proofPositions: Vector<Boolean>,
+  permission: Permission
+): Boolean {
+  const member = hash(memberSecret);
+
+  // Verify membership
+  if !verifyMembership(member, roleId, proof, proofPositions) {
+    return false;
+  }
+
+  // Check permission
+  const role = roles[roleId];
+  const permBit = permissionToBit(permission);
+
+  return (role.permissions & permBit) != 0;
+}
+
+/**
+ * Grant permission through delegation
+ * @param delegatorSecret - Delegator's secret
+ * @param delegatorProof - Delegator's membership proof
+ * @param delegatorProofPositions - Proof positions
+ * @param roleId - Role being delegated from
+ * @param delegateeCommitment - Who receives delegation
+ * @param permissions - Permissions to delegate
+ * @param duration - Duration in blocks
+ */
+export circuit delegate(
+  witness delegatorSecret: Bytes<32>,
+  witness delegatorProof: Vector<Bytes<32>>,
+  witness delegatorProofPositions: Vector<Boolean>,
+  roleId: Bytes<32>,
+  delegateeCommitment: Bytes<32>,
+  permissions: Uint<16>,
+  duration: Uint<64>
+): Bytes<32> {
+  const delegator = hash(delegatorSecret);
+
+  // Verify delegator has GRANT permission
+  assert hasPermission(delegatorSecret, roleId, delegatorProof, delegatorProofPositions, Permission.Grant);
+
+  // Verify duration within limits
+  assert duration <= maxDelegationDuration.value;
+
+  // Delegator can only delegate permissions they have
+  const role = roles[roleId];
+  assert (permissions & role.permissions) == permissions;
+
+  // Create delegation
+  const delegationId = hash(delegator, delegateeCommitment, roleId, currentBlockHeight());
+
+  delegations[delegationId] = Delegation {
+    delegator: delegator,
+    delegatee: delegateeCommitment,
+    roleId: roleId,
+    permissions: permissions,
+    expiry: currentBlockHeight() + duration,
+    active: true
+  };
+
+  delegationCount.increment(1);
+
+  logAudit(delegator, hash("DELEGATE"), delegateeCommitment, roleId);
+
+  return delegationId;
+}
+
+/**
+ * Check delegated permission
+ * @param delegateeSecret - Delegatee's secret
+ * @param delegationId - Delegation identifier
+ * @param permission - Permission to check
+ * @returns True if delegation grants permission
+ */
+export circuit hasDelegatedPermission(
+  witness delegateeSecret: Bytes<32>,
+  delegationId: Bytes<32>,
+  permission: Permission
+): Boolean {
+  const delegatee = hash(delegateeSecret);
+  const delegation = delegations[delegationId];
+
+  // Verify delegation is for this delegatee
+  if delegation.delegatee != delegatee {
+    return false;
+  }
+
+  // Check delegation is active and not expired
+  if !delegation.active || currentBlockHeight() > delegation.expiry {
+    return false;
+  }
+
+  // Check permission
+  const permBit = permissionToBit(permission);
+  return (delegation.permissions & permBit) != 0;
+}
+
+/**
+ * Revoke delegation
+ * @param callerSecret - Caller's secret (delegator or admin)
+ * @param delegationId - Delegation to revoke
+ */
+export circuit revokeDelegation(
+  witness callerSecret: Bytes<32>,
+  delegationId: Bytes<32>
+): Void {
+  const caller = hash(callerSecret);
+  var delegation = delegations[delegationId];
+
+  // Must be delegator or super admin
+  assert caller == delegation.delegator ||
+    caller == superAdmin.value;
+
+  delegation.active = false;
+  delegations[delegationId] = delegation;
+
+  logAudit(caller, hash("REVOKE_DELEGATION"), delegationId, NULL_BYTES);
+}
+
+/**
+ * Deactivate a role
+ * @param adminSecret - Admin's secret
+ * @param roleId - Role to deactivate
+ */
+export circuit deactivateRole(
+  witness adminSecret: Bytes<32>,
+  roleId: Bytes<32>
+): Void {
+  requireAdmin(adminSecret);
+
+  var role = roles[roleId];
+  role.active = false;
+  roles[roleId] = role;
+
+  logAudit(hash(adminSecret), hash("DEACTIVATE_ROLE"), roleId, NULL_BYTES);
+}
+
+/**
+ * Reactivate a role
+ * @param adminSecret - Admin's secret
+ * @param roleId - Role to reactivate
+ */
+export circuit reactivateRole(
+  witness adminSecret: Bytes<32>,
+  roleId: Bytes<32>
+): Void {
+  requireAdmin(adminSecret);
+
+  var role = roles[roleId];
+  role.active = true;
+  roles[roleId] = role;
+
+  logAudit(hash(adminSecret), hash("REACTIVATE_ROLE"), roleId, NULL_BYTES);
+}
+
+/**
+ * Update role permissions
+ * @param adminSecret - Admin's secret
+ * @param roleId - Role to update
+ * @param newPermissions - New permission bitmask
+ */
+export circuit updateRolePermissions(
+  witness adminSecret: Bytes<32>,
+  roleId: Bytes<32>,
+  newPermissions: Uint<16>
+): Void {
+  requireAdmin(adminSecret);
+
+  var role = roles[roleId];
+  role.permissions = newPermissions;
+  roles[roleId] = role;
+
+  logAudit(hash(adminSecret), hash("UPDATE_PERMISSIONS"), roleId, NULL_BYTES);
+}
+
+/**
+ * Get role information
+ * @param roleId - Role identifier
+ * @returns Role struct
+ */
+export circuit getRole(roleId: Bytes<32>): Role {
+  return roles[roleId];
+}
+
+/**
+ * Get delegation information
+ * @param delegationId - Delegation identifier
+ * @returns Delegation struct
+ */
+export circuit getDelegation(delegationId: Bytes<32>): Delegation {
+  return delegations[delegationId];
+}
+
+/**
+ * Check if delegation is still valid
+ * @param delegationId - Delegation identifier
+ * @returns True if valid
+ */
+export circuit isDelegationValid(delegationId: Bytes<32>): Boolean {
+  const delegation = delegations[delegationId];
+  return delegation.active && currentBlockHeight() <= delegation.expiry;
+}
+
+/**
+ * Get role count
+ * @returns Number of roles
+ */
+export circuit getRoleCount(): Uint<8> {
+  return roleCount.value;
+}
+
+/**
+ * Transfer super admin
+ * @param currentAdminSecret - Current admin's secret
+ * @param newAdminCommitment - New admin's commitment
+ */
+export circuit transferSuperAdmin(
+  witness currentAdminSecret: Bytes<32>,
+  newAdminCommitment: Bytes<32>
+): Void {
+  assert hash(currentAdminSecret) == superAdmin.value;
+
+  superAdmin.value = newAdminCommitment;
+
+  logAudit(hash(currentAdminSecret), hash("TRANSFER_ADMIN"), newAdminCommitment, NULL_BYTES);
+}
+
+/**
+ * Get recent audit entries
+ * @param count - Number of entries to retrieve
+ * @returns Vector of audit entries
+ */
+export circuit getRecentAudit(count: Uint<64>): Vector<AuditEntry> {
+  var entries: Vector<AuditEntry> = [];
+  const currentIndex = auditIndex.value;
+
+  for i in 0..count {
+    if i >= currentIndex {
+      break;
+    }
+    const index = (currentIndex - 1 - i) % AUDIT_LOG_SIZE;
+    entries.push(auditLog[index]);
+  }
+
+  return entries;
+}
+
+// Internal: Require admin permission
+circuit requireAdmin(witness secret: Bytes<32>): Void {
+  const caller = hash(secret);
+  assert caller == superAdmin.value;
+}
+
+// Internal: Convert permission enum to bitmask
+circuit permissionToBit(permission: Permission): Uint<16> {
+  match permission {
+    Permission.None => 0,
+    Permission.Read => PERM_READ,
+    Permission.Write => PERM_WRITE,
+    Permission.Delete => PERM_DELETE,
+    Permission.Grant => PERM_GRANT,
+    Permission.Revoke => PERM_REVOKE,
+    Permission.Admin => PERM_ADMIN
+  }
+}
+
+// Internal: Log audit entry
+circuit logAudit(
+  actor: Bytes<32>,
+  action: Bytes<32>,
+  target: Bytes<32>,
+  details: Bytes<32>
+): Void {
+  const index = auditIndex.value % AUDIT_LOG_SIZE;
+
+  auditLog[index] = AuditEntry {
+    timestamp: currentBlockHeight(),
+    actor: actor,
+    action: action,
+    target: target,
+    details: details
+  };
+
+  auditIndex.increment(1);
+}

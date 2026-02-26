@@ -1,0 +1,200 @@
+/**
+ * Pausable Pattern
+ *
+ * Emergency stop mechanism for contracts.
+ * Use cases: Emergency response, maintenance windows, bug mitigation.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Pause state
+ledger paused: Cell<Boolean>;
+ledger pausedAt: Cell<Uint<64>>;
+ledger pauseCount: Counter;
+
+// Pause authorities
+ledger owner: Cell<Bytes<32>>;
+ledger pauseGuardians: Set<Bytes<32>>;
+
+// Pause reason (for transparency)
+ledger pauseReason: Cell<Bytes<32>>;
+
+// Auto-unpause configuration
+ledger autoUnpauseHeight: Cell<Uint<64>>;
+
+/**
+ * Initialize pausable contract
+ * @param ownerCommitment - Owner's commitment (can pause and unpause)
+ */
+export circuit initialize(ownerCommitment: Bytes<32>): Void {
+  owner.value = ownerCommitment;
+  paused.value = false;
+  autoUnpauseHeight.value = 0;
+}
+
+/**
+ * Internal modifier to check pause state
+ */
+circuit requireNotPaused(): Void {
+  // Check if auto-unpause should trigger
+  if paused.value && autoUnpauseHeight.value > 0 {
+    if currentBlockHeight() >= autoUnpauseHeight.value {
+      // Auto-unpause has triggered
+      assert false; // Still paused until explicit check
+    }
+  }
+
+  assert !paused.value;
+}
+
+/**
+ * Internal modifier to require pause
+ */
+circuit requirePaused(): Void {
+  assert paused.value;
+}
+
+/**
+ * Pause the contract (owner or guardian)
+ * @param callerSecret - Caller's secret
+ * @param reason - Reason for pause (stored on-chain)
+ */
+export circuit pause(
+  witness callerSecret: Bytes<32>,
+  reason: Bytes<32>
+): Void {
+  const caller = hash(callerSecret);
+
+  // Must be owner or guardian
+  assert caller == owner.value || pauseGuardians.member(caller);
+
+  // Must not already be paused
+  assert !paused.value;
+
+  paused.value = true;
+  pausedAt.value = currentBlockHeight();
+  pauseReason.value = reason;
+  pauseCount.increment(1);
+}
+
+/**
+ * Pause with auto-unpause after duration
+ * @param callerSecret - Caller's secret
+ * @param reason - Reason for pause
+ * @param duration - Blocks until auto-unpause
+ */
+export circuit pauseWithDuration(
+  witness callerSecret: Bytes<32>,
+  reason: Bytes<32>,
+  duration: Uint<64>
+): Void {
+  const caller = hash(callerSecret);
+  assert caller == owner.value || pauseGuardians.member(caller);
+  assert !paused.value;
+
+  paused.value = true;
+  pausedAt.value = currentBlockHeight();
+  pauseReason.value = reason;
+  autoUnpauseHeight.value = currentBlockHeight() + duration;
+  pauseCount.increment(1);
+}
+
+/**
+ * Unpause the contract (owner only)
+ * @param ownerSecret - Owner's secret
+ */
+export circuit unpause(witness ownerSecret: Bytes<32>): Void {
+  assert hash(ownerSecret) == owner.value;
+  assert paused.value;
+
+  paused.value = false;
+  pauseReason.value = 0x0;
+  autoUnpauseHeight.value = 0;
+}
+
+/**
+ * Trigger auto-unpause if conditions met
+ * Can be called by anyone if auto-unpause height reached
+ */
+export circuit triggerAutoUnpause(): Void {
+  assert paused.value;
+  assert autoUnpauseHeight.value > 0;
+  assert currentBlockHeight() >= autoUnpauseHeight.value;
+
+  paused.value = false;
+  pauseReason.value = 0x0;
+  autoUnpauseHeight.value = 0;
+}
+
+/**
+ * Add a pause guardian
+ * @param ownerSecret - Owner's secret
+ * @param guardianCommitment - New guardian's commitment
+ */
+export circuit addGuardian(
+  witness ownerSecret: Bytes<32>,
+  guardianCommitment: Bytes<32>
+): Void {
+  assert hash(ownerSecret) == owner.value;
+  pauseGuardians.insert(guardianCommitment);
+}
+
+/**
+ * Remove a pause guardian
+ * @param ownerSecret - Owner's secret
+ * @param guardianCommitment - Guardian to remove
+ */
+export circuit removeGuardian(
+  witness ownerSecret: Bytes<32>,
+  guardianCommitment: Bytes<32>
+): Void {
+  assert hash(ownerSecret) == owner.value;
+  pauseGuardians.remove(guardianCommitment);
+}
+
+/**
+ * Check if contract is paused
+ * @returns Current pause state
+ */
+export circuit isPaused(): Boolean {
+  // Check auto-unpause condition
+  if paused.value && autoUnpauseHeight.value > 0 {
+    if currentBlockHeight() >= autoUnpauseHeight.value {
+      return false; // Effectively unpaused
+    }
+  }
+  return paused.value;
+}
+
+/**
+ * Get pause information
+ * @returns Pause state, height, and reason
+ */
+export circuit getPauseInfo(): (Boolean, Uint<64>, Bytes<32>) {
+  return (paused.value, pausedAt.value, pauseReason.value);
+}
+
+/**
+ * Example of a pausable function
+ * @param userSecret - User's secret
+ */
+export circuit protectedAction(witness userSecret: Bytes<32>): Void {
+  requireNotPaused();
+
+  // Actual logic here
+  // ...
+}
+
+/**
+ * Example of emergency-only function
+ * @param ownerSecret - Owner's secret
+ */
+export circuit emergencyWithdraw(witness ownerSecret: Bytes<32>): Void {
+  requirePaused();
+  assert hash(ownerSecret) == owner.value;
+
+  // Emergency withdrawal logic
+  // ...
+}

@@ -1,0 +1,499 @@
+/**
+ * Multi-Party Token Escrow
+ *
+ * A comprehensive escrow system supporting:
+ * - Multiple parties with different roles
+ * - Conditional release based on milestones
+ * - Timeout-based refunds
+ * - Dispute resolution with arbitration
+ * - Partial releases and milestone payments
+ *
+ * Use cases: Freelance payments, real estate, trade finance
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Escrow states
+enum EscrowState {
+  Created, // Initial state
+  Funded, // All required deposits received
+  InProgress, // Work/delivery in progress
+  Disputed, // Under dispute
+  Completed, // Successfully completed
+  Refunded, // Funds returned to depositors
+  Cancelled // Cancelled before funding
+}
+
+// Party roles
+enum PartyRole {
+  Depositor, // Provides funds
+  Beneficiary, // Receives funds on completion
+  Arbitrator // Resolves disputes
+}
+
+// Party information
+struct Party {
+  commitment: Bytes<32>,
+  role: PartyRole,
+  depositAmount: Uint<64>,
+  deposited: Boolean,
+  claimed: Boolean
+}
+
+// Milestone for staged releases
+struct Milestone {
+  id: Bytes<32>,
+  description: Bytes<32>,
+  amount: Uint<64>,
+  completed: Boolean,
+  released: Boolean,
+  deadline: Uint<64>
+}
+
+// Escrow configuration
+struct EscrowConfig {
+  escrowId: Bytes<32>,
+  totalAmount: Uint<64>,
+  releaseDelay: Uint<64>, // Blocks after completion before release
+  disputeWindow: Uint<64>, // Blocks to raise dispute
+  absoluteDeadline: Uint<64>,  // Final deadline for completion
+  requireAllDeposits: Boolean  // Whether all parties must deposit
+}
+
+// Main escrow state
+ledger config: Cell<EscrowConfig>;
+ledger state: Cell<EscrowState>;
+ledger createdAt: Cell<Uint<64>>;
+
+// Parties (indexed by commitment)
+ledger parties: Map<Bytes<32>, Party>;
+ledger partyList: Map<Uint<8>, Bytes<32>>;
+ledger partyCount: Cell<Uint<8>>;
+
+// Financial tracking
+ledger totalDeposited: Counter;
+ledger totalReleased: Counter;
+ledger pendingRelease: Cell<Uint<64>>;
+
+// Milestones
+ledger milestones: Map<Bytes<32>, Milestone>;
+ledger milestoneList: Map<Uint<8>, Bytes<32>>;
+ledger milestoneCount: Cell<Uint<8>>;
+ledger completedMilestones: Counter;
+
+// Dispute handling
+ledger disputeReason: Cell<Bytes<32>>;
+ledger disputeRaisedBy: Cell<Bytes<32>>;
+ledger disputeRaisedAt: Cell<Uint<64>>;
+
+// Approvals for release
+ledger releaseApprovals: Set<Bytes<32>>;
+ledger requiredApprovals: Cell<Uint<8>>;
+
+// Constants
+const MAX_PARTIES: Uint<8> = 10;
+const MAX_MILESTONES: Uint<8> = 20;
+
+/**
+ * Create a new escrow
+ * @param creatorSecret - Creator's secret (becomes first party)
+ * @param escrowId - Unique escrow identifier
+ * @param totalAmount - Total escrow amount
+ * @param releaseDelay - Blocks after completion before release
+ * @param disputeWindow - Blocks to raise dispute
+ * @param deadline - Absolute deadline for completion
+ * @param approvalsRequired - Number of approvals needed for release
+ */
+export circuit create(
+  witness creatorSecret: Bytes<32>,
+  escrowId: Bytes<32>,
+  totalAmount: Uint<64>,
+  releaseDelay: Uint<64>,
+  disputeWindow: Uint<64>,
+  deadline: Uint<64>,
+  approvalsRequired: Uint<8>
+): Void {
+  assert state.value == EscrowState.Created || partyCount.value == 0;
+
+  const creatorCommitment = hash(creatorSecret);
+
+  config.value = EscrowConfig {
+    escrowId: escrowId,
+    totalAmount: totalAmount,
+    releaseDelay: releaseDelay,
+    disputeWindow: disputeWindow,
+    absoluteDeadline: deadline,
+    requireAllDeposits: true
+  };
+
+  // Add creator as first party (depositor by default)
+  parties[creatorCommitment] = Party {
+    commitment: creatorCommitment,
+    role: PartyRole.Depositor,
+    depositAmount: totalAmount,
+    deposited: false,
+    claimed: false
+  };
+  partyList[0] = creatorCommitment;
+  partyCount.value = 1;
+
+  requiredApprovals.value = approvalsRequired;
+  state.value = EscrowState.Created;
+  createdAt.value = currentBlockHeight();
+}
+
+/**
+ * Add a party to the escrow
+ * @param callerSecret - Caller's secret (must be existing party)
+ * @param partyCommitment - New party's commitment
+ * @param role - Party's role
+ * @param depositRequired - Amount this party must deposit (0 for beneficiary/arbitrator)
+ */
+export circuit addParty(
+  witness callerSecret: Bytes<32>,
+  partyCommitment: Bytes<32>,
+  role: PartyRole,
+  depositRequired: Uint<64>
+): Void {
+  assert state.value == EscrowState.Created;
+  assert partyCount.value < MAX_PARTIES;
+
+  // Verify caller is existing party
+  const callerCommitment = hash(callerSecret);
+  assert parties[callerCommitment].commitment == callerCommitment;
+
+  // Add new party
+  parties[partyCommitment] = Party {
+    commitment: partyCommitment,
+    role: role,
+    depositAmount: depositRequired,
+    deposited: depositRequired == 0, // Non-depositors are "deposited" by default
+    claimed: false
+  };
+  partyList[partyCount.value] = partyCommitment;
+  partyCount.value = partyCount.value + 1;
+}
+
+/**
+ * Add a milestone
+ * @param callerSecret - Caller's secret (must be party)
+ * @param milestoneId - Unique milestone identifier
+ * @param description - Description hash
+ * @param amount - Amount released on completion
+ * @param deadline - Block height deadline
+ */
+export circuit addMilestone(
+  witness callerSecret: Bytes<32>,
+  milestoneId: Bytes<32>,
+  description: Bytes<32>,
+  amount: Uint<64>,
+  deadline: Uint<64>
+): Void {
+  assert state.value == EscrowState.Created;
+  assert milestoneCount.value < MAX_MILESTONES;
+
+  const callerCommitment = hash(callerSecret);
+  assert parties[callerCommitment].commitment == callerCommitment;
+
+  milestones[milestoneId] = Milestone {
+    id: milestoneId,
+    description: description,
+    amount: amount,
+    completed: false,
+    released: false,
+    deadline: deadline
+  };
+  milestoneList[milestoneCount.value] = milestoneId;
+  milestoneCount.value = milestoneCount.value + 1;
+}
+
+/**
+ * Deposit funds into escrow
+ * @param depositorSecret - Depositor's secret
+ * @param amount - Amount to deposit
+ */
+export circuit deposit(
+  witness depositorSecret: Bytes<32>,
+  amount: Uint<64>
+): Void {
+  assert state.value == EscrowState.Created ||
+    state.value == EscrowState.Funded;
+
+  const depositorCommitment = hash(depositorSecret);
+  var party = parties[depositorCommitment];
+
+  assert party.commitment == depositorCommitment;
+  assert party.role == PartyRole.Depositor;
+  assert !party.deposited;
+  assert amount == party.depositAmount;
+
+  // Record deposit
+  party.deposited = true;
+  parties[depositorCommitment] = party;
+  totalDeposited.increment(amount);
+
+  // Check if fully funded
+  if checkFullyFunded() {
+    state.value = EscrowState.Funded;
+  }
+}
+
+/**
+ * Check if all required deposits received
+ */
+circuit checkFullyFunded(): Boolean {
+  for i in 0..partyCount.value {
+    const commitment = partyList[i];
+    const party = parties[commitment];
+    if party.role == PartyRole.Depositor && !party.deposited {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Mark milestone as completed
+ * @param callerSecret - Caller's secret (beneficiary or arbitrator)
+ * @param milestoneId - Milestone to complete
+ */
+export circuit completeMilestone(
+  witness callerSecret: Bytes<32>,
+  milestoneId: Bytes<32>
+): Void {
+  assert state.value == EscrowState.Funded ||
+    state.value == EscrowState.InProgress;
+
+  const callerCommitment = hash(callerSecret);
+  const party = parties[callerCommitment];
+  assert party.role == PartyRole.Beneficiary ||
+    party.role == PartyRole.Arbitrator;
+
+  var milestone = milestones[milestoneId];
+  assert !milestone.completed;
+  assert currentBlockHeight() <= milestone.deadline;
+
+  milestone.completed = true;
+  milestones[milestoneId] = milestone;
+  completedMilestones.increment(1);
+
+  state.value = EscrowState.InProgress;
+}
+
+/**
+ * Approve release of funds
+ * @param callerSecret - Caller's secret
+ */
+export circuit approveRelease(witness callerSecret: Bytes<32>): Void {
+  assert state.value == EscrowState.InProgress ||
+    state.value == EscrowState.Funded;
+
+  const callerCommitment = hash(callerSecret);
+  assert parties[callerCommitment].commitment == callerCommitment;
+
+  releaseApprovals.insert(callerCommitment);
+}
+
+/**
+ * Release funds for completed milestone
+ * @param milestoneId - Milestone to release
+ * @param beneficiaryCommitment - Beneficiary to receive funds
+ */
+export circuit releaseMilestone(
+  milestoneId: Bytes<32>,
+  beneficiaryCommitment: Bytes<32>
+): Uint<64> {
+  assert state.value == EscrowState.InProgress;
+
+  // Check approvals
+  var approvalCount: Uint<8> = 0;
+  for i in 0..partyCount.value {
+    if releaseApprovals.member(partyList[i]) {
+      approvalCount = approvalCount + 1;
+    }
+  }
+  assert approvalCount >= requiredApprovals.value;
+
+  // Verify milestone completed
+  var milestone = milestones[milestoneId];
+  assert milestone.completed;
+  assert !milestone.released;
+
+  // Verify beneficiary
+  const beneficiary = parties[beneficiaryCommitment];
+  assert beneficiary.role == PartyRole.Beneficiary;
+
+  // Release funds
+  milestone.released = true;
+  milestones[milestoneId] = milestone;
+  totalReleased.increment(milestone.amount);
+
+  // Check if all milestones released
+  if completedMilestones.value == milestoneCount.value {
+    state.value = EscrowState.Completed;
+  }
+
+  return milestone.amount;
+}
+
+/**
+ * Raise a dispute
+ * @param callerSecret - Caller's secret
+ * @param reason - Reason for dispute
+ */
+export circuit raiseDispute(
+  witness callerSecret: Bytes<32>,
+  reason: Bytes<32>
+): Void {
+  assert state.value == EscrowState.Funded ||
+    state.value == EscrowState.InProgress;
+
+  const callerCommitment = hash(callerSecret);
+  assert parties[callerCommitment].commitment == callerCommitment;
+
+  state.value = EscrowState.Disputed;
+  disputeReason.value = reason;
+  disputeRaisedBy.value = callerCommitment;
+  disputeRaisedAt.value = currentBlockHeight();
+}
+
+/**
+ * Resolve dispute (arbitrator only)
+ * @param arbitratorSecret - Arbitrator's secret
+ * @param refundDepositors - True to refund, false to release to beneficiary
+ * @param splitPercent - Percentage to beneficiary (0-100) if splitting
+ */
+export circuit resolveDispute(
+  witness arbitratorSecret: Bytes<32>,
+  refundDepositors: Boolean,
+  splitPercent: Uint<8>
+): Void {
+  assert state.value == EscrowState.Disputed;
+  assert splitPercent <= 100;
+
+  const arbitratorCommitment = hash(arbitratorSecret);
+  const arbitrator = parties[arbitratorCommitment];
+  assert arbitrator.role == PartyRole.Arbitrator;
+
+  if refundDepositors {
+    state.value = EscrowState.Refunded;
+  } else {
+    // Calculate split
+    const remainingFunds = totalDeposited.value - totalReleased.value;
+    const toBeneficiary = (remainingFunds * splitPercent as Uint<64>) / 100;
+
+    pendingRelease.value = toBeneficiary;
+    totalReleased.increment(toBeneficiary);
+
+    state.value = EscrowState.Completed;
+  }
+}
+
+/**
+ * Claim refund after timeout or dispute resolution
+ * @param depositorSecret - Depositor's secret
+ */
+export circuit claimRefund(
+  witness depositorSecret: Bytes<32>
+): Uint<64> {
+  const depositorCommitment = hash(depositorSecret);
+  var party = parties[depositorCommitment];
+
+  assert party.role == PartyRole.Depositor;
+  assert party.deposited;
+  assert !party.claimed;
+
+  // Check refund conditions
+  const canRefund =
+    state.value == EscrowState.Refunded ||
+    state.value == EscrowState.Cancelled ||
+    (currentBlockHeight() > config.value.absoluteDeadline &&
+     state.value != EscrowState.Completed);
+
+  assert canRefund;
+
+  // Calculate refund amount
+  const refundAmount = party.depositAmount;
+  party.claimed = true;
+  parties[depositorCommitment] = party;
+
+  return refundAmount;
+}
+
+/**
+ * Claim release (beneficiary)
+ * @param beneficiarySecret - Beneficiary's secret
+ */
+export circuit claimRelease(
+  witness beneficiarySecret: Bytes<32>
+): Uint<64> {
+  assert state.value == EscrowState.Completed;
+
+  const beneficiaryCommitment = hash(beneficiarySecret);
+  var party = parties[beneficiaryCommitment];
+
+  assert party.role == PartyRole.Beneficiary;
+  assert !party.claimed;
+
+  party.claimed = true;
+  parties[beneficiaryCommitment] = party;
+
+  const releaseAmount = pendingRelease.value;
+  pendingRelease.value = 0;
+
+  return releaseAmount;
+}
+
+/**
+ * Get escrow state
+ */
+export circuit getState(): EscrowState {
+  return state.value;
+}
+
+/**
+ * Get escrow configuration
+ */
+export circuit getConfig(): EscrowConfig {
+  return config.value;
+}
+
+/**
+ * Get party information
+ */
+export circuit getParty(commitment: Bytes<32>): Party {
+  return parties[commitment];
+}
+
+/**
+ * Get milestone information
+ */
+export circuit getMilestone(milestoneId: Bytes<32>): Milestone {
+  return milestones[milestoneId];
+}
+
+/**
+ * Get financial summary
+ */
+export circuit getFinancialSummary(): (Uint<64>, Uint<64>, Uint<64>) {
+  return (
+    config.value.totalAmount,
+    totalDeposited.value,
+    totalReleased.value
+  );
+}
+
+/**
+ * Cancel escrow (before fully funded)
+ * @param callerSecret - Caller's secret
+ */
+export circuit cancel(witness callerSecret: Bytes<32>): Void {
+  assert state.value == EscrowState.Created;
+
+  const callerCommitment = hash(callerSecret);
+  assert parties[callerCommitment].commitment == callerCommitment;
+
+  state.value = EscrowState.Cancelled;
+}

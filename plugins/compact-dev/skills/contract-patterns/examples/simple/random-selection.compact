@@ -1,0 +1,245 @@
+/**
+ * Random Selection Pattern
+ *
+ * Fair random selection using commit-reveal scheme.
+ * Use cases: Lottery systems, random assignment, fair selection.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Participant entry
+struct Participant {
+  commitment: Bytes<32>,
+  revealed: Boolean,
+  revealValue: Bytes<32>
+}
+
+// Selection round state
+enum RoundState {
+  Inactive,
+  Commitment, // Accepting commitments
+  Reveal, // Accepting reveals
+  Finalized // Winner selected
+}
+
+// Round configuration
+ledger roundState: Cell<RoundState>;
+ledger roundId: Counter;
+
+// Timing
+ledger commitDeadline: Cell<Uint<64>>;
+ledger revealDeadline: Cell<Uint<64>>;
+
+// Participants
+ledger participants: Map<Bytes<32>, Participant>;
+ledger participantList: Map<Uint<64>, Bytes<32>>; // index -> commitment
+ledger participantCount: Cell<Uint<64>>;
+ledger revealCount: Cell<Uint<64>>;
+
+// Result
+ledger combinedRandomness: Cell<Bytes<32>>;
+ledger winnerIndex: Cell<Uint<64>>;
+ledger winner: Cell<Bytes<32>>;
+
+// Admin
+ledger admin: Cell<Bytes<32>>;
+
+/**
+ * Initialize random selection contract
+ * @param adminCommitment - Admin's commitment
+ */
+export circuit initialize(adminCommitment: Bytes<32>): Void {
+  admin.value = adminCommitment;
+  roundState.value = RoundState.Inactive;
+}
+
+/**
+ * Start a new selection round
+ * @param adminSecret - Admin's secret
+ * @param commitDuration - Blocks for commitment phase
+ * @param revealDuration - Blocks for reveal phase
+ */
+export circuit startRound(
+  witness adminSecret: Bytes<32>,
+  commitDuration: Uint<64>,
+  revealDuration: Uint<64>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert roundState.value == RoundState.Inactive;
+
+  roundState.value = RoundState.Commitment;
+  commitDeadline.value = currentBlockHeight() + commitDuration;
+  revealDeadline.value = currentBlockHeight() + commitDuration + revealDuration;
+  participantCount.value = 0;
+  revealCount.value = 0;
+  combinedRandomness.value = 0x0;
+  roundId.increment(1);
+}
+
+/**
+ * Submit a commitment to participate
+ * Commitment = hash(secret || participantId)
+ * @param commitment - Hash of participant's secret value
+ */
+export circuit commit(commitment: Bytes<32>): Void {
+  assert roundState.value == RoundState.Commitment;
+  assert currentBlockHeight() < commitDeadline.value;
+
+  // Ensure not already committed
+  assert participants[commitment].commitment == 0x0;
+
+  // Record participant
+  participants[commitment] = Participant {
+    commitment: commitment,
+    revealed: false,
+    revealValue: 0x0
+  };
+
+  participantList[participantCount.value] = commitment;
+  participantCount.value = participantCount.value + 1;
+}
+
+/**
+ * Transition to reveal phase (anyone can call after deadline)
+ */
+export circuit startRevealPhase(): Void {
+  assert roundState.value == RoundState.Commitment;
+  assert currentBlockHeight() >= commitDeadline.value;
+  assert participantCount.value > 0; // Need participants
+
+  roundState.value = RoundState.Reveal;
+}
+
+/**
+ * Reveal committed value
+ * @param secret - The secret value that was committed
+ * @param participantId - Participant identifier
+ */
+export circuit reveal(
+  witness secret: Bytes<32>,
+  witness participantId: Bytes<32>
+): Void {
+  assert roundState.value == RoundState.Reveal;
+  assert currentBlockHeight() < revealDeadline.value;
+
+  // Compute commitment from reveal
+  const commitment = hash(secret, participantId);
+
+  // Verify commitment exists and not revealed
+  var participant = participants[commitment];
+  assert participant.commitment == commitment;
+  assert !participant.revealed;
+
+  // Record reveal
+  participant.revealed = true;
+  participant.revealValue = secret;
+  participants[commitment] = participant;
+
+  // Combine into randomness
+  combinedRandomness.value = hash(combinedRandomness.value, secret);
+  revealCount.value = revealCount.value + 1;
+}
+
+/**
+ * Finalize round and select winner
+ * Anyone can call after reveal deadline
+ */
+export circuit finalize(): Void {
+  assert roundState.value == RoundState.Reveal;
+  assert currentBlockHeight() >= revealDeadline.value;
+  assert revealCount.value > 0; // Need at least one reveal
+
+  // Generate winner index from combined randomness
+  // Convert first 8 bytes of randomness to index
+  const randomBytes = combinedRandomness.value;
+  const randomValue = bytesToUint64(randomBytes);
+  const selectedIndex = randomValue % revealCount.value;
+
+  // Find the winner (nth revealed participant)
+  var revealedCount: Uint<64> = 0;
+  for i in 0..participantCount.value {
+    const commitment = participantList[i];
+    const participant = participants[commitment];
+
+    if participant.revealed {
+      if revealedCount == selectedIndex {
+        winnerIndex.value = i;
+        winner.value = commitment;
+        break;
+      }
+      revealedCount = revealedCount + 1;
+    }
+  }
+
+  roundState.value = RoundState.Finalized;
+}
+
+/**
+ * Check if caller is the winner
+ * @param secret - Caller's secret
+ * @param participantId - Caller's participant ID
+ * @returns True if caller is the winner
+ */
+export circuit isWinner(
+  witness secret: Bytes<32>,
+  witness participantId: Bytes<32>
+): Boolean {
+  assert roundState.value == RoundState.Finalized;
+
+  const commitment = hash(secret, participantId);
+  return winner.value == commitment;
+}
+
+/**
+ * Get current round state
+ * @returns Round state, participant count, reveal count
+ */
+export circuit getRoundInfo(): (RoundState, Uint<64>, Uint<64>) {
+  return (roundState.value, participantCount.value, revealCount.value);
+}
+
+/**
+ * Get winner information
+ * @returns Winner commitment (only valid after finalization)
+ */
+export circuit getWinner(): Bytes<32> {
+  assert roundState.value == RoundState.Finalized;
+  return winner.value;
+}
+
+/**
+ * Get phase deadlines
+ * @returns Commit deadline, reveal deadline
+ */
+export circuit getDeadlines(): (Uint<64>, Uint<64>) {
+  return (commitDeadline.value, revealDeadline.value);
+}
+
+/**
+ * Cancel round (admin only, emergency)
+ * @param adminSecret - Admin's secret
+ */
+export circuit cancelRound(witness adminSecret: Bytes<32>): Void {
+  assert hash(adminSecret) == admin.value;
+  roundState.value = RoundState.Inactive;
+}
+
+/**
+ * Helper to convert bytes to uint64
+ * Uses first 8 bytes of hash
+ */
+circuit bytesToUint64(b: Bytes<32>): Uint<64> {
+  // Extract and combine first 8 bytes
+  // Implementation depends on Compact's byte manipulation
+  // This is a placeholder for the actual implementation
+  return b[0] as Uint<64> * 256 * 256 * 256 * 256 * 256 * 256 * 256 +
+    b[1] as Uint<64> * 256 * 256 * 256 * 256 * 256 * 256 +
+    b[2] as Uint<64> * 256 * 256 * 256 * 256 * 256 +
+    b[3] as Uint<64> * 256 * 256 * 256 * 256 +
+    b[4] as Uint<64> * 256 * 256 * 256 +
+    b[5] as Uint<64> * 256 * 256 +
+    b[6] as Uint<64> * 256 +
+    b[7] as Uint<64>;
+}

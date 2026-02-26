@@ -1,0 +1,183 @@
+/**
+ * Rate Limit Pattern
+ *
+ * Throttle actions to prevent abuse.
+ * Use cases: API rate limiting, withdrawal limits, anti-spam.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Rate limit configuration
+struct RateLimitConfig {
+  maxActions: Uint<64>, // Max actions per window
+  windowBlocks: Uint<64>, // Window size in blocks
+  cooldownBlocks: Uint<64> // Cooldown after limit hit
+}
+
+// User rate limit state
+struct UserRateState {
+  actionCount: Uint<64>,
+  windowStart: Uint<64>,
+  cooldownUntil: Uint<64>
+}
+
+// Global configuration
+ledger config: Cell<RateLimitConfig>;
+
+// Per-user rate limiting
+ledger userStates: Map<Bytes<32>, UserRateState>;
+
+// Admin
+ledger admin: Cell<Bytes<32>>;
+
+/**
+ * Initialize rate limiter
+ * @param adminCommitment - Admin's commitment
+ * @param maxActions - Maximum actions per window
+ * @param windowBlocks - Window duration in blocks
+ * @param cooldownBlocks - Cooldown duration after limit exceeded
+ */
+export circuit initialize(
+  adminCommitment: Bytes<32>,
+  maxActions: Uint<64>,
+  windowBlocks: Uint<64>,
+  cooldownBlocks: Uint<64>
+): Void {
+  admin.value = adminCommitment;
+  config.value = RateLimitConfig {
+    maxActions: maxActions,
+    windowBlocks: windowBlocks,
+    cooldownBlocks: cooldownBlocks
+  };
+}
+
+/**
+ * Check if user can perform action (and record it if allowed)
+ * @param userSecret - User's secret for identification
+ * @returns True if action is allowed
+ */
+export circuit checkAndRecordAction(
+  witness userSecret: Bytes<32>
+): Boolean {
+  const userId = hash(userSecret);
+  const current = currentBlockHeight();
+  const cfg = config.value;
+
+  var state = userStates[userId];
+
+  // Check if in cooldown
+  if state.cooldownUntil > current {
+    return false;
+  }
+
+  // Check if window has expired (reset counter)
+  if current >= state.windowStart + cfg.windowBlocks {
+    state.windowStart = current;
+    state.actionCount = 0;
+  }
+
+  // Check if under limit
+  if state.actionCount >= cfg.maxActions {
+    // Set cooldown
+    state.cooldownUntil = current + cfg.cooldownBlocks;
+    userStates[userId] = state;
+    return false;
+  }
+
+  // Record action
+  state.actionCount = state.actionCount + 1;
+  userStates[userId] = state;
+
+  return true;
+}
+
+/**
+ * Get remaining actions for user
+ * @param userCommitment - User's commitment
+ * @returns Number of remaining actions in current window
+ */
+export circuit getRemainingActions(userCommitment: Bytes<32>): Uint<64> {
+  const current = currentBlockHeight();
+  const cfg = config.value;
+  const state = userStates[userCommitment];
+
+  // Check if in cooldown
+  if state.cooldownUntil > current {
+    return 0;
+  }
+
+  // Check if window expired
+  if current >= state.windowStart + cfg.windowBlocks {
+    return cfg.maxActions;
+  }
+
+  if state.actionCount >= cfg.maxActions {
+    return 0;
+  }
+
+  return cfg.maxActions - state.actionCount;
+}
+
+/**
+ * Check cooldown status
+ * @param userCommitment - User's commitment
+ * @returns Blocks remaining in cooldown (0 if not in cooldown)
+ */
+export circuit getCooldownRemaining(userCommitment: Bytes<32>): Uint<64> {
+  const current = currentBlockHeight();
+  const state = userStates[userCommitment];
+
+  if state.cooldownUntil <= current {
+    return 0;
+  }
+
+  return state.cooldownUntil - current;
+}
+
+/**
+ * Update rate limit configuration (admin only)
+ * @param adminSecret - Admin's secret
+ * @param newConfig - New configuration
+ */
+export circuit updateConfig(
+  witness adminSecret: Bytes<32>,
+  maxActions: Uint<64>,
+  windowBlocks: Uint<64>,
+  cooldownBlocks: Uint<64>
+): Void {
+  assert hash(adminSecret) == admin.value;
+
+  config.value = RateLimitConfig {
+    maxActions: maxActions,
+    windowBlocks: windowBlocks,
+    cooldownBlocks: cooldownBlocks
+  };
+}
+
+/**
+ * Reset a user's rate limit state (admin only, for support)
+ * @param adminSecret - Admin's secret
+ * @param userCommitment - User to reset
+ */
+export circuit resetUserState(
+  witness adminSecret: Bytes<32>,
+  userCommitment: Bytes<32>
+): Void {
+  assert hash(adminSecret) == admin.value;
+
+  userStates[userCommitment] = UserRateState {
+    actionCount: 0,
+    windowStart: 0,
+    cooldownUntil: 0
+  };
+}
+
+/**
+ * Get current configuration
+ * @returns Rate limit configuration
+ */
+export circuit getConfig(): RateLimitConfig {
+  return config.value;
+}

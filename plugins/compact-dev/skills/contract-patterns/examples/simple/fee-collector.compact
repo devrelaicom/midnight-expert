@@ -1,0 +1,239 @@
+/**
+ * Fee Collector Pattern
+ *
+ * Collect and distribute fees from operations.
+ * Use cases: Protocol fees, service charges, revenue sharing.
+ */
+
+pragma language_version >= 1.0.0;
+
+import CompactStandardLibrary;
+
+// Fee recipient configuration
+struct FeeRecipient {
+  commitment: Bytes<32>,
+  sharePercent: Uint<8>,  // Percentage (0-100)
+  collected: Uint<64>
+}
+
+// Fee configuration
+ledger feeRateBps: Cell<Uint<16>>;  // Fee rate in basis points (100 = 1%)
+ledger minFee: Cell<Uint<64>>;
+ledger maxFee: Cell<Uint<64>>;
+
+// Fee distribution
+ledger recipients: Map<Uint<8>, FeeRecipient>;
+ledger recipientCount: Cell<Uint<8>>;
+
+// Accumulated fees
+ledger totalCollected: Counter;
+ledger pendingDistribution: Cell<Uint<64>>;
+
+// Admin
+ledger admin: Cell<Bytes<32>>;
+
+// Constants
+const MAX_RECIPIENTS: Uint<8> = 10;
+const BPS_DENOMINATOR: Uint<64> = 10000;
+
+/**
+ * Initialize fee collector
+ * @param adminCommitment - Admin's commitment
+ * @param feeRate - Fee rate in basis points
+ * @param minFeeAmount - Minimum fee amount
+ * @param maxFeeAmount - Maximum fee amount
+ */
+export circuit initialize(
+  adminCommitment: Bytes<32>,
+  feeRate: Uint<16>,
+  minFeeAmount: Uint<64>,
+  maxFeeAmount: Uint<64>
+): Void {
+  assert feeRate <= 10000; // Max 100%
+  assert minFeeAmount <= maxFeeAmount;
+
+  admin.value = adminCommitment;
+  feeRateBps.value = feeRate;
+  minFee.value = minFeeAmount;
+  maxFee.value = maxFeeAmount;
+  recipientCount.value = 0;
+}
+
+/**
+ * Add a fee recipient
+ * @param adminSecret - Admin's secret
+ * @param recipientCommitment - Recipient's commitment
+ * @param sharePercent - Share percentage (must sum to 100 across all recipients)
+ */
+export circuit addRecipient(
+  witness adminSecret: Bytes<32>,
+  recipientCommitment: Bytes<32>,
+  sharePercent: Uint<8>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert recipientCount.value < MAX_RECIPIENTS;
+  assert sharePercent > 0 && sharePercent <= 100;
+
+  const index = recipientCount.value;
+  recipients[index] = FeeRecipient {
+    commitment: recipientCommitment,
+    sharePercent: sharePercent,
+    collected: 0
+  };
+
+  recipientCount.value = recipientCount.value + 1;
+}
+
+/**
+ * Calculate fee for a given amount
+ * @param amount - Transaction amount
+ * @returns Fee amount
+ */
+export circuit calculateFee(amount: Uint<64>): Uint<64> {
+  var fee = (amount * feeRateBps.value as Uint<64>) / BPS_DENOMINATOR;
+
+  // Apply min/max bounds
+  if fee < minFee.value {
+    fee = minFee.value;
+  }
+  if fee > maxFee.value {
+    fee = maxFee.value;
+  }
+
+  return fee;
+}
+
+/**
+ * Collect fee from an operation
+ * @param amount - Amount from which to collect fee
+ * @returns Net amount after fee, and fee collected
+ */
+export circuit collectFee(amount: Uint<64>): (Uint<64>, Uint<64>) {
+  const fee = calculateFee(amount);
+  assert amount >= fee;
+
+  totalCollected.increment(fee);
+  pendingDistribution.value = pendingDistribution.value + fee;
+
+  return (amount - fee, fee);
+}
+
+/**
+ * Distribute collected fees to recipients
+ * @returns Amount distributed
+ */
+export circuit distributeFees(): Uint<64> {
+  const toDistribute = pendingDistribution.value;
+  assert toDistribute > 0;
+
+  var distributed: Uint<64> = 0;
+
+  for i in 0..recipientCount.value {
+    var recipient = recipients[i];
+    const share = (toDistribute * recipient.sharePercent as Uint<64>) / 100;
+
+    recipient.collected = recipient.collected + share;
+    recipients[i] = recipient;
+    distributed = distributed + share;
+  }
+
+  // Handle rounding dust (give to first recipient)
+  if distributed < toDistribute {
+    var first = recipients[0];
+    first.collected = first.collected + (toDistribute - distributed);
+    recipients[0] = first;
+    distributed = toDistribute;
+  }
+
+  pendingDistribution.value = 0;
+
+  return distributed;
+}
+
+/**
+ * Claim collected fees
+ * @param recipientSecret - Recipient's secret
+ * @returns Amount claimed
+ */
+export circuit claimFees(
+  witness recipientSecret: Bytes<32>
+): Uint<64> {
+  const recipientCommitment = hash(recipientSecret);
+
+  // Find recipient
+  for i in 0..recipientCount.value {
+    var recipient = recipients[i];
+    if recipient.commitment == recipientCommitment {
+      const claimable = recipient.collected;
+      recipient.collected = 0;
+      recipients[i] = recipient;
+      return claimable;
+    }
+  }
+
+  // Not found
+  assert false;
+  return 0;
+}
+
+/**
+ * Get claimable fees for a recipient
+ * @param recipientCommitment - Recipient's commitment
+ * @returns Claimable amount
+ */
+export circuit getClaimable(recipientCommitment: Bytes<32>): Uint<64> {
+  for i in 0..recipientCount.value {
+    const recipient = recipients[i];
+    if recipient.commitment == recipientCommitment {
+      return recipient.collected;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Update fee rate (admin only)
+ * @param adminSecret - Admin's secret
+ * @param newRate - New fee rate in basis points
+ */
+export circuit updateFeeRate(
+  witness adminSecret: Bytes<32>,
+  newRate: Uint<16>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert newRate <= 10000;
+  feeRateBps.value = newRate;
+}
+
+/**
+ * Update fee bounds (admin only)
+ * @param adminSecret - Admin's secret
+ * @param newMin - New minimum fee
+ * @param newMax - New maximum fee
+ */
+export circuit updateFeeBounds(
+  witness adminSecret: Bytes<32>,
+  newMin: Uint<64>,
+  newMax: Uint<64>
+): Void {
+  assert hash(adminSecret) == admin.value;
+  assert newMin <= newMax;
+  minFee.value = newMin;
+  maxFee.value = newMax;
+}
+
+/**
+ * Get fee statistics
+ * @returns Total collected and pending distribution
+ */
+export circuit getFeeStats(): (Uint<64>, Uint<64>) {
+  return (totalCollected.value, pendingDistribution.value);
+}
+
+/**
+ * Get current fee configuration
+ * @returns Fee rate (bps), min fee, max fee
+ */
+export circuit getFeeConfig(): (Uint<16>, Uint<64>, Uint<64>) {
+  return (feeRateBps.value, minFee.value, maxFee.value);
+}

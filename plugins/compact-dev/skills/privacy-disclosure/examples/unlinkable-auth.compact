@@ -1,0 +1,215 @@
+// unlinkable-auth.compact - Unlinkable authentication pattern
+// Demonstrates how to authenticate without creating trackable patterns
+
+import { persistentHash, persistentCommit, Maybe } from "CompactStandardLibrary";
+
+// ============================================
+// Problem: Linkable Authentication
+// ============================================
+
+// If a user proves membership with the same proof every time,
+// transactions can be linked together to track user behavior.
+//
+// Solution: Include a "round counter" in proofs to make each
+// authentication unique while still proving the same membership.
+
+// ============================================
+// Ledger State
+// ============================================
+
+// Membership tree (users are leaves)
+ledger members: MerkleTree<Bytes<32>>;
+
+// Action counter (increments each action, used for unlinkability)
+ledger action_counter: Counter;
+
+// Record of auth tokens used (prevents replay)
+ledger used_tokens: Set<Bytes<32>>;
+
+// ============================================
+// Types
+// ============================================
+
+struct UserCredential {
+ secret_key: Bytes<32>,
+ membership_index: Uint<32>
+}
+
+// ============================================
+// Witnesses
+// ============================================
+
+witness get_credential(): UserCredential;
+witness get_merkle_path(index: Uint<32>): Vector<Bytes<32>, 20>;
+
+// ============================================
+// Core Authentication
+// ============================================
+
+/// Compute the user's public identity (for membership tree)
+circuit compute_identity(secret_key: Bytes<32>): Bytes<32> {
+ return persistentCommit(secret_key);
+}
+
+/// Compute a round-specific auth token
+/// Different for each round, so transactions can't be linked
+circuit compute_auth_token(secret_key: Bytes<32>, round: Uint<64>): Bytes<32> {
+ // Token = Hash(secret_key, round)
+ // - Different for each round (unlinkable)
+ // - Requires knowledge of secret_key (unforgeable)
+ // - Deterministic for same (key, round) pair
+ return persistentHash(secret_key, round as Field);
+}
+
+// ============================================
+// Registration
+// ============================================
+
+/// Register a new member
+/// The identity commitment is stored in the Merkle tree
+export circuit register(): Bytes<32> {
+ const cred = get_credential();
+
+ // Compute identity commitment
+ const identity = compute_identity(cred.secret_key);
+
+ // Add to membership tree
+ members.insert(identity);
+
+ return identity;
+}
+
+// ============================================
+// Unlinkable Authentication
+// ============================================
+
+/// Authenticate and perform an action
+/// Returns an auth token unique to this round (unlinkable)
+export circuit authenticate(
+ merkle_root: Bytes<32>
+): Bytes<32> {
+ const cred = get_credential();
+ const path = get_merkle_path(cred.membership_index);
+
+ // ========================================
+ // Step 1: Prove membership
+ // ========================================
+
+ // Compute identity from secret
+ const identity = compute_identity(cred.secret_key);
+
+ // Verify Merkle membership
+ const computed_root = merkleTreePathRoot(identity, path);
+ assert computed_root == merkle_root, "Not a member";
+
+ // ========================================
+ // Step 2: Generate unlinkable auth token
+ // ========================================
+
+ // Get current round/action number
+ const round = action_counter.value();
+
+ // Compute round-specific token
+ const token = compute_auth_token(cred.secret_key, round);
+
+ // Check token not already used (prevents replay)
+ assert !used_tokens.member(token), "Token already used";
+
+ // Record token as used
+ used_tokens.insert(token);
+
+ // Increment counter for next authentication
+ action_counter.increment(1);
+
+ // ========================================
+ // Return auth token
+ // ========================================
+
+ return token;
+}
+
+// ============================================
+// Query Functions
+// ============================================
+
+/// Get current round number
+export circuit get_round(): Uint<64> {
+ return action_counter.value();
+}
+
+/// Check if a token has been used
+export circuit is_token_used(token: Bytes<32>): Boolean {
+ return used_tokens.member(token);
+}
+
+/// Get membership tree root
+export circuit get_membership_root(): Bytes<32> {
+ return members.root();
+}
+
+// ============================================
+// Privacy Analysis
+// ============================================
+
+// Linkability comparison:
+//
+// LINKABLE (bad):
+// - User proves with same nullifier each time
+// - Observer: "These 5 transactions are from the same user"
+//
+// UNLINKABLE (this pattern):
+// - User proves with different token each round
+// - Observer: "5 transactions from 5 members, can't tell if same person"
+
+// What is hidden:
+// - Which member is authenticating
+// - Whether two authentications are from the same user
+// - User's secret key
+
+// What is revealed:
+// - A valid member authenticated
+// - The round number at time of auth
+// - A unique token for this auth event
+
+// Trade-offs:
+// - Requires incrementing counter (coordination)
+// - Token replay prevented by used_tokens set
+// - More storage than simple nullifier approach
+
+// ============================================
+// Alternative: Domain-Separated Tokens
+// ============================================
+
+/// Generate action-specific auth tokens
+/// Allows multiple actions per round while staying unlinkable
+circuit compute_domain_token(
+ secret_key: Bytes<32>,
+ round: Uint<64>,
+ action_type: Field
+): Bytes<32> {
+ return persistentHash(secret_key, round as Field, action_type);
+}
+
+/// Authenticate for a specific action type
+export circuit authenticate_action(
+ merkle_root: Bytes<32>,
+ action_type: Field
+): Bytes<32> {
+ const cred = get_credential();
+ const path = get_merkle_path(cred.membership_index);
+
+ // Verify membership
+ const identity = compute_identity(cred.secret_key);
+ const computed_root = merkleTreePathRoot(identity, path);
+ assert computed_root == merkle_root, "Not a member";
+
+ // Get round and compute domain-specific token
+ const round = action_counter.value();
+ const token = compute_domain_token(cred.secret_key, round, action_type);
+
+ // Prevent replay
+ assert !used_tokens.member(token), "Token already used";
+ used_tokens.insert(token);
+
+ return token;
+}
