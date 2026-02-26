@@ -7,10 +7,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib/colors.sh"
 source "$SCRIPT_DIR/../lib/json.sh"
+source "$SCRIPT_DIR/../lib/marketplace.sh"
 
 # Default values
 MARKETPLACE_JSON=".claude-plugin/marketplace.json"
-PLUGINS_DIR="./plugins"
 
 # Check for jq dependency
 if ! command -v jq >/dev/null 2>&1; then
@@ -53,6 +53,11 @@ if [[ ! -f "$MARKETPLACE_JSON" ]]; then
     exit 1
 fi
 
+# Initialize marketplace configuration (resolves pluginRoot)
+if ! init_marketplace_config "$MARKETPLACE_JSON"; then
+    HAS_ERRORS=true
+fi
+
 # Validate JSON syntax
 if ! validate_json_syntax "$MARKETPLACE_JSON" "marketplace.json"; then
     HAS_ERRORS=true
@@ -68,11 +73,11 @@ print_section "Checking plugin completeness"
 
 # Get plugins from filesystem
 FILESYSTEM_PLUGINS=()
-if [[ -d "$PLUGINS_DIR" ]]; then
+if [[ -d "$PLUGIN_ROOT_ABS" ]]; then
     while IFS= read -r -d '' dir; do
         plugin_name=$(basename "$dir")
         FILESYSTEM_PLUGINS+=("$plugin_name")
-    done < <(find "$PLUGINS_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+    done < <(find "$PLUGIN_ROOT_ABS" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 fi
 
 # Get plugins from marketplace.json
@@ -110,7 +115,7 @@ FAILURE_COUNT=0
 
 if [[ ${#FILESYSTEM_PLUGINS[@]} -gt 0 ]]; then
     for plugin_name in "${FILESYSTEM_PLUGINS[@]}"; do
-        plugin_path="$PLUGINS_DIR/$plugin_name"
+        plugin_path="$PLUGIN_ROOT_ABS/$plugin_name"
         plugin_json="$plugin_path/.claude-plugin/plugin.json"
 
         # Check .claude-plugin directory exists

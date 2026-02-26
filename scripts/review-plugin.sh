@@ -6,12 +6,12 @@ set -euo pipefail
 # Get script directory and source libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/colors.sh"
+source "$SCRIPT_DIR/lib/marketplace.sh"
 
 # Default values
 OUTPUT_DIR=""
 INCLUDE_JSON=false
 FORMAT="markdown"
-PLUGINS_DIR="./plugins"
 
 # Usage information
 usage() {
@@ -76,13 +76,11 @@ if [[ -z "$PLUGIN_ARG" ]]; then
     usage
 fi
 
+# Initialize marketplace configuration (resolves pluginRoot)
+init_marketplace_config 2>/dev/null || true
+
 # Resolve plugin path
-PLUGIN_PATH=""
-if [[ -d "$PLUGIN_ARG" ]]; then
-    PLUGIN_PATH="$PLUGIN_ARG"
-elif [[ -d "$PLUGINS_DIR/$PLUGIN_ARG" ]]; then
-    PLUGIN_PATH="$PLUGINS_DIR/$PLUGIN_ARG"
-else
+if ! PLUGIN_PATH=$(resolve_plugin_to_path "$PLUGIN_ARG"); then
     print_error "Plugin not found: $PLUGIN_ARG"
     exit 1
 fi

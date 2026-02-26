@@ -7,6 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/colors.sh"
 source "$SCRIPT_DIR/lib/json.sh"
+source "$SCRIPT_DIR/lib/marketplace.sh"
 source "$SCRIPT_DIR/lib/validation.sh"
 source "$SCRIPT_DIR/lib/atomic.sh"
 
@@ -121,6 +122,11 @@ if [[ ! "$ON_CONFLICT" =~ ^(abort|skip|replace|rename)$ ]]; then
     exit 1
 fi
 
+# Initialize marketplace configuration (resolves pluginRoot)
+if ! init_marketplace_config "$MARKETPLACE_JSON"; then
+    exit 1
+fi
+
 [[ "$JSON_MODE" != "true" ]] && print_section "Pre-flight Validation"
 
 # Array to store plugin info
@@ -134,17 +140,10 @@ for plugin_arg in "${PLUGIN_ARGS[@]}"; do
     plugin_path=""
 
     # Resolve plugin path
-    if [[ -d "$plugin_arg" ]]; then
-        plugin_path="$plugin_arg"
-    elif [[ -d "./plugins/$plugin_arg" ]]; then
-        plugin_path="./plugins/$plugin_arg"
-    else
+    if ! plugin_path=$(resolve_plugin_to_path "$plugin_arg"); then
         VALIDATION_ERRORS+=("Plugin not found: $plugin_arg")
         continue
     fi
-
-    # Make path absolute
-    plugin_path=$(cd "$plugin_path" && pwd)
 
     # Verify plugin.json exists
     if [[ ! -f "$plugin_path/.claude-plugin/plugin.json" ]]; then
@@ -238,25 +237,23 @@ fi
 [[ "$JSON_MODE" != "true" ]] && print_section "Planning Operations"
 
 declare -A PLUGIN_SOURCES
-PROJECT_ROOT=$(cd "$(dirname "$MARKETPLACE_JSON")/.." && pwd)
 
 for plugin_name in "${!PLUGIN_PATHS[@]}"; do
     plugin_path="${PLUGIN_PATHS[$plugin_name]}"
     final_name="${PLUGIN_NAMES[$plugin_name]}"
 
-    # Check if plugin is already inside project
-    if [[ "$plugin_path" == "$PROJECT_ROOT/plugins/"* ]]; then
-        # Internal plugin - use relative path
-        rel_path="./plugins/$(basename "$plugin_path")"
-        PLUGIN_SOURCES["$plugin_name"]="$rel_path"
-        [[ "$JSON_MODE" != "true" ]] && print_info "Internal plugin: $final_name -> $rel_path"
+    # Check if plugin is already inside pluginRoot
+    if [[ "$plugin_path" == "$PLUGIN_ROOT_ABS/"* ]]; then
+        # Internal plugin - source is the directory name (resolved via pluginRoot)
+        source_name="$(basename "$plugin_path")"
+        PLUGIN_SOURCES["$plugin_name"]="$source_name"
+        [[ "$JSON_MODE" != "true" ]] && print_info "Internal plugin: $final_name -> $source_name"
     else
         # External plugin
         if [[ "$COPY_EXTERNAL" == "true" ]]; then
-            # Will copy to ./plugins
-            target_dir="$PROJECT_ROOT/plugins/$final_name"
-            rel_path="./plugins/$final_name"
-            PLUGIN_SOURCES["$plugin_name"]="$rel_path|COPY|$target_dir"
+            # Will copy into pluginRoot
+            target_dir="$PLUGIN_ROOT_ABS/$final_name"
+            PLUGIN_SOURCES["$plugin_name"]="$final_name|COPY|$target_dir"
             [[ "$JSON_MODE" != "true" ]] && print_info "Will copy: $final_name -> $target_dir"
         else
             # Reference by absolute path
@@ -349,7 +346,7 @@ for plugin_name in "${!PLUGIN_PATHS[@]}"; do
 
     IFS='|' read -r version description keywords <<< "$metadata"
 
-    [[ "$JSON_MODE" != "true" ]] && print_info "Adding $final_name to marketplace"
+    [[ "$JSON_MODE" != "true" ]] && print_info "Adding $final_name to marketplace (source: $source_path)"
 
     # If replacing, remove old entry first
     if [[ "$ON_CONFLICT" == "replace" ]] && plugin_exists_in_marketplace "$MARKETPLACE_JSON" "$final_name"; then
@@ -363,17 +360,19 @@ for plugin_name in "${!PLUGIN_PATHS[@]}"; do
     fi
 
     # Add plugin entry
-    if ! add_plugin_to_marketplace "$MARKETPLACE_JSON" "$source_path" "$final_name" "$description" "$version" "$keywords"; then
+    if ! add_plugin_to_marketplace "$MARKETPLACE_JSON" "$source_path" "$final_name" "$keywords"; then
         print_error "Failed to add plugin to marketplace: $final_name"
         UPDATE_FAILED=true
         break
     fi
 
-    # Validate marketplace after each addition
-    if ! validate_marketplace "$MARKETPLACE_JSON" true; then
-        print_error "Marketplace validation failed after adding: $final_name"
-        UPDATE_FAILED=true
-        break
+    # Validate marketplace after each addition (unless --skip-validation)
+    if [[ "$SKIP_VALIDATION" != "true" ]]; then
+        if ! validate_marketplace "$MARKETPLACE_JSON" true; then
+            print_error "Marketplace validation failed after adding: $final_name"
+            UPDATE_FAILED=true
+            break
+        fi
     fi
 
     [[ "$JSON_MODE" != "true" ]] && print_success "Added: $final_name"
@@ -414,14 +413,16 @@ new_version=$(jq -r '.version' "$MARKETPLACE_JSON")
 [[ "$JSON_MODE" != "true" ]] && print_success "Marketplace version: $old_version -> $new_version"
 [[ "$JSON_MODE" == "true" ]] && add_json_result "info" "Marketplace version bumped: $old_version -> $new_version" ""
 
-# Phase 7: Final validation
-[[ "$JSON_MODE" != "true" ]] && print_section "Final Validation"
+# Phase 7: Final validation (unless --skip-validation)
+if [[ "$SKIP_VALIDATION" != "true" ]]; then
+    [[ "$JSON_MODE" != "true" ]] && print_section "Final Validation"
 
-if ! validate_marketplace "$MARKETPLACE_JSON" true; then
-    print_error "Final marketplace validation failed"
-    restore_backup "$backup_path"
-    remove_backup "$backup_path"
-    exit 1
+    if ! validate_marketplace "$MARKETPLACE_JSON" true; then
+        print_error "Final marketplace validation failed"
+        restore_backup "$backup_path"
+        remove_backup "$backup_path"
+        exit 1
+    fi
 fi
 
 # Remove backup on success

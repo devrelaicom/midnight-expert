@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash -c 'if [ -x \"$HOME/.midnight-expert/statusLine/sl.sh\" ]; then exec \"$HOME/.midnight-expert/statusLine/sl.sh\"; else printf \"\\033[33m⚠ run /midnight-tooling:install-statusline-script to configure your status line\\033[0m\"; fi'"
+  }
+}
