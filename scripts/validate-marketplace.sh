@@ -7,11 +7,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/colors.sh"
 source "$SCRIPT_DIR/lib/json.sh"
+source "$SCRIPT_DIR/lib/marketplace.sh"
 source "$SCRIPT_DIR/lib/validation.sh"
 
 # Default values
 MARKETPLACE_JSON=".claude-plugin/marketplace.json"
-PLUGINS_DIR="./plugins"
+PLUGINS_DIR_OVERRIDE=""
 SKIP_PLUGINS=false
 
 # Usage information
@@ -46,7 +47,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --plugins)
-            PLUGINS_DIR="$2"
+            PLUGINS_DIR_OVERRIDE="$2"
             shift 2
             ;;
         --json)
@@ -80,10 +81,20 @@ else
     [[ "$JSON_MODE" == "true" ]] && add_json_result "error" "Marketplace validation failed" "path: $MARKETPLACE_JSON"
 fi
 
+# Initialize marketplace configuration (resolves pluginRoot)
+if ! init_marketplace_config "$MARKETPLACE_JSON"; then
+    HAS_ERRORS=true
+fi
+
+# Allow --plugins override to take precedence over pluginRoot
+if [[ -n "$PLUGINS_DIR_OVERRIDE" ]]; then
+    PLUGIN_ROOT_ABS=$(cd "$PLUGINS_DIR_OVERRIDE" && pwd)
+fi
+
 # Step 2: Check completeness
 [[ "$JSON_MODE" != "true" ]] && print_section "Checking completeness"
 
-if check_all_plugins_listed "$MARKETPLACE_JSON" "$PLUGINS_DIR" false; then
+if check_all_plugins_listed "$MARKETPLACE_JSON" "$PLUGIN_ROOT_ABS" false; then
     [[ "$JSON_MODE" == "true" ]] && add_json_result "success" "All plugins listed correctly" ""
 else
     HAS_ERRORS=true
@@ -94,12 +105,6 @@ fi
 if [[ "$SKIP_PLUGINS" != "true" ]]; then
     [[ "$JSON_MODE" != "true" ]] && print_section "Validating individual plugins"
 
-    # Get list of plugins from marketplace.json
-    if ! command -v jq >/dev/null 2>&1; then
-        print_error "jq is required but not installed"
-        exit 1
-    fi
-
     PLUGIN_COUNT=0
     PLUGIN_SUCCESS=0
     PLUGIN_FAILURES=0
@@ -107,12 +112,12 @@ if [[ "$SKIP_PLUGINS" != "true" ]]; then
     while IFS= read -r plugin_source; do
         [[ -z "$plugin_source" ]] && continue
         PLUGIN_COUNT=$((PLUGIN_COUNT + 1))
-        plugin_path="$plugin_source"
 
-        # Make path absolute if relative and normalize (remove ./ prefix)
-        if [[ ! "$plugin_path" = /* ]]; then
-            plugin_path="${plugin_path#./}"
-            plugin_path="$(pwd)/$plugin_path"
+        if ! plugin_path=$(resolve_plugin_source "$plugin_source"); then
+            print_error "Cannot resolve plugin source: $plugin_source"
+            PLUGIN_FAILURES=$((PLUGIN_FAILURES + 1))
+            HAS_ERRORS=true
+            continue
         fi
 
         plugin_name=$(basename "$plugin_path")

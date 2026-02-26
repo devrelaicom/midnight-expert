@@ -94,8 +94,9 @@ validate_plugin() {
     if output=$(claude plugin validate "$path" 2>&1); then
         [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_success "Plugin validated: $path"
     else
-        [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_error "Plugin validation failed: $path"
-        [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && echo "$output" >&2
+        # Always show validation errors, even in quiet mode
+        [[ "$JSON_MODE" != "true" ]] && print_error "Plugin validation failed: $path"
+        [[ "$JSON_MODE" != "true" ]] && [[ -n "$output" ]] && echo "$output" >&2
         return 1
     fi
 
@@ -110,6 +111,10 @@ validate_plugin() {
 # Validate a marketplace.json file using claude CLI
 # Usage: validate_marketplace path [quiet]
 # Returns: 0 if valid, 1 if invalid
+#
+# Note: claude plugin validate does not understand pluginRoot, so when it's set
+# we validate against a temp copy with expanded source paths. The original file
+# is never modified.
 validate_marketplace() {
     local path="$1"
     local quiet="${2:-false}"
@@ -119,24 +124,67 @@ validate_marketplace() {
         return 1
     fi
 
-    # For marketplace validation, we need to validate the root directory
-    # If the path contains .claude-plugin/marketplace.json, go up to the parent
+    # Resolve the project root directory
     local marketplace_dir
     marketplace_dir=$(dirname "$path")
     if [[ "$(basename "$marketplace_dir")" == ".claude-plugin" ]]; then
         marketplace_dir=$(dirname "$marketplace_dir")
     fi
 
-    # Run validation and capture output
-    local output
-    if output=$(claude plugin validate "$marketplace_dir" 2>&1); then
-        [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_success "Marketplace validated: $path"
-        return 0
-    else
-        [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_error "Marketplace validation failed: $path"
-        [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && echo "$output" >&2
-        return 1
+    local validate_dir="$marketplace_dir"
+
+    # claude plugin validate doesn't understand pluginRoot — bare source names
+    # like "my-plugin" are rejected. When pluginRoot is set, create a temp copy
+    # with sources expanded to full relative paths for validation.
+    local plugin_root temp_dir=""
+    plugin_root=$(jq -r '.pluginRoot // ""' "$path" 2>/dev/null)
+
+    if [[ -n "$plugin_root" ]]; then
+        # Normalize pluginRoot to start with ./
+        if [[ "$plugin_root" != ./* && "$plugin_root" != /* ]]; then
+            plugin_root="./$plugin_root"
+        fi
+
+        temp_dir=$(mktemp -d)
+        mkdir -p "$temp_dir/.claude-plugin"
+
+        # Expand bare source names to full relative paths
+        jq --arg root "$plugin_root" '
+            .plugins = [.plugins[] |
+                if (.source // "") | test("^[./]") then .
+                else .source = ($root + "/" + .source)
+                end
+            ]
+        ' "$path" > "$temp_dir/.claude-plugin/marketplace.json" 2>/dev/null
+
+        # Symlink the plugins directory so the validator can find them
+        local abs_marketplace_dir
+        abs_marketplace_dir=$(cd "$marketplace_dir" && pwd)
+        local plugin_root_target="$abs_marketplace_dir/$plugin_root"
+        if [[ -d "$plugin_root_target" ]]; then
+            ln -s "$plugin_root_target" "$temp_dir/$plugin_root"
+        fi
+
+        validate_dir="$temp_dir"
     fi
+
+    # Run validation and capture output
+    local output rc=0
+    if output=$(claude plugin validate "$validate_dir" 2>&1); then
+        [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_success "Marketplace validated: $path"
+    else
+        # Always show validation errors, even in quiet mode
+        [[ "$JSON_MODE" != "true" ]] && print_error "Marketplace validation failed: $path"
+        [[ "$JSON_MODE" != "true" ]] && [[ -n "$output" ]] && echo "$output" >&2
+        rc=1
+    fi
+
+    # Clean up temp directory
+    if [[ -n "$temp_dir" && -d "$temp_dir" ]]; then
+        rm -rf "$temp_dir"
+    fi
+
+    return $rc
 }
 
 # Check that all plugins in directory are listed in marketplace

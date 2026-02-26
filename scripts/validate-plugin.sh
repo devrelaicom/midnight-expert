@@ -7,11 +7,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/colors.sh"
 source "$SCRIPT_DIR/lib/json.sh"
+source "$SCRIPT_DIR/lib/marketplace.sh"
 source "$SCRIPT_DIR/lib/validation.sh"
 
 # Default values
 QUIET=false
-PLUGINS_DIR="./plugins"
 
 # Usage information
 usage() {
@@ -62,41 +62,26 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Resolve plugin paths
-resolve_plugin_path() {
-    local input="$1"
-
-    # If it's a directory path
-    if [[ -d "$input" ]]; then
-        echo "$input"
-        return 0
-    fi
-
-    # Try as plugin name in ./plugins
-    if [[ -d "$PLUGINS_DIR/$input" ]]; then
-        echo "$PLUGINS_DIR/$input"
-        return 0
-    fi
-
-    return 1
-}
+# Initialize marketplace configuration (resolves pluginRoot)
+# Non-fatal if marketplace.json doesn't exist — we can still validate by path
+init_marketplace_config 2>/dev/null || true
 
 # Collect all plugins to validate
 PLUGINS_TO_VALIDATE=()
 
 if [[ ${#PLUGIN_ARGS[@]} -eq 0 ]]; then
-    # No arguments: validate all plugins in ./plugins
-    if [[ ! -d "$PLUGINS_DIR" ]]; then
-        print_error "Plugins directory not found: $PLUGINS_DIR"
+    # No arguments: validate all plugins in plugin root
+    if [[ ! -d "$PLUGIN_ROOT_ABS" ]]; then
+        print_error "Plugins directory not found: $PLUGIN_ROOT_ABS"
         exit 1
     fi
 
     while IFS= read -r -d '' dir; do
         PLUGINS_TO_VALIDATE+=("$dir")
-    done < <(find "$PLUGINS_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+    done < <(find "$PLUGIN_ROOT_ABS" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 
     if [[ ${#PLUGINS_TO_VALIDATE[@]} -eq 0 ]]; then
-        print_error "No plugins found in $PLUGINS_DIR"
+        print_error "No plugins found in $PLUGIN_ROOT_ABS"
         exit 1
     fi
 else
@@ -116,8 +101,8 @@ else
                 done < <(find "$arg" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
             fi
         else
-            # Try to resolve as plugin name
-            if resolved=$(resolve_plugin_path "$arg"); then
+            # Try to resolve as plugin name via pluginRoot
+            if resolved=$(resolve_plugin_to_path "$arg"); then
                 PLUGINS_TO_VALIDATE+=("$resolved")
             else
                 print_error "Plugin not found: $arg"

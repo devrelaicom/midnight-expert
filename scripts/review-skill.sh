@@ -6,12 +6,12 @@ set -euo pipefail
 # Get script directory and source libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/colors.sh"
+source "$SCRIPT_DIR/lib/marketplace.sh"
 
 # Default values
 OUTPUT_DIR=""
 INCLUDE_JSON=false
 FORMAT="markdown"
-PLUGINS_DIR="./plugins"
 MARKETPLACE_JSON="./.claude-plugin/marketplace.json"
 
 # Usage information
@@ -57,8 +57,11 @@ EOF
 
 # --- Resolution helpers ---
 
+# Initialize marketplace configuration (resolves pluginRoot)
+init_marketplace_config "$MARKETPLACE_JSON" 2>/dev/null || true
+
 # Resolve a plugin argument to a directory path.
-# Tries: direct path, ./plugins/<name>, marketplace.json lookup.
+# Tries: direct path, pluginRoot/<name>, marketplace.json name lookup.
 resolve_plugin() {
     local arg="$1"
 
@@ -68,16 +71,15 @@ resolve_plugin() {
         return 0
     fi
 
-    # 2. Directory name under PLUGINS_DIR
-    if [[ -d "$PLUGINS_DIR/$arg" && -f "$PLUGINS_DIR/$arg/.claude-plugin/plugin.json" ]]; then
-        echo "$PLUGINS_DIR/$arg"
+    # 2. Directory name under pluginRoot
+    if [[ -d "$PLUGIN_ROOT_ABS/$arg" && -f "$PLUGIN_ROOT_ABS/$arg/.claude-plugin/plugin.json" ]]; then
+        echo "$PLUGIN_ROOT_ABS/$arg"
         return 0
     fi
 
     # 3. Marketplace.json lookup by plugin name
     if [[ -f "$MARKETPLACE_JSON" ]]; then
         local entry
-        # Each entry may be a string (name) or an object with a "name" field
         entry=$(jq -r --arg name "$arg" '
             .plugins[]
             | if type == "string" then . else .name // empty end
@@ -86,9 +88,9 @@ resolve_plugin() {
 
         if [[ -n "$entry" ]]; then
             # The marketplace name might differ from the directory name.
-            # Search PLUGINS_DIR for a plugin whose plugin.json "name" matches.
+            # Search pluginRoot for a plugin whose plugin.json "name" matches.
             local dir
-            for dir in "$PLUGINS_DIR"/*/; do
+            for dir in "$PLUGIN_ROOT_ABS"/*/; do
                 if [[ -f "$dir/.claude-plugin/plugin.json" ]]; then
                     local pname
                     pname=$(jq -r '.name // empty' "$dir/.claude-plugin/plugin.json" 2>/dev/null)
