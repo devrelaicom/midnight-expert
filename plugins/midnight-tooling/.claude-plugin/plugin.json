@@ -1,0 +1,24 @@
+{
+  "name": "midnight-tooling",
+  "version": "0.1.0",
+  "description": "Installs, configures, and manages the Midnight Network development toolchain — Compact CLI, compiler version switching, Docker-based proof server lifecycle, diagnostics, and release notes for all Midnight components.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "compact",
+    "cli",
+    "toolchain",
+    "proof-server",
+    "docker",
+    "development-environment",
+    "troubleshooting",
+    "statusline",
+    "release-notes"
+  ]
+}

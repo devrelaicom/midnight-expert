@@ -1,0 +1,8 @@
+{
+  "octocode": {
+    "command": "npx",
+    "args": [
+      "octocode-mcp@latest"
+    ]
+  }
+}
