@@ -23,7 +23,7 @@
 //      and then discloses ONLY the boolean result of the property check.
 //
 // What is PRIVATE (never leaves the prover):
-//   - The actual credential value (e.g., credit score, balance, age)
+//   - The actual credential value (e.g., credit score as Uint<64>)
 //   - The random salt used in the commitment
 //   - The issuer's secret key
 //   - Individual struct fields that are not selectively disclosed
@@ -31,7 +31,7 @@
 // What is PUBLIC (visible on-chain):
 //   - The commitment hash (Bytes<32>) — hides the value via random salt
 //   - The issuer's derived public key (Bytes<32>)
-//   - The threshold / range parameters passed to verification circuits
+//   - The threshold / range parameters (Uint<64>) passed to verification circuits
 //   - The boolean RESULT of each property check (true/false)
 //   - Which verification circuit was called (circuit identity is public)
 //
@@ -82,10 +82,12 @@ export ledger structCredentialIssued: Boolean;
 // This NEVER appears on-chain.
 witness local_secret_key(): Bytes<32>;
 
-// Returns the credential holder's actual value (e.g., their credit score
-// encoded as Bytes<32>). This is the secret that we prove properties about
-// without revealing.
-witness get_credential_value(): Bytes<32>;
+// Returns the credential holder's actual numeric value (e.g., their credit
+// score as a Uint<64>). This is the secret that we prove properties about
+// without revealing. Uint<64> is used (rather than Bytes<32>) because
+// threshold and range checks require relational operators (>=, <=), which
+// are only available on numeric types in Compact.
+witness get_credential_value(): Uint<64>;
 
 // Returns the random salt used when the credential was committed.
 // Must be the SAME salt used during issuance, otherwise the recomputed
@@ -116,11 +118,16 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
   ]);
 }
 
-// Recompute the credential commitment from value and salt.
-// Uses the same domain separator as issuance to ensure consistency.
-circuit recomputeCommitment(credentialValue: Bytes<32>, salt: Bytes<32>): Bytes<32> {
+// Recompute the credential commitment from a numeric value and salt.
+// The Uint<64> value is cast to Bytes<32> (via Field) before hashing,
+// so the commitment is computed over the same byte representation
+// regardless of whether issuance or verification calls this circuit.
+circuit recomputeCommitment(credentialValue: Uint<64>, salt: Bytes<32>): Bytes<32> {
+  // Two-step cast: Uint<64> -> Field -> Bytes<32>.
+  // Direct Uint-to-Bytes cast is not allowed in Compact.
+  const valueBytes = (credentialValue as Field) as Bytes<32>;
   return persistentCommit<Vector<2, Bytes<32>>>(
-    [credentialValue, pad(32, "seldiscl:cred:")],
+    [valueBytes, pad(32, "seldiscl:cred:")],
     salt
   );
 }
@@ -165,9 +172,9 @@ constructor() {
 // on-chain — only the commitment. The holder can later prove properties
 // about their value using verifyThreshold and verifyRange.
 //
-// The value parameter is the credential value encoded as Bytes<32>.
+// The value parameter is the credential value as a Uint<64>.
 // The salt is retrieved from the witness for commitment hiding.
-export circuit issueCredential(value: Bytes<32>): [] {
+export circuit issueCredential(value: Uint<64>): [] {
   // --- Authentication: only the issuer can issue ---
   const sk = local_secret_key();
   const callerPk = get_public_key(sk);
@@ -229,14 +236,14 @@ export circuit issueStructCredential(
 //   4. Only the boolean result (true/false) is disclosed — not the value
 //
 // Example: A lender wants to verify that a borrower's credit score is >= 700.
-//   - The borrower calls verifyThreshold(pad(32, "\x02\xBC")) for score 700
+//   - The borrower calls verifyThreshold(700) with the numeric threshold
 //   - The circuit proves the committed score >= 700 and returns true/false
 //   - The lender sees "yes, score meets threshold" but NOT the actual score
 //
 // Privacy: The threshold parameter IS public (the observer sees what was
 // asked). The value is NEVER revealed. The observer learns only:
 //   "value >= threshold" => true or false
-export circuit verifyThreshold(threshold: Bytes<32>): Boolean {
+export circuit verifyThreshold(threshold: Uint<64>): Boolean {
   // --- Verify credential exists ---
   assert(credentialIssued, "No credential issued");
 
@@ -280,7 +287,7 @@ export circuit verifyThreshold(threshold: Bytes<32>): Boolean {
 // Privacy: Both min and max are public (the observer sees the range).
 // The actual value is NEVER revealed. The observer learns only:
 //   "min <= value <= max" => true or false
-export circuit verifyRange(minValue: Bytes<32>, maxValue: Bytes<32>): Boolean {
+export circuit verifyRange(minValue: Uint<64>, maxValue: Uint<64>): Boolean {
   // --- Verify credential exists ---
   assert(credentialIssued, "No credential issued");
 

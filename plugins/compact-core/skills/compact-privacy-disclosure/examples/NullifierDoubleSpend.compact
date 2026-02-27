@@ -203,7 +203,7 @@ export circuit spend(): [] {
   //   - The assert condition is a disclosure point
   // This is intentional: nullifiers MUST be public so the network can
   // enforce the double-spend check.
-  assert(disclose(!nullifiers.member(nul)), "Token already spent");
+  assert(disclose(!nullifiers.member(disclose(nul))), "Token already spent");
 
   // Step 7: Record the nullifier as spent.
   // disclose() is required because Set.insert() is a ledger operation
