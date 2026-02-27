@@ -17,6 +17,10 @@
     "ledger",
     "circuits",
     "witnesses",
-    "zk-proofs"
+    "zk-proofs",
+    "tokens",
+    "shielded",
+    "unshielded",
+    "zswap"
   ]
 }
