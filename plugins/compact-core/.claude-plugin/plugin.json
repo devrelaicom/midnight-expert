@@ -26,6 +26,16 @@
     "stdlib",
     "elliptic-curve",
     "merkle-tree",
-    "cryptographic"
+    "cryptographic",
+    "privacy",
+    "disclosure",
+    "disclose",
+    "witness-protection",
+    "commitment",
+    "nullifier",
+    "selective-disclosure",
+    "commit-reveal",
+    "anonymous-auth",
+    "merkle-proof"
   ]
 }
