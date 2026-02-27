@@ -21,6 +21,11 @@
     "tokens",
     "shielded",
     "unshielded",
-    "zswap"
+    "zswap",
+    "standard-library",
+    "stdlib",
+    "elliptic-curve",
+    "merkle-tree",
+    "cryptographic"
   ]
 }
