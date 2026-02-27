@@ -163,12 +163,12 @@ Types provided by the standard library. All are available after `import CompactS
 
 | Type | Generic Parameters | Fields Summary | Default Value |
 |------|--------------------|----------------|---------------|
-| `Maybe<T>` | `T` -- any type | `is_some: Boolean`, `value: T` | `{ is_some: false, value: default<T> }` |
-| `Either<L, R>` | `L`, `R` -- any types | `is_left: Boolean`, `left: L`, `right: R` | `{ is_left: true, left: default<L>, right: default<R> }` |
+| `Maybe<T>` | `T` -- any type | `isSome: Boolean`, `value: T` | `{ isSome: false, value: default<T> }` |
+| `Either<L, R>` | `L`, `R` -- any types | `isLeft: Boolean`, `left: L`, `right: R` | `{ isLeft: true, left: default<L>, right: default<R> }` |
 | `NativePoint` | none | `x: Field`, `y: Field` | `{ x: 0, y: 0 }` |
-| `MerkleTreeDigest` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
-| `MerkleTreePathEntry` | none | `sibling: Bytes<32>`, `goes_left: Boolean` | `{ sibling: 0x00...00, goes_left: false }` |
-| `MerkleTreePath<N, T>` | `#N` -- depth, `T` -- leaf type | `leaf: T`, `entries: Vector<N, MerkleTreePathEntry>` | Default leaf + default entries |
+| `MerkleTreeDigest` | none | `field: Field` | `{ field: 0 }` |
+| `MerkleTreePathEntry` | none | `sibling: MerkleTreeDigest`, `goesLeft: Boolean` | `{ sibling: { field: 0 }, goesLeft: false }` |
+| `MerkleTreePath<N, T>` | `#N` -- depth, `T` -- leaf type | `leaf: T`, `path: Vector<N, MerkleTreePathEntry>` | Default leaf + default path |
 | `ContractAddress` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `ZswapCoinPublicKey` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `UserAddress` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
@@ -193,7 +193,7 @@ circuit right<A, B>(value: B): Either<A, B>;
 
 ```compact
 const found = some<Field>(42);
-if (found.is_some) {
+if (found.isSome) {
   const v = found.value;  // 42
 }
 

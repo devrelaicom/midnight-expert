@@ -5,6 +5,10 @@ Alphabetical index of every Compact standard library export. Use this as a quick
 | Name | Kind | Description | Authoritative Location |
 |------|------|-------------|------------------------|
 | `assert` | builtin | Abort transaction if condition is false | `compact-language-ref/references/stdlib-functions.md` |
+| `blockTimeGt` | circuit | Block time greater than comparison | `compact-language-ref/references/stdlib-functions.md` |
+| `blockTimeGte` | circuit | Block time greater-or-equal comparison | `compact-language-ref/references/stdlib-functions.md` |
+| `blockTimeLt` | circuit | Block time less than comparison | `compact-language-ref/references/stdlib-functions.md` |
+| `blockTimeLte` | circuit | Block time less-or-equal comparison | `compact-language-ref/references/stdlib-functions.md` |
 | `constructNativePoint` | circuit | Construct NativePoint from X, Y coordinates | `compact-standard-library/references/cryptographic-functions.md` |
 | `ContractAddress` | type | Contract address wrapper | `compact-standard-library/references/types-and-constructors.md` |
 | `Counter` | ledger ADT | Numeric counter with increment/decrement | `compact-ledger/references/types-and-operations.md` |

@@ -57,10 +57,10 @@ if (result.isSome) {
 
 ### Common Uses
 
-- Return type of `Map.lookup()` -- always returns `Maybe<V>`
 - Return type of `List.head()` -- returns `Maybe<T>`
 - Optional witness data from TypeScript
 - The `change` field of `ShieldedSendResult` is `Maybe<ShieldedCoinInfo>`
+- Note: `Map.lookup()` returns `V` directly (not `Maybe<V>`). Use `Map.member()` to check existence.
 
 ### TypeScript Representation
 
@@ -410,29 +410,27 @@ if (addr.isLeft) {
 }
 ```
 
-Nested Maybe with Map.lookup:
+Using with List.head (returns Maybe<T>):
 
 ```compact
-// Map<Field, Map<Field, Uint<64>>>
-const inner = outerMap.lookup(outerKey);  // Maybe<Map<Field, Uint<64>>> -- no: Map.lookup returns V directly
-// For nested maps, lookup returns the value type directly:
-const balance = balances.lookup(tokenId).lookup(userId);
+// List.head() returns Maybe<T>
+const first = myList.head();             // returns Maybe<T>
+if (first.isSome) {
+  const item = first.value;
+}
 ```
 
-Using with Map.lookup (returns the value type directly, not Maybe):
+Note on Map.lookup vs List.head:
 
 ```compact
-// Note: Map.lookup(key) returns V directly, not Maybe<V>.
+// Map.lookup(key) returns V directly (NOT Maybe<V>).
 // It returns default<V> if the key is not found.
 // Use Map.member(key) to check existence first.
 const val = myMap.lookup(key);           // returns V (or default<V> if missing)
 const exists = myMap.member(key);        // returns Boolean
 
-// List.head() does return Maybe<T>
-const first = myList.head();             // returns Maybe<T>
-if (first.isSome) {
-  const item = first.value;
-}
+// Nested maps chain directly:
+const balance = balances.lookup(tokenId).lookup(userId);
 ```
 
 ## Re-Exporting Stdlib Types
