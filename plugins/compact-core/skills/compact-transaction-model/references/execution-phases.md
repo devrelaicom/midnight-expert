@@ -80,9 +80,9 @@ Before the standard per-phase execution steps, the guaranteed phase performs two
 
 2. **Fallible Zswap pre-application.** The fallible Zswap section is also applied during the guaranteed phase. This prevents a scenario where an attacker merges an invalid spend into a transaction that would specifically invalidate only the fallible section while allowing the guaranteed section to succeed. By applying the fallible Zswap section early, any invalidity in it causes failure in the guaranteed phase, rejecting the entire transaction rather than permitting a partial success with corrupted fallible-section semantics.
 
-### Standard Phase Execution Steps
+### Phase Execution Steps
 
-After the additional guaranteed-phase work, the standard execution steps proceed:
+The guaranteed phase executes in three ordered steps:
 
 1. **Zswap offer application.** The guaranteed-phase Zswap offer is applied to the ledger:
    - New coin commitments are inserted into the Merkle tree.
@@ -90,14 +90,14 @@ After the additional guaranteed-phase work, the standard execution steps proceed
    - Merkle roots referenced by inputs are checked against the set of valid past roots. If any root is not in the set, the transaction aborts.
    - The past roots set is updated to include the new Merkle tree root.
 
-2. **Additional guaranteed-phase checks.** The proof verification and fallible Zswap pre-application described above are performed at this point, if applicable.
+2. **Contract operation lookup, proof verification, and fallible Zswap pre-application.** For every contract call, the contract's operations are looked up from the ledger and the ZK proof is verified against the appropriate verifier key (see "Additional Work" above). The fallible Zswap section is also applied at this point to prevent selective invalidation attacks.
 
 3. **Contract call execution.** For each contract call in sequence, the transcript relevant to the guaranteed phase is applied:
    - The contract's current state is loaded from the ledger.
    - A context object is set up from the transaction, containing the contract's address, a map of newly allocated coin commitments to their Merkle tree indices, block timestamp information, and the block hash.
    - The Impact program is executed against the context, an empty effects set, the transcript program, and the declared gas limit. Execution runs in **verification mode**, meaning `popeq` arguments are enforced for equality rather than gathered as results.
    - The resulting effects are tested for equality against the declared effects in the transcript. A mismatch causes failure.
-   - The resulting state is stored as the contract's new state, but only if the state is "strong" (not tainted). If the state is tainted, the call fails.
+   - The resulting state is stored as the contract's new state, but only if the state is "strong" (not weak). If the state has been weakened by incorporating context or effects data, the call fails.
 
 Because each contract call in a transaction executes sequentially, later calls see the state changes produced by earlier calls within the same phase.
 
@@ -163,7 +163,7 @@ A contract executes on a stack containing three items:
 
 | Stack Item | Description |
 |------------|-------------|
-| Context | An array describing the containing transaction: the contract's address, a map of newly allocated coins to Merkle tree indices, block timestamp, timestamp precision bound, and block hash |
+| Context | An array describing the containing transaction: the contract's address, a map of newly allocated coins to Merkle tree indices, block timestamp, timestamp precision bound, and block hash. **Note:** Currently only the contract address and newly-allocated coin indices are correctly initialized; the timestamp and block hash fields are defined in the spec but not yet correctly populated on-chain. |
 | Effects | An array gathering actions performed by the contract during execution: claimed nullifiers, received coins, spent coins, contract calls, and minted coins |
 | State | The contract's current state value (maps, arrays, cells, Merkle trees) |
 
@@ -187,15 +187,15 @@ Programs either abort (invalidating this part of the transaction) or succeed, in
 - **Gas-bounded execution.** Each transcript declares a gas limit. Execution costs are bounded by this limit, and exceeding it causes the call to abort. The gas limit directly determines the fees charged for the call.
 - **Verification mode.** During ledger execution, the Impact VM runs in verification mode. In this mode, `popeq` arguments are enforced for equality rather than gathered as outputs. This is the mechanism by which the on-chain verifier checks that the prover's claimed outputs match the actual execution.
 
-### Taint Propagation
+### Weak Value Propagation
 
-The context and effects objects are flagged as "weak" (tainted). This taint propagates through operations:
+The context and effects objects are flagged as **weak**. This weakness propagates through operations:
 
-- Any non-size-bounded operation on a tainted value produces a tainted result.
-- Size-bounded operations (such as checking the type or size of a value) do not propagate taint.
-- If the final contract state is tainted, the transaction fails. This prevents contracts from cheaply copying transaction context or effects data into persistent storage, which would circumvent the intended cost model.
+- Any non-size-bounded operation on a weak value produces a weak result.
+- Size-bounded operations (such as checking the type or size of a value) do not propagate weakness.
+- If the final contract state is weak, the transaction fails. The state must be "strong" (not weakened) to be stored. This prevents contracts from cheaply copying transaction context or effects data into persistent storage, which would circumvent the intended cost model.
 
-The practical consequence is that contracts cannot store context or effects data directly into their state. Values derived from context or effects through non-size-bounded operations inherit the taint and cannot be persisted. This is a deliberate design choice: context and effects are ephemeral execution data, not state.
+The practical consequence is that contracts cannot store context or effects data directly into their state. Values derived from context or effects through non-size-bounded operations inherit the weakness and cannot be persisted. This is a deliberate design choice: context and effects are ephemeral execution data, not state.
 
 ### Evaluating vs Verifying Mode
 
