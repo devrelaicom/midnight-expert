@@ -51,7 +51,8 @@ The compiler treats circuit types differently during compilation:
 ```compact
 // EXPORTED IMPURE — modifies ledger, gets ZKIR + keys
 export circuit increment(amount: Uint<16>): [] {
-  count.increment(disclose(amount));
+  const doubled = double(amount);
+  count.increment(disclose(doubled));
 }
 
 // EXPORTED PURE — no ledger access, NO ZKIR, NO keys

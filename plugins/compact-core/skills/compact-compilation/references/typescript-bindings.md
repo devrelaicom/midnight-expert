@@ -387,7 +387,7 @@ The `sourceRoot` field contains the relative path from the generated JavaScript 
 If your project structure differs from the default, use the `--sourceRoot` compiler flag to override the relative path:
 
 ```bash
-compactc --sourceRoot '../../' src/myContract.compact gen
+compact compile src/myContract.compact gen --sourceRoot '../../'
 ```
 
 ## The Contract<T> Generic Parameter

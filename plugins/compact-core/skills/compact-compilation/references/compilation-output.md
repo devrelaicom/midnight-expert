@@ -131,7 +131,7 @@ The `contract-info.json` file is a circuit manifest containing metadata about ev
       "name": "increment",
       "pure": false,
       "arguments": [
-        { "name": "amount", "type": { "type-name": "Uint<64>" } }
+        { "name": "amount", "type": { "type-name": "Uint<16>" } }
       ],
       "result-type": { "type-name": "[]" }
     },
@@ -191,22 +191,21 @@ Using the `PureImpureDemo.compact` example (see `examples/PureImpureDemo.compact
 ```compact
 export ledger count: Counter;
 
-export circuit increment(amount: Uint<64>): [] {
+export circuit increment(amount: Uint<16>): [] {
   const doubled = double(amount);
   count.increment(disclose(doubled));
 }
 
 export circuit reset(): [] {
-  const current = count.read();
-  count.decrement(current);
+  count.resetToDefault();
 }
 
 export pure circuit add(a: Uint<64>, b: Uint<64>): Uint<64> {
-  return a + b;
+  return a + b as Uint<64>;
 }
 
-circuit double(x: Uint<64>): Uint<64> {
-  return x + x;
+circuit double(x: Uint<16>): Uint<16> {
+  return (x + x) as Uint<16>;
 }
 ```
 

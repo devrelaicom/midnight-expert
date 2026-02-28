@@ -215,7 +215,7 @@ For complex contracts with many exported impure circuits, full compilation can t
 The `--skip-zk` flag skips key generation entirely, producing all compilation outputs **except** the `keys/` directory:
 
 ```bash
-compactc --skip-zk contract.compact build/
+compact compile contract.compact build/ --skip-zk
 ```
 
 ### What --skip-zk Produces
@@ -238,10 +238,10 @@ Use `--skip-zk` during active development for fast iteration:
 
 ```bash
 # Fast compile for development (seconds)
-compactc --skip-zk contract.compact build/
+compact compile contract.compact build/ --skip-zk
 
 # Full compile before deployment (may take minutes)
-compactc contract.compact build/
+compact compile contract.compact build/
 ```
 
 This workflow lets you quickly verify that your contract compiles, inspect the generated TypeScript bindings, and run unit tests that do not require proof generation -- all without waiting for key generation.
