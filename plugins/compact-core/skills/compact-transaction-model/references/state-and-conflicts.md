@@ -143,8 +143,8 @@ export circuit deposit(
   userKey: Bytes<32>,
   amount: Uint<64>
 ): [] {
-  const current = balances.lookup(userKey);
-  balances.insert(userKey, current + amount);
+  const current = balances.lookup(disclose(userKey));
+  balances.insert(disclose(userKey), disclose((current + amount) as Uint<64>));
 }
 ```
 
@@ -156,10 +156,11 @@ Avoid reading a shared field value and then writing back a derived value when th
 
 ```compact
 // High conflict: read-modify-write on a shared scalar field
+// (This is a valid pattern but prone to conflicts — see fix below)
 export ledger totalBalance: Field;
 
 export circuit addToTotal(amount: Field): [] {
-  totalBalance = totalBalance + amount;  // Conflicts if another tx changes totalBalance
+  totalBalance = disclose(totalBalance + amount);  // Conflicts if another tx changes totalBalance
 }
 ```
 
