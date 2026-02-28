@@ -91,6 +91,22 @@
     "credential",
     "merkle-auth",
     "unlinkability",
-    "design-patterns"
+    "design-patterns",
+    "deploy",
+    "deployment",
+    "deployContract",
+    "findDeployedContract",
+    "providers",
+    "MidnightProviders",
+    "wallet-setup",
+    "WalletFacade",
+    "proof-server",
+    "indexer-provider",
+    "network-id",
+    "contract-address",
+    "callTx",
+    "preprod",
+    "preview",
+    "undeployed-network"
   ]
 }
