@@ -1,0 +1,133 @@
+// ============================================================================
+// FEE-AWARE CONTRACT — GAS-CONSCIOUS PATTERNS FOR COMPACT
+// ============================================================================
+//
+// HOW GAS AND FEES WORK:
+//   Every contract call declares a gas bound. Gas is measured across five
+//   dimensions (read_time, compute_time, block_usage, bytes_written,
+//   bytes_churned). The fee is derived via dynamic pricing that targets
+//   50% block fullness. Fees are paid in DUST, a shielded resource
+//   generated from NIGHT holdings.
+//
+// WHY KEEPING CIRCUITS LEAN MATTERS:
+//   More operations in a circuit = more gas = higher fees. Every ledger
+//   read adds to read_time, every write adds to bytes_written, and
+//   complex logic adds to compute_time.
+//
+// CIRCUIT vs WITNESS — THE KEY DISTINCTION:
+//   Circuit code runs ON-CHAIN and costs gas. Witness code runs OFF-CHAIN
+//   on the prover's machine and costs ZERO gas.
+//
+// THE OPTIMIZATION STRATEGY:
+//   Push expensive computation into witnesses (off-chain, free). Use
+//   circuits only for what must happen on-chain: state reads/writes,
+//   asserting correctness, and producing the ZK proof.
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// LEDGER STATE — MINIMAL FOOTPRINT
+// ============================================================================
+// Keep ledger declarations minimal. Every field consumes on-chain storage.
+
+export ledger result: Field;          // Most recent computation result
+export ledger computations: Counter;  // How many computations performed
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+// Witnesses run off-chain on the prover's machine. They cost ZERO gas.
+
+// Performs expensive computation off-chain. The circuit verifies the
+// result, but the work itself happens locally — no gas cost.
+witness heavyComputation(input: Field): Field;
+
+// ============================================================================
+// CIRCUIT: efficientProcess — THE GAS-EFFICIENT PATTERN
+// ============================================================================
+// The expensive work is done in the witness (off-chain, zero gas cost).
+// The circuit only verifies the result and stores it (on-chain, minimal gas).
+// Gas: witness call (free) + assertion (low) + field write (low) + counter (low)
+
+export circuit efficientProcess(input: Field): [] {
+  // Step 1: Call the witness for the heavy computation.
+  // This runs entirely off-chain. No matter how complex the logic
+  // inside heavyComputation is, it costs zero gas.
+  const computed = heavyComputation(input);
+
+  // Step 2: Verify the result on-chain.
+  // A simple assertion is cheap — minimal compute_time. disclose() is
+  // required because computed derives from a witness.
+  assert(disclose(computed * computed == input * input * input), "Invalid computation result");
+
+  // Step 3: Store only the verified result.
+  // A single Field write is one of the cheapest state operations.
+  result = disclose(computed);
+
+  // Step 4: Increment the counter.
+  // Counter.increment() is cheaper than inserting into a Map or Set.
+  computations.increment(1);
+}
+
+// ============================================================================
+// CIRCUIT: inefficientProcess — THE ANTI-PATTERN
+// ============================================================================
+//
+// This does all computation on-chain — higher gas cost. Prefer the witness
+// pattern above. Every arithmetic operation contributes to compute_time
+// and increases the proof circuit size.
+
+export circuit inefficientProcess(input: Field): [] {
+  // All computation happens on-chain — each operation adds to gas.
+  // In a real contract, this might be dozens of operations, each one
+  // contributing to compute_time and proof complexity.
+  const step1 = input * input;
+  const step2 = step1 * input;
+  const computed = step2;
+
+  // Same storage operations as efficientProcess.
+  result = disclose(computed);
+  computations.increment(1);
+}
+
+// ============================================================================
+// PURE CIRCUIT: verify — THE CHEAPEST ON-CHAIN OPERATION
+// ============================================================================
+// Pure circuits do not access ledger state — no reads, no writes, no counter
+// mutations. Gas cost comes only from compute_time (zero bytes_written,
+// bytes_churned, and read_time). Use for validation, hashing, or helpers.
+
+export pure circuit verify(input: Field, expected: Field): Boolean {
+  // Pure computation only — no ledger access means no read_time,
+  // no bytes_written, and no bytes_churned. Only compute_time is
+  // consumed, and for simple arithmetic it is negligible.
+  return input * input * input == expected;
+}
+
+// ============================================================================
+// GAS OPTIMIZATION SUMMARY
+// ============================================================================
+//
+// From cheapest to most expensive:
+//   1. Witness calls            — FREE (off-chain, no gas)
+//   2. Pure circuit calls       — Lowest gas (no state operations)
+//   3. Single field writes      — Low gas (minimal bytes_written)
+//   4. Counter.increment()      — Low gas (small state mutation)
+//   5. Map/Set operations       — Medium gas (key-value writes)
+//   6. MerkleTree.insert()      — Higher gas (tree rebalancing)
+//
+// Rules of thumb:
+//   - Compute off-chain (witness), verify on-chain (circuit)
+//   - Fewer ledger operations = lower gas = lower fees
+//   - Use pure circuits for logic that does not touch the ledger
+//   - Prefer Counter over Map for simple numeric tracking
+//   - Batch related writes into one circuit rather than separate TXs
+//
+// Fees are paid in DUST, generated from NIGHT holdings over time.
+// Lower gas means less DUST consumed per transaction.
+//
+// ============================================================================

@@ -1,0 +1,151 @@
+// ============================================================================
+// TRANSACTION COMPOSITION — MULTI-CIRCUIT SEQUENTIAL EXECUTION
+// ============================================================================
+//
+// Multiple exported circuits compose into a single Midnight transaction.
+// They execute sequentially: each call sees the previous call's state changes.
+// If deposit() and withdraw() are called in the same transaction, withdraw()
+// sees the balance AFTER deposit().
+//
+// Contract deployments are fallible-only — if a deployment fails, fees are
+// still consumed but the contract is not created.
+//
+// Cross-contract calls (one contract invoking another contract's circuit) are
+// not yet available. To compose across contracts, include multiple contract
+// calls in a single transaction instead.
+//
+// NOTE: None of these circuits use kernel.checkpoint(), so they execute
+// entirely in the guaranteed phase. Any failure rejects the whole transaction.
+// See CheckpointUsage.compact for the guaranteed/fallible split pattern.
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// Multiple circuits read and write this map. Sequential calls within a
+// transaction see each other's updates to these balances.
+export ledger balance: Map<Bytes<32>, Uint<64>>;
+
+// Monotonic counters tracking deposit and withdrawal operations.
+export ledger totalDeposits: Counter;
+export ledger totalWithdrawals: Counter;
+
+// Hash identifying the most recent action. Each circuit overwrites this,
+// so the final value reflects the LAST call in the transaction.
+export ledger lastAction: Bytes<32>;
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+
+// Returns the caller's secret key. Never disclosed — only the derived
+// public key (via persistentHash) appears on-chain.
+witness localSecretKey(): Bytes<32>;
+
+// ============================================================================
+// HELPER CIRCUITS
+// ============================================================================
+
+// Derive a public key hash from a secret key. public_key() is NOT a
+// builtin — this persistentHash pattern is the standard approach.
+pure circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "compose:pk:"),
+    sk
+  ]);
+}
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+
+constructor() {
+  lastAction = pad(32, "compose:init:");
+}
+
+// ============================================================================
+// CIRCUIT: deposit — FIRST IN A TRANSACTION SEQUENCE
+// ============================================================================
+//
+// Adds funds to the caller's balance. State changes (balance update, counter
+// increment, lastAction) are visible to all subsequent calls in the same TX.
+//
+// Example three-call transaction:
+//   1. deposit(100)   — balance goes from 0 to 100
+//   2. withdraw(30)   — sees balance of 100, reduces to 70
+//   3. checkBalance() — sees final balance of 70
+
+export circuit deposit(amount: Uint<64>): [] {
+  const sk = localSecretKey();
+  const caller = publicKey(sk);
+  // Map keys must be disclosed because they become public ledger state.
+  const dCaller = disclose(caller);
+
+  // lookup returns the default (0) if the key does not exist.
+  const current = balance.lookup(dCaller);
+
+  // Arithmetic results have bounded types — cast back to Uint<64>.
+  balance.insert(dCaller, (current + disclose(amount)) as Uint<64>);
+
+  totalDeposits.increment(1);
+
+  // Subsequent circuits in the same TX see this lastAction value.
+  lastAction = persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "compose:dep:"),
+    dCaller
+  ]);
+}
+
+// ============================================================================
+// CIRCUIT: withdraw — SECOND IN A TRANSACTION SEQUENCE
+// ============================================================================
+//
+// Removes funds from the caller's balance. When called after deposit() in the
+// same transaction, this circuit reads the balance that deposit() wrote — the
+// sequential execution guarantee.
+
+export circuit withdraw(amount: Uint<64>): [] {
+  const sk = localSecretKey();
+  const caller = publicKey(sk);
+  const dCaller = disclose(caller);
+
+  // If deposit() ran earlier in this TX, this returns the post-deposit
+  // balance — not the original pre-transaction value.
+  const current = balance.lookup(dCaller);
+
+  // disclose() required because the comparison involves witness-derived data.
+  assert(disclose(current >= amount), "Insufficient balance for withdrawal");
+
+  balance.insert(dCaller, (current - disclose(amount)) as Uint<64>);
+
+  totalWithdrawals.increment(1);
+
+  lastAction = persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "compose:wth:"),
+    dCaller
+  ]);
+}
+
+// ============================================================================
+// CIRCUIT: checkBalance — THIRD IN A TRANSACTION SEQUENCE
+// ============================================================================
+//
+// Returns the caller's current balance. When called after deposit() and
+// withdraw() in the same transaction, this sees the post-deposit,
+// post-withdrawal state — not the state from before the transaction.
+// All circuits share one sequential state timeline within a transaction.
+
+export circuit checkBalance(): Uint<64> {
+  const sk = localSecretKey();
+  const caller = publicKey(sk);
+  const dCaller = disclose(caller);
+
+  // Returns the cumulative result of all prior mutations in this TX.
+  return balance.lookup(dCaller);
+}
