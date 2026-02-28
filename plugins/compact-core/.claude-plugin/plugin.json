@@ -51,6 +51,16 @@
     "prover-keys",
     "verifier-keys",
     "circuit-metrics",
-    "build-artifacts"
+    "build-artifacts",
+    "circuit-costs",
+    "gate-count",
+    "proving-time",
+    "optimization",
+    "gas-model",
+    "loop-unrolling",
+    "transientHash",
+    "persistentHash",
+    "pure-circuit",
+    "compiler-optimization"
   ]
 }
