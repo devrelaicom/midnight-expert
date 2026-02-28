@@ -1,0 +1,203 @@
+# Compact Contract Runtime
+
+Reference for the compiler-generated Contract class, circuit interfaces, and the ledger function. For witness implementation details, see `references/witness-implementation.md`. For type mappings, see `references/type-mappings.md`.
+
+## Compiler-Generated .d.ts Structure
+
+Every compiled Compact contract produces a `.d.ts` file with this structure:
+
+```typescript
+import type * as __compactRuntime from '@midnight-ntwrk/compact-runtime';
+
+// 1. Exported types (enums, structs, Maybe, etc.)
+export type Maybe<a> = { is_some: boolean; value: a };
+
+// 2. Witnesses interface
+export interface Witnesses<PS> {
+  myWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
+}
+
+// 3. Circuits type
+export type Circuits<PS> = {
+  myCircuit(arg: bigint): [];
+  pureCompute(x: bigint, y: bigint): bigint;
+};
+
+// 4. Contract class
+export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>> {
+  witnesses: W;
+  circuits: Circuits<PS>;
+  impureCircuits: ImpureCircuits<PS>;
+  constructor(witnesses: W);
+  initialState(context: __compactRuntime.ConstructorContext<PS>): __compactRuntime.ConstructorResult<PS>;
+}
+
+// 5. Ledger type and function
+export type Ledger = {
+  readonly myField: bigint;
+  readonly owner: Uint8Array;
+};
+
+export declare function ledger(state: __compactRuntime.ContractState): Ledger;
+```
+
+## The Contract Class
+
+### Instantiation
+
+Create a contract instance by passing your witnesses object:
+
+```typescript
+import { MyContract } from "@midnight-ntwrk/mycontract-contract";
+import { witnesses } from "./witnesses.js";
+
+const contractInstance = new MyContract.Contract(witnesses);
+```
+
+The `Witnesses` interface type-checks your implementations at compile time — if your witness functions have wrong signatures, TypeScript reports the error.
+
+### Constructor Arguments
+
+If the Compact contract has a `constructor(arg1: T1, arg2: T2)`, the generated Contract constructor takes witnesses first, then the constructor arguments:
+
+```typescript
+// Compact: constructor(value: Field)
+const instance = new MyContract.Contract(witnesses, 42n);
+
+// Compact: constructor() — no args
+const instance = new MyContract.Contract(witnesses);
+```
+
+## Circuits vs ImpureCircuits vs PureCircuits
+
+The Contract class exposes three circuit interfaces:
+
+| Interface | Contains | Proof Generated? | Modifies State? |
+|-----------|----------|-------------------|-----------------|
+| `circuits` | All circuits | Yes (for impure) | Impure: yes, Pure: no |
+| `impureCircuits` | Only circuits that touch state/witnesses | Yes | Yes |
+| `pureCircuits` | Only `pure circuit` declarations | **No** | **No** |
+
+### impureCircuits
+
+Circuits that read/write ledger state or call witnesses. These generate ZK proofs and create transactions:
+
+```compact
+// Compact
+export circuit increment(): [] {
+  round.increment(1);
+}
+```
+
+```typescript
+// TypeScript — called through the DApp's transaction layer
+// (via deployContract/findDeployedContract, not directly)
+const result = await deployedContract.callTx.increment();
+```
+
+### pureCircuits
+
+Circuits marked `pure` in Compact run locally without generating proofs. Call them directly on the contract instance:
+
+```compact
+// Compact
+export pure circuit computeHash(data: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "prefix:"), data]);
+}
+```
+
+```typescript
+// TypeScript — synchronous, local computation
+const hash: Uint8Array = contractInstance.pureCircuits.computeHash(myData);
+```
+
+Pure circuits are useful for:
+- Computing values locally that witnesses need to provide
+- Hashing data in the same way the contract does (e.g., computing a public key hash)
+- Validating inputs before submitting a transaction
+
+## The ledger() Function
+
+The compiler generates a `ledger()` function that parses raw on-chain contract state into typed TypeScript objects:
+
+```typescript
+import { MyContract } from "@midnight-ntwrk/mycontract-contract";
+
+// Parse raw contract state into typed ledger object
+const state = MyContract.ledger(contractState.data);
+
+// Access typed fields
+const round: bigint = state.round;           // Counter -> bigint
+const owner: Uint8Array = state.owner;        // Bytes<32> -> Uint8Array
+const message = state.message;                // Maybe<Opaque<"string">>
+```
+
+Only `export ledger` fields are accessible through the `ledger()` function. Non-exported ledger fields are not visible.
+
+### Querying Ledger State
+
+In a DApp context, you typically query the indexer for contract state, then parse it:
+
+```typescript
+const contractState = await providers.publicDataProvider
+  .queryContractState(contractAddress);
+
+if (contractState != null) {
+  const ledgerState = MyContract.ledger(contractState.data);
+  console.log(`Current round: ${ledgerState.round}`);
+}
+```
+
+## Private State ID
+
+When deploying or joining a contract, you provide a string identifier for the private state store. This lets the runtime persist and retrieve private state across sessions:
+
+```typescript
+// Deploying
+const deployed = await deployContract(providers, {
+  contract: contractInstance,
+  privateStateId: 'myContractPrivateState',
+  initialPrivateState: createMyPrivateState(secretKey),
+});
+
+// Joining an existing deployment
+const found = await findDeployedContract(providers, {
+  contract: contractInstance,
+  contractAddress: address,
+  privateStateId: 'myContractPrivateState',
+  initialPrivateState: createMyPrivateState(secretKey),
+});
+```
+
+The `privateStateId` is a string key used by the private state provider to store and retrieve state. Use a descriptive, unique name per contract type.
+
+## Re-Export Pattern
+
+The standard pattern for a contract package is an `index.ts` that re-exports both the generated code and your witness implementations:
+
+```typescript
+// contract/src/index.ts
+export * from "./managed/mycontract/contract/index.js";
+export * from "./witnesses.js";
+
+// Optional: re-export for convenient access
+import * as CompiledContract from "./managed/mycontract/contract/index.js";
+export { CompiledContract };
+```
+
+This provides a single import point for consuming applications:
+
+```typescript
+// In your DApp
+import { Contract, Ledger, witnesses, createMyPrivateState } from "@midnight-ntwrk/mycontract-contract";
+```
+
+## Common Mistakes
+
+| Mistake | Correct | Why |
+|---------|---------|-----|
+| Calling `impureCircuits` directly | Use `deployedContract.callTx.circuitName()` | Impure circuits need the full transaction pipeline |
+| Using `pureCircuits` for state-changing logic | Pure circuits cannot read or modify ledger | Use impure circuits for state changes |
+| Forgetting to export ledger fields in Compact | `export ledger myField: Type;` | Non-exported fields aren't in the `ledger()` output |
+| Importing from wrong path | `./managed/<name>/contract/index.js` | Path includes the contract name subdirectory |
+| Mixing up `.js` and `.cjs` imports | Check your package `type` field | `"type": "module"` uses `.js`, CommonJS uses `.cjs` |
