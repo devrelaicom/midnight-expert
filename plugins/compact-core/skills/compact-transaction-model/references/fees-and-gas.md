@@ -162,19 +162,19 @@ The core principle: more ledger operations means higher gas means higher fees.
 
 ```compact
 export ledger totalVotes: Counter;
-export ledger hasVoted: Map<Bytes<32>, Uint<8>>;
+export ledger hasVoted: Set<Bytes<32>>;
 
-witness computeVoterHash(secret: Bytes<32>): Bytes<32> {
-  // Complex hashing logic runs off-chain -- no gas cost
-  return persistent_hash(secret);
-}
+// Witness runs off-chain -- no on-chain gas cost
+witness computeVoterHash(secret: Bytes<32>): Bytes<32>;
 
 export circuit castVote(voterSecret: Bytes<32>): [] {
-  const voterHash = computeVoterHash(disclose(voterSecret));
-  assert hasVoted.lookup(voterHash) == none::<Uint<8>>;
-  hasVoted.insert(voterHash, 1 as Uint<8>);
+  // Hash computation happens in the witness (off-chain, zero gas)
+  const voterHash = computeVoterHash(voterSecret);
+  // On-chain: only a Set membership check, a Set insert, and a Counter increment
+  assert(!disclose(hasVoted.member(disclose(voterHash))), "Already voted");
+  hasVoted.insert(disclose(voterHash));
   totalVotes.increment(1);
 }
 ```
 
-In this example, the witness handles the hash computation off-chain. The export circuit only performs the minimum on-chain operations: one `Map` lookup, one `Map` insert, and one `Counter` increment. This keeps `bytes_written` and `compute_time` low.
+In this example, the witness handles the hash computation off-chain. The export circuit only performs the minimum on-chain operations: one `Set` membership check, one `Set` insert, and one `Counter` increment. This keeps `bytes_written` and `compute_time` low.
