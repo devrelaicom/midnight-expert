@@ -107,6 +107,16 @@
     "callTx",
     "preprod",
     "preview",
-    "undeployed-network"
+    "undeployed-network",
+    "testing",
+    "vitest",
+    "unit-test",
+    "simulator",
+    "createCircuitContext",
+    "createConstructorContext",
+    "sampleContractAddress",
+    "impureCircuits",
+    "compact-compile",
+    "test-driven"
   ]
 }
