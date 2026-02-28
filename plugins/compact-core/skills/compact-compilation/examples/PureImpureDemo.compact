@@ -1,0 +1,76 @@
+// PureImpureDemo.compact
+// Demonstrates how the Compact compiler treats different circuit types.
+//
+// COMPILATION OUTPUT GUIDE:
+// After running: compact compile PureImpureDemo.compact ./output
+//
+// contract/          -- TypeScript bindings for ALL exported circuits
+//   index.d.ts       -- Type definitions (increment, reset, add all appear)
+//   index.js         -- JavaScript implementation
+//   index.js.map     -- Source map back to this .compact file
+//
+// zkir/              -- ZKIR files for EXPORTED IMPURE circuits ONLY
+//   increment.zkir   -- Circuit description for "increment"
+//   increment.bzkir  -- Binary ZKIR for "increment"
+//   reset.zkir       -- Circuit description for "reset"
+//   reset.bzkir      -- Binary ZKIR for "reset"
+//   (no add.zkir)    -- "add" is pure, so NO ZKIR generated
+//
+// keys/              -- Prover/verifier keys for EXPORTED IMPURE circuits ONLY
+//   increment.prover    -- Proving key for "increment"
+//   increment.verifier  -- Verification key for "increment"
+//   reset.prover        -- Proving key for "reset"
+//   reset.verifier      -- Verification key for "reset"
+//   (no add.prover)     -- "add" is pure, so NO keys generated
+//
+// compiler/
+//   contract-info.json  -- Circuit manifest and metadata
+//
+// Expected compiler output:
+//   Compiling 2 circuits:
+//     circuit "increment" (k=10, rows=...)
+//     circuit "reset" (k=10, rows=...)
+//   Overall progress [====================] 2/2
+//
+// Note: Only 2 circuits compiled (the impure ones), not 3.
+// The pure circuit "add" and internal helper "double" produce no ZK artifacts.
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+export ledger count: Counter;
+
+// EXPORTED IMPURE CIRCUIT
+// Modifies ledger state -> generates ZKIR + prover/verifier keys
+// Appears in: contract/, zkir/, keys/, compiler/
+export circuit increment(amount: Uint<16>): [] {
+  // Counter.increment() takes Uint<16>. The internal helper double()
+  // is inlined here by the compiler -- it produces no standalone artifact.
+  const doubled = double(amount);
+  count.increment(disclose(doubled));
+}
+
+// EXPORTED IMPURE CIRCUIT
+// Modifies ledger state -> generates ZKIR + prover/verifier keys
+// Appears in: contract/, zkir/, keys/, compiler/
+export circuit reset(): [] {
+  // Counter.resetToDefault() resets to 0 without needing to read the value.
+  count.resetToDefault();
+}
+
+// EXPORTED PURE CIRCUIT
+// No ledger access -> NO ZKIR, NO keys
+// Appears in: contract/ only (as pureCircuits.add)
+export pure circuit add(a: Uint<64>, b: Uint<64>): Uint<64> {
+  return a + b as Uint<64>;
+}
+
+// INTERNAL HELPER (not exported)
+// Embedded into calling circuits at compile time
+// Does NOT appear as a standalone artifact anywhere
+circuit double(x: Uint<16>): Uint<16> {
+  // x + x widens the result type, so cast back to Uint<16>.
+  // This is a checked cast -- fails at runtime if the result overflows.
+  return (x + x) as Uint<16>;
+}
