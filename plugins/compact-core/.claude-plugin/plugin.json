@@ -44,6 +44,16 @@
     "compact-runtime",
     "contract-class",
     "pureCircuits",
-    "compiler-generated"
+    "compiler-generated",
+    "testing",
+    "vitest",
+    "unit-test",
+    "simulator",
+    "createCircuitContext",
+    "createConstructorContext",
+    "sampleContractAddress",
+    "impureCircuits",
+    "compact-compile",
+    "test-driven"
   ]
 }
