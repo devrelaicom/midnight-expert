@@ -71,6 +71,26 @@
     "transientHash",
     "persistentHash",
     "pure-circuit",
-    "compiler-optimization"
+    "compiler-optimization",
+    "patterns",
+    "access-control",
+    "owner-only",
+    "rbac",
+    "pausable",
+    "initializable",
+    "state-machine",
+    "time-lock",
+    "auction",
+    "escrow",
+    "treasury",
+    "multi-sig",
+    "voting",
+    "governance",
+    "registry",
+    "allowlist",
+    "credential",
+    "merkle-auth",
+    "unlinkability",
+    "design-patterns"
   ]
 }
