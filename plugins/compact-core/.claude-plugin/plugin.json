@@ -36,6 +36,13 @@
     "selective-disclosure",
     "commit-reveal",
     "anonymous-auth",
-    "merkle-proof"
+    "merkle-proof",
+    "compilation",
+    "compiler-output",
+    "zkir",
+    "prover-keys",
+    "verifier-keys",
+    "circuit-metrics",
+    "build-artifacts"
   ]
 }
