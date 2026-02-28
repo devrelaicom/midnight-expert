@@ -117,6 +117,12 @@
     "sampleContractAddress",
     "impureCircuits",
     "compact-compile",
-    "test-driven"
+    "test-driven",
+    "create-mn-app",
+    "project-setup",
+    "scaffolding",
+    "init-project",
+    "hello-world",
+    "counter-template"
   ]
 }
