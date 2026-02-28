@@ -143,9 +143,9 @@ export ledger topic: Bytes<32>;
 
 // Voter registry and vote tracking
 export ledger eligibleVoters: HistoricMerkleTree<10, Bytes<32>>;
-export ledger committedVotes: MerkleTree<10, Bytes<32>>;
-export ledger committed: Set<Bytes<32>>;
-export ledger revealed: Set<Bytes<32>>;
+export ledger committedVotes: HistoricMerkleTree<10, Bytes<32>>;
+export ledger commitNullifiers: Set<Bytes<32>>;
+export ledger revealNullifiers: Set<Bytes<32>>;
 export ledger yesVotes: Counter;
 export ledger noVotes: Counter;
 
@@ -209,7 +209,7 @@ export circuit voteCommit(ballot: Boolean): [] {
   const sk = local_secret_key();
   const pk = get_public_key(sk);
   const comNul = commitment_nullifier(sk);
-  assert(!committed.member(comNul), "Already committed");
+  assert(!commitNullifiers.member(comNul), "Already committed");
 
   // Prove voter eligibility via Merkle proof
   const path = get_voter_path(pk);
@@ -224,7 +224,7 @@ export circuit voteCommit(ballot: Boolean): [] {
   const cm = commit_with_sk(
     ballot ? pad(32, "yes") : pad(32, "no"), sk);
   committedVotes.insert(cm);
-  committed.insert(comNul);
+  commitNullifiers.insert(comNul);
   local_advance_state();
 }
 
@@ -240,7 +240,7 @@ export circuit voteReveal(): [] {
   assert(phase == VotePhase.reveal, "Not in reveal phase");
   const sk = local_secret_key();
   const revNul = reveal_nullifier(sk);
-  assert(!revealed.member(revNul), "Already revealed");
+  assert(!revealNullifiers.member(revNul), "Already revealed");
 
   const vote = local_vote_cast();
   assert(disclose(vote.is_some), "No vote recorded");
@@ -261,7 +261,7 @@ export circuit voteReveal(): [] {
   } else {
     noVotes.increment(1);
   }
-  revealed.insert(revNul);
+  revealNullifiers.insert(revNul);
   local_advance_state();
 }
 

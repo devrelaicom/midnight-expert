@@ -32,7 +32,7 @@ witness getSecretValue(): Field;
 
 // Compute commitment using persistentHash with salt
 circuit computeCommitment(value: Field, salt: Bytes<32>): Bytes<32> {
-  const valueBytes = (value as Field) as Bytes<32>;
+  const valueBytes = value as Bytes<32>;
   return persistentHash<Vector<2, Bytes<32>>>([valueBytes, salt]);
 }
 
@@ -84,7 +84,7 @@ export circuit submitCommitment(value: Field): [] {
   const sk = local_secret_key();
   const pk = get_public_key(sk);
   const salt = get_randomness();
-  const valueBytes = (value as Field) as Bytes<32>;
+  const valueBytes = value as Bytes<32>;
   const c = persistentHash<Vector<2, Bytes<32>>>([valueBytes, salt]);
   storeOpening(pk, salt, value);
   commitments.insert(disclose(pk), disclose(c));
@@ -99,7 +99,7 @@ export circuit revealValue(): Field {
   const opening = getOpening();
   const salt = opening.0;
   const value = opening.1;
-  const valueBytes = (value as Field) as Bytes<32>;
+  const valueBytes = value as Bytes<32>;
   const expected = persistentHash<Vector<2, Bytes<32>>>([valueBytes, salt]);
   assert(disclose(expected == commitments.lookup(pk)), "Commitment mismatch");
   reveals.insert(disclose(pk), disclose(value));
@@ -195,7 +195,8 @@ export circuit submitBid(bidAmount: Uint<64>): [] {
   const pk = get_public_key(sk);
   assert(disclose(!bidCommitments.member(pk)), "Already submitted a bid");
   const salt = get_randomness();
-  const amountBytes = (disclose(bidAmount) as Field) as Bytes<32>;
+  // Do NOT disclose bidAmount here — the hash hides it
+  const amountBytes = (bidAmount as Field) as Bytes<32>;
   const commitment = persistentHash<Vector<2, Bytes<32>>>([amountBytes, salt]);
   storeBidOpening(salt, bidAmount);
   bidCommitments.insert(disclose(pk), disclose(commitment));
@@ -241,7 +242,11 @@ export circuit finalizeAuction(): [] {
 
 ### Privacy Considerations
 
-- During bidding, only commitment hashes are visible. Bid amounts are hidden.
+- During bidding, only commitment hashes are visible. Bid amounts are hidden
+  in the hash. Note: `bidAmount` is a circuit parameter, so it arrives in the
+  transaction call. In a production system, derive the bid from a witness
+  instead to ensure it never appears in the public transaction data.
+- The commitment hash itself hides the bid value (due to the random salt).
 - After reveal, all bid amounts and bidder identities become public.
 - The number of bidders is visible from the `bidCommitments` Map size.
 - Bidders who do not reveal forfeit (their bids remain hidden but they cannot win).

@@ -17,7 +17,7 @@ A comprehensive catalog of 18 reusable contract design patterns for Midnight Com
 | 4 | Initializable | Access Control | Beginner | One-time setup without constructor | `Boolean` flag, `initialize()` guard |
 | 5 | State Machine | State Mgmt | Beginner | Multi-phase protocols with ordered transitions | `enum` phases, transition functions |
 | 6 | Time-Locked Operations | State Mgmt | Intermediate | Enforce deadlines on actions | `blockTimeGte`, `sealed ledger` |
-| 7 | Commit-Reveal | Commitment | Intermediate | Hide a value, prove it later | `persistentCommit`, salt management |
+| 7 | Commit-Reveal | Commitment | Intermediate | Hide a value, prove it later | `persistentHash`, salt management |
 | 8 | Sealed-Bid Auction | Commitment | Advanced | Private bidding with fair resolution | Commit-reveal + escrow + time-lock |
 | 9 | Escrow | Value | Intermediate | Hold funds until conditions are met | `receiveShielded`, `sendShielded` |
 | 10 | Treasury / Pot | Value | Intermediate | Manage pooled funds with controlled withdrawal | `QualifiedShieldedCoinInfo`, `mergeCoin` |

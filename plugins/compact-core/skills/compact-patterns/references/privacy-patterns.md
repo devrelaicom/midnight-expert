@@ -31,7 +31,7 @@ witness local_secret_key(): Bytes<32>;
 circuit publicKey(currentRound: Field, sk: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<3, Bytes<32>>>([
     pad(32, "myapp:round-pk:"),
-    (currentRound as Field) as Bytes<32>,
+    currentRound as Bytes<32>,
     sk
   ]);
 }
