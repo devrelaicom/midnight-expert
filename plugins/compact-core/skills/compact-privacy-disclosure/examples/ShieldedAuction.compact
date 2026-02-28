@@ -1,0 +1,396 @@
+// ============================================================================
+// SHIELDED AUCTION — Sealed-Bid Auction with Commit-Reveal and Time Constraints
+// ============================================================================
+//
+// This contract demonstrates a sealed-bid auction that combines multiple privacy
+// patterns into a single real-world application:
+//
+//   1. Commit-Reveal — bidders submit hidden bids (commitments) during the
+//      bidding phase, then reveal them during the reveal phase.
+//   2. Time Constraints — blockTimeGte / blockTimeLt enforce phase deadlines.
+//      The auction creator sets bidding and reveal end times at deployment.
+//   3. State Machine — an enum tracks the auction phase (bidding, reveal,
+//      finalized), enforcing valid transitions.
+//
+// Auction lifecycle:
+//   BIDDING phase (before biddingEnd):
+//     - Bidders call placeBid() with a hidden bid amount
+//     - The circuit computes a commitment using persistentCommit and stores it
+//     - The bid amount is NOT revealed — only the commitment hash is on-chain
+//
+//   REVEAL phase (after biddingEnd, before revealEnd):
+//     - Bidders call revealBid() to prove their bid matches their commitment
+//     - The circuit verifies the commitment and tracks the highest bid
+//     - Revealed amounts become visible on-chain
+//
+//   FINALIZED phase (after revealEnd):
+//     - Anyone calls finalize() to close the auction
+//     - The winner and winning bid are recorded on-chain
+//
+// What is PRIVATE (never leaves the prover):
+//   - Bid amounts during the bidding phase (hidden by persistentCommit)
+//   - Random salts used for commitments (never disclosed)
+//   - Bidders' secret keys (always private)
+//   - Non-winning bid amounts (only stored in commitments)
+//
+// What is PUBLIC (visible on-chain):
+//   - Commitment hashes for each bidder
+//   - Bidder public key hashes (derived from secret keys)
+//   - Bidding and reveal deadline timestamps
+//   - The highest revealed bid amount and winner identity
+//   - Phase transitions
+//   - Number of bids placed (Map size is observable)
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// CUSTOM TYPES
+// ============================================================================
+
+// Phase tracks the auction state machine.
+// The default value is the first variant (bidding), which is appropriate for
+// the initial state set in the constructor.
+export enum Phase { bidding, reveal, finalized }
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// The current auction phase. Transitions: bidding -> reveal -> finalized.
+export ledger phase: Phase;
+
+// Deadline timestamps (Unix epoch in milliseconds, as Uint<64>).
+// sealed means these values are set once in the constructor and cannot change.
+// This prevents the auctioneer from manipulating deadlines after deployment.
+export sealed ledger biddingEnd: Uint<64>;
+export sealed ledger revealEnd: Uint<64>;
+
+// Map from bidder public key hash to their bid commitment.
+// The key is a hash of the bidder's secret key (with domain separation).
+// The value is a persistentCommit output hiding the bid amount.
+export ledger commitments: Map<Bytes<32>, Bytes<32>>;
+
+// The highest revealed bid amount so far.
+export ledger highestBid: Uint<64>;
+
+// The public key hash of the highest bidder.
+// pad(32, '') is the zero value (no winner yet).
+export ledger winner: Bytes<32>;
+
+// Counter tracking how many bids have been placed.
+export ledger bidCount: Counter;
+
+// The public key hash of the auctioneer (deployer).
+// sealed ensures only the deployer can finalize.
+export sealed ledger auctioneer: Bytes<32>;
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+// Witnesses run off-chain on the prover's machine.
+
+// Returns the bidder's secret key for identity derivation.
+witness local_secret_key(): Bytes<32>;
+
+// Returns a fresh random salt for bid commitments.
+// IMPORTANT: Must return cryptographically random bytes.
+// Reusing salts across bids would weaken hiding.
+witness get_random_salt(): Bytes<32>;
+
+// Stores the salt off-chain so it can be retrieved during reveal.
+witness store_bid_salt(salt: Bytes<32>): [];
+
+// Retrieves the previously stored salt during the reveal phase.
+witness retrieve_bid_salt(): Bytes<32>;
+
+// ============================================================================
+// HELPER CIRCUITS
+// ============================================================================
+
+// Derive a public key hash from a secret key.
+// Domain separator "auction:pk:" ensures this derivation is unique to
+// this contract and cannot collide with key derivations in other contracts.
+circuit get_public_key(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "auction:pk:"),
+    sk
+  ]);
+}
+
+// Compute a bid commitment from amount and salt.
+// Uses persistentCommit<T> (not persistentHash) so the commitment is:
+//   - Hiding: without the salt, the amount cannot be determined
+//   - Binding: the bidder cannot change their bid after committing
+// The amount is cast to Bytes<32> and combined with a domain separator
+// to prevent cross-protocol replay of commitments.
+circuit compute_bid_commitment(amount: Uint<64>, salt: Bytes<32>): Bytes<32> {
+  // Two-step cast: Uint<64> -> Field -> Bytes<32>.
+  // Direct Uint-to-Bytes cast is not allowed in Compact.
+  const amountBytes = (amount as Field) as Bytes<32>;
+  return persistentCommit<Vector<2, Bytes<32>>>(
+    [amountBytes, pad(32, "auction:bid:")],
+    salt
+  );
+}
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+// Deploys the auction with fixed deadlines and sets the auctioneer identity.
+
+constructor(biddingEndTime: Uint<64>, revealEndTime: Uint<64>) {
+  // Store the auctioneer's public key for finalization access control.
+  // disclose() is required because the value derives from a witness
+  // (local_secret_key). This reveals the auctioneer's public key hash
+  // on-chain, which is intentional for access control.
+  auctioneer = disclose(get_public_key(local_secret_key()));
+
+  // Store deadlines. disclose() is required because constructor
+  // parameters are treated as witness data and must be disclosed
+  // when written to sealed ledger fields.
+  biddingEnd = disclose(biddingEndTime);
+  revealEnd = disclose(revealEndTime);
+
+  // Initialize phase to bidding (the first enum variant).
+  phase = Phase.bidding;
+}
+
+// ============================================================================
+// PHASE 1: PLACE BID (Bidding Phase)
+// ============================================================================
+
+// placeBid() commits a hidden bid amount during the bidding phase.
+//
+// The bidder supplies their bid amount as a circuit parameter. The circuit:
+//   1. Authenticates the bidder via their secret key
+//   2. Checks we are in the bidding phase and before the deadline
+//   3. Generates a random salt and computes the commitment
+//   4. Stores the commitment on-chain, keyed by the bidder's public key hash
+//
+// Privacy: The bid amount never appears on-chain during this phase.
+// Only the commitment hash (hiding the amount) is stored.
+export circuit placeBid(amount: Uint<64>): [] {
+  // --- Phase check ---
+  assert(phase == Phase.bidding, "Not in bidding phase");
+
+  // --- Time check ---
+  // blockTimeLt(biddingEnd) returns true if current block time < biddingEnd.
+  // This ensures bids can only be placed before the bidding deadline.
+  // biddingEnd is from ledger (not witness-derived), so no disclose() needed.
+  assert(blockTimeLt(biddingEnd), "Bidding period has ended");
+
+  // --- Bidder identity ---
+  const sk = local_secret_key();
+  const bidderPk = get_public_key(sk);
+
+  // Ensure this bidder has not already placed a bid.
+  // disclose() is required on bidderPk because it is witness-derived and
+  // Map.member() requires its key argument to be disclosed for Merkle-tree
+  // verification. The negated boolean result is also disclosed for the assert.
+  assert(!commitments.member(disclose(bidderPk)), "Already placed a bid");
+
+  // --- Generate commitment ---
+  const salt = get_random_salt();
+
+  // Store the salt off-chain for retrieval during reveal.
+  store_bid_salt(salt);
+
+  // Compute the commitment. persistentCommit hides the amount behind
+  // the random salt, making it impossible to determine the bid from
+  // the commitment alone.
+  const comm = compute_bid_commitment(amount, salt);
+
+  // --- Store commitment on-chain ---
+  // disclose() is required for both Map.insert arguments because they
+  // are witness-derived. The bidder's public key hash reveals their
+  // identity (by design — we need to map bids to bidders). The
+  // commitment is hiding, so the amount stays private.
+  commitments.insert(disclose(bidderPk), disclose(comm));
+
+  // Track bid count.
+  bidCount.increment(1);
+}
+
+// ============================================================================
+// PHASE 2: REVEAL BID (Reveal Phase)
+// ============================================================================
+
+// revealBid() proves a bidder's commitment matches a claimed amount.
+//
+// The bidder re-supplies the original bid amount. The circuit:
+//   1. Checks we are in the reveal phase (after biddingEnd, before revealEnd)
+//   2. Retrieves the salt from off-chain storage
+//   3. Recomputes the commitment and verifies it matches the stored one
+//   4. If this bid exceeds the current highest, updates the leader
+//
+// Privacy: The bid amount is disclosed during reveal. This is intentional —
+// the purpose of the reveal phase is to open commitments. However, bidders
+// who choose NOT to reveal (e.g., if they know they lost) keep their
+// amounts private. Only revealed amounts become public.
+export circuit revealBid(amount: Uint<64>): [] {
+  // --- Phase check ---
+  // During reveal phase we need: biddingEnd <= blockTime < revealEnd.
+  // blockTimeGte(biddingEnd) ensures bidding period is over.
+  // blockTimeLt(revealEnd) ensures reveal period hasn't ended.
+  assert(phase == Phase.bidding || phase == Phase.reveal, "Auction already finalized");
+  assert(blockTimeGte(biddingEnd), "Bidding period not yet ended");
+  assert(blockTimeLt(revealEnd), "Reveal period has ended");
+
+  // Transition to reveal phase if still in bidding.
+  // This is safe because we've already verified the time constraints above.
+  if (phase == Phase.bidding) {
+    phase = Phase.reveal;
+  }
+
+  // --- Bidder identity ---
+  const sk = local_secret_key();
+  const bidderPk = get_public_key(sk);
+
+  // Verify this bidder actually placed a bid.
+  // disclose() is required on bidderPk because it is witness-derived and
+  // Map.member() requires its key argument to be disclosed.
+  assert(commitments.member(disclose(bidderPk)), "No bid found for this bidder");
+
+  // --- Retrieve stored commitment ---
+  const storedComm = commitments.lookup(disclose(bidderPk));
+
+  // --- Recompute commitment ---
+  // Retrieve the salt that was stored off-chain during placeBid().
+  const salt = retrieve_bid_salt();
+  const recomputed = compute_bid_commitment(amount, salt);
+
+  // --- Verify match ---
+  // disclose() is required because recomputed is derived from witness
+  // values (salt from retrieve_bid_salt). The comparison result must
+  // be disclosed for the assert to evaluate it.
+  assert(disclose(recomputed == storedComm), "Commitment mismatch");
+
+  // --- Update highest bid ---
+  // disclose() is required on amount because it is a circuit parameter
+  // (witness data) and we are using it in a conditional that affects
+  // ledger writes. This is the intentional reveal — the bid amount
+  // becomes public.
+  if (disclose(amount) > highestBid) {
+    highestBid = disclose(amount);
+    // Update the winner to this bidder's public key hash.
+    winner = disclose(bidderPk);
+  }
+
+  // Remove the commitment to prevent double-reveal.
+  // We insert a zero commitment to mark this bidder as revealed.
+  commitments.insert(disclose(bidderPk), pad(32, "revealed"));
+}
+
+// ============================================================================
+// PHASE 3: FINALIZE (After Reveal Phase)
+// ============================================================================
+
+// finalize() closes the auction after the reveal period ends.
+//
+// Anyone can call finalize once the reveal deadline has passed,
+// but only if the auction hasn't been finalized yet.
+// The winner and highest bid are already tracked from the reveal phase.
+export circuit finalize(): [] {
+  // --- Phase check ---
+  assert(phase != Phase.finalized, "Already finalized");
+
+  // --- Time check ---
+  // blockTimeGte(revealEnd) ensures the reveal period is over.
+  assert(blockTimeGte(revealEnd), "Reveal period not yet ended");
+
+  // Transition to finalized phase.
+  phase = Phase.finalized;
+}
+
+// ============================================================================
+// READ-ONLY CIRCUITS
+// ============================================================================
+
+// Returns the current phase.
+export circuit getPhase(): Phase {
+  return phase;
+}
+
+// Returns the current highest bid amount.
+export circuit getHighestBid(): Uint<64> {
+  return highestBid;
+}
+
+// Returns the public key hash of the current highest bidder.
+export circuit getWinner(): Bytes<32> {
+  return winner;
+}
+
+// Returns the bidding deadline timestamp.
+export circuit getBiddingEnd(): Uint<64> {
+  return biddingEnd;
+}
+
+// Returns the reveal deadline timestamp.
+export circuit getRevealEnd(): Uint<64> {
+  return revealEnd;
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// Data Flow:
+//   bidding phase:  amount (private) + salt (private) --> commitment (public)
+//   reveal phase:   amount (disclosed) + salt (private) --> verify match
+//                   --> if highest, update winner/highestBid (public)
+//   finalize:       phase transition only (no private data involved)
+//
+// What the ZK proof guarantees:
+//   1. Each bidder knows the amount and salt that produce their commitment
+//   2. Commitments are computed correctly using persistentCommit
+//   3. Revealed amounts match the original commitments (binding property)
+//   4. Time constraints are respected (block time checks are part of the proof)
+//   5. Each bidder can only place one bid (Map.member check)
+//
+// What is NEVER revealed:
+//   - Bid amounts during the bidding phase (hidden by persistentCommit)
+//   - Random salts (used only inside circuits, never disclosed)
+//   - Bidders' secret keys (used only for authentication)
+//   - Non-revealed bids (bidders who skip the reveal keep amounts private)
+//
+// What IS revealed:
+//   - Commitment hashes during bidding (hiding protects the amounts)
+//   - Bidder public key hashes (identity is needed for the bid mapping)
+//   - Revealed bid amounts during reveal phase (intentional disclosure)
+//   - The winning bid amount and winner identity after reveals
+//   - Deadline timestamps (set at construction, always public)
+//   - Phase transitions and bid count
+//
+// Threat model:
+//   - An observer CANNOT determine bid amounts during the bidding phase
+//     because persistentCommit uses random salt (hiding property)
+//   - A bidder CANNOT change their bid after committing because
+//     persistentCommit is binding (cannot find different amount + salt
+//     that produce the same commitment)
+//   - A bidder CANNOT front-run others' reveals because commitments
+//     are binding and the reveal requires the original salt
+//   - Time manipulation is limited by the blockchain's consensus on
+//     block time; the auctioneer cannot extend or shorten deadlines
+//     because they are sealed ledger values set at deployment
+//   - Bidders who do not reveal forfeit but keep their amounts private
+//   - The number of bids is observable (bidCount is public), but the
+//     amounts behind unrevealed commitments remain hidden
+//
+// disclose() summary:
+//   - constructor:  disclose(get_public_key(...)) — auctioneer identity
+//                   disclose(biddingEndTime/revealEndTime) — deadlines
+//   - placeBid():   commitments.member(disclose(bidderPk)) — uniqueness check
+//                   disclose(bidderPk) and disclose(comm) — Map.insert
+//   - revealBid():  commitments.member(disclose(bidderPk)) — existence check
+//                   disclose(bidderPk) — Map.lookup key
+//                   disclose(recomputed == storedComm) — commitment verification
+//                   disclose(amount) — intentional reveal of bid
+//                   disclose(bidderPk) — winner identity
+//   - finalize():   no disclose() needed — only uses ledger values
+//
+// ============================================================================

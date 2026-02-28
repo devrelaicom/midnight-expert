@@ -1,0 +1,41 @@
+{
+  "name": "compact-core",
+  "version": "0.1.0",
+  "description": "Core knowledge for writing Midnight Compact smart contracts — contract structure, data types, ledger declarations, circuits, witnesses, and common patterns.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "compact",
+    "smart-contracts",
+    "zero-knowledge",
+    "ledger",
+    "circuits",
+    "witnesses",
+    "zk-proofs",
+    "tokens",
+    "shielded",
+    "unshielded",
+    "zswap",
+    "standard-library",
+    "stdlib",
+    "elliptic-curve",
+    "merkle-tree",
+    "cryptographic",
+    "privacy",
+    "disclosure",
+    "disclose",
+    "witness-protection",
+    "commitment",
+    "nullifier",
+    "selective-disclosure",
+    "commit-reveal",
+    "anonymous-auth",
+    "merkle-proof"
+  ]
+}

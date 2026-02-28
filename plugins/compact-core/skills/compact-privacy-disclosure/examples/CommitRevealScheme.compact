@@ -1,0 +1,300 @@
+// ============================================================================
+// COMMIT-REVEAL SCHEME
+// ============================================================================
+//
+// This contract demonstrates the commit-reveal pattern using persistentCommit<T>
+// for proper hiding with randomness. The pattern has two phases:
+//
+//   Phase 1 — COMMIT: The user computes a commitment = persistentCommit(value, salt)
+//     and publishes only the commitment hash on-chain. The actual value and the
+//     random salt remain private (known only to the committer's prover).
+//
+//   Phase 2 — REVEAL: The user re-supplies the original value and salt. The circuit
+//     recomputes the commitment and verifies it matches the stored one. If it does,
+//     the value is disclosed and recorded on-chain.
+//
+// What is PRIVATE (never leaves the prover):
+//   - The committed value (during the commit phase)
+//   - The random salt / randomness (always — never disclosed)
+//   - The committer's secret key (always — never disclosed)
+//
+// What is PUBLIC (visible on-chain):
+//   - The commitment hash (Bytes<32>)
+//   - The committer's derived public key (Bytes<32>)
+//   - The revealed value (only after the reveal phase)
+//   - The phase transitions (commit -> reveal)
+//   - Whether the scheme has been revealed or not
+//
+// Why persistentCommit<T> instead of persistentHash<T>:
+//   persistentHash is deterministic — the same input always produces the same hash.
+//   An observer who can guess the value can verify their guess by hashing it.
+//   persistentCommit adds a random opening (salt) that makes the commitment hiding:
+//   without knowing the salt, an observer cannot verify a guess even by brute force.
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// CUSTOM TYPES
+// ============================================================================
+
+// Phase tracks the state of the commit-reveal lifecycle.
+// Using an enum enforces valid transitions and makes the state machine explicit.
+export enum Phase { empty, committed, revealed }
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// The commitment hash — a Bytes<32> produced by persistentCommit<T>.
+// This is public on-chain so anyone can see that a commitment exists,
+// but the committed value is hidden by the random salt.
+export ledger commitment: Bytes<32>;
+
+// The current phase of the scheme. Transitions: empty -> committed -> revealed.
+export ledger phase: Phase;
+
+// The revealed value, set only during the reveal phase.
+// Before reveal, this is the default value (0).
+export ledger revealedValue: Bytes<32>;
+
+// The public key of the committer, derived from their secret key.
+// sealed means it is set once in the constructor and cannot change after deployment.
+// This ensures only the original deployer can commit and reveal.
+export sealed ledger committerPk: Bytes<32>;
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+// Witnesses run off-chain on the prover's machine. They provide private data
+// to circuits. Implementation is in TypeScript, not Compact.
+
+// Returns the committer's secret key. Used for authentication.
+witness local_secret_key(): Bytes<32>;
+
+// Returns a fresh random salt (Bytes<32>) for the commitment.
+// The salt provides the hiding property of persistentCommit.
+// IMPORTANT: This must return cryptographically random bytes each time
+// it is called during commit. Reusing salts weakens hiding.
+witness get_random_salt(): Bytes<32>;
+
+// Stores the salt off-chain so it can be retrieved during reveal.
+// The salt is never published on-chain — it stays with the prover.
+witness store_salt(salt: Bytes<32>): [];
+
+// Retrieves the previously stored salt during the reveal phase.
+witness retrieve_salt(): Bytes<32>;
+
+// ============================================================================
+// HELPER CIRCUITS
+// ============================================================================
+
+// Derive a public key from a secret key using persistentHash with a
+// domain separator. This is the standard pattern — public_key() does NOT
+// exist in the standard library.
+circuit get_public_key(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "commitreveal:pk:"),
+    sk
+  ]);
+}
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+// Runs once at deployment. Sets the committer's public key (sealed) and
+// initializes the phase to empty.
+
+constructor() {
+  // disclose() is required because the value derives from a witness
+  // (local_secret_key). The derived public key must be disclosed to write
+  // it to the sealed ledger field. This reveals the committer's identity
+  // (public key) on-chain — that is intentional for access control.
+  committerPk = disclose(get_public_key(local_secret_key()));
+  phase = Phase.empty;
+}
+
+// ============================================================================
+// PHASE 1: COMMIT
+// ============================================================================
+
+// commit() stores a commitment on-chain without revealing the value.
+//
+// The commitment is computed as:
+//   persistentCommit<Vector<2, Bytes<32>>>([value, domainSep], salt)
+//
+// The domain separator "commitreveal:val:" prevents cross-protocol attacks
+// where a commitment from one scheme could be replayed in another.
+//
+// Privacy: The value and salt remain private. Only the commitment hash
+// is written to the public ledger.
+export circuit commit(value: Bytes<32>): [] {
+  // --- Authentication ---
+  // Verify the caller is the deployer by checking their secret key
+  // produces the stored public key.
+  const sk = local_secret_key();
+  const callerPk = get_public_key(sk);
+  // disclose() is required here because the comparison involves a witness-
+  // derived value (callerPk) and controls a conditional branch (assert).
+  // This reveals whether the caller is authorized, but NOT the secret key.
+  assert(disclose(callerPk == committerPk), "Only committer can commit");
+
+  // --- Phase check ---
+  assert(phase == Phase.empty, "Already committed");
+
+  // --- Generate randomness ---
+  // The salt provides the hiding property. Without it, persistentHash alone
+  // would allow brute-force verification of guessed values.
+  const salt = get_random_salt();
+
+  // Store the salt off-chain for retrieval during reveal.
+  // This witness call has a side-effect (local storage) but reveals nothing on-chain.
+  store_salt(salt);
+
+  // --- Compute commitment ---
+  // persistentCommit<T>(value, rand) computes a SHA-256 commitment that is:
+  //   - Hiding: without the salt, the value cannot be determined
+  //   - Binding: the committer cannot change the value after committing
+  //   - Persistent: stable across compiler upgrades, safe for ledger storage
+  const domainSep = pad(32, "commitreveal:val:");
+  const comm = persistentCommit<Vector<2, Bytes<32>>>(
+    [value, domainSep],
+    salt
+  );
+
+  // disclose() is required because the commitment is derived from witness
+  // values (value comes from a circuit parameter which may carry witness data,
+  // and salt is directly from a witness). However, persistentCommit is
+  // considered sufficient to protect the input — the commitment hash does
+  // not reveal the value or salt.
+  commitment = disclose(comm);
+
+  // Transition to the committed phase.
+  phase = Phase.committed;
+}
+
+// ============================================================================
+// PHASE 2: REVEAL
+// ============================================================================
+
+// reveal() proves the committed value matches and discloses it on-chain.
+//
+// The user re-supplies the original value. The circuit retrieves the salt
+// from off-chain storage, recomputes the commitment, and verifies it matches
+// the one stored on-chain. If it matches, the value is disclosed publicly.
+//
+// After reveal:
+//   - The value is publicly visible on-chain (revealedValue)
+//   - The salt is STILL private (never disclosed)
+//   - The phase transitions to revealed (no further commits possible)
+export circuit reveal(value: Bytes<32>): Bytes<32> {
+  // --- Authentication ---
+  const sk = local_secret_key();
+  const callerPk = get_public_key(sk);
+  // disclose() wraps the comparison because it involves witness-derived data
+  // and controls the assert branch. Reveals authorization status, not the key.
+  assert(disclose(callerPk == committerPk), "Only committer can reveal");
+
+  // --- Phase check ---
+  assert(phase == Phase.committed, "Nothing to reveal");
+
+  // --- Retrieve salt ---
+  // The salt was stored off-chain during commit. It must be the SAME salt
+  // used during commit, otherwise the recomputed commitment will not match.
+  const salt = retrieve_salt();
+
+  // --- Recompute commitment ---
+  // Using the same domain separator and structure as in commit().
+  const domainSep = pad(32, "commitreveal:val:");
+  const recomputed = persistentCommit<Vector<2, Bytes<32>>>(
+    [value, domainSep],
+    salt
+  );
+
+  // --- Verify match ---
+  // disclose() is required because recomputed is derived from witness values
+  // (salt from retrieve_salt). The comparison result must be disclosed for
+  // the assert to evaluate it. This reveals whether the proof succeeded,
+  // but not the salt itself.
+  assert(disclose(recomputed == commitment), "Commitment mismatch");
+
+  // --- Store revealed value ---
+  // disclose() is required to write the value to the public ledger.
+  // This is the intentional "reveal" step — the value is now public.
+  // Before this point, it was hidden behind the commitment.
+  revealedValue = disclose(value);
+
+  // Transition to the revealed phase.
+  phase = Phase.revealed;
+
+  // Return the revealed value.
+  // disclose() is required because exported circuits must disclose
+  // any witness-derived return values to make them part of the public proof.
+  return disclose(value);
+}
+
+// ============================================================================
+// READ-ONLY CIRCUITS
+// ============================================================================
+
+// Returns the current commitment hash. Useful for off-chain verification.
+export circuit getCommitment(): Bytes<32> {
+  return commitment;
+}
+
+// Returns the current phase as a Field value for easier off-chain processing.
+export circuit getPhase(): Phase {
+  return phase;
+}
+
+// Returns the revealed value. Only meaningful after phase == revealed.
+export circuit getRevealedValue(): Bytes<32> {
+  return revealedValue;
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// Data Flow:
+//   commit phase:  value (private) + salt (private) --> commitment (public)
+//   reveal phase:  value (disclosed) + salt (private) --> verify match --> revealedValue (public)
+//
+// What the ZK proof guarantees:
+//   1. The committer knows a value and salt that produce the stored commitment
+//   2. The commitment was computed correctly using persistentCommit
+//   3. The revealed value is the same one that was originally committed
+//
+// What is NEVER revealed:
+//   - The random salt (used only inside the circuit, never disclosed)
+//   - The committer's secret key (used only for authentication)
+//
+// What IS revealed:
+//   - The commitment hash (Phase 1) — hiding protects the value
+//   - The committer's public key (constructor) — for access control
+//   - The revealed value (Phase 2) — this is the point of the reveal
+//   - Phase transitions — observers see when commit/reveal happen
+//
+// Threat model:
+//   - An observer who sees the commitment CANNOT determine the value
+//     because persistentCommit uses random salt (hiding property)
+//   - The committer CANNOT change their mind after committing because
+//     persistentCommit is binding (they cannot find a different value
+//     and salt that produce the same commitment)
+//   - A third party CANNOT reveal on behalf of the committer because
+//     they do not know the secret key (authentication check)
+//   - A third party CANNOT front-run the reveal because the value
+//     parameter alone is insufficient — the salt is also needed and
+//     is never transmitted on-chain
+//
+// disclose() summary:
+//   - commit():  disclose(callerPk == committerPk) — auth check
+//                disclose(comm) — write commitment to ledger
+//   - reveal():  disclose(callerPk == committerPk) — auth check
+//                disclose(recomputed == commitment) — verify match
+//                disclose(value) — intentional reveal to ledger and return
+//
+// ============================================================================

@@ -1,0 +1,246 @@
+// NullifierDoubleSpend.compact
+// Pattern: Commitment + Nullifier for Single-Use Tokens
+//
+// This contract demonstrates the commitment/nullifier pattern used in
+// zero-knowledge cash systems (e.g., Zerocash). It enables single-use
+// authorization tokens where:
+//   - Issuance hides the token value inside a Merkle tree (private)
+//   - Spending proves token ownership via a ZK Merkle path proof
+//   - A nullifier prevents double-spending without revealing which token
+//     was spent
+//
+// Key privacy properties:
+//   - Token secrets never leave the ZK proof
+//   - Commitments hide token identity inside the Merkle tree
+//   - Nullifiers are derived with a DIFFERENT domain separator than
+//     commitments, preventing correlation between the two
+//   - An on-chain observer sees nullifiers but cannot link them to
+//     specific commitments in the tree
+//
+// Threat model:
+//   - Observer can see: number of tokens issued, number spent,
+//     nullifier values, that a Merkle root check passed
+//   - Observer CANNOT see: which commitment was spent, the secret
+//     behind any token, the link between a nullifier and its commitment
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+//
+// commitments: HistoricMerkleTree stores token commitments. Using Historic
+//   variant so proofs remain valid even after new tokens are issued (the tree
+//   root changes on each insert, but HistoricMerkleTree remembers past roots).
+//   Depth 10 supports up to 2^10 = 1024 tokens.
+//
+// nullifiers: Set stores spent nullifiers. This is public by design --
+//   nullifiers are derived values that cannot be linked back to commitments
+//   without knowledge of the secret.
+
+export ledger commitments: HistoricMerkleTree<10, Bytes<32>>;
+export ledger nullifiers: Set<Bytes<32>>;
+
+// ============================================================================
+// WITNESS FUNCTIONS
+// ============================================================================
+//
+// Witnesses provide private data from the off-chain environment. Their return
+// values are treated as witness data by the compiler and must be disclosed
+// before flowing to any public context (ledger writes, conditionals, returns).
+
+// Returns the user's secret for a token. This secret is the sole input to
+// both the commitment and nullifier derivations.
+witness local_secret(): Bytes<32>;
+
+// Returns randomness for the commitment. Each token MUST use unique randomness
+// to prevent two tokens with the same secret from producing identical
+// commitments (which would leak information).
+witness local_randomness(): Bytes<32>;
+
+// Returns a Merkle proof for a given commitment value. The off-chain
+// implementation looks up the commitment in the tree and constructs the
+// authentication path from leaf to root.
+witness get_commitment_path(commitment: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+// ============================================================================
+// DOMAIN-SEPARATED HASHING
+// ============================================================================
+//
+// CRITICAL: Commitments and nullifiers MUST use different domain separators.
+// If they shared the same domain, an observer could compute commitments from
+// nullifiers (or vice versa) and link them, breaking privacy.
+//
+// Domain separation uses pad(32, "...") to create a fixed 32-byte prefix
+// that is included in the hash input. This ensures the hash function
+// operates in a separate "domain" for each purpose.
+
+// Derive a commitment from a secret and randomness.
+// Uses persistentCommit (not persistentHash) because:
+//   1. persistentCommit includes a blinding factor (randomness) that hides
+//      the secret even if the space of possible secrets is small
+//   2. persistentCommit clears witness taint on the result, so the output
+//      can be inserted into the Merkle tree without additional disclosure
+// The domain prefix "nds:commitment:" binds this to commitment derivation.
+circuit derive_commitment(secret: Bytes<32>, randomness: Bytes<32>): Bytes<32> {
+  return persistentCommit<Vector<2, Bytes<32>>>(
+    [pad(32, "nds:commitment:"), secret],
+    randomness
+  );
+}
+
+// Derive a nullifier from a secret.
+// Uses persistentHash (not persistentCommit) because:
+//   1. Nullifiers do NOT need to hide the secret -- they are derived values
+//      that will be published on-chain
+//   2. Nullifiers must be deterministic for a given secret so the same
+//      token always produces the same nullifier (no randomness)
+//   3. persistentHash is stable across compiler upgrades, important for
+//      long-lived on-chain state
+// The domain prefix "nds:nullifier::" is deliberately different from the
+// commitment domain, preventing cross-domain correlation.
+circuit derive_nullifier(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "nds:nullifier::"),
+    secret
+  ]);
+}
+
+// ============================================================================
+// CIRCUITS
+// ============================================================================
+
+// Issue a new single-use token.
+//
+// The issuer provides a secret and randomness via witnesses. The circuit:
+//   1. Derives a commitment from the secret and randomness
+//   2. Inserts the commitment into the Merkle tree
+//
+// Privacy: The commitment value is hidden on-chain because MerkleTree.insert()
+// does not reveal its argument. An observer sees only that a new leaf was
+// added to the tree, not what the leaf contains.
+//
+// The secret and randomness must be stored off-chain by the token holder.
+// They will need both to spend the token later (the secret to derive the
+// nullifier and the randomness to re-derive the commitment for the Merkle
+// proof).
+export circuit issue(): [] {
+  const secret = local_secret();
+  const randomness = local_randomness();
+
+  // Derive the commitment -- persistentCommit clears witness taint on the
+  // result, so no disclose() is needed for the insert below.
+  const commitment = derive_commitment(secret, randomness);
+
+  // Insert into the Merkle tree. The leaf value (commitment) is hidden
+  // on-chain -- this is the key privacy property of MerkleTree.insert().
+  commitments.insert(commitment);
+}
+
+// Spend (consume) a previously issued token.
+//
+// The spender proves they know the secret behind a commitment in the tree,
+// without revealing which commitment they are spending. The circuit:
+//   1. Gets the secret and randomness from witness
+//   2. Re-derives the commitment (to find it in the tree)
+//   3. Gets a Merkle path proving the commitment exists in the tree
+//   4. Verifies the Merkle path against the tree's historic roots
+//   5. Derives the nullifier from the secret
+//   6. Checks the nullifier has not been used before (prevents double-spend)
+//   7. Inserts the nullifier into the spent set
+//
+// Privacy: The observer sees:
+//   - A Merkle root check was performed (but not which leaf)
+//   - A new nullifier was inserted (but cannot link it to any commitment)
+//   - The spend transaction succeeded
+// The observer does NOT see:
+//   - Which commitment was spent
+//   - The secret behind the token
+//   - Any link between this nullifier and its corresponding commitment
+export circuit spend(): [] {
+  // Step 1: Get the user's secret and randomness from the off-chain witness.
+  // These values are private and never leave the ZK proof.
+  const secret = local_secret();
+  const randomness = local_randomness();
+
+  // Step 2: Re-derive the commitment from the secret and randomness.
+  // This must match the commitment that was inserted during issue().
+  const commitment = derive_commitment(secret, randomness);
+
+  // Step 3: Get the Merkle proof from the off-chain witness.
+  // The witness implementation looks up the commitment's position in the
+  // tree and constructs the authentication path (sibling hashes from
+  // leaf to root).
+  const path = get_commitment_path(commitment);
+
+  // Step 4: Verify the Merkle path against the tree.
+  // merkleTreePathRoot recomputes the root from the leaf and path.
+  // checkRoot verifies against any historic root (HistoricMerkleTree
+  // remembers all past roots, so proofs remain valid even after new
+  // tokens are issued).
+  //
+  // disclose() is required on the merkleTreePathRoot result because
+  // checkRoot is a ledger operation whose argument (the digest) becomes
+  // visible on-chain. However, the digest alone does not reveal which
+  // leaf was used -- it only proves that SOME valid leaf was verified.
+  assert(
+    commitments.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
+    "Commitment not found in tree"
+  );
+
+  // Step 5: Derive the nullifier from the secret.
+  // The nullifier uses a DIFFERENT domain separator ("nds:nullifier::")
+  // than the commitment ("nds:commitment:"), so an observer cannot
+  // correlate nullifiers with commitments.
+  const nul = derive_nullifier(secret);
+
+  // Step 6: Check the nullifier has not been used before.
+  // disclose() is required because:
+  //   - nullifiers.member() is a ledger operation (Set membership check)
+  //   - The nullifier value and result are visible on-chain
+  //   - The assert condition is a disclosure point
+  // This is intentional: nullifiers MUST be public so the network can
+  // enforce the double-spend check.
+  assert(disclose(!nullifiers.member(disclose(nul))), "Token already spent");
+
+  // Step 7: Record the nullifier as spent.
+  // disclose() is required because Set.insert() is a ledger operation
+  // that reveals its argument on-chain. This is by design -- the nullifier
+  // being public is what prevents double-spending.
+  nullifiers.insert(disclose(nul));
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// What an on-chain observer can see:
+//   - Number of tokens issued (tree size increases)
+//   - Number of tokens spent (nullifier set size increases)
+//   - Individual nullifier values (but cannot link to commitments)
+//   - That Merkle root checks passed (but not which leaf was proven)
+//   - Timing of issue and spend transactions
+//
+// What an on-chain observer CANNOT see:
+//   - Token secrets
+//   - Which commitment corresponds to which nullifier
+//   - Which commitment was spent in a given transaction
+//   - The randomness used in any commitment
+//
+// Correlation attack mitigations:
+//   - Domain separation ("nds:commitment:" vs "nds:nullifier::") prevents
+//     computing one from the other
+//   - persistentCommit uses randomness, so even identical secrets produce
+//     different commitments (preventing duplicate-secret detection)
+//   - HistoricMerkleTree allows spending at any time after issuance,
+//     reducing timing correlation (spend need not follow issue immediately)
+//
+// Remaining risks:
+//   - If only one token exists, any spend is trivially linkable to that
+//     token. Privacy improves with a larger anonymity set (more tokens).
+//   - An attacker who knows the set of possible secrets can brute-force
+//     the commitment by trying all possibilities. Use high-entropy secrets.
+//   - Timing patterns (e.g., immediate issue-then-spend) can leak info.
+//     Recommend batching or adding delay between issue and spend.

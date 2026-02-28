@@ -1,0 +1,451 @@
+// ============================================================================
+// SELECTIVE DISCLOSURE
+// ============================================================================
+//
+// This contract demonstrates selective disclosure — the most practical privacy
+// pattern for real-world applications like KYC, credit checks, age
+// verification, and balance threshold proofs.
+//
+// The core idea: prove a PROPERTY about private data without revealing the
+// underlying value. An on-chain observer learns that a condition is met (e.g.,
+// "credit score >= 700") but never learns the actual value (e.g., "742").
+//
+// How it works:
+//   1. A credential issuer commits a value on-chain using persistentCommit<T>.
+//      The commitment hides the real value behind a random salt.
+//   2. The credential holder can later prove properties about that value
+//      WITHOUT revealing it:
+//        - "My value is >= some threshold" (threshold check)
+//        - "My value is within [min, max]" (range proof)
+//        - "Specific fields of my credential match criteria" (selective fields)
+//   3. The circuit fetches the real value and salt from a witness (private),
+//      recomputes the commitment, verifies it matches the on-chain commitment,
+//      and then discloses ONLY the boolean result of the property check.
+//
+// What is PRIVATE (never leaves the prover):
+//   - The actual credential value (e.g., credit score as Uint<64>)
+//   - The random salt used in the commitment
+//   - The issuer's secret key
+//   - Individual struct fields that are not selectively disclosed
+//
+// What is PUBLIC (visible on-chain):
+//   - The commitment hash (Bytes<32>) — hides the value via random salt
+//   - The issuer's derived public key (Bytes<32>)
+//   - The threshold / range parameters (Uint<64>) passed to verification circuits
+//   - The boolean RESULT of each property check (true/false)
+//   - Which verification circuit was called (circuit identity is public)
+//
+// Why persistentCommit<T> instead of persistentHash<T>:
+//   persistentHash is deterministic — an observer who knows the possible range
+//   of values (e.g., credit scores 300-850) could hash every candidate and
+//   compare against the on-chain hash to discover the real value.
+//   persistentCommit adds a random salt that makes this attack infeasible:
+//   without knowing the salt, brute-force verification is impossible.
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// The commitment to the credential value. Computed as:
+//   persistentCommit<Vector<2, Bytes<32>>>([value_as_bytes, domain], salt)
+// The commitment is public on-chain but the value is hidden by the salt.
+export ledger credentialCommitment: Bytes<32>;
+
+// Whether a credential has been issued (prevents re-issuance).
+export ledger credentialIssued: Boolean;
+
+// The issuer's public key, derived from their secret key.
+// sealed means it is set once in the constructor and cannot change.
+// Only the issuer (who knows the secret key) can issue credentials.
+export sealed ledger issuerPk: Bytes<32>;
+
+// The commitment for a multi-field credential (struct-like).
+// Uses a separate commitment so threshold and struct proofs can coexist.
+export ledger structCredentialCommitment: Bytes<32>;
+
+// Whether a struct credential has been issued.
+export ledger structCredentialIssued: Boolean;
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+// Witnesses run off-chain on the prover's machine. They provide private data
+// to circuits. Implementation is in TypeScript, not Compact.
+
+// Returns the issuer's secret key. Used for authentication.
+// This NEVER appears on-chain.
+witness local_secret_key(): Bytes<32>;
+
+// Returns the credential holder's actual numeric value (e.g., their credit
+// score as a Uint<64>). This is the secret that we prove properties about
+// without revealing. Uint<64> is used (rather than Bytes<32>) because
+// threshold and range checks require relational operators (>=, <=), which
+// are only available on numeric types in Compact.
+witness get_credential_value(): Uint<64>;
+
+// Returns the random salt used when the credential was committed.
+// Must be the SAME salt used during issuance, otherwise the recomputed
+// commitment will not match.
+witness get_credential_salt(): Bytes<32>;
+
+// Returns the individual fields of a multi-field credential.
+// Field 1: e.g., age (encoded as Bytes<32>)
+// Field 2: e.g., income bracket (encoded as Bytes<32>)
+// Field 3: e.g., country code (encoded as Bytes<32>)
+witness get_struct_field_1(): Bytes<32>;
+witness get_struct_field_2(): Bytes<32>;
+witness get_struct_field_3(): Bytes<32>;
+
+// Returns the salt for the struct credential commitment.
+witness get_struct_credential_salt(): Bytes<32>;
+
+// ============================================================================
+// HELPER CIRCUITS
+// ============================================================================
+
+// Derive a public key from a secret key using persistentHash with a
+// domain separator. public_key() does NOT exist in the standard library.
+circuit get_public_key(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "seldiscl:pk:"),
+    sk
+  ]);
+}
+
+// Recompute the credential commitment from a numeric value and salt.
+// The Uint<64> value is cast to Bytes<32> (via Field) before hashing,
+// so the commitment is computed over the same byte representation
+// regardless of whether issuance or verification calls this circuit.
+circuit recomputeCommitment(credentialValue: Uint<64>, salt: Bytes<32>): Bytes<32> {
+  // Two-step cast: Uint<64> -> Field -> Bytes<32>.
+  // Direct Uint-to-Bytes cast is not allowed in Compact.
+  const valueBytes = (credentialValue as Field) as Bytes<32>;
+  return persistentCommit<Vector<2, Bytes<32>>>(
+    [valueBytes, pad(32, "seldiscl:cred:")],
+    salt
+  );
+}
+
+// Recompute the struct credential commitment from three fields and a salt.
+// All three fields are hashed together with a domain separator, then committed.
+circuit recomputeStructCommitment(
+  field1: Bytes<32>,
+  field2: Bytes<32>,
+  field3: Bytes<32>,
+  salt: Bytes<32>
+): Bytes<32> {
+  return persistentCommit<Vector<4, Bytes<32>>>(
+    [field1, field2, field3, pad(32, "seldiscl:struct:")],
+    salt
+  );
+}
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+
+constructor() {
+  // Derive and store the issuer's public key. disclose() is required because
+  // the value is derived from a witness (local_secret_key) and is being
+  // written to a sealed ledger field. This intentionally reveals the
+  // issuer's identity for access control.
+  issuerPk = disclose(get_public_key(local_secret_key()));
+
+  // Initialize credential flags.
+  credentialIssued = false;
+  structCredentialIssued = false;
+}
+
+// ============================================================================
+// CREDENTIAL ISSUANCE
+// ============================================================================
+
+// issueCredential() stores a commitment to a credential value on-chain.
+//
+// Only the issuer (deployer) can call this. The actual value is never stored
+// on-chain — only the commitment. The holder can later prove properties
+// about their value using verifyThreshold and verifyRange.
+//
+// The value parameter is the credential value as a Uint<64>.
+// The salt is retrieved from the witness for commitment hiding.
+export circuit issueCredential(value: Uint<64>): [] {
+  // --- Authentication: only the issuer can issue ---
+  const sk = local_secret_key();
+  const callerPk = get_public_key(sk);
+  // disclose() required: comparison involves witness data, used in assert.
+  assert(disclose(callerPk == issuerPk), "Only issuer can issue credentials");
+
+  // --- Guard: only one credential per contract ---
+  assert(!credentialIssued, "Credential already issued");
+
+  // --- Compute commitment ---
+  const salt = get_credential_salt();
+  const comm = recomputeCommitment(value, salt);
+
+  // disclose() required: commitment is derived from witness data
+  // (value from circuit param, salt from witness). persistentCommit
+  // provides the hiding property — the commitment is safe to publish.
+  credentialCommitment = disclose(comm);
+  credentialIssued = true;
+}
+
+// issueStructCredential() commits a multi-field credential on-chain.
+//
+// This demonstrates committing structured data (e.g., a KYC record with
+// age, income, and country) as a single commitment. Later, individual
+// fields can be selectively disclosed without revealing the others.
+export circuit issueStructCredential(
+  field1: Bytes<32>,
+  field2: Bytes<32>,
+  field3: Bytes<32>
+): [] {
+  // --- Authentication ---
+  const sk = local_secret_key();
+  const callerPk = get_public_key(sk);
+  assert(disclose(callerPk == issuerPk), "Only issuer can issue credentials");
+
+  // --- Guard ---
+  assert(!structCredentialIssued, "Struct credential already issued");
+
+  // --- Compute commitment over all fields ---
+  const salt = get_struct_credential_salt();
+  const comm = recomputeStructCommitment(field1, field2, field3, salt);
+
+  // disclose() required: derived from witness data (fields + salt).
+  structCredentialCommitment = disclose(comm);
+  structCredentialIssued = true;
+}
+
+// ============================================================================
+// SELECTIVE DISCLOSURE: THRESHOLD CHECK
+// ============================================================================
+
+// verifyThreshold() proves that the committed credential value is >= a
+// given threshold WITHOUT revealing the actual value.
+//
+// How it works:
+//   1. The holder's witness provides the real value and salt (private)
+//   2. The circuit recomputes the commitment and verifies it matches on-chain
+//   3. The circuit compares the value against the threshold
+//   4. Only the boolean result (true/false) is disclosed — not the value
+//
+// Example: A lender wants to verify that a borrower's credit score is >= 700.
+//   - The borrower calls verifyThreshold(700) with the numeric threshold
+//   - The circuit proves the committed score >= 700 and returns true/false
+//   - The lender sees "yes, score meets threshold" but NOT the actual score
+//
+// Privacy: The threshold parameter IS public (the observer sees what was
+// asked). The value is NEVER revealed. The observer learns only:
+//   "value >= threshold" => true or false
+export circuit verifyThreshold(threshold: Uint<64>): Boolean {
+  // --- Verify credential exists ---
+  assert(credentialIssued, "No credential issued");
+
+  // --- Retrieve private data from witness ---
+  const realValue = get_credential_value();
+  const salt = get_credential_salt();
+
+  // --- Recompute commitment and verify it matches ---
+  // This proves the value we are checking is the SAME value that was
+  // committed on-chain. Without this step, a holder could claim any value.
+  const recomputed = recomputeCommitment(realValue, salt);
+  // disclose() required: recomputed derives from witness data (realValue,
+  // salt). The comparison result is used in an assert condition.
+  assert(disclose(recomputed == credentialCommitment), "Credential mismatch");
+
+  // --- Perform the threshold comparison ---
+  // The comparison realValue >= threshold happens INSIDE the ZK proof.
+  // Only the boolean result is disclosed, not realValue.
+  const meetsThreshold = realValue >= threshold;
+
+  // disclose() required: meetsThreshold is derived from witness data
+  // (realValue from witness) and is returned from an exported circuit.
+  // This is the SELECTIVE part: we disclose only the boolean result.
+  // The observer learns "value meets threshold" but NOT the actual value.
+  return disclose(meetsThreshold);
+}
+
+// ============================================================================
+// SELECTIVE DISCLOSURE: RANGE PROOF
+// ============================================================================
+
+// verifyRange() proves that the committed credential value falls within
+// [min, max] WITHOUT revealing the actual value.
+//
+// This is more informative than a threshold check because it bounds
+// the value from both sides. Useful for:
+//   - Age verification: prove age is in [18, 65] for employment eligibility
+//   - Credit tiers: prove score is in [700, 800] for a specific loan product
+//   - Income brackets: prove income is in a qualifying range
+//
+// Privacy: Both min and max are public (the observer sees the range).
+// The actual value is NEVER revealed. The observer learns only:
+//   "min <= value <= max" => true or false
+export circuit verifyRange(minValue: Uint<64>, maxValue: Uint<64>): Boolean {
+  // --- Verify credential exists ---
+  assert(credentialIssued, "No credential issued");
+
+  // --- Retrieve private data ---
+  const realValue = get_credential_value();
+  const salt = get_credential_salt();
+
+  // --- Verify commitment matches ---
+  const recomputed = recomputeCommitment(realValue, salt);
+  // disclose() required: comparison involves witness-derived data.
+  assert(disclose(recomputed == credentialCommitment), "Credential mismatch");
+
+  // --- Perform range check ---
+  // Both comparisons happen inside the ZK proof. Only the combined
+  // boolean result is disclosed.
+  const inRange = realValue >= minValue && realValue <= maxValue;
+
+  // disclose() required: inRange derives from witness data (realValue).
+  // This reveals only whether the value falls in [min, max].
+  return disclose(inRange);
+}
+
+// ============================================================================
+// SELECTIVE DISCLOSURE: STRUCT FIELD DISCLOSURE
+// ============================================================================
+
+// verifyProperty() demonstrates selective field disclosure from a
+// multi-field credential. The holder proves a property about ONE field
+// while keeping all other fields completely private.
+//
+// Scenario: A KYC credential has three fields:
+//   field1 = age (e.g., 25 encoded as Bytes<32>)
+//   field2 = income bracket (e.g., "high" encoded as Bytes<32>)
+//   field3 = country code (e.g., "US" encoded as Bytes<32>)
+//
+// The holder wants to prove their country code matches a required value
+// WITHOUT revealing their age or income bracket.
+//
+// How it works:
+//   1. The witness provides ALL three fields and the salt (all private)
+//   2. The circuit recomputes the full struct commitment and verifies match
+//   3. Only the specific field comparison result is disclosed
+//
+// Privacy: The requiredField3Value parameter is public (the expected value).
+// Only the boolean result of field3 == requiredField3Value is disclosed.
+// field1 and field2 are NEVER revealed in any form.
+export circuit verifyProperty(requiredField3Value: Bytes<32>): Boolean {
+  // --- Verify credential exists ---
+  assert(structCredentialIssued, "No struct credential issued");
+
+  // --- Retrieve ALL fields from witness (all private) ---
+  const field1 = get_struct_field_1();
+  const field2 = get_struct_field_2();
+  const field3 = get_struct_field_3();
+  const salt = get_struct_credential_salt();
+
+  // --- Recompute the full struct commitment and verify ---
+  // ALL fields are needed to recompute the commitment, which proves
+  // the holder knows the complete credential. But only field3 will
+  // be compared against the required value.
+  const recomputed = recomputeStructCommitment(field1, field2, field3, salt);
+  // disclose() required: derived from witness data, used in assert.
+  assert(disclose(recomputed == structCredentialCommitment), "Credential mismatch");
+
+  // --- Check ONLY field3 against the required value ---
+  // field1 and field2 are used only for commitment verification above.
+  // They are never compared, disclosed, or written to ledger.
+  const fieldMatches = field3 == requiredField3Value;
+
+  // disclose() required: fieldMatches derives from witness data (field3)
+  // and is returned from an exported circuit. Only this boolean is
+  // revealed — field1 and field2 remain completely private.
+  return disclose(fieldMatches);
+}
+
+// ============================================================================
+// READ-ONLY CIRCUITS
+// ============================================================================
+
+// Returns the credential commitment hash. Useful for off-chain verification
+// that a credential exists before attempting verification.
+export circuit getCredentialCommitment(): Bytes<32> {
+  return credentialCommitment;
+}
+
+// Returns whether a credential has been issued.
+export circuit isCredentialIssued(): Boolean {
+  return credentialIssued;
+}
+
+// Returns the struct credential commitment hash.
+export circuit getStructCredentialCommitment(): Bytes<32> {
+  return structCredentialCommitment;
+}
+
+// Returns whether a struct credential has been issued.
+export circuit isStructCredentialIssued(): Boolean {
+  return structCredentialIssued;
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// Selective disclosure is the most practical privacy pattern because it
+// mirrors real-world verification: a bouncer checks "are you 21+" without
+// learning your exact birthday; a lender checks "score >= 700" without
+// seeing the score.
+//
+// Data Flow:
+//   issuance:     value (private) + salt (private) --> commitment (public)
+//   verification: value (witness) + salt (witness) --> recompute commitment
+//                 --> verify match --> compare property --> boolean (public)
+//
+// What the ZK proof guarantees:
+//   1. The prover knows a value and salt that produce the on-chain commitment
+//   2. The commitment was computed correctly using persistentCommit
+//   3. The property check (>=, range, equality) was performed honestly
+//   4. The disclosed boolean accurately reflects the comparison result
+//
+// What is NEVER revealed:
+//   - The actual credential value (credit score, age, balance)
+//   - The random salt used in the commitment
+//   - The issuer's secret key
+//   - Non-disclosed struct fields (field1, field2 in verifyProperty)
+//
+// What IS revealed:
+//   - The credential commitment hash (on issuance)
+//   - The issuer's public key (in constructor)
+//   - The threshold / range / required values (circuit parameters are public)
+//   - The boolean result of each property check
+//   - Which verification circuit was called
+//   - That a verification occurred (transaction metadata)
+//
+// Threat model:
+//   - An observer who sees the commitment CANNOT determine the value
+//     because persistentCommit uses random salt (hiding property)
+//   - An observer who sees "verifyThreshold(700) => true" knows only
+//     that the value is >= 700, not the exact value. They could narrow
+//     the range by observing multiple threshold checks with different
+//     values — this is a privacy consideration for the holder.
+//   - A malicious holder CANNOT claim a different value because the
+//     commitment binds them to the original value (binding property)
+//   - A third party CANNOT forge a verification because they do not
+//     know the value or salt needed to match the commitment
+//   - Repeated verifications with different thresholds can leak
+//     information: if verify(700)=true and verify(750)=false, the
+//     observer knows the value is in [700, 749]. Holders should be
+//     aware of this narrowing effect.
+//
+// disclose() summary:
+//   - issueCredential():     disclose(callerPk == issuerPk) — auth check
+//                            disclose(comm) — write commitment to ledger
+//   - verifyThreshold():     disclose(recomputed == ...) — verify match
+//                            disclose(meetsThreshold) — boolean result only
+//   - verifyRange():         disclose(recomputed == ...) — verify match
+//                            disclose(inRange) — boolean result only
+//   - verifyProperty():      disclose(recomputed == ...) — verify match
+//                            disclose(fieldMatches) — boolean result only
+//
+// ============================================================================

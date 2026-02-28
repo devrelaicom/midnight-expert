@@ -1,0 +1,216 @@
+// UnlinkableAuth.compact
+// Pattern: Round-based key rotation for transaction unlinkability
+//
+// This contract demonstrates how to break the link between successive
+// transactions from the same user. The key insight from Midnight's lock
+// contract is that by deriving the on-chain authority hash using a round
+// counter, each transaction presents a different observable key hash.
+// An on-chain observer cannot correlate two transactions as coming from
+// the same party.
+//
+// How it works:
+//   1. The owner has a secret key (sk) known only to them
+//   2. The on-chain "authority" is persistentHash([domain, round_bytes, sk])
+//   3. To authenticate, the owner proves they know sk such that
+//      hash(domain, current_round, sk) == stored authority
+//   4. After authenticating, the round increments and a NEW authority
+//      is computed for the next round: hash(domain, new_round, sk)
+//   5. Because the round changes, the new authority hash is completely
+//      different — unlinkable to the previous one
+//
+// Threat model:
+//   - An on-chain observer sees authority change each transaction
+//   - They cannot determine if two different authority values belong
+//     to the same secret key holder
+//   - The secret key (sk) never leaves the witness/prover environment
+//   - The domain separator prevents cross-contract key reuse attacks
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// The current round's authority hash. Changes every transaction.
+// This is the public "identity" for this round — it cannot be linked
+// to the authority hash from any other round without knowing sk.
+export ledger authority: Bytes<32>;
+
+// Monotonically increasing round counter. Each authenticated action
+// advances the round by 1, causing the authority hash to rotate.
+export ledger round: Counter;
+
+// A general-purpose value that only the authenticated owner can set.
+// Demonstrates how to combine auth + round rotation with a useful action.
+export ledger value: Field;
+
+// Immutable contract metadata set at deployment time.
+// sealed means these can only be written in the constructor.
+export sealed ledger contractName: Bytes<32>;
+
+// ============================================================================
+// WITNESS FUNCTIONS
+// ============================================================================
+// Witnesses are implemented off-chain in TypeScript. They provide
+// private inputs to circuits without revealing them on-chain.
+
+// Returns the owner's secret key. This NEVER appears on-chain —
+// it stays entirely within the ZK proof.
+witness local_secret_key(): Bytes<32>;
+
+// ============================================================================
+// KEY DERIVATION
+// ============================================================================
+
+// Derives a round-specific public key hash from a secret key.
+// The domain separator ("unlinkauth:pk:") prevents collisions with
+// other contracts that might use the same sk for different purposes.
+//
+// The round number is incorporated so that the same sk produces a
+// completely different hash for each round. This is what makes
+// successive transactions unlinkable.
+//
+// NOTE: public_key() is NOT a built-in function in Compact.
+// We derive keys using persistentHash, which is the standard pattern.
+circuit deriveAuthority(roundValue: Field, sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "unlinkauth:pk:"),
+    roundValue as Bytes<32>,
+    sk
+  ]);
+}
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+
+// Sets the initial authority for round 0 and the contract metadata.
+// The deployer's secret key is used to derive the first authority hash.
+// After deployment, only the holder of that secret key can authenticate.
+constructor() {
+  // Derive the authority hash for round 0 (Counter starts at 0)
+  // Counter.read() returns Uint<64>; we cast through Field to Bytes<32>
+  // for the hash input.
+  const sk = local_secret_key();
+  const initialRound = round.read() as Field;
+  authority = disclose(deriveAuthority(initialRound, sk));
+
+  // Set immutable contract metadata
+  contractName = disclose(pad(32, "UnlinkableAuth"));
+}
+
+// ============================================================================
+// AUTHENTICATION CIRCUIT
+// ============================================================================
+
+// Authenticates the caller and rotates the authority to the next round.
+//
+// Steps:
+//   1. Get the secret key from the witness (private, never on-chain)
+//   2. Derive what the authority SHOULD be for the current round
+//   3. Assert it matches the stored authority (proves ownership)
+//   4. Increment the round counter
+//   5. Compute and store the NEW authority for the next round
+//
+// After this circuit executes, the on-chain authority is completely
+// different from what it was before — breaking linkability.
+export circuit authenticate(): [] {
+  // Step 1: Get secret key from witness (stays private in ZK proof)
+  const sk = local_secret_key();
+
+  // Step 2: Derive the expected authority for the current round
+  const currentRound = round.read() as Field;
+  const expectedAuthority = deriveAuthority(currentRound, sk);
+
+  // Step 3: Assert the derived authority matches the stored authority
+  // disclose() is required because this comparison involves witness
+  // data (sk flows into expectedAuthority) and is used in an assert.
+  assert(disclose(expectedAuthority == authority), "Not authorized");
+
+  // Step 4: Increment the round counter
+  round.increment(1);
+
+  // Step 5: Compute and store the new authority for the next round
+  // The new round number gives a completely different hash, even
+  // though the same sk is used. This is the unlinkability mechanism.
+  const newRound = round.read() as Field;
+  const newAuthority = deriveAuthority(newRound, sk);
+
+  // disclose() is required because newAuthority derives from witness
+  // data (sk) and is being written to the ledger.
+  authority = disclose(newAuthority);
+}
+
+// ============================================================================
+// AUTHENTICATED ACTION: setValue
+// ============================================================================
+
+// Demonstrates a useful action that requires authentication and
+// rotates the round in a single transaction. This is the typical
+// usage pattern: authenticate + perform action + rotate.
+//
+// The caller proves they know the secret key, sets the value,
+// and the authority rotates — all atomically.
+export circuit setValue(newValue: Field): [] {
+  // --- Authentication ---
+  const sk = local_secret_key();
+  const currentRound = round.read() as Field;
+  const expectedAuthority = deriveAuthority(currentRound, sk);
+  assert(disclose(expectedAuthority == authority), "Not authorized");
+
+  // --- Perform the action ---
+  // disclose() is required because newValue is a circuit parameter
+  // (treated as witness data) being written to the ledger.
+  value = disclose(newValue);
+
+  // --- Rotate the authority ---
+  round.increment(1);
+  const newRound = round.read() as Field;
+  authority = disclose(deriveAuthority(newRound, sk));
+}
+
+// ============================================================================
+// READ-ONLY CIRCUIT
+// ============================================================================
+
+// Returns the current round number. No authentication required.
+// This is useful for off-chain code to know which round the contract
+// is on (e.g., to pre-compute the expected authority for the next tx).
+export circuit currentRound(): Uint<64> {
+  return round.read();
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// What is private (never visible on-chain):
+//   - The secret key (sk) — stays entirely within the ZK proof
+//   - The relationship between authority values across rounds
+//   - Which round's authority was set by which real-world identity
+//
+// What is public (visible on-chain):
+//   - The authority hash (changes every round)
+//   - The round counter value
+//   - The stored value
+//   - The contractName (sealed but readable)
+//   - The fact that an authentication occurred (tx metadata)
+//
+// Unlinkability guarantee:
+//   Given authority_i = persistentHash([domain, round_i, sk]) and
+//   authority_j = persistentHash([domain, round_j, sk]) where i != j,
+//   an observer cannot determine that both hashes derive from the
+//   same sk without breaking the preimage resistance of persistentHash.
+//
+// Limitations:
+//   - Timing correlation: if the same user always transacts at the
+//     same time of day, that pattern could be used for correlation
+//   - Value correlation: if setValue is called with distinctive values,
+//     the values themselves could be used to link transactions
+//   - Single owner: this pattern supports exactly one authorized party.
+//     For multi-party unlinkability, combine with MerkleTree membership.
+//   - Round counter is public: an observer knows how many actions have
+//     been performed, even though they can't link them to an identity
+// ============================================================================
