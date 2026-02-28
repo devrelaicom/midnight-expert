@@ -42,7 +42,7 @@ Operations in the guaranteed phase either all succeed or the transaction is not 
 | Fee collection | Fees for the ENTIRE transaction (both phases) collected here |
 | Zswap offer application | Coin commitments inserted into Merkle tree, nullifiers added to nullifier set, Merkle roots validated |
 | Guaranteed transcripts | Impact programs from guaranteed section of each contract call |
-| Fallible Zswap pre-check | Fallible Zswap section also applied during guaranteed phase to prevent it from invalidating the fallible section alone |
+| Fallible Zswap pre-application | The fallible Zswap offer is also applied during the guaranteed phase; this prevents an attacker from merging in an invalid spend that would invalidate only the fallible section |
 
 ### Fallible Phase
 
@@ -66,19 +66,27 @@ Operations in the fallible phase may fail without reversing guaranteed-phase eff
 `kernel.checkpoint()` splits a circuit into guaranteed and fallible sections. Everything before the call executes in the guaranteed phase; everything after executes in the fallible phase. It maps to the `ckpt` opcode in the Impact VM.
 
 ```compact
+// Assumes ledger declarations:
+//   export ledger balance: Map<Bytes<32>, Uint<64>>;
+//   export ledger transferCount: Counter;
+//   ledger kernel: Kernel;
+//   witness localSecretKey(): Bytes<32>;
+
 export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
   // --- GUARANTEED PHASE ---
   // These operations are atomic: all succeed or the transaction is rejected
-  const current = balance.lookup(disclose(own_address));
+  const sk = localSecretKey();
+  const sender = persistentHash<Bytes<32>>(sk);
+  const current = balance.lookup(disclose(sender));
   assert(disclose(current >= amount), "Insufficient balance");
-  counter.increment(1);
+  transferCount.increment(1);
 
   kernel.checkpoint();
 
   // --- FALLIBLE PHASE ---
   // These operations may fail without reversing the guaranteed phase
-  balance.insert(disclose(own_address), disclose(current - amount));
-  balance.insert(disclose(to), disclose(balance.lookup(disclose(to)) + amount));
+  balance.insert(disclose(sender), disclose((current - amount) as Uint<64>));
+  balance.insert(disclose(to), disclose((balance.lookup(disclose(to)) + amount) as Uint<64>));
 }
 ```
 
@@ -90,7 +98,7 @@ export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
 | Determines phase boundary | Code before checkpoint = guaranteed; code after = fallible |
 | No checkpoint = guaranteed-only | Without `kernel.checkpoint()`, the entire circuit body is guaranteed |
 | Maps to `ckpt` opcode | Compiles to a single Impact VM instruction that marks the phase boundary |
-| No jumps across boundary | The `ckpt` boundary must not be crossed by jump instructions in the compiled Impact program |
+| Phase separation | The guaranteed and fallible sections are compiled as distinct segments in the Impact program |
 
 ### When to Use checkpoint
 
@@ -143,15 +151,15 @@ Each contract on Midnight maintains state as two components:
 ### State Lifecycle During Execution
 
 1. The contract's current state is loaded from the ledger before each call.
-2. A context object (contract address, newly allocated coins, block time, block hash) and an empty effects set are placed on the Impact VM stack alongside the state.
-3. The Impact program executes, mutating the state on the stack.
-4. If the resulting state is "strong" (not tainted by weak/transient data), it is stored as the contract's updated state. If the state is "weak" (tainted by context or effects data), the transaction fails.
-5. The resulting effects are compared to the declared effects in the transcript; mismatches cause failure.
+2. A context object (contract address, newly allocated coins, block time, block hash) and an empty effects set are placed on the Impact VM stack alongside the state. Both context and effects are flagged as **tainted**.
+3. The Impact program executes, mutating the state on the stack. Any non-size-bounded operation on a tainted value propagates the taint to the result.
+4. The resulting effects are compared to the declared effects in the transcript; mismatches cause failure.
+5. The resulting state is stored only if it is "strong" (not tainted). If the state has been tainted — for example, by copying context or effects data into it — the call fails.
 
 ### Concurrency and Conflicts
 
-- Multiple transactions in the same block that touch the same contract are ordered sequentially.
-- A transaction that reads or writes state a concurrent transaction also modifies may conflict.
+- Within a block, transactions are applied sequentially. If two transactions write to the same contract state, the second executes against the state left by the first.
+- A transaction that reads or writes state another transaction also modifies may conflict if the second transaction's proof was generated against the pre-first-transaction state.
 - Practical advice: use append-only data structures (Merkle trees, counters, sets with insert-only patterns) to minimize conflict windows. Avoid read-modify-write patterns on shared mutable state when possible.
 
 ## Fees & Gas
@@ -185,8 +193,8 @@ The proof for each contract call is generated client-side when the user invokes 
 
 ## Common Mistakes
 
-| Mistake | Correct Approach | Why |
-|---------|-----------------|-----|
+| Wrong | Correct | Why |
+|-------|---------|-----|
 | Putting critical state changes after `kernel.checkpoint()` | Move essential state changes before checkpoint | Post-checkpoint operations are fallible and may not execute |
 | Assuming all transaction effects are atomic | Understand guaranteed vs fallible split | Guaranteed effects persist even when the fallible section fails |
 | Treating contract deployments as guaranteed | Design for deployment being fallible | Deployments execute entirely in the fallible phase |
@@ -194,13 +202,13 @@ The proof for each contract call is generated client-side when the user invokes 
 | Expecting cross-contract calls to work | Use transaction composition (multiple calls in one transaction) instead | Cross-contract calls are not yet available |
 | Not handling partial success in the DApp | Check transaction status in TypeScript client code | A "partial success" means guaranteed worked but fallible failed |
 | Omitting `kernel.checkpoint()` when fallible operations are needed | Add `kernel.checkpoint()` before fallible section | Without it, the entire circuit is guaranteed-only and any failure rejects the whole transaction |
-| Copying context or effects into contract state | Keep context/effects data on-stack only | Context and effects are "weak" values; tainting the state with them causes the transaction to fail |
+| Copying context or effects into contract state | Keep context/effects data on-stack only | Context and effects are tainted; any non-size-bounded operation on them propagates taint, and tainted state cannot be stored |
 
 ## Reference Routing
 
 | Topic | Reference File |
 |-------|---------------|
-| Three execution stages, phase semantics, state lifecycle, weak vs strong values | `references/execution-phases.md` |
+| Three execution stages, phase semantics, state lifecycle, tainted vs strong values | `references/execution-phases.md` |
 | Contract state model, concurrency, conflict minimization, append-only patterns | `references/state-and-conflicts.md` |
 | DUST generation, SyntheticCost dimensions, gas-to-fee conversion, dynamic pricing | `references/fees-and-gas.md` |
 | Zswap offers, inputs/outputs, balance vectors, transaction merging, Pedersen binding | `references/zswap-and-offers.md` |
