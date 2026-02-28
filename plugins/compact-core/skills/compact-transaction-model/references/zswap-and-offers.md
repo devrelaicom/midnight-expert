@@ -47,7 +47,7 @@ A Zswap input spends an existing coin by referencing its original commitment in 
 |-----------|---------|
 | Nullifier | An unlinkable reference to the original commitment; prevents double-spending without revealing which coin is spent |
 | Pedersen commitment | A multi-base Pedersen commitment to the type/value vector of the coin being spent |
-| Contract address (optional) | Present if and only if the coin is targeted at a contract; identifies the owning contract |
+| Contract address (optional) | Present if and only if the coin being spent was originally created for a specific contract; identifies which contract owns the coin |
 | Merkle root | A root of a Merkle tree that contains the commitment corresponding to this nullifier |
 | ZK proof | A zero-knowledge proof that all of the above are correct with respect to each other |
 
@@ -67,7 +67,7 @@ A Zswap output creates a new coin and places a corresponding commitment in the g
 | Coin commitment | A hash-based commitment placed in the global Merkle tree; proves the coin exists without revealing its contents |
 | Pedersen commitment | A multi-base Pedersen commitment to the type/value vector of the newly created coin |
 | Contract address (optional) | Present if and only if the output is targeted at a contract |
-| Ciphertext (optional) | Encrypted coin information for the recipient, present when the output is directed toward a user who must be able to discover and spend it |
+| Ciphertext (optional) | Encrypted coin information for the recipient, present when the output is directed toward a user who must be able to discover and spend it. Not present for contract-targeted outputs since contracts do not decrypt ciphertexts -- they discover their coins through the contract address field |
 | ZK proof | A zero-knowledge proof that all of the above are correct with respect to each other |
 
 ### Output Validity
@@ -176,7 +176,7 @@ The integrity mechanism works through a chain of commitments:
 
 The contract call section of a transaction also contributes to the overall Pedersen commitment. However, this contribution is special: it is **restricted to carry no value vector**. A contract call section must not introduce hidden value that could unbalance the transaction.
 
-This restriction is enforced via a **Fiat-Shamir transformed Schnorr proof** -- a proof of knowledge of an exponent of the Pedersen generator. The proof demonstrates that the contract call section's commitment is purely a randomness commitment (of the form `g * r`) and carries no value component. This prevents an attacker from embedding hidden value in the contract call section to siphon funds from the Zswap offers.
+This restriction is enforced via a **Fiat-Shamir transformed Schnorr proof** -- a non-interactive proof of knowledge of the opening randomness of the Pedersen commitment. The proof demonstrates that the contract call section's commitment is purely a randomness-only commitment with no value component, preventing an attacker from embedding hidden value in the contract call section to siphon funds from the Zswap offers.
 
 ### Binding Guarantee
 
