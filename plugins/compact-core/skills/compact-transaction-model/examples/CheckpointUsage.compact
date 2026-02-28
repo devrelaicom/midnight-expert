@@ -1,0 +1,261 @@
+// ============================================================================
+// CHECKPOINT USAGE — GUARANTEED vs FALLIBLE TRANSACTION PHASES
+// ============================================================================
+//
+// This contract demonstrates the guaranteed/fallible execution model using
+// kernel.checkpoint(). Every Midnight transaction passes through three stages:
+//
+//   1. Well-formedness check (stateless — ZK proofs and balances verified)
+//   2. Guaranteed phase (stateful — all-or-nothing)
+//   3. Fallible phase (stateful — may fail without reversing guaranteed)
+//
+// kernel.checkpoint() splits a circuit into guaranteed and fallible sections.
+// Everything BEFORE the checkpoint executes in the guaranteed phase. Everything
+// AFTER executes in the fallible phase. Without a checkpoint, the entire
+// circuit body executes in the guaranteed phase only.
+//
+// GUARANTEED (before checkpoint) — persists or the entire TX is rejected:
+//   - Authentication (verify the caller's identity)
+//   - Fee accounting (fees for ALL phases are collected here)
+//   - Counter increments (monotonic progress that must not be lost)
+//   - Critical invariants and assertions
+//
+// FALLIBLE (after checkpoint) — may fail without reversing guaranteed effects:
+//   - State map inserts/updates (may conflict with concurrent TXs)
+//   - Complex state mutations that can be retried
+//   - Contract deployments
+//   If the fallible phase fails, the transaction is a "partial success":
+//   guaranteed effects persist, but fallible effects are rolled back.
+//
+// What goes ON-CHAIN (public ledger state):
+//   - owner (Bytes<32>) — the deployer's public key
+//   - taskCount (Counter) — total tasks submitted
+//   - completionCount (Counter) — total tasks completed
+//   - tasks (Map) — task IDs mapped to their status
+//
+// What stays PRIVATE (never leaves the prover):
+//   - The caller's secret key (used for authentication, never disclosed)
+//   - Witness computations (run off-chain on the prover's machine)
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// CUSTOM TYPES
+// ============================================================================
+
+// TaskStatus tracks the lifecycle of a submitted task.
+// The enum variants map to Field values (0, 1, 2) on-chain.
+export enum TaskStatus { pending, completed, failed }
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// The contract owner's public key, set once at deployment. sealed means
+// immutable after the constructor — no circuit can change it later. This
+// guarantees that only the original deployer can submit and complete tasks.
+export sealed ledger owner: Bytes<32>;
+
+// Monotonic counter of all submitted tasks. Incremented in the GUARANTEED
+// phase so the count advances even if the fallible map insert fails.
+export ledger taskCount: Counter;
+
+// Monotonic counter of completed tasks. Also incremented in the guaranteed
+// phase for the same reason — progress tracking must not be lost.
+export ledger completionCount: Counter;
+
+// Maps task IDs to their status. Updated in the FALLIBLE phase because map
+// operations may conflict with concurrent transactions modifying the same key.
+export ledger tasks: Map<Bytes<32>, TaskStatus>;
+
+// NOTE: The Kernel ADT (providing kernel.checkpoint() and other system-level
+// operations) is automatically available via CompactStandardLibrary. There is
+// no need to declare "ledger kernel: Kernel;" — the import provides it.
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+// Witnesses run off-chain on the prover's machine. They supply private data
+// to circuits. The implementation lives in TypeScript, not in Compact.
+
+// Returns the caller's secret key for authentication.
+// The secret key itself is NEVER disclosed — only the derived public key
+// (via persistentHash) appears on-chain.
+witness localSecretKey(): Bytes<32>;
+
+// ============================================================================
+// HELPER CIRCUITS
+// ============================================================================
+
+// Derive a public key from a secret key using persistentHash with a domain
+// separator. public_key() is NOT a builtin — this is the standard pattern.
+// The domain separator "checkpoint:pk:" prevents cross-protocol key reuse.
+pure circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "checkpoint:pk:"),
+    sk
+  ]);
+}
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+// Runs once at deployment. Sets the immutable owner public key.
+
+constructor() {
+  // disclose() is required because the value derives from a witness
+  // (localSecretKey). The public key is intentionally revealed on-chain
+  // for access control — the secret key remains private.
+  owner = disclose(publicKey(localSecretKey()));
+}
+
+// ============================================================================
+// CIRCUIT: submitTask — PRIMARY CHECKPOINT DEMONSTRATION
+// ============================================================================
+//
+// This circuit shows the core guaranteed/fallible pattern:
+//   GUARANTEED: authenticate caller, increment counter
+//   FALLIBLE:   insert task into the map
+//
+// If the fallible insert fails (e.g., concurrent state conflict), the caller
+// still pays fees and the taskCount still advances, but the task is not
+// recorded in the map. The caller can retry the submission.
+
+export circuit submitTask(taskId: Bytes<32>): [] {
+  // --- GUARANTEED PHASE ---
+  // Everything before kernel.checkpoint() is guaranteed. If any assertion
+  // here fails, the entire transaction is rejected (not included in ledger).
+
+  // Step 1: Authenticate the caller.
+  // The secret key never leaves the prover. We derive the public key and
+  // compare it against the stored owner. disclose() is required because the
+  // comparison involves witness-derived data and controls an assert branch.
+  const sk = localSecretKey();
+  const callerPk = publicKey(sk);
+  assert(disclose(callerPk == owner), "Only the owner can submit tasks");
+
+  // Step 2: Increment the task counter.
+  // This is in the guaranteed phase so the count advances even if the
+  // fallible phase fails. The counter provides a monotonic record of all
+  // submission attempts, which is useful for audit trails and nonce tracking.
+  taskCount.increment(1);
+
+  // --- PHASE BOUNDARY ---
+  // kernel.checkpoint() separates guaranteed from fallible. At most one
+  // checkpoint is allowed per circuit. It compiles to the ckpt opcode in
+  // the Impact VM.
+  kernel.checkpoint();
+
+  // --- FALLIBLE PHASE ---
+  // Everything after the checkpoint may fail without reversing the guaranteed
+  // effects above. If this section fails, the transaction is a partial success:
+  // the counter increment and fee collection persist, but the map insert
+  // does not. The caller's fees are still consumed (forfeited).
+
+  // Step 3: Record the task in the map with pending status.
+  // Map operations are placed in the fallible phase because they are
+  // susceptible to state conflicts — another transaction may modify the
+  // same map key concurrently. If a conflict occurs, only this section
+  // is rolled back.
+  tasks.insert(disclose(taskId), TaskStatus.pending);
+}
+
+// ============================================================================
+// CIRCUIT: completeTask — SECOND CHECKPOINT EXAMPLE
+// ============================================================================
+//
+// Demonstrates the same pattern for a different operation: marking a task
+// as completed. The guaranteed phase handles auth and counting; the fallible
+// phase updates the map.
+
+export circuit completeTask(taskId: Bytes<32>): [] {
+  // --- GUARANTEED PHASE ---
+
+  // Authenticate: verify the caller is the owner.
+  const sk = localSecretKey();
+  const callerPk = publicKey(sk);
+  assert(disclose(callerPk == owner), "Only the owner can complete tasks");
+
+  // Increment the completion counter in the guaranteed phase.
+  // Even if the status update below fails, we know the owner attempted
+  // a completion, which is valuable for monitoring and rate limiting.
+  completionCount.increment(1);
+
+  kernel.checkpoint();
+
+  // --- FALLIBLE PHASE ---
+
+  // Verify the task exists and is in pending status before updating.
+  // These assertions run in the fallible phase — if they fail, the
+  // guaranteed counter increment and fee payment still persist.
+  assert(tasks.member(disclose(taskId)), "Task does not exist");
+  assert(
+    tasks.lookup(disclose(taskId)) == TaskStatus.pending,
+    "Task is not in pending status"
+  );
+
+  // Update the task status to completed.
+  tasks.insert(disclose(taskId), TaskStatus.completed);
+}
+
+// ============================================================================
+// CIRCUIT: getTaskStatus — NO CHECKPOINT (GUARANTEED-ONLY)
+// ============================================================================
+//
+// A read-only circuit with no checkpoint. The entire body executes in the
+// guaranteed phase. This is appropriate for queries that do not modify state
+// or that must never partially succeed.
+
+export circuit getTaskStatus(taskId: Bytes<32>): TaskStatus {
+  return tasks.lookup(disclose(taskId));
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// Data Flow:
+//   submitTask:   sk (private) -> publicKey (disclosed for auth check)
+//                 taskId (disclosed) -> tasks map (public)
+//                 taskCount increment (public, monotonic)
+//
+//   completeTask: sk (private) -> publicKey (disclosed for auth check)
+//                 taskId (disclosed) -> tasks map update (public)
+//                 completionCount increment (public, monotonic)
+//
+// What the ZK proof guarantees:
+//   1. The caller knows a secret key that maps to the stored owner public key
+//   2. The taskId parameter was correctly disclosed for map operations
+//   3. Counter increments happened atomically in the guaranteed phase
+//
+// What is NEVER revealed:
+//   - The owner's secret key (used only inside the prover for auth)
+//   - Any intermediate witness computations
+//
+// What IS revealed (public on-chain):
+//   - The owner's public key (set in constructor, sealed)
+//   - The task count and completion count (Counter values)
+//   - Task IDs and their statuses (Map entries)
+//   - Whether a transaction partially succeeded (guaranteed OK, fallible failed)
+//
+// Checkpoint implications:
+//   - A failed submitTask still increments taskCount — observers see the
+//     counter advance without a corresponding map entry, which signals a
+//     partial success (fallible phase failure)
+//   - Fees are ALWAYS consumed in the guaranteed phase, even if the fallible
+//     phase fails. This prevents griefing attacks where someone could
+//     repeatedly submit conflicting transactions for free
+//   - Counter increments are guaranteed-phase operations specifically because
+//     they must not be lost — they provide an audit trail of all attempts
+//
+// disclose() summary:
+//   - submitTask:   disclose(callerPk == owner) — auth check
+//                   disclose(taskId) — map key must be public for insert
+//   - completeTask: disclose(callerPk == owner) — auth check
+//                   disclose(taskId) — map key for member/lookup/insert
+//
+// ============================================================================
