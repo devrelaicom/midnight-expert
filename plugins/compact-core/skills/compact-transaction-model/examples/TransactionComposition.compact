@@ -14,6 +14,10 @@
 // not yet available. To compose across contracts, include multiple contract
 // calls in a single transaction instead.
 //
+// NOTE: None of these circuits use kernel.checkpoint(), so they execute
+// entirely in the guaranteed phase. Any failure rejects the whole transaction.
+// See CheckpointUsage.compact for the guaranteed/fallible split pattern.
+//
 // ============================================================================
 
 pragma language_version >= 0.16 && <= 0.18;
