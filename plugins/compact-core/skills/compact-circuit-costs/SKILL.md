@@ -21,7 +21,7 @@ Midnight contracts have three independent cost dimensions. Optimizing one may in
 
 ### Loop Unrolling
 
-All `for` loops are fully unrolled at compile time. Each iteration produces a complete copy of the loop body in the circuit.
+All `for` loops are fully unrolled at compile time. The range `a..b` produces `b - a` iterations (upper bound is exclusive). Each iteration produces a complete copy of the loop body in the circuit.
 
 | Pattern | Gate Cost | Example |
 |---------|-----------|---------|

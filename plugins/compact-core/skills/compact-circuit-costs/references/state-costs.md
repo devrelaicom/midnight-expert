@@ -16,7 +16,7 @@ These types have constant storage cost regardless of usage:
 | `Bytes<N>` | ⌈N/31⌉ field elements | Grows with byte length |
 | Enum | 1 field element | Stored as numeric index |
 | Struct | Sum of field sizes | Each field contributes individually |
-| `Counter` | 1 Uint\<64> (~8 bytes) | Fixed; cheapest ADT |
+| `Counter` | 1 field element | Fixed; cheapest ADT |
 
 ### Variable-Size Types
 

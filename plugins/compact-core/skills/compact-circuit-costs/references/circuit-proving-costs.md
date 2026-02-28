@@ -28,7 +28,7 @@ Every operation in your Compact code produces gates. The total number of gates d
 
 ## Loop Unrolling In Depth
 
-Compact's `for` loops have compile-time-determined bounds only. The compiler fully unrolls every loop, replacing it with N copies of the loop body, each specialized for that iteration's index value.
+Compact's `for` loops have compile-time-determined bounds only. The range `a..b` produces `b - a` iterations (upper bound is exclusive), so `0..100` is 100 iterations and `1..10` is 9 iterations. The compiler fully unrolls every loop, replacing it with N copies of the loop body, each specialized for that iteration's index value.
 
 ### Single Loop
 
@@ -146,7 +146,7 @@ If the data structure allows it, consider using a `Set` or `Map` for O(1) member
 |----------|-------------|----------------------|-------------------|----------------------|
 | `transientHash<T>` | `Field` | 1× (baseline) | Not safe across upgrades | No — requires `disclose()` |
 | `persistentHash<T>` | `Bytes<32>` | ~10-50× | Safe across upgrades | No — requires `disclose()` |
-| `transientCommit<T>` | `Field` | ~1× | Not safe across upgrades | Yes — protects input |
+| `transientCommit<T>` | `Field` | ~1-2× | Not safe across upgrades | Yes — protects input |
 | `persistentCommit<T>` | `Bytes<32>` | ~10-50× | Safe across upgrades | Yes — protects input |
 
 The exact cost ratio depends on the input type and size. The key insight is that `transient*` functions are **dramatically** cheaper in-circuit.
