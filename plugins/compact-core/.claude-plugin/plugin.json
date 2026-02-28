@@ -44,6 +44,13 @@
     "compact-runtime",
     "contract-class",
     "pureCircuits",
-    "compiler-generated"
+    "compiler-generated",
+    "compilation",
+    "compiler-output",
+    "zkir",
+    "prover-keys",
+    "verifier-keys",
+    "circuit-metrics",
+    "build-artifacts"
   ]
 }
