@@ -28,7 +28,7 @@ If `$ARGUMENTS` provides a path, use it. Otherwise, find all relevant files:
 # Find all Compact and related files
 find . -name "*.compact" -not -path "*/node_modules/*" -not -path "*/.compact/*"
 find . -name "*.ts" -not -path "*/node_modules/*" -not -path "*/.compact/*" | grep -iE "(witness|private)" || true
-find . -name "*.test.ts" -o -name "*.spec.ts" -not -path "*/node_modules/*" | head -20
+find . \( -name "*.test.ts" -o -name "*.spec.ts" \) -not -path "*/node_modules/*" | head -20
 ```
 
 Collect the file list and present it to the user for confirmation.
@@ -105,7 +105,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review token & economic security"
 prompt: "You are reviewing category: Token & Economic Security.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the token-security-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the token-security-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 4:**
@@ -114,7 +114,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review concurrency & contention"
 prompt: "You are reviewing category: Concurrency & Contention.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the concurrency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the concurrency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 5:**
@@ -123,7 +123,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review compilation & types"
 prompt: "You are reviewing category: Compilation & Type Safety.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the compilation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the compilation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 6:**
@@ -132,7 +132,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review performance & efficiency"
 prompt: "You are reviewing category: Performance & Circuit Efficiency.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the performance-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the performance-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 7:**
@@ -141,7 +141,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review witness consistency"
 prompt: "You are reviewing category: Witness-Contract Consistency.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the witness-consistency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the witness-consistency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 8:**
@@ -150,7 +150,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review architecture & state"
 prompt: "You are reviewing category: Architecture, State Design & Composability.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the architecture-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the architecture-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 9:**
@@ -159,7 +159,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review code quality"
 prompt: "You are reviewing category: Code Quality & Best Practices.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the code-quality-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the code-quality-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 10:**
@@ -168,7 +168,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review testing adequacy"
 prompt: "You are reviewing category: Testing Adequacy.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the testing-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the testing-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **Agent call 11:**
@@ -177,7 +177,7 @@ subagent_type: "compact-core:reviewer"
 description: "Review documentation"
 prompt: "You are reviewing category: Documentation.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the documentation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels."
+Invoke the compact-core:compact-review skill. Read the documentation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
 ```
 
 **CRITICAL: All 11 Agent tool calls MUST be in a single message to ensure concurrent execution.**
