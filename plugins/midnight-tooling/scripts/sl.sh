@@ -571,7 +571,10 @@ fi
 if [ "$COMPACT_INSTALLED" -eq 1 ]; then
   compact_text=" \xe2\x9a\x99 compactc"
   if [ -n "$COMPACT_VERSION" ]; then
-    compact_text="${compact_text} v${COMPACT_VERSION}"
+    compact_text="${compact_text} ${COMPACT_VERSION}"
+    if [ -n "$COMPACT_LANG_VERSION" ]; then
+      compact_text="${compact_text}/${COMPACT_LANG_VERSION}"
+    fi
   fi
   if [ "$COMPACT_UPDATE" = "update" ]; then
     compact_text="${compact_text} \xe2\x86\x91"
