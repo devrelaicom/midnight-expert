@@ -2,12 +2,13 @@
 
 Installation, configuration, and management of Midnight Network development tools.
 
-A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) that provides skills, commands, and a status bar integration for working with the Compact CLI, the proof server, compiler versions, and release notes.
+A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) that provides skills, commands, and a status bar integration for working with the Compact CLI, local devnet (node, indexer, proof server), account funding, compiler versions, and release notes.
 
 ## Features
 
 - Install and manage the Compact CLI and compiler versions
-- Start, stop, and monitor the Docker-based proof server
+- Start, stop, and monitor the local devnet (node, indexer, proof server)
+- Fund accounts and generate test wallets on the local network
 - Run diagnostics on your entire Midnight toolchain
 - View release notes for any Midnight component
 - Troubleshoot common development environment issues
@@ -16,9 +17,9 @@ A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) t
 ## Prerequisites
 
 - Unix-like environment (macOS, Linux, WSL)
-- `curl` for installation and proof server health checks
+- `curl` for installation and health checks
 - `jq` recommended for JSON parsing (falls back to grep/sed)
-- `docker` for the proof server and alternate port detection
+- `docker` for the local devnet and standalone proof server
 
 ## Installation
 
@@ -34,7 +35,7 @@ Or add the plugin manually by cloning it into your Claude Code plugins directory
 
 ### `/midnight-tooling:doctor`
 
-Comprehensive diagnostic for the Compact CLI installation. Checks the CLI binary, compiler versions, PATH configuration, update availability, proof server status, and custom directory setup. Presents a health report with severity indicators and offers to fix issues.
+Comprehensive diagnostic for the Compact CLI installation and local devnet. Checks the CLI binary, compiler versions, PATH configuration, update availability, devnet services (node, indexer, proof server), and custom directory setup. Presents a health report with severity indicators and offers to fix issues.
 
 ```
 /midnight-tooling:doctor
@@ -51,15 +52,20 @@ Install, update, or configure the Compact CLI tool. Supports global installation
 /midnight-tooling:install-cli update
 ```
 
-### `/midnight-tooling:run-proof-server`
+### `/midnight-tooling:devnet`
 
-Start, restart, stop, or manage the Midnight proof server Docker container.
+Manage the local Midnight development network (node, indexer, proof server) and fund accounts. Delegates to the `@aaronbassett/midnight-local-devnet` MCP server.
 
 ```
-/midnight-tooling:run-proof-server
-/midnight-tooling:run-proof-server --restart
-/midnight-tooling:run-proof-server --stop
-/midnight-tooling:run-proof-server --logs
+/midnight-tooling:devnet start
+/midnight-tooling:devnet stop
+/midnight-tooling:devnet status
+/midnight-tooling:devnet health
+/midnight-tooling:devnet logs --service node
+/midnight-tooling:devnet config
+/midnight-tooling:devnet wallet
+/midnight-tooling:devnet fund <address>
+/midnight-tooling:devnet generate-account --count 3 --fund
 ```
 
 ### `/midnight-tooling:view-release-notes`
@@ -91,17 +97,29 @@ Manages the Compact CLI tool for Midnight Network development. Covers installati
 
 **Triggers on**: installing Compact, updating compiler versions, formatting Compact files, configuring `COMPACT_DIRECTORY`, resolving `compact: command not found`
 
+### devnet
+
+Covers the local development network lifecycle — starting, stopping, restarting, checking status and health, viewing logs, and getting endpoint configuration for all 3 services (node, indexer, proof server).
+
+**Triggers on**: starting/stopping the devnet, local network, node/indexer/proof server containers, port 9944/8088/6300 issues, network health
+
+### funding
+
+Covers wallet and account operations on the local devnet — checking genesis wallet balances, funding accounts by address or mnemonic, batch funding from files, and generating test accounts.
+
+**Triggers on**: fund account, NIGHT/DUST tokens, test accounts, genesis wallet, mnemonic, Bech32 address, accounts.json
+
 ### proof-server
 
-Manages the Midnight proof server lifecycle. Covers starting, stopping, restarting, checking logs, verifying health on port 6300, and Docker container setup.
+Covers working with proof servers in general — local (via devnet) and remote (testnet/mainnet). Includes API endpoints, version selection, Docker setup for standalone instances, and looking up environment endpoints.
 
-**Triggers on**: starting/stopping the proof server, proof server not working, checking proof server logs, Docker container for proofs, port 6300 issues
+**Triggers on**: proof server health, proof server version, proof server API endpoints, standalone proof server Docker setup
 
 ### troubleshooting
 
-Systematic diagnosis and resolution of common issues with Midnight Network tools including `ERR_UNSUPPORTED_DIR_IMPORT`, version mismatches, NixOS/Windows/Bun setup, environment URLs, and proof server connectivity.
+Systematic diagnosis and resolution of common issues with Midnight Network tools including `ERR_UNSUPPORTED_DIR_IMPORT`, version mismatches, NixOS/Windows/Bun setup, environment URLs, proof server connectivity, and devnet issues.
 
-**Triggers on**: errors, installation failures, version mismatches, unexpected behavior with Midnight tools
+**Triggers on**: errors, installation failures, version mismatches, unexpected behavior with Midnight tools, devnet not starting, MCP server connectivity
 
 ### release-notes
 
