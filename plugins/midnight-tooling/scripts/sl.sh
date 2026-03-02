@@ -273,6 +273,52 @@ if command -v npx >/dev/null 2>&1; then
   fi
 fi
 
+# --- Devnet health overlay (30s cache, supplements status) ---
+if [ "$DEVNET_ANY_RUNNING" -eq 1 ]; then
+  devnet_health_json=""
+  health_needs_refresh=1
+
+  if [ -f "$DEVNET_HEALTH_CACHE" ]; then
+    health_age="$(get_file_age "$DEVNET_HEALTH_CACHE")"
+    if [ "$health_age" -lt 30 ]; then
+      devnet_health_json="$(cat "$DEVNET_HEALTH_CACHE" 2>/dev/null || true)"
+      health_needs_refresh=0
+    fi
+  fi
+
+  if [ "$health_needs_refresh" -eq 1 ] && command -v npx >/dev/null 2>&1; then
+    devnet_health_json="$(run_with_timeout 5 npx -y @aaronbassett/midnight-local-devnet health --json 2>/dev/null || true)"
+    if [ -n "$devnet_health_json" ]; then
+      printf '%s' "$devnet_health_json" > "$DEVNET_HEALTH_CACHE" 2>/dev/null || true
+    fi
+  fi
+
+  # Override status with health data: container "running" but unhealthy → treat as down
+  if [ -n "$devnet_health_json" ]; then
+    node_healthy="" indexer_healthy="" proof_healthy=""
+    if command -v jq >/dev/null 2>&1; then
+      node_healthy="$(printf '%s' "$devnet_health_json" | jq -r '.node.healthy // empty' 2>/dev/null || true)"
+      indexer_healthy="$(printf '%s' "$devnet_health_json" | jq -r '.indexer.healthy // empty' 2>/dev/null || true)"
+      proof_healthy="$(printf '%s' "$devnet_health_json" | jq -r '.proofServer.healthy // empty' 2>/dev/null || true)"
+    else
+      node_healthy="$(printf '%s' "$devnet_health_json" | grep -A2 '"node"' | grep -o '"healthy" *: *[a-z]*' | head -1 | sed 's/.*: *//' || true)"
+      indexer_healthy="$(printf '%s' "$devnet_health_json" | grep -A2 '"indexer"' | grep -o '"healthy" *: *[a-z]*' | head -1 | sed 's/.*: *//' || true)"
+      proof_healthy="$(printf '%s' "$devnet_health_json" | grep -A2 '"proofServer"' | grep -o '"healthy" *: *[a-z]*' | head -1 | sed 's/.*: *//' || true)"
+    fi
+
+    # Health overrides: if container is "running" but health says false, mark as unhealthy
+    if [ "$DEVNET_NODE" = "running" ] && [ "$node_healthy" = "false" ]; then
+      DEVNET_NODE="unhealthy"
+    fi
+    if [ "$DEVNET_INDEXER" = "running" ] && [ "$indexer_healthy" = "false" ]; then
+      DEVNET_INDEXER="unhealthy"
+    fi
+    if [ "$DEVNET_PROOF" = "running" ] && [ "$proof_healthy" = "false" ]; then
+      DEVNET_PROOF="unhealthy"
+    fi
+  fi
+fi
+
 # --- Compact CLI ---
 COMPACT_INSTALLED=0
 COMPACT_VERSION=""
