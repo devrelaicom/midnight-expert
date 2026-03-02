@@ -96,11 +96,11 @@ mise env
 
 1. **Forgetting to prefix commands** - dotenv-cli requires commands to be run through it:
    ```bash
-   dotenv -- compact build
+   dotenv -- compact compile
    ```
    Not just:
    ```bash
-   compact build
+   compact compile
    ```
 
 2. **Wrong `.env` content** - Verify the file:

@@ -149,3 +149,4 @@ grep -i "midnight" yarn.lock 2>/dev/null | head -20
 
 1. Search for version-related issues: `gh search issues "version mismatch org:midnightntwrk" --state=open --limit=20 --sort=updated --json "title,url,updatedAt,commentsCount"`
 2. Check `references/checking-release-notes.md` for known compatibility issues in recent releases
+3. If endpoints may also be wrong, see `references/environment-urls.md` for current URL lookup and environment diagnosis
