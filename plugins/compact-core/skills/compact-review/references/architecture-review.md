@@ -2,6 +2,19 @@
 
 Review checklist for the **Architecture, State Design & Composability** category. This covers ADT selection, MerkleTree depth planning, ledger visibility, contract decomposition, circuit vs witness boundary design, and state initialization. Apply every item below to the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Compilation output reveals structural issues |
+| `midnight-extract-contract-structure` | `[shared]` | Identifies all data structure declarations, visibility modifiers, modules |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of contract architecture |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for ADT types, visibility modifiers, module syntax |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
 ## ADT Selection Checklist
 
 Check every ledger variable for correct abstract data type choice. Choosing the wrong ADT leads to privacy leaks, contention issues, or unnecessary complexity.
@@ -17,6 +30,8 @@ Check every ledger variable for correct abstract data type choice. Choosing the 
   | Anonymous + historic proofs | `HistoricMerkleTree<N, T>` | Root doesn't change on insert; regular MerkleTree invalidates existing proofs |
   | Ordered history | `List<T>` | Preserves insertion order; Set is unordered |
   | Single value | Direct `ledger var: T` | Simplest; no ADT overhead |
+
+  > **Tool:** `midnight-extract-contract-structure` lists all ledger variable declarations with their types. Cross-reference each declaration against the ADT selection decision tree above.
 
 - [ ] **Using `Field` as a counter instead of `Counter`.** If a ledger variable of type `Field` is incremented by reading its current value and writing back the incremented result, it should be a `Counter`. The `Counter` ADT provides conflict-free `increment()` and `decrement()` operations. A `Field` used as a counter causes read-modify-write contention under concurrent load.
 
@@ -110,6 +125,8 @@ Check every MerkleTree and HistoricMerkleTree declaration for appropriate depth 
 
   Note: depth 1 is invalid. The minimum valid depth is 2.
 
+  > **Tool:** `midnight-extract-contract-structure` shows all MerkleTree declarations with their depth parameters. Verify each depth against the planning table.
+
 - [ ] **Depth is not excessively large for the expected number of entries.** A tree with depth 32 supports ~4 billion entries but requires 32 hash operations per proof. If the contract will never have more than a few thousand entries, depth 16 is sufficient. Over-sizing wastes proof generation time and circuit resources.
 
   ```compact
@@ -140,6 +157,8 @@ Check every ledger variable for correct visibility modifiers. Visibility determi
   - `export ledger` — readable by anyone, queryable by DApps
   - `sealed ledger` — set only in constructor, immutable after deployment
   - `ledger` (no modifier) — internal, not directly queryable but state changes are visible on-chain
+
+  > **Tool:** `midnight-extract-contract-structure` shows the visibility modifier for each ledger variable. `midnight-list-examples` provides reference architectures showing idiomatic visibility patterns.
 
 - [ ] **Missing `export` on ledger variables that the DApp needs to query.** If the DApp front-end needs to read a ledger variable (e.g., to display the current state, check balances, show voting results), the variable must be `export ledger`. Without `export`, the DApp cannot directly query the value.
 
@@ -194,13 +213,16 @@ Check the contract for modularity and appropriate separation of concerns.
   }
   ```
 
+  > **Tool:** `midnight-extract-contract-structure` identifies module structure and imports. `midnight-search-compact` can find reference examples of module decomposition patterns.
+
 - [ ] **Shared types defined at the top level or in a shared module.** If multiple modules use the same types (enums, structs), those types should be defined at the top level or in a dedicated shared module, not duplicated across modules.
 
-- [ ] **Re-export pattern for public interface.** If internal modules contain circuits that should be part of the contract's public API, use the re-export pattern to expose them cleanly.
+- [ ] **Re-export pattern for public interface.** If internal modules contain circuits that should be part of the contract's public API, import the module and re-export the desired functions.
 
   ```compact
   // Re-export pattern for public interface
-  export { func } from InternalModule;
+  import InternalModule;
+  export { func };
   ```
 
 - [ ] **Module boundaries align with trust boundaries.** If different parts of the contract have different access control requirements (e.g., admin functions vs user functions), they should be in separate modules. This makes it easier to audit access control by module boundary.
@@ -235,9 +257,9 @@ Check the division of logic between circuit (on-chain verification) and witness 
 
 - [ ] **Rule of thumb: minimum logic in circuit, maximum in witness.** The circuit only verifies what the witness computed. Every operation in a circuit adds to proof generation time and cost. Move computation to the witness whenever possible, and have the circuit assert correctness of the result.
 
-- [ ] **Constructor does not access witness functions.** The constructor is called at deployment time and does not have access to witness functions. All initialization must use values passed as constructor parameters or use `default<T>`.
+- [ ] **Constructor witness usage is valid but uncommon.** Constructors in Compact can access witness functions, but the typical pattern is to pass initialization values as constructor parameters. If a constructor calls a witness, verify that the witness is implemented correctly in the TypeScript provider and that the deployment workflow supports witness execution at deploy time.
 
-  Real-world pattern from micro-dao:
+  Real-world pattern from micro-dao (parameters preferred over witnesses for clarity):
 
   ```compact
   constructor(organizer_secret_key: Bytes<32>, costs_param: Costs) {
@@ -313,6 +335,17 @@ Quick reference of common architecture anti-patterns in Compact contracts.
 | MerkleTree depth 32 for < 1,000 entries | 32 hash operations per proof when 10 would suffice; wastes proof generation time | Size depth to expected capacity: depth 10 for < 1,000, depth 16 for < 10,000 |
 | Missing `sealed` on deployment-time constants | Value appears mutable; a bug could accidentally overwrite owner address or protocol parameters | Use `sealed ledger` for values set once in constructor and never modified |
 | All logic in circuit, nothing in witness | Circuit operations are expensive (proof generation cost); complex computation in circuit bloats proof time | Move computation to witness; circuit only verifies the result with assertions |
-| Witness call in constructor | Constructor has no access to witness functions; will fail at deployment | Pass all initialization values as constructor parameters; derive values using pure circuits only |
+| Complex witness calls in constructor | Constructors can access witnesses, but complex witness logic at deployment time complicates the deployment workflow and is harder to test | Prefer passing initialization values as constructor parameters for simplicity and testability |
 | Non-ADT ledger variable not initialized in constructor | Variable has undefined initial value; behavior on first read is unpredictable | Explicitly initialize all `Field`, `Uint`, `Bytes`, `Boolean`, and enum ledger variables in the constructor |
 | Single monolithic contract with unrelated concerns | Harder to audit, test, and maintain; access control review becomes complex | Split into modules using `module Name { ... }` with clear separation of concerns |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation. |
+| `midnight-extract-contract-structure` | Deep structural analysis: data structure declarations, visibility modifiers, module organization. |
+| `midnight-analyze-contract` | Static analysis of contract architecture and patterns. |
+| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including ADT types and module syntax. |
+| `midnight-list-examples` | List available example contracts for reference architectures and idiomatic patterns. |
+| `midnight-search-compact` | Semantic search across Compact code for architectural patterns. |
