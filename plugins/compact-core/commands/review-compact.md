@@ -1,6 +1,6 @@
 ---
 description: Comprehensive review of Compact smart contract code covering 11 categories including privacy, security, tokens, concurrency, performance, and more. Supports parallel execution via agent teams (when enabled) or concurrent subagents.
-allowed-tools: Bash, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion
+allowed-tools: Bash, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, ToolSearch
 argument-hint: [path/to/contract.compact or directory]
 ---
 
@@ -33,6 +33,28 @@ find . \( -name "*.test.ts" -o -name "*.spec.ts" \) -not -path "*/node_modules/*
 
 Collect the file list and present it to the user for confirmation.
 
+## Step 1.5: Run Shared MCP Tools
+
+After identifying the files, run these 4 MCP tools against the primary `.compact` contract file. These outputs will be passed to all 11 reviewer agents as shared evidence.
+
+Use the ToolSearch tool to load the Midnight MCP tools, then call each one:
+
+1. **Compile the contract** (syntax validation):
+   Call `midnight-compile-contract` with the contract source and `skipZk=true`. Save the output as `COMPILE_RESULT`.
+
+2. **Extract contract structure** (structural analysis):
+   Call `midnight-extract-contract-structure` with the contract source. Save the output as `STRUCTURE_RESULT`.
+
+3. **Analyze the contract** (static pattern analysis):
+   Call `midnight-analyze-contract` with the contract source. Save the output as `ANALYSIS_RESULT`.
+
+4. **Get latest syntax reference**:
+   Call `midnight-get-latest-syntax`. Save the output as `SYNTAX_REFERENCE`.
+
+If any tool call fails (e.g., MCP server unavailable), note the failure and proceed — the review can still run with partial or no tool evidence. Do not block the review on tool failures.
+
+Store all four outputs for injection into reviewer prompts in the next steps.
+
 ## Step 2: Check for Agent Teams
 
 Run this command to detect agent team support:
@@ -51,9 +73,10 @@ Create an agent team to perform the review. Tell Claude:
 >
 > 1. Invoke the `compact-core:compact-review` skill
 > 2. Read their assigned reference file from the Category Reference Map
-> 3. Read all files: [INSERT FILE LIST]
-> 4. Apply every checklist item from their reference
-> 5. Report findings in the structured format with severity levels
+> 3. Reference the shared MCP tool evidence provided below
+> 4. Read all files: [INSERT FILE LIST]
+> 5. Apply every checklist item from their reference
+> 6. Report findings in the structured format with severity levels
 >
 > Teammate assignments:
 > - Teammate 1 — "Privacy & Disclosure" → read `privacy-review` reference
@@ -67,6 +90,13 @@ Create an agent team to perform the review. Tell Claude:
 > - Teammate 9 — "Code Quality & Best Practices" → read `code-quality-review` reference
 > - Teammate 10 — "Testing Adequacy" → read `testing-review` reference
 > - Teammate 11 — "Documentation" → read `documentation-review` reference
+>
+>
+> **Shared MCP Tool Evidence:**
+> - Compilation result: [INSERT COMPILE_RESULT]
+> - Structural analysis: [INSERT STRUCTURE_RESULT]
+> - Contract analysis: [INSERT ANALYSIS_RESULT]
+> - Latest syntax reference: [INSERT SYNTAX_REFERENCE]
 >
 > Use sonnet model for each teammate.
 > Wait for ALL teammates to complete before synthesizing the consolidated report.
@@ -87,7 +117,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review privacy & disclosure"
 prompt: "You are reviewing category: Privacy & Disclosure.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the privacy-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the privacy-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 2:**
@@ -96,7 +132,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review security & crypto"
 prompt: "You are reviewing category: Security & Cryptographic Correctness.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the security-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the security-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 3:**
@@ -105,7 +147,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review token & economic security"
 prompt: "You are reviewing category: Token & Economic Security.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the token-security-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the token-security-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 4:**
@@ -114,7 +162,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review concurrency & contention"
 prompt: "You are reviewing category: Concurrency & Contention.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the concurrency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the concurrency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 5:**
@@ -123,7 +177,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review compilation & types"
 prompt: "You are reviewing category: Compilation & Type Safety.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the compilation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the compilation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 6:**
@@ -132,7 +192,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review performance & efficiency"
 prompt: "You are reviewing category: Performance & Circuit Efficiency.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the performance-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the performance-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 7:**
@@ -141,7 +207,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review witness consistency"
 prompt: "You are reviewing category: Witness-Contract Consistency.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the witness-consistency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the witness-consistency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 8:**
@@ -150,7 +222,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review architecture & state"
 prompt: "You are reviewing category: Architecture, State Design & Composability.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the architecture-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the architecture-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 9:**
@@ -159,7 +237,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review code quality"
 prompt: "You are reviewing category: Code Quality & Best Practices.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the code-quality-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the code-quality-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 10:**
@@ -168,7 +252,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review testing adequacy"
 prompt: "You are reviewing category: Testing Adequacy.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the testing-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the testing-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **Agent call 11:**
@@ -177,7 +267,13 @@ subagent_type: "compact-core:reviewer"
 description: "Review documentation"
 prompt: "You are reviewing category: Documentation.
 Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the documentation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights."
+Invoke the compact-core:compact-review skill. Read the documentation-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
+
+Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
+- Compilation result: [INSERT COMPILE_RESULT]
+- Structural analysis: [INSERT STRUCTURE_RESULT]
+- Contract analysis: [INSERT ANALYSIS_RESULT]
+- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
 **CRITICAL: All 11 Agent tool calls MUST be in a single message to ensure concurrent execution.**
