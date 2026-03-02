@@ -2,6 +2,21 @@
 
 Review checklist for the **Performance & Circuit Efficiency** category. Every operation in a Compact circuit translates to constraints in the zero-knowledge proof. More constraints mean longer proof generation time and higher resource consumption for the prover. This review identifies unnecessary computational overhead, oversized data structures, and operations that could be moved off-chain. Apply every item below to the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Syntax validation and basic compilation checks |
+| `midnight-extract-contract-structure` | `[shared]` | Identifies data structure declarations, loop patterns, type casts |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of circuit complexity patterns |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for pure circuit syntax and type cast rules |
+| `midnight-compile-contract` (fullCompile) | `[category-specific]` | **Run this yourself** with `fullCompile=true` to get full ZK compilation including circuit size metrics. This reveals proof generation cost. |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+Tools marked `[category-specific]` must be run by you during your review.
+
 ## Proof Generation Cost Checklist
 
 Check every circuit for unnecessary arithmetic, redundant computations, and expressions that could be simplified. Every operation adds constraints to the ZK proof — fewer constraints mean faster proof generation.
@@ -159,6 +174,8 @@ Check every `MerkleTree` and `HistoricMerkleTree` declaration for appropriate de
   export ledger voters: HistoricMerkleTree<10, Bytes<32>>;
   ```
 
+  > **Tool:** `midnight-extract-contract-structure` lists all MerkleTree declarations with their depth parameters. Cross-reference each depth against the expected capacity table above.
+
 - [ ] **Undersized depth limits future capacity.** While oversizing wastes resources, undersizing risks running out of capacity. Once a MerkleTree is full, no new leaves can be inserted without deploying a new contract. This is not recoverable.
 
   ```compact
@@ -182,13 +199,13 @@ Check every `MerkleTree` and `HistoricMerkleTree` declaration for appropriate de
   export ledger members: HistoricMerkleTree<11, Bytes<32>>;
   ```
 
-- [ ] **`MerkleTree<1, T>` — minimum depth is 2 (depth 1 is invalid).** A MerkleTree with depth 1 would have only 2 leaves and may not function correctly. The minimum usable depth is 2 (4 leaves). If you see depth 1, flag it as likely incorrect.
+- [ ] **`MerkleTree<1, T>` — minimum depth is 2 (depth 1 is a compile-time error).** A MerkleTree with depth 1 is invalid in Compact and will fail to compile. The minimum valid depth is 2 (4 leaves). If you see depth 1, flag it as a compilation error.
 
   ```compact
-  // BAD — depth 1 is invalid; will not work correctly
+  // BAD — depth 1 is invalid; causes a compile-time error
   export ledger items: MerkleTree<1, Bytes<32>>;
 
-  // GOOD — minimum usable depth is 2
+  // GOOD — minimum valid depth is 2
   export ledger items: MerkleTree<2, Bytes<32>>;
   ```
 
@@ -209,6 +226,8 @@ Check every `for` loop and `Vector<N, T>` iteration for circuit size impact. Com
   // BETTER — if only a subset needs validation, reduce the iteration count
   // Or move the validation to witness code and verify the result in circuit
   ```
+
+  > **Tool:** `midnight-compile-contract` with `fullCompile=true` reveals the actual constraint count. Compare against the expected count based on loop iterations and body complexity.
 
 - [ ] **Large `Vector<N, T>` iterations: N directly multiplies circuit size.** When iterating over a `Vector<N, T>`, the loop body is duplicated N times. A `Vector<256, Field>` iteration with a body containing 5 constraints generates 1280 constraints. Consider whether the full vector needs to be processed in-circuit or whether a partial approach is possible.
 
@@ -259,7 +278,7 @@ Check every `for` loop and `Vector<N, T>` iteration for circuit size impact. Com
 
 Check for unnecessary or multi-step type casts that add proof constraints without serving a purpose.
 
-- [ ] **Unnecessary casts add proof constraints.** Every type conversion in a circuit generates additional constraints to prove the conversion is valid. If a value is declared as one type and then immediately cast to another, consider declaring it as the target type from the start.
+- [ ] **Conversion casts add proof constraints; static casts are free.** Type casts that involve actual value conversion (e.g., `Uint<64> → Field`, `Field → Bytes<32>`) generate constraints to prove the conversion is valid. However, static casts that merely reinterpret bits without conversion are free. If a value is declared as one type and then immediately cast via a conversion cast, consider declaring it as the target type from the start.
 
   ```compact
   // BAD — declares as Uint<64>, immediately casts to Field
@@ -329,13 +348,15 @@ Check whether expensive computations are correctly placed at the circuit/witness
 
   circuit processIfSorted(sorted: Vector<16, Field>): [] {
     // Verify sorted order: O(N) comparisons instead of O(N^2)
-    for (const i = 0; i < 15; i++) {
+    for (const i of 0..14) {
       assert(sorted[i] as Uint<64> <= sorted[i + 1] as Uint<64>,
         "Not sorted");
     }
     // ... process verified sorted result
   }
   ```
+
+  > **Tool:** `midnight-explain-circuit` can explain what a circuit does in plain language, helping identify computations that could be moved to the witness. `midnight-search-docs` has guidance on the circuit vs witness boundary optimization.
 
 - [ ] **Only the verification (assert the result is correct) needs to be in the circuit.** The circuit's job is to constrain the witness output so that only correct results are accepted. The actual computation can happen anywhere — the witness, a server, the user's browser — as long as the circuit can verify the result. This is the fundamental optimization principle for ZK circuits.
 
@@ -394,7 +415,7 @@ Check whether expensive computations are correctly placed at the circuit/witness
 
 Check for opportunities to use `pure circuit` for reusable logic that does not access ledger state.
 
-- [ ] **Reusable logic that does not touch ledger state should be `pure circuit`.** A `pure circuit` cannot read or write ledger state. This restriction allows the compiler to apply optimizations that are not possible for stateful circuits. It also makes the circuit reusable from both other circuits and witness code. If a helper circuit does not access any ledger variables, mark it as `pure circuit`.
+- [ ] **Reusable logic that does not touch ledger state should be `pure circuit`.** A `pure circuit` cannot read or write ledger state. This restriction enforces purity at compile time and enables the circuit to be exported as a `pureCircuits` function callable from TypeScript witness code. If a helper circuit does not access any ledger variables, mark it as `pure circuit`.
 
   ```compact
   // BAD — regular circuit that does not use ledger state
@@ -412,7 +433,9 @@ Check for opportunities to use `pure circuit` for reusable logic that does not a
   }
   ```
 
-- [ ] **Pure circuits can be called from witnesses and may benefit from compiler optimizations.** Because `pure circuit` functions have no side effects (no ledger access), they can be safely called from witness TypeScript code as well as from other circuits. This enables sharing logic between the on-chain proof and the off-chain witness computation without duplication.
+  > **Tool:** `midnight-extract-contract-structure` identifies all circuits and whether they access ledger state. Flag any non-pure circuit that does not read or write ledger variables. `midnight-explain-circuit` can analyze specific circuits to confirm whether they access ledger state.
+
+- [ ] **Pure circuits can be called from TypeScript witness code.** Because `pure circuit` functions have no side effects (no ledger access), they are exported as `pureCircuits` and can be called from witness TypeScript code as well as from other circuits. This enables sharing logic between the on-chain proof and the off-chain witness computation without duplication. Note: the `pure` keyword primarily validates purity and enables TypeScript export — it does not trigger additional compiler optimizations beyond what the compiler already applies to all circuits.
 
   ```compact
   // GOOD — pure circuit shared between circuit and witness contexts
@@ -433,7 +456,7 @@ Check for opportunities to use `pure circuit` for reusable logic that does not a
   // to derive keys off-chain without duplicating the logic
   ```
 
-- [ ] **Non-pure circuit used where a pure circuit would suffice.** If a circuit is declared without the `pure` modifier but does not access ledger state, it should be converted to `pure circuit`. A non-pure circuit may miss compiler optimizations and cannot be called from witness contexts.
+- [ ] **Non-pure circuit used where a pure circuit would suffice.** If a circuit is declared without the `pure` modifier but does not access ledger state, it should be converted to `pure circuit`. A non-pure circuit cannot be called from witness TypeScript code, missing an opportunity for logic reuse.
 
   ```compact
   // BAD — circuit does not touch ledger but is not marked pure
@@ -459,7 +482,18 @@ Quick reference of common performance anti-patterns in Compact contracts.
 | Sorting inside a circuit | O(N^2) comparisons all become constraints; sorting 16 elements generates ~120 comparison constraints | Sort in witness TypeScript code; verify sorted order in circuit with O(N) comparisons |
 | `Uint<64>` → `Field` → `Bytes<32>` chain when only `Bytes<32>` is needed | Each cast step adds constraints to prove the conversion is valid; multi-step chains multiply the cost | Declare or accept the value as the target type from the start |
 | Reading same ledger variable 3+ times | Each read generates constraints; 3 reads of the same variable triples the read cost | Read once into a `const`, reuse throughout the circuit |
-| Helper circuit without `pure` modifier that does not access ledger | Misses compiler optimizations available to pure circuits; cannot be called from witness code | Add `pure` modifier: `pure circuit helperName(...)` |
+| Helper circuit without `pure` modifier that does not access ledger | Cannot be called from witness TypeScript code; misses the purity enforcement and `pureCircuits` export | Add `pure` modifier: `pure circuit helperName(...)` |
 | Linear search inside circuit over `Vector<N, T>` | Iterates all N elements regardless of position; N comparisons become N constraint groups | Witness provides the index; circuit verifies `v[index] == target` in a single comparison |
-| `MerkleTree<1, T>` declaration | Depth 1 is invalid and will not function correctly | Minimum usable depth is 2: `MerkleTree<2, T>` |
+| `MerkleTree<1, T>` declaration | Depth 1 is invalid and causes a compile-time error | Minimum valid depth is 2: `MerkleTree<2, T>` |
 | Unnecessary `counter.read()` when only `increment()` is needed | Read generates constraints for a value that is never used in computation | Remove the read; call `counter.increment(n)` directly |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation, `fullCompile=true` for circuit size metrics and proof generation cost analysis. |
+| `midnight-extract-contract-structure` | Deep structural analysis: data structure declarations, loop patterns, type cast chains, pure circuit candidates. |
+| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
+| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including `pure circuit` rules and type cast paths. |
+| `midnight-explain-circuit` | Explains what a circuit does in plain language, including ZK proof cost implications. |
+| `midnight-search-docs` | Full-text search across official Midnight documentation for performance guidance. |
