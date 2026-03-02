@@ -2,6 +2,19 @@
 
 Review checklist for the **Concurrency & Contention** category. Midnight processes transactions concurrently, and two transactions that read-then-write the same ledger state will conflict — only the first to land succeeds, and the rest fail. This review identifies contention-prone patterns and recommends conflict-free alternatives. Apply every item below to the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Compilation output helps identify ledger operation patterns |
+| `midnight-extract-contract-structure` | `[shared]` | Identifies data structure declarations and usage patterns |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of contention-prone patterns |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for ADT operation semantics |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
 ## Read-Then-Write Contention Checklist
 
 Check every exported circuit for patterns where state is read and then written back with a value derived from the read. These are the primary source of transaction contention.
@@ -24,6 +37,8 @@ Check every exported circuit for patterns where state is read and then written b
     counter.increment(1);
   }
   ```
+
+  > **Tool:** `midnight-extract-contract-structure` shows all `Counter` operations. Look for `.read()` calls followed by manual writes to the same variable.
 
 - [ ] **Map read-modify-write pattern.** Reading a value from a `Map`, computing a new value from it, and writing it back to the same key creates contention when two transactions target the same key. Both transactions read the same value, compute derived values, and race to write — only one succeeds.
 
@@ -61,6 +76,8 @@ Check every exported circuit for patterns where state is read and then written b
     global_total.increment(amount);
   }
   ```
+
+  > **Tool:** `midnight-extract-contract-structure` lists all exported circuits and their ledger operations. Cross-reference reads and writes to the same variables within each circuit.
 
 ## ADT Contention Properties Checklist
 
@@ -126,7 +143,9 @@ Check each ledger data structure usage for its inherent contention characteristi
   export ledger members: HistoricMerkleTree<16, Bytes<32>>;
   ```
 
-- [ ] **`List.push(value)` — conflicts when concurrent pushes occur.** List ordering is significant. When two transactions push concurrently, they conflict because the resulting list depends on insertion order. If ordering is not important, consider whether a Set or Map would be more appropriate.
+  > **Tool:** `midnight-extract-contract-structure` identifies all MerkleTree declarations. Check whether `HistoricMerkleTree` is used where concurrent inserts are expected. `midnight-search-docs` has guidance on choosing between `MerkleTree` and `HistoricMerkleTree`.
+
+- [ ] **`List.pushFront(value)` — conflicts when concurrent pushes occur.** List ordering is significant. When two transactions push concurrently, they conflict because the resulting list depends on insertion order. If ordering is not important, consider whether a Set or Map would be more appropriate.
 
 ## Design Patterns for Low Contention Checklist
 
@@ -298,5 +317,15 @@ Quick reference of common concurrency anti-patterns in Compact contracts.
 | `highest_bid = amount` in auction circuit | Every bidder writes to the same field; under load, almost all bids fail | Store bids in a `Map` keyed by bidder identity; determine the winner in a separate finalize step |
 | `scores.insert(key, scores.lookup(key) + points)` on shared key | Read-modify-write on the same Map key; concurrent updates to the same key conflict | Use per-user keys so each user modifies only their own entry, or use `Counter` for additive accumulation |
 | `MerkleTree.insert()` under high concurrent load | Every insert changes the root; concurrent inserts invalidate each other's proofs | Use `HistoricMerkleTree` for membership verification (old roots stay valid); accept that concurrent inserts still contend |
-| `List.push()` from many concurrent users | Pushes conflict because list ordering depends on insertion sequence | Use `Map` or `Set` if ordering is not required; accept contention if strict ordering is necessary |
+| `List.pushFront()` from many concurrent users | Pushes conflict because list ordering depends on insertion sequence | Use `Map` or `Set` if ordering is not required; accept contention if strict ordering is necessary |
 | Single status flag (`state = State.ACTIVE`) set by every user | All concurrent transactions write to the same enum variable; only one succeeds | Redesign so the status is derived from per-user state, or limit state transitions to a single admin |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation. |
+| `midnight-extract-contract-structure` | Deep structural analysis: data structure declarations, ledger operation patterns. |
+| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
+| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including ADT operation semantics. |
+| `midnight-search-docs` | Full-text search across official Midnight documentation for concurrency guidance. |
