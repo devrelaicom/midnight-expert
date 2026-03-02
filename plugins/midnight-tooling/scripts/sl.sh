@@ -86,6 +86,8 @@ DIR_HASH="$(get_hash "$PROJECT_DIR")"
 OUR_CACHE="/tmp/midnight-sl-${DIR_HASH}"
 CHAIN_CONF="$HOME/.midnight-expert/statusLine/chain.conf"
 CHAIN_REFRESH_CACHE="/tmp/midnight-sl-chainrefresh-${DIR_HASH}"
+DEVNET_HEALTH_CACHE="/tmp/midnight-devnet-health-${DIR_HASH}"
+COMPACT_VER_CACHE="/tmp/midnight-compact-ver-${DIR_HASH}"
 
 # We handle cache hit AFTER running the chained command (Phase 2),
 # because the chained command must always run fresh.
