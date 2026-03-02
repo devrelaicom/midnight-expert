@@ -1,11 +1,34 @@
 ---
 name: proof-server
-description: This skill should be used when the user asks about the Midnight proof server, including "start the proof server", "run the proof server", "restart the proof server", "stop the proof server", "proof server not working", "proof server logs", "check if proof server is running", "proof server port 6300", "proof server version", "proof server image tag", "proof server health check", "proof server API endpoints", "proof server readiness check", "Docker container for proofs", or "set up Docker for the proof server". Covers proof server lifecycle management, version selection, API endpoints, and troubleshooting -- not proof generation or verification.
+description: This skill should be used when the user asks about the Midnight proof server in any context — local, testnet, or mainnet. Includes "start the proof server", "run the proof server", "restart the proof server", "stop the proof server", "proof server not working", "proof server logs", "check if proof server is running", "proof server port 6300", "proof server version", "proof server image tag", "proof server health check", "proof server API endpoints", "proof server readiness check", "Docker container for proofs", "set up Docker for the proof server", "proof server endpoint", or "proof server URL". Covers proof server concepts, version selection, API endpoints, standalone Docker usage, and troubleshooting. For local development setup, see the devnet skill.
 ---
 
-# Midnight Proof Server Management
+# Midnight Proof Server
 
-The Midnight proof server generates zero-knowledge proofs for transactions locally. It runs as a Docker container exposing port 6300 and is required for local development and testing of Midnight smart contracts.
+The Midnight proof server generates zero-knowledge proofs for Midnight transactions. It can run locally as a Docker container or be accessed as a remote service on testnet/mainnet. The server exposes an HTTP API (default port 6300) that DApps use to request proof generation at runtime.
+
+## Local Development
+
+For local development, use the devnet which manages a proof server alongside a node and indexer. Run `/devnet start` to start the full local network. See the `devnet` skill for details.
+
+The rest of this skill covers working with proof servers directly — useful when connecting to testnet/mainnet or running a standalone instance.
+
+## Looking Up Environment Endpoints
+
+Current proof server addresses for testnet and mainnet are published in the Midnight documentation. To look up the latest endpoints:
+
+Use the Midnight MCP server's documentation search tools to search for the `relnotes/overview` page in the `midnightntwrk/midnight-docs` repository:
+
+```
+githubGetFileContent(
+  owner: "midnightntwrk",
+  repo: "midnight-docs",
+  path: "docs/relnotes/overview.mdx",
+  fullContent: true
+)
+```
+
+This page contains the current network environment details including proof server URLs, node endpoints, and indexer endpoints for all active environments.
 
 ## Terminology
 
@@ -14,7 +37,7 @@ The Midnight proof server generates zero-knowledge proofs for transactions local
 | **Proof server** | A service that generates zero-knowledge proofs for Midnight transactions | Docker container (`midnightntwrk/proof-server`) listening on port 6300 |
 | **Docker Desktop** | The container runtime required to run the proof server | System application, must be running before starting the proof server |
 
-The proof server is **not** the same as the Compact compiler. The compiler produces ZK circuits from Compact source code; the proof server uses those circuits to generate proofs at runtime.
+The proof server is **not** the same as the Compact compiler. The compiler produces ZK circuits from Compact source code; the proof server uses those circuits to generate proofs at runtime. See the **compact-cli** skill for compiler installation, compilation commands, and output file details.
 
 ## Prerequisites
 
@@ -179,4 +202,6 @@ The `/ready` endpoint returns HTTP 200 when ready and HTTP 503 when the job queu
 
 | Reference | Content | When to Read |
 |-----------|---------|-------------|
-| **`references/docker-setup.md`** | Detailed Docker installation guidance per platform, daemon troubleshooting, and resource configuration | Docker installation issues or first-time setup |
+| **`references/docker-setup.md`** | Standalone Docker proof server setup; cross-references the devnet skill's Docker guide for installation and troubleshooting | Running a proof server outside the devnet (e.g., testnet/mainnet) |
+
+For local development Docker setup (node, indexer, and proof server together), see the **devnet** skill and its `references/docker-setup.md`.
