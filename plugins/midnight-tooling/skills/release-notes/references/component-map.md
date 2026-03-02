@@ -87,6 +87,8 @@ Use this table for fuzzy matching when a user specifies a component name.
 
 Both are now developed within the Ledger repository ([midnightntwrk/midnight-ledger](https://github.com/midnightntwrk/midnight-ledger)). Their independent release notes have not been updated since version 4.0.0.
 
+**Note:** The Docker image `midnightntwrk/proof-server` is still actively published and used — both as a standalone container and as part of the local devnet. The "stale" designation here applies only to independent release notes, not to the proof server software itself. For current proof server versions, check the Ledger release notes or the Docker Hub tags.
+
 When displaying Ledger release notes as a substitute, include a note such as:
 
 > **Note**: The proof-server is now part of Ledger. The last standalone proof-server release was 4.0.0 (12 May 2025). Showing Ledger release notes instead. If you want the standalone proof-server release notes, let me know.
