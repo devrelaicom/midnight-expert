@@ -2,6 +2,19 @@
 
 Review checklist for the **Code Quality & Best Practices** category. This covers naming conventions, circuit complexity, dead code detection, standard library usage verification, Compact idioms, and code duplication. These items catch maintainability and correctness issues that do not fall under security or performance but still affect long-term contract health. Apply every item below to the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Catches hallucinated functions and type errors |
+| `midnight-extract-contract-structure` | `[shared]` | Identifies dead code, unused declarations, structural patterns |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of code patterns |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for valid stdlib functions and types |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
 ## Naming Conventions Checklist
 
 Check every identifier in the contract for consistent and idiomatic naming. Compact follows specific conventions that differ from Solidity, Rust, and TypeScript. Inconsistent naming reduces readability and makes review harder.
@@ -63,17 +76,20 @@ Check every identifier in the contract for consistent and idiomatic naming. Comp
   }
   ```
 
-- [ ] **Enum variants should use PascalCase (or UPPER_SNAKE_CASE if the project is consistent).** Enum variants follow PascalCase by default, matching the convention in official examples. UPPER_SNAKE_CASE is acceptable if the project uses it consistently throughout.
+- [ ] **Enum variants should use a consistent naming style.** Official Compact examples use varying conventions — lowercase (`apple, pear, plum` in the language reference), UPPER_SNAKE_CASE (`UNSET, SET` in lock.compact, `VACANT, OCCUPIED` in bboard.compact), and PascalCase. The key requirement is consistency within a single contract. Mixed variant styles in the same enum is a code quality issue.
 
   ```compact
-  // BAD — mixed variant naming styles
+  // BAD — mixed variant naming styles in one enum
   enum State { setup, IN_PROGRESS, Completed }
 
   // GOOD — consistent PascalCase variants
   enum State { Setup, InProgress, Completed }
 
-  // ALSO GOOD — consistent UPPER_SNAKE_CASE variants (if project convention)
+  // ALSO GOOD — consistent UPPER_SNAKE_CASE variants (common in official examples)
   enum State { SETUP, IN_PROGRESS, COMPLETED }
+
+  // ALSO GOOD — consistent lowercase variants (matches language reference style)
+  enum State { setup, in_progress, completed }
   ```
 
 - [ ] **Witness function names should use camelCase and be descriptive of their purpose.** Witnesses are the bridge between off-chain TypeScript and on-chain Compact. Their names should clearly communicate what data they provide. Common prefixes include `local` for secret state, `get` for retrieval, and `context` for environmental data.
@@ -199,6 +215,8 @@ Check every circuit for excessive complexity. Long circuits with deep nesting ar
   }
   ```
 
+  > **Tool:** `midnight-extract-contract-structure` identifies all circuits and whether they access ledger state. Flag any non-pure circuit that could be marked `pure`. `midnight-list-examples` shows idiomatic use of `pure circuit` in reference contracts.
+
 ## Dead Code Detection Checklist
 
 Check the contract for code that serves no purpose. Dead code increases audit surface, confuses reviewers, and may mask missing functionality.
@@ -219,6 +237,8 @@ Check the contract for code that serves no purpose. Dead code increases audit su
   ```
 
   Review action: search every circuit body for references to each ledger variable. Any ledger variable with zero references should be flagged for removal or investigation.
+
+  > **Tool:** `midnight-extract-contract-structure` identifies all ledger declarations. Cross-reference each against usage in circuit bodies.
 
 - [ ] **Unused circuits (defined but never called).** An internal or pure circuit that is defined but never called from any other circuit is dead code. It increases audit surface without contributing to contract behavior. Note: `export circuit` declarations are always callable externally, so they are not dead code even if not called internally.
 
@@ -280,7 +300,9 @@ Check the contract for code that serves no purpose. Dead code increases audit su
 
 Verify that every standard library call in the contract actually exists in `CompactStandardLibrary`. LLM-generated Compact code frequently invents plausible-sounding functions that do not exist. Each item below lists a common hallucination and its correct replacement.
 
-- [ ] **Verify every stdlib function call exists.** For each function call in the contract, confirm it is a real `CompactStandardLibrary` function. The complete set of stdlib functions includes: `persistentHash<T>()`, `transientHash<T>()`, `persistentCommit<T>()`, `transientCommit<T>()`, `disclose()`, `assert()`, `pad()`, `default<T>()`, `some<T>()`, `none<T>()`, `left<A, B>()`, `right<A, B>()`, `publicKey()`, `slice<N>()`, `merkleTreePathRoot<N, T>()`, and ADT methods on `Counter`, `Map`, `Set`, `List`, `MerkleTree`, and `HistoricMerkleTree`.
+- [ ] **Verify every stdlib function call exists.** For each function call in the contract, confirm it is a real `CompactStandardLibrary` function. Key stdlib functions include: `persistentHash<T>()`, `transientHash<T>()`, `persistentCommit<T>()`, `transientCommit<T>()`, `disclose()`, `assert()`, `pad()`, `default<T>()`, `some<T>()`, `none<T>()`, `left<A, B>()`, `right<A, B>()`, `slice<N>()`, `merkleTreePathRoot<N, T>()`, `merkleTreePathRootNoLeafHash<N, T>()`, `ownPublicKey()`, `evolveNonce()`, `mergeCoin()`, `ecAdd()`, `ecMul()`, `ecMulGenerator()`, `hashToCurve()`, `degradeToTransient()`, `upgradeFromTransient()`, and ADT methods on `Counter`, `Map`, `Set`, `List`, `MerkleTree`, and `HistoricMerkleTree`, plus token operations like `mintShieldedToken()`, `sendShielded()`, `receiveShielded()`, `sendImmediateShielded()`, `mintUnshieldedToken()`, `sendUnshielded()`, `unshieldedBalance()`, `unshieldedBalanceGt()`, `unshieldedBalanceLt()`, `unshieldedBalanceGte()`, `unshieldedBalanceLte()`. Note: `publicKey()` is NOT a stdlib function — it is commonly defined as a user-created helper circuit using `persistentHash` with domain separation.
+
+  > **Tool:** `midnight-compile-contract` output will show `unknown function` or `operation undefined` errors for any hallucinated API calls. `midnight-get-latest-syntax` is the authoritative list of valid stdlib functions. Cross-reference every function call in the contract against these two sources.
 
 - [ ] **`hash()` does not exist.** Use `persistentHash<T>()` for deterministic hashing or `transientHash<T>()` for circuit-efficient one-time hashing. Both require an explicit type parameter.
 
@@ -291,6 +313,8 @@ Verify that every standard library call in the contract actually exists in `Comp
   // GOOD — use the specific hash function with type parameter
   const h = persistentHash<Bytes<32>>(input);
   ```
+
+  > **Tool:** `midnight-compile-contract` output will show `unknown function "hash"` if present.
 
 - [ ] **`verify()` does not exist.** There is no general verification function. Use `assert()` for condition checks and `checkRoot()` for Merkle tree root verification.
 
@@ -338,6 +362,8 @@ Verify that every standard library call in the contract actually exists in `Comp
   const current = counter.read();
   ```
 
+  > **Tool:** `midnight-compile-contract` output will show `operation "value" undefined for Counter`.
+
 - [ ] **`map.get()` does not exist.** The correct method is `map.lookup()`. LLMs hallucinate `.get()` from JavaScript's `Map`.
 
   ```compact
@@ -368,15 +394,18 @@ Verify that every standard library call in the contract actually exists in `Comp
   const coin: ShieldedCoinInfo = getCoinDetails();
   ```
 
-- [ ] **`CurvePoint` does not exist.** The correct type is `EllipticCurvePoint`.
+- [ ] **`CurvePoint` or `EllipticCurvePoint` do not exist.** The correct type name is `NativePoint`. Older documentation referenced `CurvePoint` or `EllipticCurvePoint`, but these have been superseded.
 
   ```compact
-  // BAD — CurvePoint is not a valid type
+  // BAD — CurvePoint and EllipticCurvePoint are not valid types
   const point: CurvePoint = getPoint();
-
-  // GOOD — use the correct type name
   const point: EllipticCurvePoint = getPoint();
+
+  // GOOD — use the current type name
+  const point: NativePoint = getPoint();
   ```
+
+  > **Tool:** `midnight-compile-contract` output will show an unknown type error. `midnight-get-latest-syntax` confirms `NativePoint` as the current type name.
 
 ## Compact Idioms Checklist
 
@@ -676,3 +705,14 @@ Quick reference of common code quality anti-patterns in Compact contracts.
 | Same logic copy-pasted across circuits | Bug fixes must be applied to every copy; easy to miss one; inconsistency risk | Extract shared logic to a helper or pure circuit |
 | Inline domain strings duplicated across circuits | Typo in one copy creates mismatched hashes; subtle and hard to debug | Extract hash/nullifier construction to a single pure circuit |
 | Commented-out code blocks in production | Clutters the contract; confuses reviewers; may mask incomplete refactoring | Remove commented code; rely on version control for history |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Catches hallucinated functions, wrong method names, invalid types. |
+| `midnight-extract-contract-structure` | Deep structural analysis: dead code detection, unused declarations, circuit structure. |
+| `midnight-analyze-contract` | Static analysis of code patterns and quality. |
+| `midnight-get-latest-syntax` | Authoritative list of valid Compact stdlib functions, types, and methods. Ground truth for hallucination detection. |
+| `midnight-search-compact` | Semantic search across Compact code for idiomatic patterns and stdlib usage examples. |
+| `midnight-list-examples` | List available example contracts showing best practices and correct patterns. |
