@@ -2,6 +2,21 @@
 
 Review checklist for the **Compilation & Type Safety** category. This covers deprecated syntax, incorrect return types, type casting errors, hallucinated API methods, and common compiler error patterns. LLM-generated Compact code is especially prone to these issues because training data contains outdated syntax and invented APIs. Apply every item below to the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | **Primary evidence source.** Actual compilation output reveals all syntax and type errors. |
+| `midnight-extract-contract-structure` | `[shared]` | Detects deprecated syntax, hallucinated APIs, structural issues |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of contract patterns |
+| `midnight-get-latest-syntax` | `[shared]` | **Critical for this category.** Authoritative syntax reference — the ground truth for what is valid Compact. |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
+**Important:** For Compilation & Type Safety review, the `midnight-compile-contract` and `midnight-get-latest-syntax` outputs are your primary evidence. Cross-reference every checklist item against actual compilation results before reporting findings.
+
 ## Syntax Error Checklist
 
 Check the contract for deprecated or invalid syntax that will cause compilation failures.
@@ -20,7 +35,9 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   }
   ```
 
-- [ ] **Deprecated `ledger { ... }` block instead of individual `export ledger` declarations.** Older versions of Compact used a single `ledger { ... }` block to group all ledger declarations. Current Compact requires each ledger variable to be declared individually with `export ledger`.
+  > **Tool:** `midnight-compile-contract` output will show `unknown type "Void"` or `found "{" looking for ";"` if present. `midnight-extract-contract-structure` also flags deprecated syntax.
+
+- [ ] **Deprecated `ledger { ... }` block instead of individual ledger declarations.** Older versions of Compact used a single `ledger { ... }` block to group all ledger declarations. Current Compact requires each ledger variable to be declared individually. The `export` modifier is optional — use it when the DApp needs to query the variable directly.
 
   ```compact
   // BAD — ledger block syntax is deprecated
@@ -30,11 +47,13 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
     owner: Bytes<32>;
   }
 
-  // GOOD — individual export ledger declarations
+  // GOOD — individual ledger declarations (export is optional)
   export ledger counter: Counter;
   export ledger balances: Map<Bytes<32>, Field>;
-  export ledger owner: Bytes<32>;
+  ledger owner: Bytes<32>;
   ```
+
+  > **Tool:** `midnight-compile-contract` output shows `found "{" looking for ";"` for deprecated ledger block syntax. `midnight-extract-contract-structure` flags this pattern.
 
 - [ ] **`Choice::variant` (Rust-style) instead of `Choice.variant` (dot notation).** Compact uses dot notation for enum/choice variant access, not Rust-style double-colon path syntax. LLMs trained on Rust code frequently produce the wrong syntax.
 
@@ -60,6 +79,8 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   witness local_secret_key(): Bytes<32>;
   ```
 
+  > **Tool:** `midnight-compile-contract` output will show a parsing error for witness bodies. `midnight-get-latest-syntax` confirms witness declaration-only syntax.
+
 - [ ] **`pure function` instead of `pure circuit`.** Compact does not have a `function` keyword. Reusable non-exported logic is declared as a `circuit` (or `pure circuit` for circuits that do not access ledger state). LLMs frequently hallucinate `function` because it is ubiquitous in other languages.
 
   ```compact
@@ -73,6 +94,8 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
     return persistentHash<Bytes<32>>(input);
   }
   ```
+
+  > **Tool:** `midnight-compile-contract` output will show an error for the `function` keyword. `midnight-get-latest-syntax` confirms `circuit` and `pure circuit` as the only keywords.
 
 - [ ] **`Cell<T>` used as a type.** `Cell<T>` is not a valid Compact type. LLMs sometimes hallucinate it from Rust or other ZK language patterns. Use the type directly for ledger declarations.
 
@@ -107,8 +130,8 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
     i = i + 1;
   }
 
-  // GOOD — for loop with compile-time bound
-  for (const i = 0; i < 10; i++) {
+  // GOOD — for loop with compile-time bound (range syntax)
+  for (const i of 0..9) {
     process(items[i]);
   }
   ```
@@ -127,7 +150,9 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   export ledger balances: Map<Bytes<32>, Field>;
   ```
 
-- [ ] **`include "std"` (deprecated) instead of `import CompactStandardLibrary;`.** Older versions of Compact used `include "std"` or similar include directives. The current syntax is `import CompactStandardLibrary;`. LLMs trained on older documentation frequently produce the deprecated form.
+  > **Tool:** `midnight-compile-contract` output will show undefined type errors for stdlib types if the import is missing. `midnight-extract-contract-structure` checks for the import presence.
+
+- [ ] **`include "std"` (outdated) instead of `import CompactStandardLibrary;`.** Older versions of Compact used `include "std"` to load the standard library. Since Compact 0.13.0, the standard library is a builtin module imported via `import CompactStandardLibrary;`. The `std.compact` file is still provided for backward compatibility, so `include "std"` may still compile, but the `import` form is the recommended approach. Note: the `include` keyword itself is still valid for including other `.compact` files — only its use for the standard library is outdated.
 
   ```compact
   // BAD — deprecated include syntax
@@ -175,7 +200,7 @@ Check the contract for code that is syntactically valid but semantically incorre
   // GOOD — use bounded iteration instead
   circuit factorial(n: Uint<64>): Uint<64> {
     const result = 1;
-    for (const i = 1; i <= 20; i++) {
+    for (const i of 1..20) {
       // Bounded loop with compile-time limit
       result = (i <= n) ? result * i : result;
     }
@@ -219,17 +244,16 @@ Check the contract for code that is syntactically valid but semantically incorre
   }
   ```
 
-- [ ] **Constructor accessing witnesses.** Constructors in Compact cannot access witness functions. Witnesses are only available during circuit execution (transaction time), not during contract deployment. If the constructor needs initial values, they must be passed as constructor parameters or set to default values.
+- [ ] **Constructor witness usage: valid but prefer parameters.** Constructors in Compact can access witness functions. However, the common pattern is to pass initialization values as constructor parameters for simplicity and testability. If a constructor calls witnesses, verify that the deployment workflow correctly provides the witness implementation at deploy time.
 
   ```compact
-  // BAD — constructor calling a witness function
+  // VALID but complex — constructor calling a witness function
   constructor() {
     const sk = local_secret_key();
-    // Compiler error: cannot access witnesses in constructor
-    authority = publicKey(sk);
+    authority = disclose(publicKey(sk));
   }
 
-  // GOOD — pass initial values as constructor parameters
+  // PREFERRED — pass initial values as constructor parameters (simpler deployment)
   constructor(initial_authority: Bytes<32>) {
     authority = initial_authority;
   }
@@ -252,15 +276,16 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const result = value as Field as Bytes<32>;
   ```
 
-- [ ] **Direct cast from `Boolean` to `Field`.** `Boolean` cannot be cast directly to `Field`. The cast must go through `Uint<8>` (or another unsigned integer type) first.
+  > **Tool:** `midnight-compile-contract` output will show `cannot cast from type X to type Y`. `midnight-get-latest-syntax` documents the valid cast paths.
+
+- [ ] **`Boolean` to `Field` cast is direct.** `Boolean` can be cast directly to `Field` without an intermediate step. This is a common source of unnecessary complexity — LLMs sometimes generate a multi-step cast through `Uint<8>` which works but is not required.
 
   ```compact
-  // BAD — direct Boolean to Field cast
+  // GOOD — direct Boolean to Field cast is supported
   const flag: Boolean = true;
   const field_value = flag as Field;
-  // Compiler error: cannot cast from type Boolean to type Field
 
-  // GOOD — cast through Uint<8> as intermediate
+  // ALSO WORKS but unnecessary — multi-step cast through Uint<8>
   const flag: Boolean = true;
   const field_value = flag as Uint<8> as Field;
   ```
@@ -295,14 +320,14 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const result = field_val + (uint_val as Field);
   ```
 
-- [ ] **Arithmetic result type widening: `Uint<8> + Uint<8>` produces `Uint<16>`.** When two `Uint<N>` values are added, the result type widens to `Uint<2N>` to prevent overflow. This means the result may not fit back into the original type without an explicit cast. Assignments to narrower types will fail without a cast.
+- [ ] **Arithmetic result type widening: `Uint<8> + Uint<8>` produces a wider type.** When two `Uint<N>` values are added, the result type widens to accommodate the full range of possible values (e.g., two `Uint<8>` values can sum to at most 510, so the result is a range type). This means the result may not fit back into the original type without an explicit cast. Assignments to narrower types will fail without a cast.
 
   ```compact
-  // BAD — result is Uint<16>, cannot assign to Uint<8> without cast
+  // BAD — result is wider than Uint<8>, cannot assign without cast
   const a: Uint<8> = 100;
   const b: Uint<8> = 50;
   const c: Uint<8> = a + b;
-  // Compiler error: cannot assign Uint<16> to Uint<8>
+  // Compiler error: cannot assign widened result to Uint<8>
 
   // GOOD — explicit cast back to narrower type
   const a: Uint<8> = 100;
@@ -332,6 +357,8 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const current = counter.read();
   ```
 
+  > **Tool:** `midnight-compile-contract` output will show `operation "value" undefined for Counter`. `midnight-get-latest-syntax` lists the correct Counter API methods.
+
 - [ ] **`Map.get(key)` instead of `Map.lookup(key)`.** The `Map` type does not have a `.get()` method. The correct method to retrieve a value by key is `.lookup(key)`. LLMs hallucinate `.get()` from JavaScript `Map` or other language standard libraries.
 
   ```compact
@@ -342,6 +369,8 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   // GOOD — use .lookup()
   const balance = balances.lookup(account);
   ```
+
+  > **Tool:** `midnight-compile-contract` output will show `operation "get" undefined for Map`. `midnight-search-compact` can find correct Map usage patterns in reference code.
 
 - [ ] **`Map.has(key)` instead of `Map.member(key)`.** The `Map` type does not have a `.has()` method. The correct method to check whether a key exists is `.member(key)`. LLMs hallucinate `.has()` from JavaScript `Map` or similar APIs.
 
@@ -373,6 +402,8 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   // or
   const h = transientHash<Bytes<32>>(input);
   ```
+
+  > **Tool:** `midnight-compile-contract` output will show `unknown function "hash"`. `midnight-get-latest-syntax` lists all valid hash functions.
 
 - [ ] **`verify()` as a general verification function.** There is no general `verify()` function in Compact. Verification is done through `assert()` for condition checks, `checkRoot()` for Merkle tree root verification, or specific cryptographic operations. LLMs invent `verify()` because it sounds natural.
 
@@ -421,15 +452,20 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   const pk = publicKey(sk);
   ```
 
-- [ ] **`CurvePoint` instead of `EllipticCurvePoint`.** The correct type name for elliptic curve points in Compact is `EllipticCurvePoint`, not `CurvePoint`. LLMs abbreviate the type name because `CurvePoint` is shorter and feels natural.
+- [ ] **`CurvePoint` instead of `NativePoint`.** The correct type name for elliptic curve points in Compact is `NativePoint`, not `CurvePoint`. `CurvePoint` was the old type name (now rejected by the compiler) and persists only as the TypeScript runtime interface name. LLMs hallucinate `CurvePoint` or `EllipticCurvePoint` because they appear in older documentation or are invented from convention.
 
   ```compact
-  // BAD — CurvePoint is not a valid type
+  // BAD — CurvePoint is not a valid Compact type (old name, rejected by compiler)
   const point: CurvePoint = computePoint(scalar);
 
-  // GOOD — use the full type name
+  // BAD — EllipticCurvePoint does not exist in Compact
   const point: EllipticCurvePoint = computePoint(scalar);
+
+  // GOOD — NativePoint is the correct current type name
+  const point: NativePoint = computePoint(scalar);
   ```
+
+  > **Tool:** `midnight-compile-contract` output will show an unknown type error for `CurvePoint`. `midnight-get-latest-syntax` confirms `NativePoint` as the current type name.
 
 - [ ] **`CoinInfo` instead of `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`.** The correct type names for coin information in Compact are `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`, not `CoinInfo`. LLMs simplify the type name because `CoinInfo` is shorter.
 
@@ -451,15 +487,25 @@ Quick reference of common compiler error patterns, their likely causes, and fixe
 |---|---|---|
 | `implicit disclosure of witness value` | Witness-derived value flows to a public context (ledger write, return from exported circuit) without `disclose()` | Add `disclose()` at the point where the value crosses the public boundary |
 | `found "{" looking for ";"` | Void return type used (e.g., `circuit foo(): Void {`) or deprecated ledger block syntax (`ledger { ... }`) | Use `[]` as the return type for circuits that return nothing; use individual `export ledger` declarations |
-| `cannot cast from type X to type Y` | Direct cast between incompatible types (e.g., `Uint<64>` to `Bytes<32>`, or `Boolean` to `Field`) | Use multi-step cast via `Field` as intermediate: `x as Field as Bytes<32>` |
+| `cannot cast from type X to type Y` | Direct cast between incompatible types (e.g., `Uint<64>` to `Bytes<32>`) | Use multi-step cast via `Field` as intermediate: `x as Field as Bytes<32>`. Note: `Boolean` to `Field` IS a direct cast. |
 | `operation "value" undefined for Counter` | Using `.value()` instead of `.read()` on a `Counter` | Replace `.value()` with `.read()` |
 | `operation "get" undefined for Map` | Using `.get(key)` instead of `.lookup(key)` on a `Map` | Replace `.get()` with `.lookup()` |
 | `operation "has" undefined for Map` | Using `.has(key)` instead of `.member(key)` on a `Map` | Replace `.has()` with `.member()` |
 | `recursive circuit call` | A circuit calls itself directly or through mutual recursion | Refactor to use bounded `for` loops or restructure logic to avoid recursion |
 | `type X requires N type parameters` | Missing generic parameters on a data structure (e.g., `MerkleTree<Bytes<32>>` instead of `MerkleTree<16, Bytes<32>>`) | Add all required type parameters; check documentation for the type's full generic signature |
 | `type mismatch` in arithmetic | Mixing `Field` and `Uint<N>` in the same expression without casting | Cast one operand to match the other: `field_val + (uint_val as Field)` |
-| `cannot assign Uint<2N> to Uint<N>` | Arithmetic widening — `Uint<8> + Uint<8>` produces `Uint<16>` | Add explicit cast to narrow the result: `(a + b) as Uint<8>` |
+| `cannot assign widened result to Uint<N>` | Arithmetic widening — `Uint<8> + Uint<8>` produces a wider type that cannot be assigned back to `Uint<8>` | Add explicit cast to narrow the result: `(a + b) as Uint<8>` |
 | `unknown type "Void"` | Using `Void` as a return type | Replace `Void` with `[]` (empty tuple) |
 | `unknown function "hash"` | Using `hash()` instead of `persistentHash<T>()` or `transientHash<T>()` | Use the correct hash function with explicit type parameter |
-| `witnesses not available in constructor` | Constructor body calls a witness function | Remove witness calls from constructor; pass initial values as constructor parameters |
+| Witness-related deployment error in constructor | Constructor calls a witness but the deployment workflow does not provide the witness implementation | Ensure witness providers are available at deploy time, or prefer passing initial values as constructor parameters |
 | `operation "<" undefined for Field` | Using relational operators on `Field` type | Cast to `Uint<N>` before comparison: `(a as Uint<64>) < (b as Uint<64>)` |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | **Primary tool for this category.** Compile contract with hosted compiler. Use `skipZk=true` for syntax/type validation. All compilation errors listed in the Compiler Error Quick Reference are directly caught by this tool. |
+| `midnight-extract-contract-structure` | Deep structural analysis: deprecated syntax, hallucinated APIs, missing imports. |
+| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
+| `midnight-get-latest-syntax` | **Critical for this category.** Authoritative Compact syntax reference — use as ground truth for valid types, functions, and keywords. |
+| `midnight-search-compact` | Semantic search across Compact code for correct API usage patterns. |
