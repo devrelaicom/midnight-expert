@@ -322,15 +322,39 @@ fi
 # --- Compact CLI ---
 COMPACT_INSTALLED=0
 COMPACT_VERSION=""
+COMPACT_LANG_VERSION=""
 COMPACT_UPDATE=""
 
 if command -v compact >/dev/null 2>&1; then
   COMPACT_INSTALLED=1
-  COMPACT_VERSION="$(run_with_timeout 5 compact compile --version 2>/dev/null | head -1 || true)"
-  # Clean up version string — extract just the version number
-  COMPACT_VERSION="$(printf '%s' "$COMPACT_VERSION" | grep -o '[0-9][0-9.]*[0-9]' | head -1 || true)"
 
-  # Update check with 30min cache
+  # Version check with 1hr cache
+  compact_ver_needs_refresh=1
+  if [ -f "$COMPACT_VER_CACHE" ]; then
+    ver_age="$(get_file_age "$COMPACT_VER_CACHE")"
+    if [ "$ver_age" -lt 3600 ]; then
+      # Cache format: compiler_version|language_version
+      cached_ver="$(cat "$COMPACT_VER_CACHE" 2>/dev/null || true)"
+      COMPACT_VERSION="$(printf '%s' "$cached_ver" | cut -d'|' -f1)"
+      COMPACT_LANG_VERSION="$(printf '%s' "$cached_ver" | cut -d'|' -f2)"
+      compact_ver_needs_refresh=0
+    fi
+  fi
+
+  if [ "$compact_ver_needs_refresh" -eq 1 ]; then
+    # Compiler version
+    raw_version="$(run_with_timeout 5 compact compile --version 2>/dev/null | head -1 || true)"
+    COMPACT_VERSION="$(printf '%s' "$raw_version" | grep -o '[0-9][0-9.]*[0-9]' | head -1 || true)"
+
+    # Language version
+    raw_lang="$(run_with_timeout 5 compact compile --language-version 2>/dev/null | head -1 || true)"
+    COMPACT_LANG_VERSION="$(printf '%s' "$raw_lang" | grep -o '[0-9][0-9.]*[0-9]' | head -1 || true)"
+
+    # Cache both versions (pipe-separated)
+    printf '%s' "${COMPACT_VERSION}|${COMPACT_LANG_VERSION}" > "$COMPACT_VER_CACHE" 2>/dev/null || true
+  fi
+
+  # Update check with 30min cache (unchanged logic)
   COMPACT_CHECK_CACHE="/tmp/midnight-compact-check-${DIR_HASH}"
   if [ -f "$COMPACT_CHECK_CACHE" ]; then
     check_age="$(get_file_age "$COMPACT_CHECK_CACHE")"
