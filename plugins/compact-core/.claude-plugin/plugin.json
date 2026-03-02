@@ -44,6 +44,11 @@
     "compact-runtime",
     "contract-class",
     "pureCircuits",
-    "compiler-generated"
+    "compiler-generated",
+    "code-review",
+    "security-review",
+    "privacy-review",
+    "compact-review",
+    "review"
   ]
 }
