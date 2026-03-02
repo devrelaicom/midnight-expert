@@ -12,7 +12,7 @@ emit() {
 fail=0
 
 if ! curl --version >/dev/null 2>&1; then
-  emit "curl" "warn" "not installed — used by /midnight-tooling:install-cli, /midnight-tooling:run-proof-server, /midnight-tooling:doctor"
+  emit "curl" "warn" "not installed — used by /midnight-tooling:install-cli, /midnight-tooling:devnet, /midnight-tooling:doctor"
   fail=1
 fi
 
@@ -44,6 +44,11 @@ fi
 octo_list="$(claude mcp list 2>&1)" || octo_list=""
 if ! printf '%s' "$octo_list" | grep -qi "octocode"; then
   emit "octocode MCP server" "warn" "not configured in Claude Code — required by /midnight-tooling:view-release-notes, /midnight-tooling:doctor breaking change checks. Check that the midnight-tooling plugin is installed and its MCP server is enabled."
+  fail=1
+fi
+
+if ! printf '%s' "$octo_list" | grep -qi "midnight-devnet"; then
+  emit "midnight-devnet MCP server" "warn" "not configured in Claude Code — required by /midnight-tooling:devnet for local network management. Check that the midnight-tooling plugin is installed and its MCP server is enabled."
   fail=1
 fi
 
