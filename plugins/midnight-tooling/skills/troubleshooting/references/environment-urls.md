@@ -71,3 +71,4 @@ githubGetFileContent(
 
 1. Search for URL or environment-related issues: `gh search issues "URL environment org:midnightntwrk" --state=open --limit=20 --sort=updated --json "title,url,updatedAt,commentsCount"`
 2. Check `references/checking-release-notes.md` for endpoint URL changes in recent releases
+3. If versions may also be mismatched, see `references/version-mismatch.md` for compatibility matrix and version diagnosis

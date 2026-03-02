@@ -1,6 +1,6 @@
 ---
 name: troubleshooting
-description: This skill should be used when the user encounters errors, installation failures, version mismatches, or unexpected behavior with Midnight Network tools. Covers troubleshooting "ERR_UNSUPPORTED_DIR_IMPORT", "version mismatch", "NixOS installation", "Windows setup", "WSL", "Bun setup", "wrong environment", "incorrect URLs", "connection refused", "proof server not starting", "Docker not running", "OOM", "compact command not found", "bad interpreter", "exec format error", "COMPACT_DIRECTORY", "direnv not working", "mise not working", "port 6300", "ZK parameters not found", "stale terminal", "environment variables not set", "breaking changes after upgrade", or searching Midnight GitHub issues and release notes for known bugs.
+description: This skill should be used when the user encounters errors, installation failures, version mismatches, or unexpected behavior with Midnight Network tools. Covers troubleshooting "ERR_UNSUPPORTED_DIR_IMPORT", "version mismatch", "NixOS installation", "Windows setup", "WSL", "Bun setup", "wrong environment", "incorrect URLs", "connection refused", "proof server not starting", "Docker not running", "OOM", "compact command not found", "bad interpreter", "exec format error", "COMPACT_DIRECTORY", "direnv not working", "mise not working", "port 6300", "ZK parameters not found", "stale terminal", "environment variables not set", "breaking changes after upgrade", "devnet not starting", "node not running", "indexer not syncing", "network start failed", "wallet initialization failed", "funding failed", "devnet health check failing", "MCP server not connecting", "midnight-devnet MCP error", or searching Midnight GitHub issues and release notes for known bugs.
 ---
 
 # Midnight Troubleshooting
@@ -27,9 +27,11 @@ Follow this diagnostic sequence for any issue:
 | Bun, bun runtime, bun setup | `references/bun-setup.md` |
 | Windows, WSL, PowerShell | `references/windows-setup.md` |
 | Wrong URL, incorrect endpoint, wrong network, wrong environment, preprod, testnet, mainnet | `references/environment-urls.md` |
-| Proof server, Docker, ZK parameters, port 6300, container | `references/proof-server-issues.md` |
+| Proof server, Docker, ZK parameters, port 6300, container (for proof-server-in-devnet issues also check `references/devnet-issues.md`) | `references/proof-server-issues.md` |
 | compact: command not found, shebang, exec format error, compactc wrapper | `references/compact-cli-issues.md` |
 | direnv, mise, dotenv-cli, COMPACT_DIRECTORY, stale cache | `references/environment-tooling.md` |
+| Devnet, local network, node, indexer, network start, wallet init, funding | `references/devnet-issues.md` |
+| MCP server not connecting, midnight-devnet MCP error, npx failed | `references/devnet-issues.md` |
 
 For **cross-cutting** diagnostic techniques (not tied to a specific symptom):
 
@@ -83,3 +85,5 @@ Some references link to other skills in this plugin:
 - **`references/checking-release-notes.md`** depends on the **release-notes** skill and its `references/component-map.md` for component directory mappings.
 - **`references/compact-cli-issues.md`** references the **compact-cli** skill's `references/installation.md` for additional installation detail.
 - **`references/environment-tooling.md`** references the **compact-cli** skill's `references/custom-directories.md` for per-project toolchain setup.
+- **`references/devnet-issues.md`** depends on the **devnet** skill and its references for network lifecycle details.
+- **`references/proof-server-issues.md`** references the **proof-server** skill for API endpoint details, Docker setup, and version management.

@@ -4,5 +4,14 @@
     "args": [
       "octocode-mcp@latest"
     ]
+  },
+  "midnight-devnet": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "-p",
+      "@aaronbassett/midnight-local-devnet",
+      "midnight-devnet-mcp"
+    ]
   }
 }
