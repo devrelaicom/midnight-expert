@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Midnight Network StatusLine for Claude Code
-# Displays proof server and Compact CLI status in the status bar.
+# Displays local devnet node status and Compact CLI version in the status bar.
 # Designed to chain with any existing statusLine command.
 set -euo pipefail
 
@@ -86,6 +86,8 @@ DIR_HASH="$(get_hash "$PROJECT_DIR")"
 OUR_CACHE="/tmp/midnight-sl-${DIR_HASH}"
 CHAIN_CONF="$HOME/.midnight-expert/statusLine/chain.conf"
 CHAIN_REFRESH_CACHE="/tmp/midnight-sl-chainrefresh-${DIR_HASH}"
+DEVNET_HEALTH_CACHE="/tmp/midnight-devnet-health-${DIR_HASH}"
+COMPACT_VER_CACHE="/tmp/midnight-compact-ver-${DIR_HASH}"
 
 # We handle cache hit AFTER running the chained command (Phase 2),
 # because the chained command must always run fresh.
@@ -243,66 +245,76 @@ fi
 # Phase 4: Status checks (only if Midnight project)
 # =============================================================================
 
-# --- Proof server ---
-PROOF_STATUS="off"
-PROOF_DETAIL=""
-PROOF_PORT=6300
+# --- Devnet status (via midnight-local-devnet CLI) ---
+DEVNET_NODE="unknown"
+DEVNET_INDEXER="unknown"
+DEVNET_PROOF="unknown"
+DEVNET_ANY_RUNNING=0
 
-proof_check_url() {
-  local port="$1"
-  local response
-  response="$(run_with_timeout 3 curl -sf --max-time 2 "http://localhost:${port}/ready" 2>/dev/null || true)"
-  if [ -n "$response" ]; then
-    PROOF_PORT="$port"
-    local status_val=""
-    local jobs_processing="" jobs_pending="" job_capacity=""
+if command -v npx >/dev/null 2>&1; then
+  devnet_status_json="$(run_with_timeout 5 npx -y @aaronbassett/midnight-local-devnet status --json 2>/dev/null || true)"
+  if [ -n "$devnet_status_json" ]; then
+    # Parse per-service status
     if command -v jq >/dev/null 2>&1; then
-      status_val="$(printf '%s' "$response" | jq -r '.status // empty' 2>/dev/null || true)"
-      jobs_processing="$(printf '%s' "$response" | jq -r '.jobsProcessing // empty' 2>/dev/null || true)"
-      jobs_pending="$(printf '%s' "$response" | jq -r '.jobsPending // empty' 2>/dev/null || true)"
-      job_capacity="$(printf '%s' "$response" | jq -r '.jobCapacity // empty' 2>/dev/null || true)"
+      DEVNET_NODE="$(printf '%s' "$devnet_status_json" | jq -r '.services[]? | select(.name=="node") | .status // "unknown"' 2>/dev/null || echo "unknown")"
+      DEVNET_INDEXER="$(printf '%s' "$devnet_status_json" | jq -r '.services[]? | select(.name=="indexer") | .status // "unknown"' 2>/dev/null || echo "unknown")"
+      DEVNET_PROOF="$(printf '%s' "$devnet_status_json" | jq -r '.services[]? | select(.name=="proof-server") | .status // "unknown"' 2>/dev/null || echo "unknown")"
     else
-      status_val="$(printf '%s' "$response" | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*"status" *: *"//;s/"$//' || true)"
-      jobs_processing="$(printf '%s' "$response" | grep -o '"jobsProcessing" *: *[0-9]*' | head -1 | sed 's/.*: *//' || true)"
-      jobs_pending="$(printf '%s' "$response" | grep -o '"jobsPending" *: *[0-9]*' | head -1 | sed 's/.*: *//' || true)"
-      job_capacity="$(printf '%s' "$response" | grep -o '"jobCapacity" *: *[0-9]*' | head -1 | sed 's/.*: *//' || true)"
+      # Fallback: grep for status values by position (node first, indexer second, proof-server third)
+      DEVNET_NODE="$(printf '%s' "$devnet_status_json" | grep -A3 '"name" *: *"node"' | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' || echo "unknown")"
+      DEVNET_INDEXER="$(printf '%s' "$devnet_status_json" | grep -A3 '"name" *: *"indexer"' | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' || echo "unknown")"
+      DEVNET_PROOF="$(printf '%s' "$devnet_status_json" | grep -A3 '"name" *: *"proof-server"' | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' || echo "unknown")"
     fi
-    case "$status_val" in
-      ok|ready)
-        PROOF_STATUS="ready"
-        PROOF_DETAIL=""
-        ;;
-      busy)
-        PROOF_STATUS="busy"
-        if [ -n "$jobs_processing" ] && [ -n "$job_capacity" ]; then
-          PROOF_DETAIL="${jobs_processing}/${job_capacity}"
-        fi
-        ;;
-      *)
-        PROOF_STATUS="ready"
-        ;;
-    esac
-    return 0
-  fi
-  return 1
-}
 
-# Try default port first
-if ! proof_check_url 6300; then
-  # Try to find proof server via docker
-  if command -v docker >/dev/null 2>&1; then
-    docker_line="$(docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep "proof-server" | head -1 || true)"
-    if [ -n "$docker_line" ]; then
-      # Extract host port mapped to 6300
-      alt_port="$(printf '%s' "$docker_line" | grep -o '[0-9]*->6300' | head -1 | sed 's/->.*//' || true)"
-      if [ -n "$alt_port" ] && [ "$alt_port" != "6300" ]; then
-        proof_check_url "$alt_port" || true
-      fi
-      # Container found but not responding
-      if [ "$PROOF_STATUS" = "off" ]; then
-        PROOF_STATUS="starting"
-        PROOF_DETAIL=""
-      fi
+    # Check if any service is running
+    if [ "$DEVNET_NODE" = "running" ] || [ "$DEVNET_INDEXER" = "running" ] || [ "$DEVNET_PROOF" = "running" ]; then
+      DEVNET_ANY_RUNNING=1
+    fi
+  fi
+fi
+
+# --- Devnet health overlay (30s cache, supplements status) ---
+if [ "$DEVNET_ANY_RUNNING" -eq 1 ]; then
+  devnet_health_json=""
+  health_needs_refresh=1
+
+  if [ -f "$DEVNET_HEALTH_CACHE" ]; then
+    health_age="$(get_file_age "$DEVNET_HEALTH_CACHE")"
+    if [ "$health_age" -lt 30 ]; then
+      devnet_health_json="$(cat "$DEVNET_HEALTH_CACHE" 2>/dev/null || true)"
+      health_needs_refresh=0
+    fi
+  fi
+
+  if [ "$health_needs_refresh" -eq 1 ] && command -v npx >/dev/null 2>&1; then
+    devnet_health_json="$(run_with_timeout 5 npx -y @aaronbassett/midnight-local-devnet health --json 2>/dev/null || true)"
+    if [ -n "$devnet_health_json" ]; then
+      printf '%s' "$devnet_health_json" > "$DEVNET_HEALTH_CACHE" 2>/dev/null || true
+    fi
+  fi
+
+  # Override status with health data: container "running" but unhealthy → treat as down
+  if [ -n "$devnet_health_json" ]; then
+    node_healthy="" indexer_healthy="" proof_healthy=""
+    if command -v jq >/dev/null 2>&1; then
+      node_healthy="$(printf '%s' "$devnet_health_json" | jq -r '.node.healthy // empty' 2>/dev/null || true)"
+      indexer_healthy="$(printf '%s' "$devnet_health_json" | jq -r '.indexer.healthy // empty' 2>/dev/null || true)"
+      proof_healthy="$(printf '%s' "$devnet_health_json" | jq -r '.proofServer.healthy // empty' 2>/dev/null || true)"
+    else
+      node_healthy="$(printf '%s' "$devnet_health_json" | grep -A2 '"node"' | grep -o '"healthy" *: *[a-z]*' | head -1 | sed 's/.*: *//' || true)"
+      indexer_healthy="$(printf '%s' "$devnet_health_json" | grep -A2 '"indexer"' | grep -o '"healthy" *: *[a-z]*' | head -1 | sed 's/.*: *//' || true)"
+      proof_healthy="$(printf '%s' "$devnet_health_json" | grep -A2 '"proofServer"' | grep -o '"healthy" *: *[a-z]*' | head -1 | sed 's/.*: *//' || true)"
+    fi
+
+    # Health overrides: if container is "running" but health says false, mark as unhealthy
+    if [ "$DEVNET_NODE" = "running" ] && [ "$node_healthy" = "false" ]; then
+      DEVNET_NODE="unhealthy"
+    fi
+    if [ "$DEVNET_INDEXER" = "running" ] && [ "$indexer_healthy" = "false" ]; then
+      DEVNET_INDEXER="unhealthy"
+    fi
+    if [ "$DEVNET_PROOF" = "running" ] && [ "$proof_healthy" = "false" ]; then
+      DEVNET_PROOF="unhealthy"
     fi
   fi
 fi
@@ -310,15 +322,39 @@ fi
 # --- Compact CLI ---
 COMPACT_INSTALLED=0
 COMPACT_VERSION=""
+COMPACT_LANG_VERSION=""
 COMPACT_UPDATE=""
 
 if command -v compact >/dev/null 2>&1; then
   COMPACT_INSTALLED=1
-  COMPACT_VERSION="$(run_with_timeout 5 compact compile --version 2>/dev/null | head -1 || true)"
-  # Clean up version string — extract just the version number
-  COMPACT_VERSION="$(printf '%s' "$COMPACT_VERSION" | grep -o '[0-9][0-9.]*[0-9]' | head -1 || true)"
 
-  # Update check with 30min cache
+  # Version check with 1hr cache
+  compact_ver_needs_refresh=1
+  if [ -f "$COMPACT_VER_CACHE" ]; then
+    ver_age="$(get_file_age "$COMPACT_VER_CACHE")"
+    if [ "$ver_age" -lt 3600 ]; then
+      # Cache format: compiler_version|language_version
+      cached_ver="$(cat "$COMPACT_VER_CACHE" 2>/dev/null || true)"
+      COMPACT_VERSION="$(printf '%s' "$cached_ver" | cut -d'|' -f1)"
+      COMPACT_LANG_VERSION="$(printf '%s' "$cached_ver" | cut -d'|' -f2)"
+      compact_ver_needs_refresh=0
+    fi
+  fi
+
+  if [ "$compact_ver_needs_refresh" -eq 1 ]; then
+    # Compiler version
+    raw_version="$(run_with_timeout 5 compact compile --version 2>/dev/null | head -1 || true)"
+    COMPACT_VERSION="$(printf '%s' "$raw_version" | grep -o '[0-9][0-9.]*[0-9]' | head -1 || true)"
+
+    # Language version
+    raw_lang="$(run_with_timeout 5 compact compile --language-version 2>/dev/null | head -1 || true)"
+    COMPACT_LANG_VERSION="$(printf '%s' "$raw_lang" | grep -o '[0-9][0-9.]*[0-9]' | head -1 || true)"
+
+    # Cache both versions (pipe-separated)
+    printf '%s' "${COMPACT_VERSION}|${COMPACT_LANG_VERSION}" > "$COMPACT_VER_CACHE" 2>/dev/null || true
+  fi
+
+  # Update check with 30min cache (unchanged logic)
   COMPACT_CHECK_CACHE="/tmp/midnight-compact-check-${DIR_HASH}"
   if [ -f "$COMPACT_CHECK_CACHE" ]; then
     check_age="$(get_file_age "$COMPACT_CHECK_CACHE")"
@@ -503,39 +539,42 @@ add_segment() {
 # Segment 1: Brand
 add_segment " \xf0\x9f\x8c\x99 Midnight " "$PRIMARY_BG" "$PRIMARY_FG"
 
-# Segment 2: Proof server
-case "$PROOF_STATUS" in
-  ready)
-    proof_text=" \xe2\xac\xa1 Proof: ready "
-    if [ "$PROOF_PORT" -ne 6300 ]; then
-      proof_text=" \xe2\xac\xa1 Proof: ready :${PROOF_PORT} "
-    fi
-    add_segment "$proof_text" "$SUCCESS_BG" "$SUCCESS_FG"
-    ;;
-  busy)
-    proof_text=" \xe2\xac\xa1 Proof: busy"
-    if [ -n "$PROOF_DETAIL" ]; then
-      proof_text="${proof_text} (${PROOF_DETAIL})"
-    fi
-    proof_text="${proof_text} "
-    if [ "$PROOF_PORT" -ne 6300 ]; then
-      proof_text=" \xe2\xac\xa1 Proof: busy (${PROOF_DETAIL}) :${PROOF_PORT} "
-    fi
-    add_segment "$proof_text" "$WARNING_BG" "$WARNING_FG"
-    ;;
-  starting)
-    add_segment " \xe2\xac\xa1 Proof: starting " "$WARNING_BG" "$WARNING_FG"
-    ;;
-  off)
-    add_segment " \xe2\xac\xa1 Proof: off " "$ERROR_BG" "$ERROR_FG"
-    ;;
-esac
+# Segment 2: Devnet status
+if [ "$DEVNET_ANY_RUNNING" -eq 1 ]; then
+  # Build icon grid: ✓ for running, ✗ for anything else
+  # Order: Node, Indexer, Proof Server
+  # ✓ = \xe2\x9c\x93  ✗ = \xe2\x9c\x97
+  icon_node=$( [ "$DEVNET_NODE" = "running" ] && printf '\xe2\x9c\x93' || printf '\xe2\x9c\x97' )
+  icon_indexer=$( [ "$DEVNET_INDEXER" = "running" ] && printf '\xe2\x9c\x93' || printf '\xe2\x9c\x97' )
+  icon_proof=$( [ "$DEVNET_PROOF" = "running" ] && printf '\xe2\x9c\x93' || printf '\xe2\x9c\x97' )
+
+  devnet_text=" Devnet ${icon_node}${icon_indexer}${icon_proof} "
+
+  # Color: all running = SUCCESS, all down = ERROR, mixed = WARNING
+  running_count=0
+  [ "$DEVNET_NODE" = "running" ] && running_count=$((running_count + 1))
+  [ "$DEVNET_INDEXER" = "running" ] && running_count=$((running_count + 1))
+  [ "$DEVNET_PROOF" = "running" ] && running_count=$((running_count + 1))
+
+  if [ "$running_count" -eq 3 ]; then
+    add_segment "$devnet_text" "$SUCCESS_BG" "$SUCCESS_FG"
+  elif [ "$running_count" -eq 0 ]; then
+    add_segment "$devnet_text" "$ERROR_BG" "$ERROR_FG"
+  else
+    add_segment "$devnet_text" "$WARNING_BG" "$WARNING_FG"
+  fi
+else
+  add_segment " No devnet " "$TERTIARY_BG" "$TERTIARY_FG"
+fi
 
 # Segment 3: Compact CLI
 if [ "$COMPACT_INSTALLED" -eq 1 ]; then
   compact_text=" \xe2\x9a\x99 compactc"
   if [ -n "$COMPACT_VERSION" ]; then
-    compact_text="${compact_text} v${COMPACT_VERSION}"
+    compact_text="${compact_text} ${COMPACT_VERSION}"
+    if [ -n "$COMPACT_LANG_VERSION" ]; then
+      compact_text="${compact_text}/${COMPACT_LANG_VERSION}"
+    fi
   fi
   if [ "$COMPACT_UPDATE" = "update" ]; then
     compact_text="${compact_text} \xe2\x86\x91"
