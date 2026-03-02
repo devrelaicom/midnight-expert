@@ -2,11 +2,26 @@
 
 Review checklist for the **Witness-Contract Consistency** category. This bridges the Compact contract layer with the TypeScript witness layer. A mismatch between the two causes runtime failures that the Compact compiler cannot catch because the TypeScript side is outside its scope. Apply every item below to the contract and its corresponding witness implementation.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Compilation output reveals witness-related errors |
+| `midnight-extract-contract-structure` | `[shared]` | Lists all witness declarations, their parameter types, and return types |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of contract structure |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for witness declaration syntax and type mappings |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
 ## Name Matching Checklist
 
 Check that every witness declared in the Compact contract has a corresponding key in the TypeScript `witnesses` object.
 
 - [ ] **Every `witness` declaration in the Compact contract has a matching key in the TypeScript `witnesses` object.** The runtime resolves witness functions by name at proof generation time. A missing key means the prover cannot find the function, and proof generation fails with a runtime error. There is no compile-time check for this — it only fails when a circuit that calls the witness is actually invoked.
+
+  > **Tool:** `midnight-extract-contract-structure` lists all witness declarations in the contract. Use this as your definitive list of witness names to cross-reference against the TypeScript `witnesses` object.
 
   ```compact
   // Compact contract — declares three witnesses
@@ -94,6 +109,8 @@ Check that every witness declared in the Compact contract has a corresponding ke
 
 - [ ] **Witness parameter count and order match the Compact declaration.** After the `WitnessContext` first parameter, the remaining parameters must match the Compact declaration in both count and order. The circuit passes arguments positionally. A mismatch means the witness receives the wrong values.
 
+  > **Tool:** `midnight-extract-contract-structure` provides the exact parameter list for each witness. Compare against the TypeScript implementation parameter-by-parameter.
+
   ```compact
   // Compact — two parameters: account then amount
   witness transfer_private(account: Bytes<32>, amount: Uint<64>): Boolean;
@@ -125,6 +142,8 @@ Check that Compact types are correctly translated to their TypeScript equivalent
 
 - [ ] **All Compact-to-TypeScript type mappings are correct.** Every witness parameter type and return type must use the correct TypeScript representation. The table below is the authoritative mapping. A type mismatch causes proof generation failure or silently incorrect data.
 
+  > **Tool:** `midnight-extract-contract-structure` shows the Compact types for each witness parameter and return value. `midnight-get-latest-syntax` confirms the authoritative type mapping rules. `midnight-search-docs` has detailed WitnessContext documentation.
+
   | Compact Type | TypeScript Type | Common Mistake |
   |---|---|---|
   | `Field` | `bigint` | Using `number` (loses precision for values > 2^53) |
@@ -134,10 +153,10 @@ Check that Compact types are correctly translated to their TypeScript equivalent
   | `Opaque<"string">` | `string` | Correct |
   | `Opaque<"Uint8Array">` | `Uint8Array` | Correct |
   | `Maybe<T>` | `{ is_some: boolean; value: T }` | Using `T \| null` or `T \| undefined` (WRONG -- must use tagged object) |
-  | `Either<L, R>` | `{ tag: "left"; value: L } \| { tag: "right"; value: R }` | Using `L \| R` union (WRONG -- must use tagged discriminated union) |
+  | `Either<L, R>` | `{ is_left: boolean; left: L; right: R }` | Using `L \| R` union or `{ tag: "left"; value: L }` tagged union (WRONG -- must use `is_left`/`left`/`right` structure with all fields present) |
   | `Vector<N, T>` | `T[]` (length N) | Not checking array length matches N |
   | Struct `{ x: Field; y: Boolean }` | `{ x: bigint; y: boolean }` | Field names must match exactly |
-  | Enum | `bigint` variant index | Mapping variants to wrong indices |
+  | Enum | `number` variant index | Using `bigint` or `string` instead of `number`; mapping variants to wrong indices |
   | `[T1, T2]` (tuple) | `[T1_mapped, T2_mapped]` | Wrong element order |
 
 - [ ] **`Field` and `Uint<N>` use `bigint`, not `number`.** JavaScript `number` is a 64-bit floating-point type that loses precision for integers above 2^53. Compact `Field` values can be up to the ZK field maximum (much larger). `Uint<64>` values can reach 2^64 - 1. Using `number` silently truncates large values, producing incorrect proofs.
@@ -206,7 +225,7 @@ Check that Compact types are correctly translated to their TypeScript equivalent
   },
   ```
 
-- [ ] **`Either<L, R>` uses the tagged discriminated union `{ tag: "left"; value: L } | { tag: "right"; value: R }`, not a bare union `L | R`.** The runtime uses the `tag` field to determine which variant is active. Without the tag, the runtime cannot distinguish between the two sides.
+- [ ] **`Either<L, R>` uses `{ is_left: boolean; left: L; right: R }`, not a bare union or tagged union.** The runtime expects an object with `is_left`, `left`, and `right` fields all present. The `is_left` field determines which side is active. Both `left` and `right` must be present regardless of which variant is active (use a zero/default value for the inactive side).
 
   ```compact
   // Compact
@@ -214,7 +233,7 @@ Check that Compact types are correctly translated to their TypeScript equivalent
   ```
 
   ```typescript
-  // BAD — bare union with no tag
+  // BAD — bare union with no structure
   classify_input: (
     { privateState }: WitnessContext<Ledger, MyState>,
     data: Uint8Array,
@@ -223,15 +242,24 @@ Check that Compact types are correctly translated to their TypeScript equivalent
     return [privateState, isNumeric(data) ? toBigInt(data) : false];
   },
 
-  // GOOD — tagged discriminated union
+  // BAD — tagged union (incorrect structure)
   classify_input: (
     { privateState }: WitnessContext<Ledger, MyState>,
     data: Uint8Array,
   ): [MyState, { tag: "left"; value: bigint } | { tag: "right"; value: boolean }] => {
+    // WRONG — runtime expects is_left/left/right, not tag/value
+    return [privateState, { tag: "left", value: toBigInt(data) }];
+  },
+
+  // GOOD — { is_left, left, right } with all fields present
+  classify_input: (
+    { privateState }: WitnessContext<Ledger, MyState>,
+    data: Uint8Array,
+  ): [MyState, { is_left: boolean; left: bigint; right: boolean }] => {
     if (isNumeric(data)) {
-      return [privateState, { tag: "left", value: toBigInt(data) }];
+      return [privateState, { is_left: true, left: toBigInt(data), right: false }];
     }
-    return [privateState, { tag: "right", value: false }];
+    return [privateState, { is_left: false, left: 0n, right: false }];
   },
   ```
 
@@ -294,7 +322,7 @@ Check that Compact types are correctly translated to their TypeScript equivalent
   },
   ```
 
-- [ ] **Enum values use the correct `bigint` variant index.** Compact enums are represented as zero-based `bigint` indices in TypeScript. Mapping a variant to the wrong index silently produces incorrect behavior because the contract interprets a different variant than intended.
+- [ ] **Enum values use the correct `number` variant index.** Compact enums are represented as zero-based `number` indices in TypeScript. The compiler-generated enum constants are `number` values, not `bigint`. Mapping a variant to the wrong index silently produces incorrect behavior because the contract interprets a different variant than intended.
 
   ```compact
   // Compact
@@ -303,21 +331,21 @@ Check that Compact types are correctly translated to their TypeScript equivalent
   ```
 
   ```typescript
-  // BAD — using string or wrong index
+  // BAD — using string or bigint
   get_decision: (
     { privateState }: WitnessContext<Ledger, MyState>,
-  ): [MyState, bigint] => {
-    return [privateState, 2n]; // This is "rejected", not "approved"
-    // Or worse: return [privateState, "approved" as any]; // string, not bigint
+  ): [MyState, number] => {
+    return [privateState, 2]; // This is "rejected", not "approved"
+    // Or worse: return [privateState, "approved" as any]; // string, not number
   },
 
-  // GOOD — use the compiler-generated constants
+  // GOOD — use the compiler-generated constants (which are number values)
   import { Status } from "./managed/my-contract/index.cjs";
 
   get_decision: (
     { privateState }: WitnessContext<Ledger, MyState>,
-  ): [MyState, bigint] => {
-    return [privateState, BigInt(Status.approved)]; // 1n
+  ): [MyState, number] => {
+    return [privateState, Status.approved]; // 1
   },
   ```
 
@@ -642,13 +670,24 @@ Quick reference of common witness-contract consistency anti-patterns.
 |---|---|---|
 | Missing witness key in TypeScript `witnesses` object | Runtime cannot find the witness function; proof generation fails when any circuit calls it | Every `witness` declaration in Compact must have a matching key in the TypeScript `witnesses` object |
 | camelCase key for snake_case Compact witness name | Witness lookup is case-sensitive; the key is silently not found and proof generation fails | Use the exact name from the Compact declaration, including casing |
-| `number` instead of `bigint` for `Field` or `Uint<N>` | JavaScript `number` loses precision above 2^53; silently produces incorrect proofs for large values | Always use `bigint` for `Field`, `Uint<N>`, and enum variant indices |
+| `number` instead of `bigint` for `Field` or `Uint<N>` | JavaScript `number` loses precision above 2^53; silently produces incorrect proofs for large values | Always use `bigint` for `Field` and `Uint<N>`; use `number` for enum variant indices |
 | `string` or `Buffer` instead of `Uint8Array` for `Bytes<N>` | Runtime expects `Uint8Array`; other types cause proof generation failure or portability issues | Always use `Uint8Array` for `Bytes<N>` |
 | `T \| null` for `Maybe<T>` | Runtime expects `{ is_some: boolean; value: T }` tagged object; null/undefined is not recognized | Return `{ is_some: true, value: x }` or `{ is_some: false, value: defaultValue }` |
-| `L \| R` for `Either<L, R>` | Runtime uses the `tag` field to distinguish variants; a bare union has no tag | Return `{ tag: "left", value: x }` or `{ tag: "right", value: y }` |
+| `L \| R` or `{ tag, value }` for `Either<L, R>` | Runtime expects `{ is_left: boolean; left: L; right: R }` with all fields present; bare unions and tagged unions are not recognized | Return `{ is_left: true, left: x, right: defaultR }` or `{ is_left: false, left: defaultL, right: y }` |
 | Returning only the value (not the `[PS, Value]` tuple) | Runtime expects a two-element tuple with private state first; single value causes destructuring failure | Always return `[privateState, returnValue]` |
 | Mutating `privateState` in place | Shared reference may be used elsewhere by the runtime; in-place mutation causes unpredictable behavior | Spread and override: `{ ...privateState, field: newVal }` |
 | `Math.random()` or `Date.now()` in witness | Non-deterministic; produces different output on re-proof, causing proof generation to fail on retry | Generate once and store in private state; reuse on subsequent calls |
 | Async operations (`await`, `fetch`) in witness | Witnesses are synchronous; async code either fails or blocks indefinitely during proof generation | Precompute async results and store in private state before proof generation |
 | Module-level variable for private state | Breaks when multiple contract instances share the same witness code; stale or wrong instance data | Always read from `context.privateState` |
 | Wrong parameter order after WitnessContext | Circuit passes arguments positionally; swapped parameters mean the witness receives wrong values | Match parameter order to Compact declaration exactly |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Reveals witness-related compilation errors. |
+| `midnight-extract-contract-structure` | Deep structural analysis: lists all witness declarations with their exact parameter types, return types, and names. |
+| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
+| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including witness declaration rules and type mappings. |
+| `midnight-search-compact` | Semantic search across Compact code for witness implementation patterns. |
+| `midnight-search-docs` | Full-text search across official Midnight documentation for WitnessContext and type mapping details. |
