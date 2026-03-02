@@ -1,5 +1,15 @@
 # Proof Server Issues
 
+## Proof Server in Devnet Context
+
+If the proof server is running as part of the local devnet (started via `/devnet start`), it is one of three services managed together. Issues may be caused by the node or indexer rather than the proof server itself.
+
+- Check all services: use `/devnet status` and `/devnet health`
+- Check logs for the specific service: `/devnet logs --service proof-server`
+- For network-level issues (all services failing), see `references/devnet-issues.md`
+
+The troubleshooting steps below apply to both standalone and devnet proof servers.
+
 Diagnose and resolve Docker and proof server problems for the Midnight proof server.
 
 ## Missing ZK Parameters Error
