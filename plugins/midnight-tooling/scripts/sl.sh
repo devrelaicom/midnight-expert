@@ -245,66 +245,30 @@ fi
 # Phase 4: Status checks (only if Midnight project)
 # =============================================================================
 
-# --- Proof server ---
-PROOF_STATUS="off"
-PROOF_DETAIL=""
-PROOF_PORT=6300
+# --- Devnet status (via midnight-local-devnet CLI) ---
+DEVNET_NODE="unknown"
+DEVNET_INDEXER="unknown"
+DEVNET_PROOF="unknown"
+DEVNET_ANY_RUNNING=0
 
-proof_check_url() {
-  local port="$1"
-  local response
-  response="$(run_with_timeout 3 curl -sf --max-time 2 "http://localhost:${port}/ready" 2>/dev/null || true)"
-  if [ -n "$response" ]; then
-    PROOF_PORT="$port"
-    local status_val=""
-    local jobs_processing="" jobs_pending="" job_capacity=""
+if command -v npx >/dev/null 2>&1; then
+  devnet_status_json="$(run_with_timeout 5 npx -y @aaronbassett/midnight-local-devnet status --json 2>/dev/null || true)"
+  if [ -n "$devnet_status_json" ]; then
+    # Parse per-service status
     if command -v jq >/dev/null 2>&1; then
-      status_val="$(printf '%s' "$response" | jq -r '.status // empty' 2>/dev/null || true)"
-      jobs_processing="$(printf '%s' "$response" | jq -r '.jobsProcessing // empty' 2>/dev/null || true)"
-      jobs_pending="$(printf '%s' "$response" | jq -r '.jobsPending // empty' 2>/dev/null || true)"
-      job_capacity="$(printf '%s' "$response" | jq -r '.jobCapacity // empty' 2>/dev/null || true)"
+      DEVNET_NODE="$(printf '%s' "$devnet_status_json" | jq -r '.services[]? | select(.name=="node") | .status // "unknown"' 2>/dev/null || echo "unknown")"
+      DEVNET_INDEXER="$(printf '%s' "$devnet_status_json" | jq -r '.services[]? | select(.name=="indexer") | .status // "unknown"' 2>/dev/null || echo "unknown")"
+      DEVNET_PROOF="$(printf '%s' "$devnet_status_json" | jq -r '.services[]? | select(.name=="proof-server") | .status // "unknown"' 2>/dev/null || echo "unknown")"
     else
-      status_val="$(printf '%s' "$response" | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*"status" *: *"//;s/"$//' || true)"
-      jobs_processing="$(printf '%s' "$response" | grep -o '"jobsProcessing" *: *[0-9]*' | head -1 | sed 's/.*: *//' || true)"
-      jobs_pending="$(printf '%s' "$response" | grep -o '"jobsPending" *: *[0-9]*' | head -1 | sed 's/.*: *//' || true)"
-      job_capacity="$(printf '%s' "$response" | grep -o '"jobCapacity" *: *[0-9]*' | head -1 | sed 's/.*: *//' || true)"
+      # Fallback: grep for status values by position (node first, indexer second, proof-server third)
+      DEVNET_NODE="$(printf '%s' "$devnet_status_json" | grep -A3 '"name" *: *"node"' | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' || echo "unknown")"
+      DEVNET_INDEXER="$(printf '%s' "$devnet_status_json" | grep -A3 '"name" *: *"indexer"' | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' || echo "unknown")"
+      DEVNET_PROOF="$(printf '%s' "$devnet_status_json" | grep -A3 '"name" *: *"proof-server"' | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' || echo "unknown")"
     fi
-    case "$status_val" in
-      ok|ready)
-        PROOF_STATUS="ready"
-        PROOF_DETAIL=""
-        ;;
-      busy)
-        PROOF_STATUS="busy"
-        if [ -n "$jobs_processing" ] && [ -n "$job_capacity" ]; then
-          PROOF_DETAIL="${jobs_processing}/${job_capacity}"
-        fi
-        ;;
-      *)
-        PROOF_STATUS="ready"
-        ;;
-    esac
-    return 0
-  fi
-  return 1
-}
 
-# Try default port first
-if ! proof_check_url 6300; then
-  # Try to find proof server via docker
-  if command -v docker >/dev/null 2>&1; then
-    docker_line="$(docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep "proof-server" | head -1 || true)"
-    if [ -n "$docker_line" ]; then
-      # Extract host port mapped to 6300
-      alt_port="$(printf '%s' "$docker_line" | grep -o '[0-9]*->6300' | head -1 | sed 's/->.*//' || true)"
-      if [ -n "$alt_port" ] && [ "$alt_port" != "6300" ]; then
-        proof_check_url "$alt_port" || true
-      fi
-      # Container found but not responding
-      if [ "$PROOF_STATUS" = "off" ]; then
-        PROOF_STATUS="starting"
-        PROOF_DETAIL=""
-      fi
+    # Check if any service is running
+    if [ "$DEVNET_NODE" = "running" ] || [ "$DEVNET_INDEXER" = "running" ] || [ "$DEVNET_PROOF" = "running" ]; then
+      DEVNET_ANY_RUNNING=1
     fi
   fi
 fi
