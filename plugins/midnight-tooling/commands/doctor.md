@@ -1,6 +1,6 @@
 ---
 description: Comprehensive diagnostic and health report for the Compact CLI installation, compiler versions, PATH configuration, custom directory setup, proof server status, and plugin dependencies
-allowed-tools: Bash, Task, AskUserQuestion, mcp__plugin_midnight-tooling_octocode__githubViewRepoStructure, mcp__plugin_midnight-tooling_octocode__githubGetFileContent
+allowed-tools: Bash, Task, AskUserQuestion, mcp__plugin_midnight-tooling_octocode__githubViewRepoStructure, mcp__plugin_midnight-tooling_octocode__githubGetFileContent, mcp__plugin_midnight-tooling_midnight-devnet__network-status, mcp__plugin_midnight-tooling_midnight-devnet__health-check, mcp__plugin_midnight-tooling_midnight-devnet__get-network-config
 argument-hint: [--auto-fix]
 ---
 
@@ -44,16 +44,42 @@ Prompt the agent with:
 > 2. `SCRIPTS_ROOT="$PLUGIN_ROOT/scripts/doctor"`
 > 3. `bash "$SCRIPTS_ROOT/env.sh"`
 
-### Agent 3 — Docker & Proof Server
+### Agent 3 — Docker & Devnet
+
+This agent uses a hybrid bash + MCP approach. Bash commands check Docker prerequisites and container status (resilient — no MCP dependency). The `health-check` MCP tool checks live service health with response times. If MCP tools fail, report that health checks could not be performed.
 
 Prompt the agent with:
 
-> First invoke the `midnight-plugin-utils:find-claude-plugin-root` skill to create `/tmp/cpr.py`. Then run the following bash commands and report results. Do NOT output anything except lines in the exact format `CHECK_NAME | STATUS | DETAIL`. Do not include markdown fences or any other text.
+> Run the following checks and report results. Do NOT output anything except lines in the exact format `CHECK_NAME | STATUS | DETAIL`. Do not include markdown fences or any other text.
 >
-> Commands to run:
-> 1. `PLUGIN_ROOT=$(python3 /tmp/cpr.py midnight-tooling)`
-> 2. `SCRIPTS_ROOT="$PLUGIN_ROOT/scripts/doctor"`
-> 3. `bash "$SCRIPTS_ROOT/proof-server.sh"`
+> **Part A — Docker prerequisites (bash):**
+>
+> 1. Check Docker is installed: `docker --version 2>&1`
+>    - If succeeds → `Docker installed | pass | installed` and `Docker version | info | <version output>`
+>    - If fails → `Docker installed | critical | not installed` — skip all remaining checks
+>
+> 2. Check Docker daemon is running: `docker info >/dev/null 2>&1`
+>    - If succeeds → `Docker daemon | pass | running`
+>    - If fails → `Docker daemon | critical | not running` — skip container and health checks
+>
+> **Part B — Container status (bash):**
+>
+> 3. List devnet containers: `docker ps -a --filter "name=midnight-" --format "{{.Names}}\t{{.Status}}"`
+>    - For each of the three expected containers (node, indexer, proof server), check if a matching container name is present and whether its status starts with "Up":
+>      - Running → `Node container | pass | running` (same for Indexer, Proof server)
+>      - Stopped → `Node container | warn | stopped`
+>      - Not found → `Node container | warn | not found`
+>
+> **Part C — Service health (MCP):**
+>
+> 4. Call the `mcp__plugin_midnight-tooling_midnight-devnet__health-check` tool to get service health with response times.
+>    - For each service (node, indexer, proof server), report:
+>      - Healthy → `Node health | pass | healthy`
+>      - Unhealthy/not responding → `Node health | warn | not responding`
+>    - If the MCP tool call fails entirely, emit warnings for all three:
+>      - `Node health | warn | MCP unavailable`
+>      - `Indexer health | warn | MCP unavailable`
+>      - `Proof server health | warn | MCP unavailable`
 
 ### Agent 4 — Plugin Dependencies
 
@@ -100,16 +126,18 @@ Present a single formatted report:
 | COMPACT_DIRECTORY exists | 🟢 PASS / 🔴 FAIL | ... (only if COMPACT_DIRECTORY was set) |
 | PATH configured | 🟢 PASS / 🟠 WARN | ... |
 
-### 🧾 Proof Server
+### 🌐 Devnet
 | Check | Status | Details |
 |-------|--------|---------|
 | Docker installed | 🟢 PASS / 🔴 FAIL | ... |
 | Docker version | 🔵 INFO | ... |
 | Docker daemon | 🟢 PASS / 🔴 FAIL | ... |
+| Node container | 🟢 PASS / 🟠 WARN | ... |
+| Indexer container | 🟢 PASS / 🟠 WARN | ... |
 | Proof server container | 🟢 PASS / 🟠 WARN | ... |
+| Node health | 🟢 PASS / 🟠 WARN | ... |
+| Indexer health | 🟢 PASS / 🟠 WARN | ... |
 | Proof server health | 🟢 PASS / 🟠 WARN | ... |
-| Proof server version | 🔵 INFO / 🟠 WARN | ... |
-| Proof server ready | 🟢 PASS / 🟠 WARN | ... |
 ```
 
 ### Plugin Dependencies section
@@ -189,8 +217,10 @@ Before applying any fix that updates a version (CLI update, compiler update), ch
 | COMPACT_DIRECTORY set but directory missing | Create the directory or correct the env var |
 | Docker not installed | Direct user to [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/) |
 | Docker not running | Instruct user to start Docker Desktop |
-| Proof server not running | Run `/midnight-tooling:run-proof-server` to start the proof server (resolves the latest stable version automatically) |
-| Stale proof server container | Run `docker rm -f midnight-proof-server` then start a new one |
+| Proof server not running | Run `/midnight-tooling:devnet start` to start the devnet (includes node, indexer, and proof server) |
+| Node not running | Run `/midnight-tooling:devnet start` to start the devnet |
+| Indexer not running | Run `/midnight-tooling:devnet start` to start the devnet |
+| Stale devnet containers | Run `/midnight-tooling:devnet stop --remove-volumes` then `/midnight-tooling:devnet start` |
 | Formatter not available | Run `compact update` to install latest tooling (check breaking changes first) |
 | curl not installed | Direct user to install curl via their system package manager (e.g. `brew install curl` on macOS, `apt install curl` on Debian/Ubuntu) |
 | Node.js not installed | Direct user to [https://nodejs.org/](https://nodejs.org/) or recommend `brew install node` / `nvm install --lts` |
