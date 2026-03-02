@@ -2,6 +2,19 @@
 
 Review checklist for the **Testing Adequacy** category. This covers test coverage for exported circuits, edge case and boundary testing, negative/failure-path testing, private state verification, witness mock correctness, and integration test patterns. Apply every item below to the test files accompanying the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Compilation output reveals contract structure for coverage analysis |
+| `midnight-extract-contract-structure` | `[shared]` | Lists all exported circuits (required for coverage checklist) |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of contract patterns |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for type mappings (needed for mock correctness) |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
 ## Test Coverage Checklist
 
 Check that the test suite provides baseline coverage for every exported circuit and constructor.
@@ -47,6 +60,8 @@ Check that the test suite provides baseline coverage for every exported circuit 
     });
   });
   ```
+
+  > **Tool:** `midnight-extract-contract-structure` lists all exported circuits. Use this as your definitive checklist — every exported circuit name must appear in the test files.
 
 - [ ] **Constructor tested with expected initial state.** The contract constructor (typically the `deploy` or `initialize` circuit) sets the initial ledger state. A test must verify that all ledger fields are initialized to their expected values after construction. Missing constructor tests allow incorrect initialization to go undetected, causing all subsequent circuit calls to operate on wrong state.
 
@@ -167,7 +182,7 @@ Check that the test suite covers boundary values and degenerate inputs that ofte
   });
   ```
 
-- [ ] **Maximum values tested: max Uint<64>, max Uint<128>, field maximum.** Arithmetic overflow is silent in ZK circuits — it wraps around without error. Tests must verify behavior at the upper boundary of each numeric type. For `Uint<64>`, the maximum is `2^64 - 1` (`18446744073709551615n`). For `Uint<128>`, it is `2^128 - 1`. Minting or transferring the maximum value, and then attempting one more, should be tested.
+- [ ] **Maximum values tested: max Uint<64>, max Uint<128>, field maximum.** Arithmetic behavior differs by type: `Field` arithmetic wraps silently (modular arithmetic), while `Uint<N>` addition widens the result type at compile time. For `Uint<N>`, subtraction underflow causes a runtime error. Tests must verify behavior at the upper boundary of each numeric type. For `Uint<64>`, the maximum is `2^64 - 1` (`18446744073709551615n`). For `Uint<128>`, it is `2^128 - 1`. Minting or transferring the maximum value, and then attempting one more, should be tested.
 
   ```typescript
   const MAX_UINT64 = (1n << 64n) - 1n;   // 18446744073709551615n
@@ -650,8 +665,8 @@ Check that witness mocks in tests accurately represent the runtime witness behav
   | `Bytes<N>` | `Uint8Array` | `string` or `Buffer` |
   | `Boolean` | `boolean` | `number` (0/1) |
   | `Maybe<T>` | `{ is_some: boolean; value: T }` | `T \| null` |
-  | `Either<L, R>` | `{ tag: "left"; value: L } \| { tag: "right"; value: R }` | `L \| R` |
-  | Enum | `bigint` (variant index) | `string` (variant name) |
+  | `Either<L, R>` | `{ is_left: boolean; left: L; right: R }` | `{ tag: "left"; value: L } \| { tag: "right"; value: R }` or `L \| R` |
+  | Enum | `number` (variant index) | `bigint` or `string` (variant name) |
 
   ```typescript
   // BAD — mock uses number and string instead of correct types
@@ -674,6 +689,8 @@ Check that witness mocks in tests accurately represent the runtime witness behav
     },
   };
   ```
+
+  > **Tool:** `midnight-get-latest-syntax` provides the authoritative type mapping rules. `midnight-extract-contract-structure` shows the Compact types for each witness, which must match the mock types per the mapping table.
 
 - [ ] **`Maybe<T>` mocked as `{ is_some: boolean; value: T }`, not `null` or `undefined`.** The Compact `Maybe<T>` type is represented in TypeScript as a tagged object with explicit `is_some` and `value` fields. Mocks that use JavaScript `null`/`undefined` for absent values will silently produce incorrect proof inputs. When `is_some` is `false`, the `value` field must still be present with a zero/default value of the correct type.
 
@@ -704,10 +721,10 @@ Check that witness mocks in tests accurately represent the runtime witness behav
   };
   ```
 
-- [ ] **`Either<L, R>` mocked with tagged union, not bare union.** The Compact `Either<L, R>` type maps to a discriminated union using a `tag` field. Mocks that return `L | R` without the tag field produce incorrect proof inputs because the runtime cannot determine which variant is active.
+- [ ] **`Either<L, R>` mocked with correct structure, not bare union.** The Compact `Either<L, R>` type maps to an object with `is_left`, `left`, and `right` fields. All fields must be present regardless of which variant is active. Mocks that return `L | R` without the structure produce incorrect proof inputs.
 
   ```typescript
-  // BAD — bare union with no tag
+  // BAD — bare union with no structure
   const mockWitnesses = {
     classify: (
       { privateState }: WitnessContext<Ledger, MyState>,
@@ -717,16 +734,16 @@ Check that witness mocks in tests accurately represent the runtime witness behav
     },
   };
 
-  // GOOD — tagged discriminated union
+  // GOOD — Either<L, R> uses { is_left, left, right } structure
   const mockWitnesses = {
     classify: (
       { privateState }: WitnessContext<Ledger, MyState>,
       data: Uint8Array,
-    ): [MyState, { tag: "left"; value: bigint } | { tag: "right"; value: boolean }] => {
+    ): [MyState, { is_left: boolean; left: bigint; right: boolean }] => {
       if (isNumeric(data)) {
-        return [privateState, { tag: "left", value: toBigInt(data) }];
+        return [privateState, { is_left: true, left: toBigInt(data), right: false }];
       }
-      return [privateState, { tag: "right", value: false }];
+      return [privateState, { is_left: false, left: 0n, right: false }];
     },
   };
   ```
@@ -783,6 +800,8 @@ Check that the test suite covers multi-step workflows, concurrent user scenarios
     });
   });
   ```
+
+  > **Tool:** `midnight-extract-contract-structure` and `midnight-analyze-contract` reveal the contract's state machine and multi-phase patterns. Use these to identify which flows need end-to-end tests. `midnight-list-examples` shows test patterns from reference implementations.
 
 - [ ] **Concurrent user scenarios tested.** When two or more users interact with the same contract, contention and ordering issues can emerge. Tests should simulate two users acting on shared state — both depositing, one transferring while another withdraws, or two users voting on the same proposal. These tests catch concurrency bugs that single-user tests miss.
 
@@ -902,12 +921,25 @@ Quick reference of common testing anti-patterns in Compact contract test suites.
 | Exported circuit with no test | Untested code is unverified code; bugs only discovered in production when real funds are at risk | Write at least one happy-path test and one failure-path test per exported circuit |
 | Test calls circuit but asserts nothing | Only verifies the call does not throw; does not verify correctness of state changes, return values, or side effects | Assert all expected outcomes: ledger state, return values, private state changes |
 | No zero-value tests | Zero amounts can bypass arithmetic checks, cause no-op transactions, or collide with uninitialized storage | Explicitly test zero for every numeric parameter and empty/zero for every bytes parameter |
-| No maximum-value tests | Arithmetic overflow wraps silently in ZK circuits; untested max values hide overflow vulnerabilities | Test at `MAX_UINT64`, `MAX_UINT128`, and contract-defined limits |
+| No maximum-value tests | `Field` arithmetic wraps silently (modular arithmetic); `Uint<N>` widens at compile time but subtraction underflow causes runtime error; untested max values hide vulnerabilities | Test at `MAX_UINT64`, `MAX_UINT128`, and contract-defined limits |
 | No unauthorized-caller tests | Access control bugs are invisible without negative tests; the circuit may accept anyone | Test every privileged circuit with a non-authorized witness context |
 | No out-of-order state transition tests | State machine guards may be missing or incorrect; protocol can be subverted by calling phases out of sequence | Test every invalid phase transition (reveal before commit, execute before vote, etc.) |
 | Witness mock returns only the value | Production witnesses return `[PrivateState, Value]` tuples; a mock returning just the value silently passes tests but the real witness behaves differently | Every mock witness must return `[privateState, returnValue]` |
 | Mock uses `null` for `Maybe<T>` | Runtime expects `{ is_some: boolean; value: T }` tagged object; `null`/`undefined` causes proof generation failure | Mock with `{ is_some: false, value: defaultValue }` for absent values |
+| Mock uses tagged union for `Either<L, R>` | Runtime expects `{ is_left: boolean; left: L; right: R }` with all fields present; tagged union `{ tag: "left"; value: L }` is incorrect | Mock with `{ is_left: true/false, left: ..., right: ... }` with all fields |
 | Mock uses `number` for `Field`/`Uint<N>` | `number` loses precision above 2^53; tests pass with small values but production values overflow | Always use `bigint` in mocks for `Field` and `Uint<N>` types |
+| Mock uses `bigint` for Enum | Compiler-generated enum constants are `number`, not `bigint`; using `bigint` causes type mismatches | Use `number` for enum variant indices; import constants from generated code |
 | No integration tests for multi-step flows | Individual circuit tests pass but full workflows fail due to state threading, ordering, or intermediate state corruption | Test complete flows end-to-end: commit-reveal, mint-transfer-burn, propose-vote-execute |
 | No concurrent user tests | Single-user tests miss contention, ordering, and shared-state bugs that emerge when multiple users interact simultaneously | Test two or more users acting on the same contract in sequence |
 | No state invariant checks | Subtle corruption (supply != sum of balances, counter drift) accumulates across operations and goes undetected | After multi-operation sequences, verify contract invariants hold |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Reveals contract structure for coverage analysis. |
+| `midnight-extract-contract-structure` | Lists all exported circuits, witness declarations, and state structure — the definitive list for coverage analysis. |
+| `midnight-analyze-contract` | Static analysis of contract patterns and state machines. |
+| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including type mapping rules for mock correctness. |
+| `midnight-list-examples` | List available example contracts with test suites for reference patterns. |
+| `midnight-search-docs` | Full-text search across official Midnight documentation for testing guidance. |
