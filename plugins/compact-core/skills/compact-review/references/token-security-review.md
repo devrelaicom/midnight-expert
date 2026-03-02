@@ -2,6 +2,19 @@
 
 Review checklist for the **Token & Economic Security** category. This covers double-spend prevention, arithmetic overflow/underflow, authorization controls, shielded token operations, and unshielded balance safety. Apply every item below to the contract under review.
 
+## Required MCP Tools
+
+Run these tools before starting your review. Reference their output when evaluating checklist items.
+
+| Tool | Label | Purpose |
+|------|-------|---------|
+| `midnight-compile-contract` | `[shared]` | Compilation errors from type mismatches in token operations |
+| `midnight-extract-contract-structure` | `[shared]` | Detects structural issues in token handling, missing checks |
+| `midnight-analyze-contract` | `[shared]` | Static analysis of token patterns |
+| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for token operation signatures |
+
+Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+
 ## Double-Spend Prevention Checklist
 
 Check every token-spending circuit for proper nullifier handling and commitment verification.
@@ -62,6 +75,8 @@ Check every token-spending circuit for proper nullifier handling and commitment 
   }
   ```
 
+  > **Tool:** `midnight-extract-contract-structure` identifies hash function usage. Verify all nullifier derivations use `persistentHash`, not `transientHash`.
+
 - [ ] **Commitment path verified against tree root before spend.** When spending a coin, the prover supplies a Merkle path proving the coin's commitment exists in the commitment tree. The contract must verify this path against the on-chain root using `checkRoot()`. Without this check, a prover can fabricate a commitment for coins that were never minted.
 
   ```compact
@@ -86,27 +101,20 @@ Check every token-spending circuit for proper nullifier handling and commitment 
 
 Check all arithmetic operations on token amounts for type sufficiency and bounds safety.
 
-- [ ] **Token amount type: `Uint<64>` vs `Uint<128>` — is the chosen type sufficient?** Compact supports both `Uint<64>` and `Uint<128>` for token amounts. Shielded (zswap) operations require `Uint<64>`, while unshielded operations use `Uint<128>`. Using the wrong type can cause truncation or compilation errors. Verify that the type matches the token operation context.
+- [ ] **Token amount type: `Uint<64>` vs `Uint<128>` — is the chosen type sufficient?** Compact supports both `Uint<64>` and `Uint<128>` for token amounts. Most shielded operations (`mintShieldedToken`, `sendShielded`, `sendImmediateShielded`) and unshielded send operations (`sendUnshielded`) use `Uint<128>` for amounts. The exception is `mintUnshieldedToken`, which uses `Uint<64>`. Using the wrong type can cause truncation or compilation errors. Verify that the type matches the token operation context.
 
   ```compact
-  // BAD — Uint<128> for a shielded mint (zswap requires Uint<64>)
+  // GOOD — Uint<128> for shielded mint value parameter
   export circuit mintShielded(amount: Uint<128>): ShieldedCoinInfo {
     return mintShieldedToken(
-      disclose(domainSep), disclose(amount), // Type mismatch for zswap
-      evolveNonce(0 as Uint<128>, disclose(domainSep)),
-      left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey())
-    );
-  }
-
-  // GOOD — Uint<64> for shielded operations, matching zswap requirements
-  export circuit mintShielded(amount: Uint<64>): ShieldedCoinInfo {
-    return mintShieldedToken(
       disclose(domainSep), disclose(amount),
-      evolveNonce(0 as Uint<128>, disclose(domainSep)),
+      evolveNonce(0 as Uint<64>, disclose(domainSep)),
       left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey())
     );
   }
   ```
+
+  > **Tool:** `midnight-get-latest-syntax` provides the authoritative stdlib function signatures showing the exact `Uint` width for each token operation. `midnight-compile-contract` output will show type mismatch errors if the wrong width is used.
 
 - [ ] **Addition overflow check: total does not exceed maximum value.** When adding to a balance or accumulating amounts, the result must not exceed the maximum representable value for the type. In ZK circuits, overflow wraps silently, producing a small value instead of a large one. Always assert that the addition will not overflow before performing it.
 
@@ -320,6 +328,8 @@ Check all shielded (zswap) token operations for correct API usage and value hand
   }
   ```
 
+  > **Tool:** `midnight-extract-contract-structure` identifies all `receiveShielded` calls. Cross-reference against all circuits that accept `ShieldedCoinInfo` parameters — each must call `receiveShielded`. `midnight-search-compact` can find reference patterns for correct shielded token handling.
+
 - [ ] **Correct coin color used (token type identifier).** In Midnight's zswap model, each token type is identified by a "color" (a `Bytes<32>` domain separator). Using the wrong color means the operation targets the wrong token type. Verify that the domain separator passed to `mintShieldedToken` and other operations matches the intended token.
 
   ```compact
@@ -333,7 +343,7 @@ Check all shielded (zswap) token operations for correct API usage and value hand
     return mintShieldedToken(
       disclose(domainSep),
       disclose(amount),
-      evolveNonce(0 as Uint<128>, disclose(domainSep)),
+      evolveNonce(0 as Uint<64>, disclose(domainSep)),
       left<ZswapCoinPublicKey, ContractAddress>(recipient)
     );
   }
@@ -399,16 +409,18 @@ Check all shielded (zswap) token operations for correct API usage and value hand
   }
   ```
 
-- [ ] **`Uint<64>` amount for zswap operations, not `Uint<128>`.** The zswap protocol operates on `Uint<64>` amounts. Functions like `mintShieldedToken` and `sendImmediateShielded` require `Uint<64>` for the amount parameter. Using `Uint<128>` will cause a type mismatch. Unshielded operations (e.g., `mintUnshieldedToken`, `sendUnshielded`) use `Uint<128>`.
+- [ ] **Correct `Uint` width for token operations.** Token operations use specific `Uint` widths. The `mintShieldedToken` function takes `Uint<128>` for the value parameter, while `mintUnshieldedToken` takes `Uint<64>`. The `sendShielded`, `sendImmediateShielded`, and `sendUnshielded` functions all take `Uint<128>` for the amount parameter. Check the stdlib signatures below for the exact types required by each function.
 
   Standard library function signatures for reference:
   ```
-  mintShieldedToken(Bytes<32>, Uint<64>, Bytes<32>, Either<ZswapCoinPublicKey, ContractAddress>)
-  sendImmediateShielded(ShieldedCoinInfo, Either<ZswapCoinPublicKey, ContractAddress>, Uint<64>)
+  mintShieldedToken(Bytes<32>, Uint<128>, Bytes<32>, Either<ZswapCoinPublicKey, ContractAddress>)
+  sendImmediateShielded(ShieldedCoinInfo, Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>)
   sendShielded(QualifiedShieldedCoinInfo, Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>)
   mintUnshieldedToken(Bytes<32>, Uint<64>, Either<ContractAddress, UserAddress>)
   sendUnshielded(Bytes<32>, Uint<128>, Either<ContractAddress, UserAddress>)
   ```
+
+  > **Tool:** `midnight-get-latest-syntax` is the authoritative source for these function signatures. Cross-reference every token operation call against the syntax reference.
 
 ## Unshielded Token Checklist
 
@@ -431,6 +443,8 @@ Check all unshielded token operations for construction-time pitfalls and API cor
   }
   ```
 
+  > **Tool:** `midnight-search-docs` has guidance on construction-time balance locks and the correct use of comparison functions.
+
 - [ ] **Comparison functions used instead of raw balance reads.** The standard library provides `unshieldedBalanceGt` and `unshieldedBalanceLt` for safe balance comparisons. These functions are designed to avoid the construction-time lock problem inherent in `unshieldedBalance()`. Use them instead of reading the balance and comparing manually.
 
   ```compact
@@ -448,7 +462,9 @@ Check all unshielded token operations for construction-time pitfalls and API cor
   Available stdlib comparison functions:
   ```
   unshieldedBalanceGt(Bytes<32>, Uint<128>) -> Boolean
+  unshieldedBalanceGte(Bytes<32>, Uint<128>) -> Boolean
   unshieldedBalanceLt(Bytes<32>, Uint<128>) -> Boolean
+  unshieldedBalanceLte(Bytes<32>, Uint<128>) -> Boolean
   ```
 
 - [ ] **Proper `disclose()` on amount parameters.** Unshielded token operations require disclosed (public) parameters because unshielded balances are inherently public. Forgetting `disclose()` on the color or amount will cause a compilation error since undisclosed witness values cannot flow to public ledger operations.
@@ -478,6 +494,18 @@ Quick reference of common token security anti-patterns in Compact contracts.
 | `kernel.mintShielded(pk, amount)` directly | Low-level kernel call bypasses stdlib safety checks, proper nonce handling, and coin registration | Use `mintShieldedToken(domainSep, amount, nonce, recipient)` stdlib wrapper which handles all safety concerns |
 | Allowance checked but not deducted after spend | Approved spender can drain the entire owner balance with repeated calls using the same approval | Atomically deduct the spent amount from the allowance in the same circuit that performs the transfer |
 | `sendImmediateShielded` return value discarded | Change output from partial spend is lost; tokens equal to `coinValue - sentAmount` are destroyed | Capture the return value and process `res.sent` and any change coins |
-| `Uint<128>` used for shielded token amount | Type mismatch with zswap protocol which operates on `Uint<64>`; causes compilation or runtime errors | Use `Uint<64>` for all shielded/zswap operations; reserve `Uint<128>` for unshielded operations |
+| Wrong `Uint` width for token operations | Using the wrong `Uint` width for token functions causes type mismatches; `mintShieldedToken` takes `Uint<128>` for value, `mintUnshieldedToken` takes `Uint<64>` for minting | Check the stdlib function signatures for the exact `Uint` width required by each token operation |
 | Nullifier derived using `transientHash` | Non-deterministic; same coin produces different nullifiers each time, completely defeating double-spend prevention | Use `persistentHash` with domain separation and secret key for deterministic nullifier derivation |
 | `unsafeTransfer` to a contract address | Recipient contract may not call `receiveShielded`, causing permanent token loss | Use safe transfer wrappers that verify recipient handling, or ensure the target contract is known to call `receiveShielded` |
+
+## Tool Reference
+
+| Tool | Description |
+|------|-------------|
+| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation. |
+| `midnight-extract-contract-structure` | Deep structural analysis: token patterns, missing `receiveShielded`, hash function usage. |
+| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
+| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including token operation signatures. |
+| `midnight-search-compact` | Semantic search across Compact code for token handling patterns. |
+| `midnight-search-docs` | Full-text search across official Midnight documentation. |
+| `midnight-list-examples` | List available example contracts with token implementations for reference. |
