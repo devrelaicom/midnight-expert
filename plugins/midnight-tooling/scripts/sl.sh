@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Midnight Network StatusLine for Claude Code
-# Displays proof server and Compact CLI status in the status bar.
+# Displays local devnet node status and Compact CLI version in the status bar.
 # Designed to chain with any existing statusLine command.
 set -euo pipefail
 
