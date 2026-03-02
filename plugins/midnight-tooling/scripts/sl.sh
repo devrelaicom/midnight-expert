@@ -539,33 +539,33 @@ add_segment() {
 # Segment 1: Brand
 add_segment " \xf0\x9f\x8c\x99 Midnight " "$PRIMARY_BG" "$PRIMARY_FG"
 
-# Segment 2: Proof server
-case "$PROOF_STATUS" in
-  ready)
-    proof_text=" \xe2\xac\xa1 Proof: ready "
-    if [ "$PROOF_PORT" -ne 6300 ]; then
-      proof_text=" \xe2\xac\xa1 Proof: ready :${PROOF_PORT} "
-    fi
-    add_segment "$proof_text" "$SUCCESS_BG" "$SUCCESS_FG"
-    ;;
-  busy)
-    proof_text=" \xe2\xac\xa1 Proof: busy"
-    if [ -n "$PROOF_DETAIL" ]; then
-      proof_text="${proof_text} (${PROOF_DETAIL})"
-    fi
-    proof_text="${proof_text} "
-    if [ "$PROOF_PORT" -ne 6300 ]; then
-      proof_text=" \xe2\xac\xa1 Proof: busy (${PROOF_DETAIL}) :${PROOF_PORT} "
-    fi
-    add_segment "$proof_text" "$WARNING_BG" "$WARNING_FG"
-    ;;
-  starting)
-    add_segment " \xe2\xac\xa1 Proof: starting " "$WARNING_BG" "$WARNING_FG"
-    ;;
-  off)
-    add_segment " \xe2\xac\xa1 Proof: off " "$ERROR_BG" "$ERROR_FG"
-    ;;
-esac
+# Segment 2: Devnet status
+if [ "$DEVNET_ANY_RUNNING" -eq 1 ]; then
+  # Build icon grid: ✓ for running, ✗ for anything else
+  # Order: Node, Indexer, Proof Server
+  # ✓ = \xe2\x9c\x93  ✗ = \xe2\x9c\x97
+  icon_node=$( [ "$DEVNET_NODE" = "running" ] && printf '\xe2\x9c\x93' || printf '\xe2\x9c\x97' )
+  icon_indexer=$( [ "$DEVNET_INDEXER" = "running" ] && printf '\xe2\x9c\x93' || printf '\xe2\x9c\x97' )
+  icon_proof=$( [ "$DEVNET_PROOF" = "running" ] && printf '\xe2\x9c\x93' || printf '\xe2\x9c\x97' )
+
+  devnet_text=" Devnet ${icon_node}${icon_indexer}${icon_proof} "
+
+  # Color: all running = SUCCESS, all down = ERROR, mixed = WARNING
+  running_count=0
+  [ "$DEVNET_NODE" = "running" ] && running_count=$((running_count + 1))
+  [ "$DEVNET_INDEXER" = "running" ] && running_count=$((running_count + 1))
+  [ "$DEVNET_PROOF" = "running" ] && running_count=$((running_count + 1))
+
+  if [ "$running_count" -eq 3 ]; then
+    add_segment "$devnet_text" "$SUCCESS_BG" "$SUCCESS_FG"
+  elif [ "$running_count" -eq 0 ]; then
+    add_segment "$devnet_text" "$ERROR_BG" "$ERROR_FG"
+  else
+    add_segment "$devnet_text" "$WARNING_BG" "$WARNING_FG"
+  fi
+else
+  add_segment " No devnet " "$TERTIARY_BG" "$TERTIARY_FG"
+fi
 
 # Segment 3: Compact CLI
 if [ "$COMPACT_INSTALLED" -eq 1 ]; then
