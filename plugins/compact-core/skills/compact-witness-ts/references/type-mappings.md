@@ -71,7 +71,13 @@ export { Maybe };
 ```typescript
 // Compact: Either<Uint<64>, Bytes<32>>
 // TypeScript:
-type Either<L, R> = { tag: "left"; value: L } | { tag: "right"; value: R };
+type Either<L, R> = { is_left: boolean; left: L; right: R };
+// Usage:
+if (result.is_left) {
+  const value = result.left;
+} else {
+  const error = result.right;
+}
 ```
 
 ## User-Defined Types

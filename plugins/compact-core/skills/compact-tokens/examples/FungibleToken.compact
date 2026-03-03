@@ -21,7 +21,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Compact Contracts v0.0.1-alpha.1 (token/FungibleToken.compact)
 
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.21;
 
 /**
  * @module FungibleToken
@@ -105,8 +105,8 @@ module FungibleToken {
 
   export ledger _totalSupply: Uint<128>;
 
-  // `sealed` means these values can only be set inside a circuit (never by a witness
-  // or external caller directly). This prevents unauthorized mutation of token metadata.
+  // `sealed` means these values can only be set during contract initialization
+  // (the constructor circuit). They are permanently immutable after deployment.
   // Opaque<"string"> is Compact's way of handling strings -- they are opaque to the
   // circuit (cannot be inspected character-by-character) but can be stored and compared.
   export sealed ledger _name: Opaque<"string">;

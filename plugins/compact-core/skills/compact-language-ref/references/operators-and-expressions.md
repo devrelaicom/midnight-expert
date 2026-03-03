@@ -24,7 +24,7 @@ export ledger balance: Uint<64>;
 export circuit deposit(amount: Uint<64>): [] {
   // balance + amount produces Uint<0..36893488147419103230>
   // cast back to Uint<64> before assignment
-  balance = (balance + amount) as Uint<64>;
+  balance = (balance + disclose(amount)) as Uint<64>;
 }
 ```
 
@@ -37,7 +37,7 @@ It is a compile error if the expanded bound would exceed the maximum unsigned in
 ```compact
 export circuit withdraw(amount: Uint<64>): [] {
   // Fails at runtime if amount > balance
-  balance = (balance - amount) as Uint<64>;
+  balance = (balance - disclose(amount)) as Uint<64>;
 }
 ```
 
@@ -49,7 +49,7 @@ If either operand has type `Field`, the result has type `Field`. Field arithmeti
 export ledger total: Field;
 
 export circuit accumulate(x: Field): [] {
-  total = total + x;   // Field + Field -> Field, wraps on overflow
+  total = total + disclose(x);   // Field + Field -> Field, wraps on overflow
 }
 ```
 
@@ -72,7 +72,7 @@ witness compute_quotient(a: Uint<64>, b: Uint<64>): Uint<64>;
 export circuit verified_divide(a: Uint<64>, b: Uint<64>): Uint<64> {
   const q = compute_quotient(a, b);
   assert(disclose((q * b) as Uint<64> <= a), "quotient too large");
-  return q;
+  return disclose(q);
 }
 ```
 
@@ -158,8 +158,8 @@ The table below shows which casts are allowed and their kind. Empty cells mean t
 | FROM \ TO | `Field` | `Uint<0..n>` | `Boolean` | `Bytes<n>` |
 |-----------|---------|-------------|-----------|------------|
 | **`Field`** | static | checked | conversion (1) | conversion (2) |
-| **`Uint<0..m>`** | static | static if m<=n, checked if m>n (3) | -- | -- |
-| **`Boolean`** | -- | conversion (4) | static | -- |
+| **`Uint<0..m>`** | static | static if m<=n, checked if m>n (3) | conversion (7) | -- |
+| **`Boolean`** | conversion (8) | conversion (4) | static | -- |
 | **`Bytes<m>`** | conversion (5) | -- | -- | static if m==n (6) |
 | **`enum`** | conversion | -- | -- | -- |
 
@@ -171,22 +171,22 @@ Notes:
 4. `Boolean` to `Uint<0..n>`: `false` becomes `0`, `true` becomes `1`. If `n` is `0`, the cast is checked and fails at runtime when the value is `true`.
 5. `Bytes<m>` to `Field`: little-endian interpretation. Runtime error if the result exceeds the maximum `Field` value.
 6. `Bytes<m>` to `Bytes<n>`: only allowed when `m` equals `n` (a static identity cast).
+7. `Uint<0..m>` to `Boolean`: `0` becomes `false`, non-zero becomes `true`.
+8. `Boolean` to `Field`: `false` becomes `0`, `true` becomes `1`.
 
 ### Multi-step Casts
 
-Some type conversions require going through an intermediate type:
+Some type conversions can go through an intermediate type. For example, `Uint` to `Bytes` can be cast directly or routed through `Field`:
 
 ```compact
-// Boolean -> Field: go through Uint
-const flag: Boolean = true;
-const flag_field: Field = (flag as Uint<0..1>) as Field;
-
-// Uint -> Bytes: go through Field
 const amount: Uint<64> = 1000;
-const amount_bytes: Bytes<32> = (amount as Field) as Bytes<32>;
+// Direct cast -- compiles and works
+const amount_bytes: Bytes<32> = amount as Bytes<32>;
+// Alternative -- two-step cast through Field
+const amount_bytes2: Bytes<32> = (amount as Field) as Bytes<32>;
 ```
 
-Direct `Boolean` to `Field` and direct `Uint` to `Bytes` casts are not allowed. The compiler will reject them.
+Both routes produce the same result. The `Field` intermediate step is not required but remains a valid alternative.
 
 ### Arithmetic Results Require Casting
 
@@ -196,10 +196,13 @@ Because arithmetic widens the result type, you must cast before assigning to a f
 export ledger balances: Map<Bytes<32>, Uint<64>>;
 
 export circuit transfer(from: Bytes<32>, to: Bytes<32>, amount: Uint<64>): [] {
-  const from_bal = balances.lookup(from);
-  const to_bal = balances.lookup(to);
-  balances.insert(disclose(from), (from_bal - amount) as Uint<64>);
-  balances.insert(disclose(to), (to_bal + amount) as Uint<64>);
+  const d_from = disclose(from);
+  const d_to = disclose(to);
+  const d_amount = disclose(amount);
+  const from_bal = balances.lookup(d_from);
+  const to_bal = balances.lookup(d_to);
+  balances.insert(d_from, (from_bal - d_amount) as Uint<64>);
+  balances.insert(d_to, (to_bal + d_amount) as Uint<64>);
 }
 ```
 
@@ -269,14 +272,15 @@ Anonymous circuits are inline circuit definitions using arrow syntax. The body c
 
 Anonymous circuits are **not first-class values**. They cannot be stored in variables, passed as arguments, or returned from circuits. They must be immediately called where they appear. There is no syntax for generic anonymous circuits.
 
-They appear most commonly with `map` and `fold` over vectors. Parameters support destructuring:
+They appear most commonly as arguments to the `map` and `fold` keywords when transforming vectors. `map` and `fold` are global keywords (like `assert` and `disclose`), not methods on vectors. Parameters support destructuring:
 
 ```compact
 const nums: Vector<3, Uint<64>> = [10, 20, 30];
-const doubled = nums.map<Uint<64>>((x: Uint<64>): Uint<64> => (x * 2) as Uint<64>);
+const doubled = map((x: Uint<64>): Uint<64> => (x * 2) as Uint<64>, nums);
 
 const pairs: Vector<2, [Uint<64>, Uint<64>]> = [[1, 2], [3, 4]];
-const sums = pairs.map<Uint<64>>(
-  ([a, b]: [Uint<64>, Uint<64>]): Uint<64> => (a + b) as Uint<64>
+const sums = map(
+  ([a, b]: [Uint<64>, Uint<64>]): Uint<64> => (a + b) as Uint<64>,
+  pairs
 );
 ```

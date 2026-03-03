@@ -24,13 +24,14 @@ src/managed/mycontract/
 Key exports from `contract/index.js`:
 
 ```typescript
-import { Ledger, Witnesses, Circuits, Contract } from "./managed/mycontract/contract/index.js";
+import { Ledger, Witnesses, Circuits, Contract, pureCircuits } from "./managed/mycontract/contract/index.js";
 ```
 
 - **`Ledger`** — TypeScript type matching the contract's ledger declarations
 - **`Witnesses`** — Interface defining required witness implementations
 - **`Circuits`** — Type describing available circuit functions
 - **`Contract`** — Class that binds witnesses to circuits
+- **`pureCircuits`** — Module-level const export for local-only pure circuit calls (no proof generated)
 - **`ledger()`** — Function to parse on-chain state into typed objects
 
 ## Type Mapping Quick Reference
@@ -47,10 +48,10 @@ import { Ledger, Witnesses, Circuits, Contract } from "./managed/mycontract/cont
 | `struct { a: A, b: B }` | `{ a: A, b: B }` | Plain object |
 | `Vector<N, T>` / tuples | `T[]` | Runtime length checked |
 | `Maybe<T>` | `{ is_some: boolean; value: T }` | Must export from Compact to use type |
-| `Either<L, R>` | Tagged union | `{ tag: "left"; value: L } \| { tag: "right"; value: R }` |
+| `Either<L, R>` | `{ is_left: boolean; left: L; right: R }` | Flat object with discriminator |
 | `Counter` | `bigint` | Via `ledger()` |
-| `Map<K, V>` | `Map<K, V>` | Via `ledger()` |
-| `Set<T>` | `Set<T>` | Via `ledger()` |
+| `Map<K, V>` | Custom accessor object | Via `ledger()`; has `member()`, `size`, `isEmpty`, `Symbol.iterator` |
+| `Set<T>` | Custom accessor object | Via `ledger()`; has `member()`, `size`, `isEmpty`, `Symbol.iterator` |
 | `MerkleTreePath<N, T>` | Nested structure | Array of sibling hashes + directions |
 
 For complete type mapping details, runtime validation, and casting rules, see `references/type-mappings.md`.
@@ -133,8 +134,9 @@ import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 // Instantiate with witnesses
 const contractInstance = new MyContract.Contract(witnesses);
 
-// Pure circuits — local computation, no proof, no transaction
-const hash = contractInstance.pureCircuits.computeHash(inputData);
+// Pure circuits — module-level export, local computation, no proof, no transaction
+import { pureCircuits } from "./managed/mycontract/contract/index.js";
+const hash = pureCircuits.computeHash(inputData);
 
 // Read ledger state from on-chain data
 const ledgerState = MyContract.ledger(contractStateData);

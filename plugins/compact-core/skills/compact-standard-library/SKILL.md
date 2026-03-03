@@ -163,8 +163,8 @@ Types provided by the standard library. All are available after `import CompactS
 
 | Type | Generic Parameters | Fields Summary | Default Value |
 |------|--------------------|----------------|---------------|
-| `Maybe<T>` | `T` -- any type | `isSome: Boolean`, `value: T` | `{ isSome: false, value: default<T> }` |
-| `Either<L, R>` | `L`, `R` -- any types | `isLeft: Boolean`, `left: L`, `right: R` | `{ isLeft: true, left: default<L>, right: default<R> }` |
+| `Maybe<T>` | `T` -- any type | `is_some: Boolean`, `value: T` | `{ is_some: false, value: default<T> }` |
+| `Either<L, R>` | `L`, `R` -- any types | `is_left: Boolean`, `left: L`, `right: R` | `{ is_left: false, left: default<L>, right: default<R> }` (right variant, based on struct defaults) |
 | `NativePoint` | none | `x: Field`, `y: Field` | `{ x: 0, y: 0 }` |
 | `MerkleTreeDigest` | none | `field: Field` | `{ field: 0 }` |
 | `MerkleTreePathEntry` | none | `sibling: MerkleTreeDigest`, `goesLeft: Boolean` | `{ sibling: { field: 0 }, goesLeft: false }` |
@@ -193,7 +193,7 @@ circuit right<A, B>(value: B): Either<A, B>;
 
 ```compact
 const found = some<Field>(42);
-if (found.isSome) {
+if (found.is_some) {
   const v = found.value;  // 42
 }
 
@@ -254,8 +254,8 @@ For full documentation with off-chain path generation patterns and HistoricMerkl
 |----------|-----------|---------|
 | `pad` | `pad(length, value): Bytes<N>` | UTF-8 string to fixed-size bytes (both args must be literals) |
 | `disclose` | `disclose(value: T): T` | Mark witness-derived value as publicly visible |
-| `assert` | `assert(condition: Boolean, message?: string): []` | Abort transaction if false |
-| `default<T>` | `default<T>(): T` | Default value for any type |
+| `assert` | `assert(condition: Boolean, message: string): []` | Abort transaction if false |
+| `default<T>` | `default<T>` | Default value for any type |
 
 `disclose` is required whenever a witness-derived value flows to a ledger operation, controls a conditional, or is returned from an exported circuit. `pad` requires both arguments to be compile-time literals. `assert` is the only error-handling mechanism in Compact.
 

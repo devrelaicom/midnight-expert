@@ -23,7 +23,7 @@
 //   - Observer CANNOT see: which commitment was spent, the secret
 //     behind any token, the link between a nullifier and its commitment
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 
 import CompactStandardLibrary;
 
@@ -81,8 +81,8 @@ witness get_commitment_path(commitment: Bytes<32>): MerkleTreePath<10, Bytes<32>
 // Uses persistentCommit (not persistentHash) because:
 //   1. persistentCommit includes a blinding factor (randomness) that hides
 //      the secret even if the space of possible secrets is small
-//   2. persistentCommit clears witness taint on the result, so the output
-//      can be inserted into the Merkle tree without additional disclosure
+// No disclose() needed on the commitment: persistentCommit clears witness
+//    taint on its output, so the value is no longer witness-derived.
 // The domain prefix "nds:commitment:" binds this to commitment derivation.
 circuit derive_commitment(secret: Bytes<32>, randomness: Bytes<32>): Bytes<32> {
   return persistentCommit<Vector<2, Bytes<32>>>(
@@ -130,8 +130,7 @@ export circuit issue(): [] {
   const secret = local_secret();
   const randomness = local_randomness();
 
-  // Derive the commitment -- persistentCommit clears witness taint on the
-  // result, so no disclose() is needed for the insert below.
+  // No disclose() needed: persistentCommit clears witness taint on its output.
   const commitment = derive_commitment(secret, randomness);
 
   // Insert into the Merkle tree. The leaf value (commitment) is hidden

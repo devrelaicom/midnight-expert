@@ -12,7 +12,7 @@ Element of the scalar prime field of the zero-knowledge proving system. Unbounde
 export ledger total: Field;
 
 export circuit accumulate(x: Field): [] {
-  total = total + x;
+  total = total + disclose(x);
 }
 ```
 
@@ -121,7 +121,7 @@ witness get_player_name(): Opaque<"string">;
 export circuit register(): [] {
   // The witness returns the full string.
   // Inside the circuit the value is opaque (hash only).
-  playerName = get_player_name();
+  playerName = disclose(get_player_name());
 }
 ```
 
@@ -168,7 +168,7 @@ witness find_user(id: Bytes<32>): Maybe<Bytes<32>>;
 export circuit lookup(id: Bytes<32>): Bytes<32> {
   const result = find_user(id);
   assert(disclose(result.is_some), "User not found");
-  return result.value;
+  return disclose(result.value);
 }
 ```
 
@@ -191,7 +191,7 @@ witness try_operation(): Either<Uint<64>, Bytes<32>>;
 export circuit attempt(): Uint<64> {
   const result = try_operation();
   assert(disclose(result.is_left), "Operation failed");
-  return result.left;
+  return disclose(result.left);
 }
 ```
 
@@ -313,13 +313,13 @@ The empty tuple `[]` is Compact's unit type, used as the return type for circuit
 
 ## Default Values
 
-Every Compact type has a default value, obtained with the `default<T>()` expression:
+Every Compact type has a default value, obtained with the `default<T>` expression:
 
 ```compact
-const d1 = default<Boolean>();       // false
-const d2 = default<Uint<64>>();      // 0
-const d3 = default<Field>();         // 0
-const d4 = default<Bytes<32>>();     // all-zero byte array
+const d1 = default<Boolean>;       // false
+const d2 = default<Uint<64>>;      // 0
+const d3 = default<Field>;         // 0
+const d4 = default<Bytes<32>>;     // all-zero byte array
 ```
 
 Default values by type:
@@ -339,20 +339,20 @@ Default values by type:
 ```compact
 export enum Status { pending, approved, rejected }
 
-const s = default<Status>();         // Status.pending (first variant)
+const s = default<Status>;         // Status.pending (first variant)
 
 export struct Config {
   limit: Uint<64>,
   enabled: Boolean,
 }
 
-const c = default<Config>();         // Config { limit: 0, enabled: false }
+const c = default<Config>;         // Config { limit: 0, enabled: false }
 ```
 
-Default values are also used when initializing ledger state. The `default<T>()` expression works with ledger state types as well:
+Default values are also used when initializing ledger state. The `default<T>` expression works with ledger state types as well:
 
 ```compact
-const d = default<Counter>();        // Counter at 0
+const d = default<Counter>;        // Counter at 0
 ```
 
 ## TypeScript Representations

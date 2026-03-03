@@ -160,6 +160,8 @@ export ledger items: List<Field>;
 | `.head()` | `Maybe<T>` | Get first element |
 | `.isEmpty()` | `Boolean` | Check if empty |
 | `.length()` | `Uint<64>` | Number of elements |
+| `.popFront()` | `[]` | Remove front element |
+| `.resetToDefault()` | `[]` | Clear entire list |
 
 ### MerkleTree<N, T>
 
@@ -169,10 +171,16 @@ export ledger tree: MerkleTree<10, Bytes<32>>;
 
 N is the tree depth (1 < N <= 32). Supports up to 2^N leaves.
 
-| Method | Context | Description |
+| Method | Returns | Description |
 |--------|---------|-------------|
-| `.insert(leaf)` | Circuit | Add leaf (value stays hidden) |
-| `.root()` | TypeScript only | Get tree root — NOT available in circuits |
+| `.insert(leaf)` | `[]` | Add leaf (value stays hidden on-chain) |
+| `.insertHash(leafHash)` | `[]` | Insert pre-hashed leaf |
+| `.insertIndex(leaf, index)` | `[]` | Insert leaf at a specific index |
+| `.insertHashIndex(leafHash, index)` | `[]` | Insert pre-hashed leaf at a specific index |
+| `.checkRoot(digest)` | `Boolean` | Verifies digest matches current root (circuit-available) |
+| `.isFull()` | `Boolean` | Check if tree is full |
+| `.resetToDefault()` | `[]` | Reset tree to empty |
+| `.root()` | `MerkleTreeDigest` | Get tree root — TypeScript only, NOT available in circuits |
 
 To verify membership in a circuit, use a witness to provide the Merkle proof:
 
@@ -188,11 +196,21 @@ Same as `MerkleTree` but preserves historic root values. Useful for proving memb
 export ledger history: HistoricMerkleTree<10, Bytes<32>>;
 ```
 
+Additional operation compared to `MerkleTree`:
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `.checkRoot(digest)` | `Boolean` | Verifies digest matches any past root (circuit-available) |
+
+All other `MerkleTree` operations are also available on `HistoricMerkleTree`.
+
 ## Kernel Ledger
 
 The special `Kernel` type provides access to contract metadata:
 
 ```compact
+// Note: kernel is auto-declared by `import CompactStandardLibrary;`
+// Only declare manually if NOT using the standard library import.
 ledger kernel: Kernel;
 
 export circuit getSelf(): ContractAddress {
