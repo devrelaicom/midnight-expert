@@ -44,7 +44,7 @@
 //
 // ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 
 import CompactStandardLibrary;
 
@@ -124,7 +124,7 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
 // regardless of whether issuance or verification calls this circuit.
 circuit recomputeCommitment(credentialValue: Uint<64>, salt: Bytes<32>): Bytes<32> {
   // Two-step cast: Uint<64> -> Field -> Bytes<32>.
-  // Direct Uint-to-Bytes cast is not allowed in Compact.
+  // A direct Uint<64> -> Bytes<32> cast also works, but the two-step route via Field is common.
   const valueBytes = (credentialValue as Field) as Bytes<32>;
   return persistentCommit<Vector<2, Bytes<32>>>(
     [valueBytes, pad(32, "seldiscl:cred:")],

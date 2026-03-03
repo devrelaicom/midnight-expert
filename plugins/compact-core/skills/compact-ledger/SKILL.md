@@ -70,7 +70,7 @@ witness local_secret_key(): Bytes<32>;
 constructor() {
   owner = disclose(get_public_key(local_secret_key()));
   phase = Phase.registration;
-  count.increment(0);
+  // count starts at 0 by default — no initialization needed
 }
 ```
 
@@ -125,7 +125,7 @@ For the full Kernel API including zswap claim operations, see `references/types-
 
 | Wrong | Correct | Why |
 |-------|---------|-----|
-| `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax is deprecated |
+| `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax was removed in Compact 0.10.1 — causes a parse error |
 | `counter.value()` | `counter.read()` | `.value()` does not exist |
 | `map.lookup(key)` without member check | Check `map.member(key)` first | `lookup` on missing key returns default, not error |
 | `sealed ledger export x: T` | `export sealed ledger x: T` | `export` must come before `sealed` |

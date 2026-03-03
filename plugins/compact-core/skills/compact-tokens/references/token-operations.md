@@ -105,8 +105,8 @@ assert(coin.color == nativeToken(), "Not a native token");
 
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
-| `mintShieldedToken(domainSep, value, nonce, recipient)` | `domainSep: Bytes<32>, value: Uint<128>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>` | `ShieldedCoinInfo` | Mint a new shielded coin and send to recipient |
-| `evolveNonce(index, nonce)` | `index: Uint<64>, nonce: Bytes<32>` | `Bytes<32>` | Deterministically derive a nonce from a counter and prior nonce |
+| `mintShieldedToken(domainSep, value, nonce, recipient)` | `domainSep: Bytes<32>, value: Uint<64>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>` | `ShieldedCoinInfo` | Mint a new shielded coin and send to recipient |
+| `evolveNonce(index, nonce)` | `index: Uint<128>, nonce: Bytes<32>` | `Bytes<32>` | Deterministically derive a nonce from a counter and prior nonce |
 | `shieldedBurnAddress()` | -- | `Either<ZswapCoinPublicKey, ContractAddress>` | Returns an address that burns any coins sent to it |
 | `receiveShielded(coin)` | `coin: ShieldedCoinInfo` | `[]` | Receive a shielded coin addressed to this contract |
 | `sendShielded(input, recipient, value)` | `input: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>` | `ShieldedSendResult` | Send value from a ledger coin to recipient; returns change |
@@ -147,7 +147,7 @@ export ledger mintCount: Counter;
 export circuit mintToken(amount: Uint<64>): ShieldedCoinInfo {
   const idx = mintCount.read();
   mintCount.increment(1);
-  const nonce = evolveNonce(idx, nonceSeed);
+  const nonce = evolveNonce(mintCount.read() as Uint<128>, nonceSeed);
   return mintShieldedToken(
     pad(32, "mytoken:"),
     disclose(amount),
@@ -325,7 +325,7 @@ Before submitting transactions that interact with tokens, the wallet must have s
 
 1. Create or restore a wallet with a seed phrase
 2. Request tNight from the faucet to the unshielded address
-3. The wallet auto-delegates tNight to generate DUST tokens
+3. The wallet automatically registers tNIGHT UTXOs for DUST generation
 4. DUST is consumed for ZK proof generation and transaction fees
 
 ### TypeScript SDK Token Types

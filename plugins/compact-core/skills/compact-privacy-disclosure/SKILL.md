@@ -50,7 +50,7 @@ Privacy is the default in Compact. All witness-derived data is private unless ex
 
 ## Safe Stdlib Routines
 
-| Function | Signature | Clears Witness Taint? | Why |
+| Function | Signature | Cryptographically Hides Input? | Why |
 |----------|-----------|----------------------|-----|
 | `persistentCommit<T>` | `(value: T, rand: Bytes<32>): Bytes<32>` | **Yes** | Commitment cryptographically hides input |
 | `transientCommit<T>` | `(value: T, rand: Field): Field` | **Yes** | Same hiding property, circuit-efficient |

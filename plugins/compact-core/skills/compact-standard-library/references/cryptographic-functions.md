@@ -70,7 +70,7 @@ circuit nativePointY(p: NativePoint): Field;
 circuit constructNativePoint(x: Field, y: Field): NativePoint;
 ```
 
-These functions extract or construct `NativePoint` coordinates. Prefer `nativePointX` and `nativePointY` over direct `.x`/`.y` field access; direct access is deprecated and will break when `NativePoint` becomes fully opaque.
+These functions extract or construct `NativePoint` coordinates. While direct field access (`.x`, `.y`) works, prefer `nativePointX` and `nativePointY` for long-term compatibility, as `NativePoint` may become opaque in a future compiler version.
 
 `constructNativePoint` builds a `NativePoint` from raw coordinates. Use with caution: the function does not validate that the point lies on the curve. Passing invalid coordinates can produce undefined circuit behavior.
 
@@ -143,7 +143,7 @@ witness get_proof(leafValue: Field): MerkleTreePath<4, Field>;
 export circuit verifyMembership(leafValue: Field): [] {
   const path = get_proof(leafValue);
   const digest = merkleTreePathRoot<4, Field>(path);
-  assert(merkleTree.checkRoot(digest), "Not a member");
+  assert(merkleTree.checkRoot(disclose(digest)), "Not a member");
 }
 ```
 

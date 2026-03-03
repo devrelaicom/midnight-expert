@@ -131,7 +131,7 @@ export ledger spentNullifiers: Set<Bytes<32>>;
 
 // Check and insert a nullifier
 const nul = deriveNullifier(currentRound, sk);
-assert(disclose(!spentNullifiers.member(nul)), "Already acted this round");
+assert(disclose(!spentNullifiers.member(disclose(nul))), "Already acted this round");
 spentNullifiers.insert(disclose(nul));
 ```
 
@@ -233,7 +233,7 @@ export circuit act(): [] {
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:act-nul:"), sk
   ]);
-  assert(disclose(!usedNullifiers.member(nul)), "Already acted");
+  assert(disclose(!usedNullifiers.member(disclose(nul))), "Already acted");
   usedNullifiers.insert(disclose(nul));
 
   // ... perform the action
@@ -347,12 +347,12 @@ export circuit revealValue(): Field {
   assert(phase == Phase.reveal, "Not in reveal phase");
   const sk = local_secret_key();
   const pk = get_public_key(sk);
-  assert(disclose(commitments.member(pk)), "No commitment found");
+  assert(disclose(commitments.member(disclose(pk))), "No commitment found");
   const opening = getOpening();
-  const salt = opening.0;
-  const value = opening.1;
+  const salt = opening[0];
+  const value = opening[1];
   const expected = persistentCommit<Field>(value, salt);
-  assert(disclose(expected == commitments.lookup(pk)), "Commitment mismatch");
+  assert(disclose(expected == commitments.lookup(disclose(pk))), "Commitment mismatch");
   return disclose(value);
 }
 ```
@@ -460,9 +460,9 @@ witness getProfile(): [Bytes<32>, Field, Field];
 // Reveal age bracket but not name or exact income
 export circuit proveAgeAbove(minAge: Field): [] {
   const profile = getProfile();
-  const name = profile.0;     // NOT disclosed
-  const age = profile.1;      // comparison result disclosed
-  const income = profile.2;   // NOT disclosed
+  const name = profile[0];     // NOT disclosed
+  const age = profile[1];      // comparison result disclosed
+  const income = profile[2];   // NOT disclosed
 
   // Only the boolean result of the age comparison is made public
   assert(disclose(age >= minAge), "Age requirement not met");
