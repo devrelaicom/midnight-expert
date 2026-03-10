@@ -46,7 +46,7 @@ export ledger balances: Map<Bytes<32>, Uint<64>>;
 Operations -- no bracket/subscript access:
 
 ```compact
-// Read a value (returns the value or a default)
+// Read a value (returns the value, or zero/empty if key not present)
 const balance = balances.lookup(address);
 
 // Write a value
@@ -369,18 +369,21 @@ There is no `receive coins: Coin[];` or `send value, to: Address;` statement syn
    comment */
 ```
 
-## Enum and Struct Types
+## Enum Types
 
 ```compact
 // Enum declaration
 export enum Phase { setup, commit, reveal, finalized }
 
-// Enum usage
+// Enum usage (as ledger field)
+export ledger phase: Phase;
+
+// In a circuit:
 phase = Phase.setup;
 if (phase == Phase.commit) { ... }
 ```
 
-Enum values use dot notation: `Phase.commit` (not `Phase::commit`).
+Enum values use dot notation: `Phase.commit` (not `Phase::commit`). Bare assignment to `phase` above is valid because `phase` is a ledger field, not a local variable.
 
 ## disclose() Annotation
 

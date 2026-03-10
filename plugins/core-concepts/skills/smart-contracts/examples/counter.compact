@@ -77,12 +77,13 @@ export circuit increment(): [] {
 
 // Increment the counter by a specified amount.
 // Only the authorized user can call this.
-// `amount` is Uint<64> for the parameter; cast to Uint<16> for increment.
+// Counter.increment takes Uint<16> (max 65535), so we validate the range.
 // Comparison operators (>) only work on Uint<N>, not Field.
 export circuit incrementBy(amount: Uint<64>): [] {
   requireAuth();
   assert(amount > 0, "Amount must be positive");
-  // Counter.increment takes Uint<16>; cast the amount
+  assert(amount <= 65535, "Amount exceeds Uint<16> maximum");
+  // Safe to cast after range check
   count.increment(amount as Uint<16>);
 }
 
