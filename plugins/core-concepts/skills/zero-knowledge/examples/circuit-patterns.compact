@@ -1,0 +1,145 @@
+// Common ZK Circuit Patterns in Compact
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// =============================================================================
+// PATTERN 1: PROVE KNOWLEDGE WITHOUT REVEALING
+// =============================================================================
+
+export ledger target_hash: Bytes<32>;
+
+// Witness declaration (implementation provided in TypeScript)
+witness get_secret(): Bytes<32>;
+
+// Prove you know the preimage of a hash
+export circuit proveKnowledge(): [] {
+  const secret = get_secret();
+  // Constraint: Hash(secret) must equal public target
+  // Verifier learns: "Prover knows a valid preimage"
+  // Verifier does NOT learn: The actual secret value
+  assert(persistentHash<Bytes<32>>(secret) == target_hash, "Hash does not match target");
+}
+
+// =============================================================================
+// PATTERN 2: RANGE PROOF (prove value in range)
+// =============================================================================
+
+export ledger minimum: Uint<64>;
+export ledger maximum: Uint<64>;
+
+// Witness declaration
+witness get_secret_value(): Uint<64>;
+
+// Prove a value is within a range without revealing exact value
+// Note: comparison operators (>=, <=) only work on Uint<N>, not Field
+export circuit proveInRange(): [] {
+  const secret_value = get_secret_value();
+  // These comparisons become bit-decomposition constraints
+  assert(secret_value >= minimum, "Value below minimum");
+  assert(secret_value <= maximum, "Value above maximum");
+  // Verifier learns: value is in [minimum, maximum]
+  // Verifier does NOT learn: exact value
+}
+
+// =============================================================================
+// PATTERN 3: MEMBERSHIP PROOF
+// =============================================================================
+
+export ledger authorized: MerkleTree<32, Bytes<32>>;
+
+// Witness declarations
+witness get_member_key(): Bytes<32>;
+witness get_merkle_path(): MerkleTreePath<32, Bytes<32>>;
+
+// Prove membership in a set without revealing which member
+export circuit proveMembership(): [] {
+  const secret_key = get_member_key();
+  const merkle_path = get_merkle_path();
+  const public_key = persistentHash<Bytes<32>>(secret_key);
+
+  // Compute the root from the path, then verify against the tree
+  const root = merkleTreePathRoot<32, Bytes<32>>(merkle_path);
+  authorized.checkRoot(disclose(root));
+  // Verifier learns: "Some authorized key was used"
+  // Verifier does NOT learn: Which specific key
+}
+
+// =============================================================================
+// PATTERN 4: CONDITIONAL LOGIC
+// =============================================================================
+
+export ledger threshold: Uint<64>;
+export ledger premium_count: Counter;
+export ledger regular_count: Counter;
+
+// Witness declaration
+witness get_secret_balance(): Uint<64>;
+
+// ZK-proven conditional execution
+export circuit conditionalAction(): [] {
+  const secret_balance = get_secret_balance();
+  // The condition itself is proven without revealing balance
+  // Note: comparison only works on Uint<N>
+  if secret_balance >= threshold {
+    premium_count.increment(1);
+  } else {
+    regular_count.increment(1);
+  }
+  // Verifier learns: One counter increased
+  // Verifier does NOT learn: Which branch or actual balance
+}
+
+// =============================================================================
+// PATTERN 5: COMMITMENT VERIFICATION
+// =============================================================================
+
+export ledger stored_commitment: Bytes<32>;
+
+// Witness declarations
+witness get_committed_value(): Field;
+witness get_randomness(): Bytes<32>;
+
+// Verify a commitment without revealing committed value
+export circuit verifyCommitment(): [] {
+  const committed_value = get_committed_value();
+  const randomness = get_randomness();
+  // Reconstruct commitment from private inputs
+  const computed = persistentCommit(committed_value, randomness);
+
+  // Prove it matches stored commitment
+  assert(computed == stored_commitment, "Commitment does not match");
+  // Verifier learns: Prover knows the committed value
+  // Verifier does NOT learn: What the value is
+}
+
+// =============================================================================
+// PATTERN 6: MULTI-CONSTRAINT PROOFS
+// =============================================================================
+
+export ledger owner_hash: Bytes<32>;
+export ledger min_amount: Uint<64>;
+export ledger action_count: Counter;
+
+// Witness declarations
+witness get_owner_secret(): Bytes<32>;
+witness get_amount(): Uint<64>;
+
+// Prove multiple conditions simultaneously
+export circuit complexProof(): [] {
+  const owner_secret = get_owner_secret();
+  const amount = get_amount();
+
+  // Constraint 1: Prove ownership
+  assert(persistentHash<Bytes<32>>(owner_secret) == owner_hash, "Not the owner");
+
+  // Constraint 2: Prove sufficient amount
+  assert(amount >= min_amount, "Amount too low");
+
+  // Constraint 3: Update state (proves authorization)
+  action_count.increment(1);
+
+  // Single proof validates all three conditions
+  // None of the private values revealed
+}
