@@ -86,13 +86,14 @@ export circuit authenticate(): [] {
 export ledger signers: HistoricMerkleTree<10, Bytes<32>>;
 export ledger approvalCount: Counter;
 export ledger approvedNullifiers: Set<Bytes<32>>;
+// sealed: threshold value is private; observers see approval count but not the target
 export sealed ledger threshold: Uint<64>;
 export ledger actionApproved: Boolean;
 
 // Witness to get Merkle path for a signer
 witness getSignerPath(pk: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
 
-circuit get_public_key(sk: Bytes<32>): Bytes<32> {
+circuit get_signer_key(sk: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "multisig:pk:"), sk
   ]);
@@ -109,7 +110,7 @@ export circuit approve(): [] {
   assert(!actionApproved, "Already approved");
 
   const sk = local_secret_key();
-  const pk = get_public_key(sk);
+  const pk = get_signer_key(sk);
 
   // Step 1: Prove membership via Merkle proof
   // Pass the whole MerkleTreePath struct -- no .value field exists
@@ -129,7 +130,8 @@ export circuit approve(): [] {
 
   // Step 3: Increment approval count and check threshold
   approvalCount.increment(1);
-  // Counter.read() returns Uint<64>; comparison with Uint<64> threshold is valid
+  // Counter.read() returns Uint<64>; threshold is sealed (private) ledger data.
+  // No disclose() needed here: both operands are ledger-derived (not witness-tainted).
   if (approvalCount.read() >= threshold) {
     actionApproved = true;
   }

@@ -146,6 +146,8 @@ O(log n) path construction when the leaf's index is known. More efficient for la
 
 ### Example Witness Implementation
 
+Note: The API shape below is illustrative. Consult the current Midnight SDK documentation for exact method signatures.
+
 ```typescript
 // Simplified TypeScript witness implementation
 const getMemberPath = async (pk: Bytes) => {

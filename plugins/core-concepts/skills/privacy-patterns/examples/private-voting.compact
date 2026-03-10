@@ -137,8 +137,11 @@ circuit deriveRevealNullifier(sk: Bytes<32>): Bytes<32> {
 }
 
 // Compute a vote commitment: hash(domain + ballot + randomness).
-// The commitment binds the voter to their ballot choice and hides
-// the actual vote content behind the randomness.
+// Uses persistentHash with inline randomness rather than persistentCommit
+// because the commitment is immediately inserted into a MerkleTree (which
+// requires disclose() anyway). persistentCommit would also work:
+//   persistentCommit<Vector<2, Bytes<32>>>([pad(32, "pvote:ballot:"), ballot], rand)
+// The key requirement is that `rand` is fresh per commitment.
 circuit computeVoteCommitment(ballot: Bytes<32>, rand: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<3, Bytes<32>>>([
     pad(32, "pvote:ballot:"), ballot, rand

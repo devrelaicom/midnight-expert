@@ -157,7 +157,7 @@ Use `HistoricMerkleTree<N, T>` instead of `MerkleTree<N, T>` when members are ad
 
 ### The On-Chain / Off-Chain Dance
 
-1. **Admin inserts commitments on-chain.** `tree.insert(commitment)` adds a leaf. The leaf value is hidden on-chain (the unique privacy property of MerkleTree inserts).
+1. **Admin inserts commitments on-chain.** `tree.insert(commitment)` adds a leaf. The leaf value is hidden on-chain (the special privacy property of MerkleTree and HistoricMerkleTree inserts).
 
 2. **User obtains a MerkleTreePath off-chain.** The witness function queries the local copy of the tree state. TypeScript provides `findPathForLeaf(leaf)` (O(n) scan) or `pathForLeaf(index, leaf)` (O(log n) by index).
 
