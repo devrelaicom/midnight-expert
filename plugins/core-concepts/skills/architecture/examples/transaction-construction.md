@@ -193,6 +193,10 @@ MyOffer {
 }
 ```
 
+> **Note:** Partial offers with negative deltas are not independently valid.
+> They become valid only when merged, at which point the combined deltas
+> must be non-negative per token type.
+
 ### Counterparty Offer (Partial)
 
 ```

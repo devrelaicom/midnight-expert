@@ -85,10 +85,10 @@ ContractCall {
 
 ### 3. Cryptographic Binding
 
-All components bound together via Pedersen commitments that are homomorphically combined:
-- **Pedersen commitments** — Homomorphic value binding across all transaction components
-- **Schnorr proof** — One lightweight ZK proof per transaction proving contract contribution carries no hidden value
-- **ZK proofs** — Transcript validity (one per contract call)
+Three complementary cryptographic guarantees ensure transaction integrity:
+- **Pedersen commitments** — Bind and link all transaction components via homomorphic value commitments
+- **Schnorr proof** — One lightweight ZK proof per transaction proving the contract section contributes zero net value
+- **ZK-SNARK proofs** — Prove transcript validity for each contract call (coin ownership, state transitions)
 
 ## Transaction Integrity
 
