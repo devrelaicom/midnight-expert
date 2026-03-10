@@ -143,10 +143,4 @@ Enforced via:
 
 ### Multi-Asset Support
 
-Each token type has independent accounting:
-
-```
-For valid transaction, per token type:
-  sum(inputs) - sum(outputs) + mints >= 0
-Native token dimension also covers fees.
-```
+Each token type has independent balance accounting. The native token dimension also covers transaction fees.

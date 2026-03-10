@@ -95,17 +95,18 @@ export circuit flexibleDeposit(
 }
 
 // =============================================================================
-// TOKEN TYPE CHECKING
+// TOKEN TYPE IDENTIFICATION
 // =============================================================================
 
-// Get the native token type identifier (256-bit zero value)
-// Note: this is the type IDENTIFIER, not a value/balance
-export circuit depositNativeToken(
-): [] {
-  const coin: CoinInfo = witness("coin");
-  const native = nativeToken();
+// nativeToken() returns the native token type identifier (256-bit zero value).
+// tokenType() computes a custom token type from a domain separator.
+// Token type filtering and validation happens at the Zswap protocol level,
+// not within the contract itself.
 
-  // Token type filtering and validation happens at the Zswap level
-  // The contract specifies which token types it accepts
-  receive(coin);
+// Example: get native and custom token type identifiers
+export circuit getTokenTypes(
+  domain_separator: Bytes<32>
+): [] {
+  const native = nativeToken();
+  const custom = tokenType(domain_separator, self());
 }

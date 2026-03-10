@@ -117,13 +117,7 @@ Midnight maintains a `TimeFilterMap<MerkleTreeRoot>` of valid past roots with ti
 
 ### Choosing Privacy Level
 
-```compact
-// Shielded send via circuit call
-send(input, recipient, value);
-
-// For selective disclosure, viewing keys are shared at the wallet level
-// This doesn't change the contract code
-```
+The shielded/unshielded distinction is determined by the coin type and wallet configuration, not by different Compact syntax. The `send()` circuit call is the same regardless of privacy level. For selective disclosure, viewing keys are shared at the wallet level — this is external to the contract code.
 
 ## Parallel Processing
 

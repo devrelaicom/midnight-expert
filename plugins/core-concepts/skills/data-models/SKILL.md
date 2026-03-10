@@ -61,7 +61,7 @@ send(input, recipient, value);
 
 ## Account Model (Contract Tokens)
 
-Maintain address-to-balance mappings within Compact contracts, following OpenZeppelin-style standards adapted for Compact.
+Maintain address-to-balance mappings within Compact contracts, following patterns inspired by OpenZeppelin-style token standards adapted for Compact.
 
 ### When to Use
 
@@ -105,7 +105,7 @@ Token types are 256-bit collision-resistant hashes:
 const native = nativeToken();
 
 // Custom token type = Hash(contractAddress, domainSeparator)
-const color = tokenType(domainSep, contractAddr);
+const custom = tokenType(domainSep, self());
 ```
 
 ## Practical Application
