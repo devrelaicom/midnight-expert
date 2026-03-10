@@ -1,0 +1,111 @@
+// Token Handling Patterns in Compact
+// Demonstrates receiving, sending, minting, and shielded/unshielded patterns
+// using correct Compact syntax and standard library circuit calls.
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// =============================================================================
+// LEDGER STATE
+// =============================================================================
+
+// Individual export ledger declarations (block syntax removed in v0.15)
+export ledger received_count: Counter;
+export ledger total_supply: Counter;
+export ledger accepted_token: Bytes<32>;
+
+// =============================================================================
+// RECEIVING TOKENS
+// =============================================================================
+
+// Receive a shielded coin into the contract.
+// The coin data is provided by the user via a witness declaration.
+// receive() is a circuit call that takes a CoinInfo value.
+export circuit receivePayment(
+): [] {
+  const coin: CoinInfo = witness("coin");
+  receive(coin);
+  received_count.increment(1);
+}
+
+// =============================================================================
+// SENDING TOKENS
+// =============================================================================
+
+// Send tokens to a recipient.
+// send() is a circuit call: send(input, recipient, value) -> SendResult
+// - input: QualifiedCoinInfo (existing coin on ledger with Merkle index)
+// - recipient: Either<ZswapCoinPublicKey, ContractAddress>
+// - value: Uint<128>
+export circuit sendReward(
+  amount: Uint<128>
+): SendResult {
+  const input: QualifiedCoinInfo = witness("input_coin");
+  const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+
+  return send(input, recipient, disclose(amount));
+}
+
+// =============================================================================
+// CUSTOM TOKEN MINTING
+// =============================================================================
+
+// Mint new custom tokens.
+// mintToken() is a circuit call:
+//   mintToken(domainSep: Bytes<32>, value: Uint<128>, nonce: Bytes<32>,
+//             recipient: Either<ZswapCoinPublicKey, ContractAddress>): CoinInfo
+// Token type = Hash(contractAddress, domainSeparator)
+export circuit mint(
+  amount: Uint<128>,
+  domain_separator: Bytes<32>,
+  nonce: Bytes<32>
+): CoinInfo {
+  const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+
+  const newCoin = mintToken(
+    disclose(domain_separator),
+    disclose(amount),
+    disclose(nonce),
+    recipient
+  );
+
+  total_supply.increment(1);
+  return newCoin;
+}
+
+// =============================================================================
+// SHIELDED VS UNSHIELDED
+// =============================================================================
+
+// By default, tokens are shielded (private).
+// The commitment Hash<(CoinInfo, ZswapCoinPublicKey)> hides value, type, and owner.
+
+// For regulatory compliance, viewing keys can be shared.
+// This doesn't change the contract code -- it's a wallet-level feature.
+
+// Pattern: Accept a shielded coin deposit
+// Coins can be shielded or unshielded; the contract uses receive() identically.
+export circuit flexibleDeposit(
+): [] {
+  const coin: CoinInfo = witness("coin");
+  receive(coin);
+}
+
+// =============================================================================
+// TOKEN TYPE CHECKING
+// =============================================================================
+
+// Get the native token type identifier (256-bit zero value)
+// Note: this is the type IDENTIFIER, not a value/balance
+export circuit depositNativeToken(
+): [] {
+  const coin: CoinInfo = witness("coin");
+  const native = nativeToken();
+
+  // Token type filtering and validation happens at the Zswap level
+  // The contract specifies which token types it accepts
+  receive(coin);
+}
