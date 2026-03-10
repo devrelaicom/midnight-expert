@@ -98,6 +98,13 @@ Cannot create valid proof for false statement (computationally).
 
 Proof reveals nothing beyond statement truth.
 
+## Cryptographic Primitives
+
+Midnight's ZK circuits use specific cryptographic primitives:
+- **Hashing** (`persistentHash`): Uses Poseidon hash — efficient in ZK circuits due to low gate count
+- **Commitments** (`persistentCommit`): Hash-based commitments for hiding values with randomness
+- **Balance proofs**: Use Pedersen commitments (multi-base, homomorphic) — a separate mechanism from coin commitments
+
 ## Midnight's SNARK Usage
 
 ### Universal SRS
