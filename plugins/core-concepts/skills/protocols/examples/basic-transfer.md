@@ -101,7 +101,7 @@ In Compact, token operations are stdlib circuit calls imported via `import Compa
 
 ```compact
 // send(input, recipient, value) is a stdlib call, not special syntax
-send(qualifiedCoinInfo, recipientKey, 100_Uint128): SendResult
+send(qualifiedCoinInfo, recipientKey, 100 as Uint<128>)
 ```
 
 The Zswap machinery (commitments, nullifiers, proofs) happens automatically.

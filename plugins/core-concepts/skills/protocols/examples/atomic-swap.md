@@ -35,7 +35,7 @@ This offer is **incomplete**: deltas don't balance.
 
 ### Step 2: Bob Creates Complementary Offer
 
-Bob offers TOKEN_A, wants NIGHT:
+Bob offers TOKEN_A, wants NIGHT. Bob also constructs an output for Alice (he knows her public key from the order book):
 
 ```
 Bob's Offer {
@@ -43,7 +43,8 @@ Bob's Offer {
     { nullifier: 0xbbb..., value: 50 TOKEN_A, proof: ... }
   ],
   outputs: [
-    { commitment: 0xccc..., value: 100 NIGHT, to: Bob }
+    { commitment: 0xccc..., value: 100 NIGHT, to: Bob },
+    { commitment: 0xddd..., value: 50 TOKEN_A, to: Alice }
   ],
   deltas: {
     NIGHT: +100,    // Bob wants 100 NIGHT
@@ -52,7 +53,7 @@ Bob's Offer {
 }
 ```
 
-Also incomplete alone.
+Also incomplete alone (deltas don't balance without Alice's input).
 
 ### Step 3: Merge Offers
 
@@ -66,7 +67,7 @@ Merged Offer {
   ],
   outputs: [
     Bob's NIGHT output,
-    Alice's TOKEN_A output  // Added to complete the swap
+    Alice's TOKEN_A output  // Constructed by Bob in Step 2
   ],
   deltas: {
     NIGHT: -100 + 100 = 0,
