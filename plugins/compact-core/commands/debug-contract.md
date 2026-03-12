@@ -15,8 +15,9 @@ Analyze `$ARGUMENTS` to determine invocation mode:
 | Path ending in `.compact` | File analysis | Step 2 |
 | Quoted string or multiline text | Error text | Step 4 (pass error text as context) |
 | Nothing or `--interactive` | Interactive | Step 4 (skill starts triage) |
+| Unrecognized input | Clarification | Ask user to provide a `.compact` file path or error text |
 
-If no arguments provided and not `--interactive`, jump to Step 4.
+If no arguments provided and not `--interactive`, jump to Step 4. If a file path is provided, verify it exists before proceeding to Step 2. If not found, use AskUserQuestion to clarify the path.
 
 ## Step 2 — Concurrent Analysis
 
