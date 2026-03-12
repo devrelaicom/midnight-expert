@@ -69,7 +69,6 @@ Operations in the fallible phase may fail without reversing guaranteed-phase eff
 // Assumes ledger declarations:
 //   export ledger balance: Map<Bytes<32>, Uint<64>>;
 //   export ledger transferCount: Counter;
-//   ledger kernel: Kernel;
 //   witness localSecretKey(): Bytes<32>;
 
 export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
@@ -151,10 +150,11 @@ Each contract on Midnight maintains state as two components:
 ### State Lifecycle During Execution
 
 1. The contract's current state is loaded from the ledger before each call.
-2. A context object (contract address, newly allocated coins, block time, block hash) and an empty effects set are placed on the Impact VM stack alongside the state. Both context and effects are flagged as **tainted**.
-3. The Impact program executes, mutating the state on the stack. Any non-size-bounded operation on a tainted value propagates the taint to the result.
+2. A context object (contract address, newly allocated coins, block time, block hash, block's 32-bit max timestamp divergence) and an empty effects set are placed on the Impact VM stack alongside the state. Both context and effects are flagged as **weak**.
+   > **Caution:** Currently, only the first two of these are correctly initialized!
+3. The Impact program executes, mutating the state on the stack. The propagation rules for weakness are opcode-specific.
 4. The resulting effects are compared to the declared effects in the transcript; mismatches cause failure.
-5. The resulting state is stored only if it is "strong" (not tainted). If the state has been tainted — for example, by copying context or effects data into it — the call fails.
+5. The resulting state is stored only if it is "strong" (not weak). If the state has been weakened — for example, by copying context or effects data into it — the call fails.
 
 ### Concurrency and Conflicts
 
@@ -164,7 +164,7 @@ Each contract on Midnight maintains state as two components:
 
 ## Fees & Gas
 
-DUST is Midnight's fee token. It is a shielded, non-transferable resource derived from NIGHT.
+DUST is Midnight's shielded network resource used exclusively to pay for transaction fees. It is a non-transferable resource derived from NIGHT.
 
 | Property | Detail |
 |----------|--------|
@@ -202,13 +202,13 @@ The proof for each contract call is generated client-side when the user invokes 
 | Expecting cross-contract calls to work | Use transaction composition (multiple calls in one transaction) instead | Cross-contract calls are not yet available |
 | Not handling partial success in the DApp | Check transaction status in TypeScript client code | A "partial success" means guaranteed worked but fallible failed |
 | Omitting `kernel.checkpoint()` when fallible operations are needed | Add `kernel.checkpoint()` before fallible section | Without it, the entire circuit is guaranteed-only and any failure rejects the whole transaction |
-| Copying context or effects into contract state | Keep context/effects data on-stack only | Context and effects are tainted; any non-size-bounded operation on them propagates taint, and tainted state cannot be stored |
+| Copying context or effects into contract state | Keep context/effects data on-stack only | Context and effects are weak; weakness propagation is opcode-specific, and weak state cannot be stored |
 
 ## Reference Routing
 
 | Topic | Reference File |
 |-------|---------------|
-| Three execution stages, phase semantics, state lifecycle, tainted vs strong values | `references/execution-phases.md` |
+| Three execution stages, phase semantics, state lifecycle, weak vs strong values | `references/execution-phases.md` |
 | Contract state model, concurrency, conflict minimization, append-only patterns | `references/state-and-conflicts.md` |
 | DUST generation, SyntheticCost dimensions, gas-to-fee conversion, dynamic pricing | `references/fees-and-gas.md` |
 | Zswap offers, inputs/outputs, balance vectors, transaction merging, Pedersen binding | `references/zswap-and-offers.md` |

@@ -138,7 +138,7 @@ Check in order:
 What kind of data?
 ├── Single numeric value → Counter (cheapest)
 ├── Key-value lookups → Map<K, V>
-│   └── Need nested state? → Map<K, Map<...>> (only Map supports nesting)
+│   └── Need nested state? → Map<K, V> where V is any ledger type (Counter, Set<T>, List<T>, MerkleTree, or another Map)
 ├── Membership checks →
 │   ├── Privacy required? → MerkleTree<N, T> (insertions hidden)
 │   └── No privacy needed? → Set<T> (cheaper, simpler)

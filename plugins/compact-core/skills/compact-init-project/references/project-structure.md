@@ -126,7 +126,8 @@ Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.29.0)
 
 | Service | URL |
 |---------|-----|
-| Indexer | `https://indexer.preprod.midnight.network` |
+| Indexer (GraphQL) | `https://indexer.preprod.midnight.network/api/v3/graphql` |
+| Indexer (WebSocket) | `wss://indexer.preprod.midnight.network/api/v3/graphql/ws` |
 | RPC | `https://rpc.preprod.midnight.network` |
 | Faucet | `https://faucet.preprod.midnight.network/` |
 | Docs | `https://docs.midnight.network` |

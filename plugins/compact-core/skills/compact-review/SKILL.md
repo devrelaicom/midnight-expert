@@ -37,7 +37,7 @@ Apply these severity levels consistently across all categories:
 | **High** | Security vulnerability or privacy leak exploitable under certain conditions | Unnecessary disclose() on sensitive data, missing overflow check on token amounts |
 | **Medium** | Correctness issue, compilation problem, or significant performance concern | Wrong type cast that will fail at runtime, MerkleTree depth 32 when 10 suffices |
 | **Low** | Code quality, style, or minor best practice deviation | Inconsistent naming, unused import, missing sealed modifier |
-| **Suggestion** | Enhancement opportunity, not a problem | Could use pureCircuit for better reuse, consider adding assertion message |
+| **Suggestion** | Enhancement opportunity, not a problem | Could use `pure` circuit modifier for better reuse, consider adding assertion message |
 
 ## Output Format
 

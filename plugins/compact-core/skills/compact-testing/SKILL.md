@@ -5,7 +5,7 @@ description: This skill should be used when the user asks about testing Compact 
 
 # Compact Contract Testing
 
-Compact contracts compile to JavaScript (`index.cjs`), so you test them using standard JS test runners -- specifically Vitest. There is no official Compact test framework; you import the generated `Contract` class and runtime helpers directly, then assert against ledger state and return values. This skill covers the Simulator pattern for wrapping contract lifecycle, the context creation and reassignment lifecycle, assertion strategies for ledger state and errors, and compilation validation as a test gate. For witness implementation details, see `compact-witness-ts`. For contract anatomy (ledger, circuits, witnesses), see `compact-structure`.
+Compact contracts compile to JavaScript (`index.js`), so you test them using standard JS test runners -- specifically Vitest. There is no official Compact test framework; you import the generated `Contract` class and runtime helpers directly, then assert against ledger state and return values. This skill covers the Simulator pattern for wrapping contract lifecycle, the context creation and reassignment lifecycle, assertion strategies for ledger state and errors, and compilation validation as a test gate. For witness implementation details, see `compact-witness-ts`. For contract anatomy (ledger, circuits, witnesses), see `compact-structure`.
 
 ## Quick Start
 
@@ -20,9 +20,9 @@ setNetworkId("undeployed");
 
 const contract = new Contract({ /* witnesses, if any */ });
 const initialState = { privateCounter: 0 };
-const deployCtx = createConstructorContext(sampleContractAddress(), initialState, "0100");
+const deployCtx = createConstructorContext(initialState, "0100");
 const { currentPrivateState, currentContractState } = contract.initialState(deployCtx);
-let ctx = createCircuitContext(sampleContractAddress(), currentContractState, currentPrivateState, "0200");
+let ctx = createCircuitContext(sampleContractAddress(), "0200", currentContractState, currentPrivateState);
 
 const result = contract.impureCircuits.increment(ctx);
 ctx = result.context;
@@ -41,9 +41,9 @@ class MySimulator {
 
   constructor(initialPrivateState: MyPrivateState) {
     this.contract = new Contract<MyPrivateState>(witnesses);
-    const deployCtx = createConstructorContext(sampleContractAddress(), initialPrivateState, "0100");
+    const deployCtx = createConstructorContext(initialPrivateState, "0100");
     const { currentPrivateState, currentContractState } = this.contract.initialState(deployCtx);
-    this.ctx = createCircuitContext(sampleContractAddress(), currentContractState, currentPrivateState, "0200");
+    this.ctx = createCircuitContext(sampleContractAddress(), "0200", currentContractState, currentPrivateState);
   }
 
   myCircuit(args) {
@@ -68,7 +68,7 @@ See `references/simulator-pattern.md` for the full pattern with multi-user suppo
 | Circuit rejects bad input | `expect(() => ...).toThrow("failed assert: ...")` | Error testing |
 | Private state updates correctly | `ctx.currentPrivateState.field` | Private state assertion |
 | Multi-user interaction | Switch `currentPrivateState` between calls | Multi-actor |
-| Pure computation | `contract.pureCircuits.<name>(args)` | Pure circuit test |
+| Pure computation | `contract.circuits.<name>(args)` | Pure circuit test |
 | Contract compiles | `compact compile` exits 0 | Compilation gate |
 
 ## Key API Reference
@@ -97,7 +97,7 @@ See `references/simulator-pattern.md` for the full pattern with multi-user suppo
 | Not updating context after circuit call | Always reassign: `ctx = result.context` |
 | Using `contract.circuits` for impure ops | Use `contract.impureCircuits` for state-changing circuits |
 | Expecting string equality on `Bytes<N>` | Compare `Uint8Array` with `.toEqual()`, not `===` |
-| Missing `deps.interopDefault: true` in vitest config | Required for CommonJS `index.cjs` imports |
+| Missing `deps.interopDefault: true` in vitest config | Required for CommonJS `index.js` imports |
 | Testing with wrong `compact-runtime` version | Must match the version the compiler expects |
 | Witness key mismatch | Witness object keys must exactly match Compact `witness` names |
 

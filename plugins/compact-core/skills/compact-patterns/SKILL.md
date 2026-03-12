@@ -20,9 +20,9 @@ A comprehensive catalog of 18 reusable contract design patterns for Midnight Com
 | 7 | Commit-Reveal | Commitment | Intermediate | Hide a value, prove it later | `persistentHash`, salt management |
 | 8 | Sealed-Bid Auction | Commitment | Advanced | Private bidding with fair resolution | Commit-reveal + escrow + time-lock |
 | 9 | Escrow | Value | Intermediate | Hold funds until conditions are met | `receiveShielded`, `sendShielded` |
-| 10 | Treasury / Pot | Value | Intermediate | Manage pooled funds with controlled withdrawal | `QualifiedShieldedCoinInfo`, `mergeCoin` |
+| 10 | Treasury / Pot | Value | Intermediate | Manage pooled funds with controlled withdrawal | `QualifiedShieldedCoinInfo`, `mergeCoinImmediate` |
 | 11 | Multi-Party Auth (Multi-Sig) | Governance | Advanced | Require M-of-N approvals for actions | `Map` approvals, `Counter` threshold |
-| 12 | Voting / Governance | Governance | Advanced | Democratic decision-making with privacy | Commit-reveal + nullifiers + MerkleTree |
+| 12 | Voting / Governance | Governance | Advanced | Democratic decision-making with privacy | Commit-reveal + nullifiers + HistoricMerkleTree |
 | 13 | Registry / Allowlist | Identity | Beginner | Managed membership lists | `Set<Bytes<32>>`, admin gates |
 | 14 | Credential Verification | Identity | Intermediate | Prove properties without revealing data | `persistentCommit`, threshold checks |
 | 15 | Domain-Separated Identity | Identity | Beginner | Multi-purpose keys from single secret | `persistentHash` + domain prefixes |
