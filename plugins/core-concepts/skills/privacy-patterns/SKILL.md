@@ -160,7 +160,7 @@ Use `HistoricMerkleTree<N, T>` instead of `MerkleTree<N, T>` when members are ad
 
 2. **User obtains a MerkleTreePath off-chain.** The witness function queries the local copy of the tree state. TypeScript provides `findPathForLeaf(leaf)` (O(n) scan) or `pathForLeaf(index, leaf)` (O(log n) by index).
 
-3. **Circuit computes the root.** `merkleTreePathRoot<N, T>(path)` recomputes the Merkle root from the path. The `MerkleTreePath<N, T>` struct has fields `leaf: T` and `path: Vector<N, MerkleTreePathEntry>`, where each `MerkleTreePathEntry` has `sibling: MerkleTreeDigest` and `goesLeft: Boolean`. Pass the whole struct -- there is no `.value` field.
+3. **Circuit computes the root.** `merkleTreePathRoot<N, T>(path)` recomputes the Merkle root from the path. The `MerkleTreePath<N, T>` struct has fields `leaf: T` and `path: Vector<N, MerkleTreePathEntry>`, where each `MerkleTreePathEntry` has `sibling: MerkleTreeDigest` and `goes_left: Boolean`. Pass the whole struct -- there is no `.value` field.
 
 4. **Circuit verifies the root on-chain.** `tree.checkRoot(disclose(digest))` confirms the computed root matches a current (or historic) root. The `disclose()` is required because the digest is derived from witness data (the path). There is no `historicMember` method -- use `checkRoot` only.
 

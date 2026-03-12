@@ -125,7 +125,7 @@ export circuit approve(): [] {
     pad(32, "multisig:approve-nul:"), sk
   ]);
   // disclose() required: nul is derived from witness data (sk)
-  assert(disclose(!approvedNullifiers.member(nul)), "Already approved");
+  assert(!approvedNullifiers.member(disclose(nul)), "Already approved");
   approvedNullifiers.insert(disclose(nul));
 
   // Step 3: Increment approval count and check threshold
@@ -184,7 +184,7 @@ export circuit memberAction(): [] {
     pad(32, "roles:member-action-nul:"), sk
   ]);
   // disclose() required: nul is derived from witness data
-  assert(disclose(!memberActionNullifiers.member(nul)), "Already acted");
+  assert(!memberActionNullifiers.member(disclose(nul)), "Already acted");
   memberActionNullifiers.insert(disclose(nul));
 
   // ... perform the member action

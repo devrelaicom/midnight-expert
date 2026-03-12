@@ -248,7 +248,7 @@ export circuit commitVote(ballot: Bytes<32>): [] {
   // Set.member() (a ledger operation). Revealing the nullifier is
   // intentional -- it prevents double-voting. The nullifier cannot
   // be linked to the voter's public key due to domain separation.
-  assert(disclose(!commitNullifiers.member(cmNullifier)), "Already committed");
+  assert(!commitNullifiers.member(disclose(cmNullifier)), "Already committed");
   commitNullifiers.insert(disclose(cmNullifier));
 
   // --- Step 3: Create and store vote commitment ---
@@ -296,7 +296,7 @@ export circuit revealVote(): [] {
   // disclose() required: nullifier is witness-derived and used in
   // Set.member() (ledger operation). Different domain separator from
   // commitment nullifier prevents correlation between commit and reveal.
-  assert(disclose(!revealNullifiers.member(rvNullifier)), "Already revealed");
+  assert(!revealNullifiers.member(disclose(rvNullifier)), "Already revealed");
   revealNullifiers.insert(disclose(rvNullifier));
 
   // --- Step 4: Tally the vote ---

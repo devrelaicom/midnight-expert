@@ -21,11 +21,11 @@ export ledger accepted_token: Bytes<32>;
 
 // Receive a shielded coin into the contract.
 // The coin data is provided by the user via a witness declaration.
-// receive() is a circuit call that takes a CoinInfo value.
+// receiveShielded() is a circuit call that takes a ShieldedCoinInfo value.
 export circuit receivePayment(
 ): [] {
-  const coin: CoinInfo = witness("coin");
-  receive(coin);
+  const coin: ShieldedCoinInfo = witness("coin");
+  receiveShielded(coin);
   received_count.increment(1);
 }
 
@@ -34,18 +34,18 @@ export circuit receivePayment(
 // =============================================================================
 
 // Send tokens to a recipient.
-// send() is a circuit call: send(input, recipient, value) -> SendResult
-// - input: QualifiedCoinInfo (existing coin on ledger with Merkle index)
+// sendShielded() is a circuit call: sendShielded(input, recipient, value) -> SendResult
+// - input: QualifiedShieldedCoinInfo (existing coin on ledger with Merkle index)
 // - recipient: Either<ZswapCoinPublicKey, ContractAddress>
 // - value: Uint<128>
 export circuit sendReward(
   amount: Uint<128>
 ): SendResult {
-  const input: QualifiedCoinInfo = witness("input_coin");
+  const input: QualifiedShieldedCoinInfo = witness("input_coin");
   const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
   const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
 
-  return send(input, recipient, disclose(amount));
+  return sendShielded(input, recipient, disclose(amount));
 }
 
 // =============================================================================
@@ -87,11 +87,11 @@ export circuit mint(
 // This doesn't change the contract code -- it's a wallet-level feature.
 
 // Pattern: Accept a shielded coin deposit
-// Coins can be shielded or unshielded; the contract uses receive() identically.
+// Shielded coin deposit using receiveShielded().
 export circuit flexibleDeposit(
 ): [] {
-  const coin: CoinInfo = witness("coin");
-  receive(coin);
+  const coin: ShieldedCoinInfo = witness("coin");
+  receiveShielded(coin);
 }
 
 // =============================================================================
