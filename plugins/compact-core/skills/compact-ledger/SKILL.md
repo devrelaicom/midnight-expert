@@ -24,7 +24,7 @@ sealed ledger secret: Field;                 // Internal, set once in constructo
 | `sealed` | Can only be set during constructor (directly or via helper circuits called by constructor) |
 | `export sealed` | Both: publicly readable and immutable after deployment |
 
-Valid ledger types: any Compact type (`Field`, `Boolean`, `Bytes<N>`, `Uint<N>`, enums, structs), `Counter`, `Map<K, V>`, `Set<T>`, `List<T>`, `MerkleTree<N, T>`, `HistoricMerkleTree<N, T>`, and nested ADTs like `Map<K, Map<K2, V>>`.
+Valid ledger types: any Compact type (`Field`, `Boolean`, `Bytes<N>`, `Uint<N>`, enums, structs), `Counter`, `Map<K, V>`, `Set<T>`, `List<T>`, `MerkleTree<N, T>`, `HistoricMerkleTree<N, T>`, and nested ADTs like `Map<K, Map<K2, V>>`. **Note:** Nested ADTs are only permitted as `Map` values — e.g., `Map<K, Set<T>>` or `Map<K, List<T>>` are valid, but `Set<Map<K,V>>`, `List<Map<K,V>>`, etc. are invalid.
 
 For exhaustive syntax rules and modifier details, see `references/types-and-operations.md`.
 
@@ -68,9 +68,9 @@ export ledger count: Counter;
 witness local_secret_key(): Bytes<32>;
 
 constructor() {
-  owner = disclose(get_public_key(local_secret_key()));
+  owner = disclose(public_key(local_secret_key()));
   phase = Phase.registration;
-  count.increment(0);
+  // count starts at 0 by default — no initialization needed
 }
 ```
 
@@ -104,9 +104,9 @@ For detailed per-operation visibility analysis, MerkleTree vs Set privacy compar
 
 The `Kernel` type provides access to contract metadata and token operations:
 
-```compact
-ledger kernel: Kernel;
+The `kernel` field is predefined by `import CompactStandardLibrary;` — do not declare it manually. Use it directly:
 
+```compact
 export circuit getSelf(): ContractAddress {
   return kernel.self();
 }
@@ -125,7 +125,7 @@ For the full Kernel API including zswap claim operations, see `references/types-
 
 | Wrong | Correct | Why |
 |-------|---------|-----|
-| `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax is deprecated |
+| `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax was removed in Compact 0.10.1 — causes a parse error |
 | `counter.value()` | `counter.read()` | `.value()` does not exist |
 | `map.lookup(key)` without member check | Check `map.member(key)` first | `lookup` on missing key returns default, not error |
 | `sealed ledger export x: T` | `export sealed ledger x: T` | `export` must come before `sealed` |

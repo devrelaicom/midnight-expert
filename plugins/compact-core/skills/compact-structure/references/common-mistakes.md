@@ -36,12 +36,14 @@ export circuit doSomething(): [] {
 
 ```compact
 // Wrong - patch version not needed, wrong operator format
-pragma language_version >= 0.14.0;
-pragma language_version >= 0.16.0 < 0.19.0;
+pragma language_version >= 0.20.0;
+pragma language_version >= 0.20.0 < 0.22.0;
 
-// Correct - bounded range without patch version
-pragma language_version >= 0.16 && <= 0.18;
+// Correct - minimum version constraint without patch version
+pragma language_version >= 0.20;
 ```
+
+> **Tip:** Run `compact compile --language-version` to check your compiler's supported version.
 
 ### Enum Variant Access (Rust-style)
 
@@ -85,7 +87,7 @@ pure circuit helper(x: Field): Field {
 ### Deprecated Cell<T> Wrapper
 
 ```compact
-// Wrong - Cell was removed in 0.15
+// Wrong - Cell<T> is implicit and cannot be written explicitly
 export ledger myField: Cell<Field>;
 
 // Correct - use the type directly
@@ -167,24 +169,20 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
 
 ## Type Errors
 
-### Direct Uint to Bytes Cast
+### Uint to Bytes Cast
 
 ```compact
-// Wrong - cannot cast from type Uint<64> to type Bytes<32>
-const b: Bytes<32> = amount as Bytes<32>;
-
-// Correct - go through Field
-const b: Bytes<32> = (amount as Field) as Bytes<32>;
+// Both approaches work:
+const b: Bytes<32> = amount as Bytes<32>;              // Direct cast is valid
+const b: Bytes<32> = (amount as Field) as Bytes<32>;   // Via Field also works
 ```
 
 ### Boolean to Field Cast
 
 ```compact
-// Wrong - cannot cast Boolean directly to Field
-const f: Field = flag as Field;
-
-// Correct - go through Uint
-const f: Field = (flag as Uint<0..1>) as Field;
+// Both approaches work:
+const f: Field = flag as Field;                        // Direct cast is valid
+const f: Field = (flag as Uint<0..1>) as Field;        // Via Uint also works
 ```
 
 ### Arithmetic Result Without Cast
@@ -231,7 +229,7 @@ const result = myField + (myUint as Field);
 | `implicit disclosure of witness value` | Missing `disclose()` in conditional | Wrap with `disclose()` |
 | `potential witness-value disclosure must be declared` | Witness value flowing to ledger | `disclose()` before ledger write |
 | `incompatible combination of types Field and Uint` | Type mismatch | Cast with `as` |
-| `cannot cast from type Uint<64> to type Bytes<32>` | Direct Uint->Bytes | Go through Field: `(x as Field) as Bytes<32>` |
+| `cannot cast from type Uint<64> to type Bytes<32>` | Direct Uint->Bytes | Cast directly: `x as Bytes<32>` or via Field: `(x as Field) as Bytes<32>` |
 | `expected second argument ... Uint<64> but received Uint<0..N>` | Arithmetic result not cast | Cast: `(a + b) as Uint<64>` |
 | `cannot prove assertion` | Logic error or bad witness value | Check logic, range checks, witness returns |
 | `member access requires struct type` | Accessing field on non-struct | Verify base type is a struct |

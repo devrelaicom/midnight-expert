@@ -148,6 +148,8 @@ Operations (all available in circuits):
 | `.head()` | `Maybe<T>` | Get first element |
 | `.isEmpty()` | `Boolean` | Check if empty |
 | `.length()` | `Uint<64>` | Number of elements |
+| `.popFront()` | `[]` | Remove front element |
+| `.resetToDefault()` | `[]` | Clear entire list |
 
 ## Custom Types
 
@@ -179,7 +181,7 @@ Define compound types with named fields:
 
 ```compact
 export struct PlayerConfig {
-  name: Opaque<"string">,
+  name: Bytes<32>,
   score: Uint<32>,
   isActive: Boolean,
 }
@@ -187,7 +189,7 @@ export struct PlayerConfig {
 export struct ShieldedCoinInfo {
   nonce: Bytes<32>,
   color: Bytes<32>,
-  value: Uint<64>,
+  value: Uint<128>,
 }
 ```
 
@@ -195,7 +197,7 @@ Construct structs with named field syntax:
 
 ```compact
 const config = PlayerConfig {
-  name: "Alice",
+  name: pad(32, "Alice"),
   score: 100,
   isActive: true,
 };
@@ -227,14 +229,14 @@ All casts use `expression as Type` syntax.
 
 ### Multi-step Casts
 
-Some conversions require intermediate types:
+Some conversions can use intermediate types, though direct casts may also work:
 
 ```compact
-// Uint -> Bytes: go through Field
+// Uint -> Bytes: the intermediate Field route always works
 const b: Bytes<32> = (amount as Field) as Bytes<32>;
 
-// Boolean -> Field: go through Uint
-const f: Field = (flag as Uint<0..1>) as Field;
+// Boolean -> Field: direct cast is valid
+const f: Field = flag as Field;
 ```
 
 ### Arithmetic Result Casts
@@ -246,20 +248,27 @@ const sum: Uint<64> = (a + b) as Uint<64>;
 const product: Uint<64> = (a * b) as Uint<64>;
 ```
 
+## Language Built-ins
+
+These are keywords/built-in functions available without imports:
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `pad` | `pad(length, value): Bytes<N>` | Pad string to fixed-length bytes |
+| `disclose` | `disclose(value: T): T` | Explicitly reveal a value |
+| `assert` | `assert(condition, message): []` | Fail circuit if condition is false |
+| `default` | `default<T>` | Default value for a type (keyword expression, not a function call) |
+
 ## Standard Library Functions
 
 Provided by `import CompactStandardLibrary`:
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `persistentHash` | `persistentHash<T>(value: T): Bytes<32>` | Poseidon hash, consistent across calls |
-| `persistentCommit` | `persistentCommit<T>(value: T): Bytes<32>` | Hiding commitment |
+| `persistentHash` | `persistentHash<T>(value: T): Bytes<32>` | SHA-256 hash, guaranteed stable across upgrades |
+| `persistentCommit` | `persistentCommit<T>(value: T, rand: Bytes<32>): Bytes<32>` | Persistent hiding commitment; rand must be unique Bytes<32> |
 | `transientHash` | `transientHash<T>(value: T): Field` | Hash for non-stored values (returns `Field`, not `Bytes<32>`) |
 | `transientCommit` | `transientCommit<T>(value: T, rand: Field): Field` | Commitment for non-stored values (returns `Field`, not `Bytes<32>`) |
-| `pad` | `pad(length, value): Bytes<N>` | Pad string to fixed-length bytes |
-| `disclose` | `disclose(value: T): T` | Explicitly reveal a value |
-| `assert` | `assert(condition, message?): []` | Fail circuit if condition is false |
-| `default` | `default<T>(): T` | Default value for a type |
 
 ### Functions That Do NOT Exist
 

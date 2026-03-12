@@ -32,7 +32,7 @@
 // ("lares:election:cm-nul:" and "lares:election:rv-nul:").
 // ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 
 import CompactStandardLibrary;
 
@@ -166,9 +166,7 @@ circuit requireAdmin(): [] {
 export circuit registerVoter(voterPk: Bytes<32>): [] {
   assert(phase == Phase.setup, "Not in setup phase");
   requireAdmin();
-  // disclose() required: voterPk is a circuit parameter (treated as
-  // witness data). MerkleTree.insert() hides the leaf value on-chain,
-  // but the compiler still requires disclose() for the argument.
+  // disclose() is required here because voterPk is witness-tainted.
   voters.insert(disclose(voterPk));
 }
 
@@ -236,7 +234,7 @@ export circuit commitVote(ballot: Bytes<32>): [] {
   // Set.member() (a ledger operation). Revealing the nullifier is
   // intentional — it prevents double-voting. The nullifier cannot
   // be linked to the voter's public key due to domain separation.
-  assert(disclose(!commitNullifiers.member(cmNullifier)), "Already committed");
+  assert(disclose(!commitNullifiers.member(disclose(cmNullifier))), "Already committed");
   commitNullifiers.insert(disclose(cmNullifier));
 
   // --- Step 3: Create and store vote commitment ---
@@ -283,7 +281,7 @@ export circuit revealVote(): [] {
   // disclose() required: nullifier is witness-derived and used in
   // Set.member() (ledger operation). Different domain separator from
   // commitment nullifier prevents correlation between commit and reveal.
-  assert(disclose(!revealNullifiers.member(rvNullifier)), "Already revealed");
+  assert(disclose(!revealNullifiers.member(disclose(rvNullifier))), "Already revealed");
   revealNullifiers.insert(disclose(rvNullifier));
 
   // --- Step 4: Tally the vote ---

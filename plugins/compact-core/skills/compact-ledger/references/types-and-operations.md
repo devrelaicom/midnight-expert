@@ -262,7 +262,7 @@ N must satisfy: 1 < N <= 32.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `root()` | `MerkleTreeDigest` | Get the current tree root |
-| `pathForLeaf(index)` | `MerkleTreePath<N, T>` | Get proof path by leaf index (O(1) lookup) |
+| `pathForLeaf(index: bigint, leaf: value_type)` | `MerkleTreePath<N, T>` | Get proof path by index and leaf value |
 | `findPathForLeaf(leaf)` | `MerkleTreePath<N, T>` | Find proof path by leaf value (O(n) scan) |
 
 **Visibility:** `insert()` hides the leaf value. All other operations that take arguments reveal those arguments on-chain.
@@ -282,7 +282,7 @@ export circuit insert(item: Field): [] {
 
 export circuit check(item: Field): [] {
   const path = findItem(item);
-  assert(items.checkRoot(merkleTreePathRoot<10, Field>(path.value)), "path must be valid");
+  assert(items.checkRoot(disclose(merkleTreePathRoot<10, Field>(path))), "path must be valid");
 }
 ```
 
@@ -346,6 +346,11 @@ ledger kernel: Kernel;
 | `claimUnshieldedCoinSpend(tokenType, recipient, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, recipient: Either<ContractAddress, UserAddress>, amount: Uint<64>` | `[]` | Circuit | Claim an unshielded coin spend |
 | `incUnshieldedOutputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Circuit | Increment unshielded outputs |
 | `incUnshieldedInputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Circuit | Increment unshielded inputs |
+| `balance(tokenType)` | `tokenType: Either<Bytes<32>, Bytes<32>>` | `Uint<64>` | Circuit | Query contract's unshielded balance |
+| `balanceLessThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Circuit | Check if balance < amount |
+| `balanceGreaterThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Circuit | Check if balance > amount |
+| `blockTimeGreaterThan(time)` | `time: Uint<64>` | `Boolean` | Circuit | Check if block time > time |
+| `blockTimeLessThan(time)` | `time: Uint<64>` | `Boolean` | Circuit | Check if block time < time |
 
 ### Common Usage
 

@@ -228,7 +228,7 @@ constructor(initNonce: Bytes<32>) {
 ```compact
 constructor() {
   owner = disclose(get_public_key(local_secret_key()));
-  counter = default<Counter>();
+  // counter initializes to 0 automatically
 }
 ```
 
@@ -238,15 +238,14 @@ For larger contracts, split code across files using `include`:
 
 ```compact
 // main.compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 import CompactStandardLibrary;
 
-include "types";
 include "ledger";
 include "witnesses";
 include "circuits";
 
-constructor(ctx: Context) {
+constructor(admin: Bytes<32>) {
   // ...
 }
 ```

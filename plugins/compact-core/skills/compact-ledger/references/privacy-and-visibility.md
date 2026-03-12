@@ -121,14 +121,14 @@ export circuit vote(): [] {
 
   // Proves membership without revealing which voter
   assert(eligibleVoters.checkRoot(
-    merkleTreePathRoot<10, Bytes<32>>(path.value)
+    disclose(merkleTreePathRoot<10, Bytes<32>>(path))
   ), "Not eligible");
 
   // Nullifier prevents double voting without revealing identity
   const nullifier = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "vote:nullifier:"), sk
   ]);
-  assert(disclose(!votedNullifiers.member(nullifier)), "Already voted");
+  assert(disclose(!votedNullifiers.member(disclose(nullifier))), "Already voted");
   votedNullifiers.insert(disclose(nullifier));
 }
 ```
@@ -259,14 +259,14 @@ export circuit useToken(): [] {
   // Prove the commitment exists (without revealing which one)
   const authPath = findAuthPath(get_public_key(sk));
   assert(commitments.checkRoot(
-    merkleTreePathRoot<10, Bytes<32>>(authPath)
+    disclose(merkleTreePathRoot<10, Bytes<32>>(authPath))
   ), "Not authorized");
 
   // Prevent reuse with a nullifier
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "nullifier:"), sk
   ]);
-  assert(disclose(!nullifiers.member(nul)), "Already used");
+  assert(disclose(!nullifiers.member(disclose(nul))), "Already used");
   nullifiers.insert(disclose(nul));
 }
 ```
@@ -361,18 +361,18 @@ Key types:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Describes a coin's properties |
-| `QualifiedShieldedCoinInfo` | coin + recipient | Coin with destination |
+| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mtIndex: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
 
 The standard library provides circuits for shielded operations:
 
 | Circuit | Purpose |
 |---------|---------|
-| `sendShielded(coin, recipient)` | Send shielded coin to recipient |
+| `sendShielded(coin: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): ShieldedSendResult` | Send shielded coin to recipient |
 | `receiveShielded(coin)` | Receive a shielded coin |
-| `sendImmediateShielded(coin, recipient)` | Send within same transaction |
+| `sendImmediateShielded(coin: ShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): ShieldedSendResult` | Send within same transaction |
 | `mergeCoin(coin1, coin2)` | Combine two coins |
 | `createZswapOutput(coin, recipient)` | Create a zswap output |
-| `mintShieldedToken(domainSep, amount)` | Mint new shielded tokens |
+| `mintShieldedToken(domainSep: Bytes<32>, value: Uint<64>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>): ShieldedCoinInfo` | Mint new shielded tokens |
 | `evolveNonce(index, nonce)` | Deterministically derive new nonce |
 | `shieldedBurnAddress()` | Get address that burns sent coins |
 

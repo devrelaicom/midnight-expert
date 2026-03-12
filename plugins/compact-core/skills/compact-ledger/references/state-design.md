@@ -276,7 +276,7 @@ The standard library provides these types for token operations:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Describes a new shielded coin |
-| `QualifiedShieldedCoinInfo` | `ShieldedCoinInfo` + recipient | Coin with destination |
+| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mtIndex: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
 | `ContractAddress` | `bytes: Bytes<32>` | Contract address for token sends |
 
 ### Token Operations via Kernel
@@ -291,6 +291,20 @@ export circuit mintTokens(amount: Uint<64>): [] {
 }
 ```
 
-The standard library also provides circuits for sending and receiving shielded coins: `sendShielded`, `receiveShielded`, `sendImmediateShielded`, `mergeCoin`, and `createZswapOutput`. These integrate with the zswap protocol for private token transfers.
+The standard library also provides circuits for shielded token operations:
+
+| Circuit | Signature |
+|---------|-----------|
+| `sendShielded` | `(coin: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): ShieldedSendResult` |
+| `receiveShielded` | `(coin: ShieldedCoinInfo): []` |
+| `sendImmediateShielded` | `(coin: ShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): ShieldedSendResult` |
+| `mergeCoin` | `(coin1: QualifiedShieldedCoinInfo, coin2: QualifiedShieldedCoinInfo): ShieldedCoinInfo` |
+| `mergeCoinImmediate` | `(coin1: QualifiedShieldedCoinInfo, coin2: ShieldedCoinInfo): ShieldedCoinInfo` |
+| `createZswapOutput` | `(coin: ShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>): []` |
+| `mintShieldedToken` | `(domainSep: Bytes<32>, value: Uint<64>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>): ShieldedCoinInfo` |
+| `evolveNonce` | `(index: Uint<128>, nonce: Bytes<32>): Bytes<32>` |
+| `shieldedBurnAddress` | `(): Either<ZswapCoinPublicKey, ContractAddress>` |
+
+These integrate with the zswap protocol for private token transfers.
 
 For the privacy implications of the token system vs ledger Maps, see `privacy-and-visibility.md`.
