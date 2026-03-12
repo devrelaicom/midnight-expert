@@ -1,0 +1,73 @@
+// SimpleNonFungibleToken.compact
+// A basic NFT contract with URI storage, approvals, and transfers.
+
+pragma language_version >= 0.21.0;
+
+import CompactStandardLibrary;
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/token/NonFungibleToken"
+  prefix NonFungibleToken_;
+
+constructor(
+  name: Opaque<"string">,
+  symbol: Opaque<"string">,
+  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+  tokenURI: Opaque<"string">,
+) {
+  const tokenId = 1 as Uint<128>;
+  NonFungibleToken_initialize(name, symbol);
+  NonFungibleToken__mint(recipient, tokenId);
+  NonFungibleToken__setTokenURI(tokenId, tokenURI);
+}
+
+export circuit balanceOf(owner: Either<ZswapCoinPublicKey, ContractAddress>): Uint<128> {
+  return NonFungibleToken_balanceOf(owner);
+}
+
+export circuit ownerOf(tokenId: Uint<128>): Either<ZswapCoinPublicKey, ContractAddress> {
+  return NonFungibleToken_ownerOf(tokenId);
+}
+
+export circuit name(): Opaque<"string"> {
+  return NonFungibleToken_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return NonFungibleToken_symbol();
+}
+
+export circuit tokenURI(tokenId: Uint<128>): Opaque<"string"> {
+  return NonFungibleToken_tokenURI(tokenId);
+}
+
+export circuit approve(
+  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  tokenId: Uint<128>
+): [] {
+  NonFungibleToken_approve(to, tokenId);
+}
+
+export circuit getApproved(tokenId: Uint<128>): Either<ZswapCoinPublicKey, ContractAddress> {
+  return NonFungibleToken_getApproved(tokenId);
+}
+
+export circuit setApprovalForAll(
+  operator: Either<ZswapCoinPublicKey, ContractAddress>,
+  approved: Boolean
+): [] {
+  NonFungibleToken_setApprovalForAll(operator, approved);
+}
+
+export circuit isApprovedForAll(
+  owner: Either<ZswapCoinPublicKey, ContractAddress>,
+  operator: Either<ZswapCoinPublicKey, ContractAddress>
+): Boolean {
+  return NonFungibleToken_isApprovedForAll(owner, operator);
+}
+
+export circuit transferFrom(
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
+  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  tokenId: Uint<128>
+): [] {
+  NonFungibleToken_transferFrom(fromAddress, to, tokenId);
+}

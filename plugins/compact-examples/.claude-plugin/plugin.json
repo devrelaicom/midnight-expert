@@ -1,0 +1,29 @@
+{
+  "name": "compact-examples",
+  "version": "0.1.0",
+  "description": "Handpicked examples of Compact smart contracts — curated library implementations, patterns, and usage guides for building on Midnight.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "compact",
+    "smart-contracts",
+    "examples",
+    "openzeppelin",
+    "ownable",
+    "access-control",
+    "pausable",
+    "fungible-token",
+    "non-fungible-token",
+    "multi-token",
+    "initializable",
+    "testing",
+    "modules",
+    "witnesses"
+  ]
+}
