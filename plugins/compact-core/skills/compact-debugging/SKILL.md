@@ -138,6 +138,8 @@ If you catch yourself thinking:
 - "Let me just try..." (without hypothesis)
 - "It works on my machine" (without investigating difference)
 
+**If any of these apply:** Stop. Return to Phase 1 (Root Cause Investigation) before attempting any fix.
+
 ## Warning Signs of Deeper Problems
 
 Consecutive fixes revealing new problems in different areas indicates architectural issues: stop patching, document findings, discuss with team, consider design rethink.
