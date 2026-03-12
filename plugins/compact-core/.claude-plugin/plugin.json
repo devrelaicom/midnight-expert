@@ -44,6 +44,8 @@
     "compact-runtime",
     "contract-class",
     "pureCircuits",
-    "compiler-generated"
+    "compiler-generated",
+    "debugging",
+    "troubleshooting"
   ]
 }
