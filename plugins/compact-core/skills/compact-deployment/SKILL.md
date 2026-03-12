@@ -41,6 +41,7 @@ compact compile  setNetworkId()   deployContract()   callTx.<name>()
 | | `@midnight-ntwrk/wallet-sdk-shielded` | 1.0.0 |
 | | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 1.0.0 |
 | | `@midnight-ntwrk/wallet-sdk-dust-wallet` | 1.0.0 |
+| | `@midnight-ntwrk/wallet-sdk-address-format` | 3.0.0 |
 | **Ledger** | `@midnight-ntwrk/ledger` | ^4.0.0 |
 | **Utilities** | `ws` | ^8.19.0 |
 
@@ -54,7 +55,7 @@ compact compile  setNetworkId()   deployContract()   callTx.<name>()
 | **Proof Server** | `http://localhost:6300` | `http://localhost:6300` | `http://localhost:6300` |
 | **Faucet** | N/A | `https://faucet.preview.midnight.network` | `https://faucet.preprod.midnight.network` |
 
-The proof server always runs locally (to protect private data). The local network uses the `undeployed` network ID with the `dev` node preset. The local ports match the Lace wallet's "Undeployed" network settings — no custom endpoint configuration required.
+The proof server should run locally for DApp development (to protect private data). The local network uses the `undeployed` network ID. The local ports match the Lace wallet's "Undeployed" network settings — no custom endpoint configuration required.
 
 ## Core Deployment Pattern
 
@@ -96,9 +97,9 @@ console.log(`Tx ${txData.public.txId} in block ${txData.public.blockHeight}`);
 | `FoundContract<C>` | `midnight-js-contracts` | Joined contract (same as deployed but found by address) |
 | `CompiledContract` | `compact-js` | Prepared contract with witnesses and ZK assets |
 | `ImpureCircuitId<C>` | `compact-js` | Branded circuit key type for type-safe provider generics |
-| `ContractAddress` | `ledger` | Hex-encoded contract address string |
+| `ContractAddress` | `compact-runtime` | Hex-encoded contract address string |
 | `FinalizedDeployTxData<C>` | `midnight-js-contracts` | Deployment result (contractAddress, txId, blockHeight) |
-| `FinalizedCallTxData` | `midnight-js-contracts` | Circuit call result (txId, blockHeight, status) |
+| `FinalizedCallTxData<C, ICK>` | `midnight-js-contracts` | Circuit call result (txId, blockHeight, status) |
 | `WalletProvider` | `midnight-js-types` | balanceTx, getCoinPublicKey, getEncryptionPublicKey |
 | `MidnightProvider` | `midnight-js-types` | submitTx |
 
@@ -109,7 +110,7 @@ console.log(`Tx ${txData.public.txId} in block ${txData.public.blockHeight}`);
 | Missing `globalThis.WebSocket = WebSocket` in Node.js | Add at top of entry point before any SDK imports |
 | Proof server not running | Start with `docker run -p 6300:6300 midnightntwrk/proof-server:7.0.0 -- midnight-proof-server -v` |
 | Wrong or missing `setNetworkId()` call | Call once at startup before creating providers; must match the network you're connecting to |
-| Wallet not funded (DUST balance zero) | Fund with tNight from faucet, then wait for DUST generation from staked NIGHT |
+| Wallet not funded (DUST balance zero) | Fund with tNight from faucet, register NIGHT UTXOs via `registerForDustGeneration()`, then wait for DUST generation |
 | Using `contract` instead of `compiledContract` in deploy options | Use `compiledContract` (created via `CompiledContract.make().pipe(...)`) |
 
 ## Reference Files

@@ -21,7 +21,7 @@ For CLI tool installation, version management, and basic compile command syntax,
 │   ├── <circuit>.zkir           # JSON circuit description (per impure circuit)
 │   └── <circuit>.bzkir          # Binary ZKIR (per impure circuit)
 ├── keys/                        # Cryptographic keys (absent with --skip-zk)
-│   ├── <circuit>.prover         # Prover key (ProvingKeyMaterial)
+│   ├── <circuit>.prover         # Prover key (ProverKey, branded Uint8Array)
 │   └── <circuit>.verifier       # Verifier key (Uint8Array)
 └── compiler/
     └── contract-info.json       # Circuit manifest and metadata
@@ -33,12 +33,12 @@ For a detailed walkthrough of each directory, see `references/compilation-output
 
 | Artifact | Purpose | Generated For |
 |----------|---------|---------------|
-| `contract/index.d.ts` | TypeScript types: `Contract<T>`, `Ledger`, `Witnesses`, `PureCircuits` | All exported circuits |
+| `contract/index.d.ts` | TypeScript types: `Contract<PS, W>`, `Ledger`, `Witnesses`, `PureCircuits`, `ImpureCircuits<T>` | All exported circuits |
 | `contract/index.js` | Runtime implementation with version and type validation | All exported circuits |
 | `contract/index.js.map` | Source map for debugging `.compact` in VS Code | Always |
 | `zkir/<circuit>.zkir` | JSON circuit description consumed by proof server | Exported impure circuits only |
 | `zkir/<circuit>.bzkir` | Binary ZKIR for efficient proof server processing | Exported impure circuits only |
-| `keys/<circuit>.prover` | Prover key for generating ZK proofs | Exported impure circuits only |
+| `keys/<circuit>.prover` | Prover key (ProverKey, branded Uint8Array) for generating ZK proofs | Exported impure circuits only |
 | `keys/<circuit>.verifier` | Verifier key submitted on-chain during deployment | Exported impure circuits only |
 | `compiler/contract-info.json` | Circuit manifest (names, types, pure/impure flags) | Always |
 
@@ -79,10 +79,9 @@ See `examples/PureImpureDemo.compact` for a complete annotated example.
 The compiler reports circuit size metrics during compilation:
 
 ```
-Compiling 2 circuits:
-  circuit "increment" (k=13, rows=4569)
-  circuit "reset" (k=13, rows=4580)
-Overall progress [====================] 2/2
+Compiling 1 circuit:
+  circuit "increment" (k=5, rows=24)
+Overall progress [====================] 1/1
 ```
 
 | Metric | Meaning | Impact |
@@ -100,10 +99,10 @@ For details on metrics, key generation, and the proof server relationship, see `
 |---|---|---|
 | Parse | "expected '[token]' but found '[token]'" | `Void` return type, `::` enum access, `ledger { }` block |
 | Type | "no matching overload" | Wrong argument type, missing cast |
-| Disclosure | "potential witness-value disclosure must be declared" | Missing `disclose()` on witness value |
-| Overflow | Integer literal exceeds field modulus | Value > ~2^255 (BLS12-381) |
+| Disclosure | "potential witness-value disclosure must be declared but is not:" | Missing `disclose()` on witness value |
+| Overflow | Integer literal exceeds field modulus | Value > ~2^254.86 (BLS12-381 scalar field) |
 | Composable | "missing association for circuits" | Missing `contract-info.json` in dependency |
-| Internal | Exit code 255 | Compiler bug — update and report |
+| Internal | Exit code 255 | Subprocess crash (e.g., OOM) — check system resources, update, and report |
 | Runtime | "Version mismatch" (post-compilation) | `compact-runtime` version mismatch |
 
 For detailed error interpretation and debugging strategies, see `references/compiler-errors.md`.
