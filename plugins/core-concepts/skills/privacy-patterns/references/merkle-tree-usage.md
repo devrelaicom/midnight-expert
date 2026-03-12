@@ -58,7 +58,7 @@ Each `MerkleTreePathEntry` has:
 | Field | Type | Description |
 |-------|------|-------------|
 | `sibling` | `MerkleTreeDigest` | The sibling hash at this tree level |
-| `goesLeft` | `Boolean` | Whether the current node is the left child |
+| `goes_left` | `Boolean` | Whether the current node is the left child |
 
 **There is no `.value` field on `MerkleTreePath`.** Pass the whole struct to `merkleTreePathRoot`.
 
@@ -124,8 +124,8 @@ export circuit proveAndAct(): [] {
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:act-nul:"), sk
   ]);
-  // disclose() required: nul is derived from witness data (sk)
-  assert(disclose(!usedNullifiers.member(nul)), "Already acted");
+  // disclose() required: nul is witness-derived; Set.member() argument must be public
+  assert(!usedNullifiers.member(disclose(nul)), "Already acted");
   usedNullifiers.insert(disclose(nul));
 
   // ... perform the action

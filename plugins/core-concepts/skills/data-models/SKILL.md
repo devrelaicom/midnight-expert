@@ -41,7 +41,7 @@ Unlike Bitcoin, which references prior outputs directly by txid+index (revealing
 CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
 ```
 
-Where `CoinInfo = { value, type_, nonce }`.
+Where `CoinInfo = { value, type, nonce }`.
 
 **Privacy benefit**: The nullifier is computed from the raw coin data and the spending key, not from the commitment. This means the nullifier reveals nothing about which coin commitment was spent.
 
@@ -53,10 +53,10 @@ Each UTXO independently chooses privacy level:
 
 ```compact
 // Receiving a shielded coin (CoinInfo provided by witness)
-receive(coin);
+receiveShielded(coin);
 
-// Sending tokens — returns SendResult with change info
-send(input, recipient, value);
+// Sending shielded tokens — returns SendResult with change info
+sendShielded(input, recipient, value);
 ```
 
 ## Account Model (Contract Tokens)
@@ -86,7 +86,6 @@ Midnight's ledger has two components:
 ### 1. Zswap State
 - Commitment tree: `MerkleTree<CoinCommitment>`
 - First free index: `u32`
-- Commitment set: `Set<CoinCommitment>` (prevents duplicate commitments)
 - Nullifier set: `Set<CoinNullifier>`
 - Historic roots: `TimeFilterMap<MerkleTreeRoot>` (time-based expiry)
 

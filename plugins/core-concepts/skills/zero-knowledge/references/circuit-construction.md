@@ -7,17 +7,13 @@
 ```
 Compact Source
      ↓
-   Parser
-     ↓
-Abstract Syntax Tree
-     ↓
-Type Checker
+  Compiler
      ↓
 Circuit IR
      ↓
    ZKIR
      ↓
-PLONK Proving/Verification Keys
+Proving/Verification Keys
 (derived from universal SRS)
 ```
 
@@ -49,7 +45,7 @@ PLONK Proving/Verification Keys
 ### Example
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.20;
 import CompactStandardLibrary;
 
 export ledger hash: Bytes<32>;

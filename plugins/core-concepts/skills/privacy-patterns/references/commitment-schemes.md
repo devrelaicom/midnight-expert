@@ -20,9 +20,8 @@ Once a commitment `c` is published, the committer cannot find a different `(valu
 
 ### Relationship to Witness Taint
 
-Commitment functions **clear witness taint** on their inputs. The compiler considers the committed value cryptographically hidden, so it does not require `disclose()` for values that flow into the commitment's input. However:
+Commitment functions **clear witness taint** on their inputs and on the commitment result. The compiler considers both the input and the output of `persistentCommit` as clean — neither requires `disclose()` downstream.
 
-- The commitment **result** still needs `disclose()` when written to ledger (it is a new value being stored publicly).
 - Hash functions (`persistentHash`, `transientHash`) do **not** clear witness taint because hash outputs could theoretically be brute-forced.
 
 ## Function Reference
@@ -106,8 +105,9 @@ export circuit submitCommitment(value: Field): [] {
   // persistentCommit clears witness taint on the input (value, salt)
   const c = persistentCommit<Field>(value, salt);
   storeOpening(pk, salt, value);
-  // disclose() needed: pk and c are witness-derived, Map.insert args are public
-  commitments.insert(disclose(pk), disclose(c));
+  // disclose() needed: pk is witness-derived (persistentHash does not clear taint);
+  // c is clean (persistentCommit clears taint), so no disclose() needed on c
+  commitments.insert(disclose(pk), c);
 }
 
 // Phase 2: Each participant reveals their value
@@ -115,15 +115,15 @@ export circuit revealValue(): Field {
   assert(phase == Phase.reveal, "Not in reveal phase");
   const sk = local_secret_key();
   const pk = get_public_key(sk);
-  // disclose() needed: pk is witness-derived, Map.member arg is public
-  assert(disclose(commitments.member(pk)), "No commitment found");
+  // disclose() needed: pk is witness-derived; Map.member() argument must be public
+  assert(commitments.member(disclose(pk)), "No commitment found");
   const opening = getOpening();
-  const salt = opening.0;
-  const value = opening.1;
+  const [salt, value] = opening;
   // Recompute the commitment and compare against stored value
   const expected = persistentCommit<Field>(value, salt);
-  // disclose() needed: comparison involves witness data
-  assert(disclose(expected == commitments.lookup(pk)), "Commitment mismatch");
+  // disclose() needed: pk is witness-derived; Map.lookup() argument must be public
+  // expected is clean (persistentCommit clears taint), so no disclose() on result
+  assert(expected == commitments.lookup(disclose(pk)), "Commitment mismatch");
   // disclose() needed: returning witness data from exported circuit
   return disclose(value);
 }

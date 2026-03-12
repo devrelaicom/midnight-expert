@@ -64,7 +64,7 @@ witness getProof(leaf: Bytes<32>): MerkleTreePath<32, Bytes<32>>;
 witness getAmount(): Uint<64>;
 ```
 
-Witness return values are private by default. When witness-tainted values flow to public context (ledger writes, assert conditions, circuit return values), the compiler requires `disclose()` to make the information flow explicit.
+Witness return values are private by default. When witness-tainted values flow to public context (ledger writes, circuit return values, and cross-contract calls), the compiler requires `disclose()` to make the information flow explicit.
 
 ### 4. Internal Circuits (Helpers)
 
@@ -104,12 +104,12 @@ Every transaction executes in three sequential phases:
 
 Checked by every node without accessing ledger state:
 
-- Verify ZK proof against circuit verification key
-- Verify Schnorr proof for the transaction's zero-value contribution
 - Check structural validity (correct format, valid bytecodes)
 - Validate token type consistency
+- Verify Schnorr proof in the contract section
+- Verify Zswap offer ZK proofs
 
-This phase ensures the transaction is cryptographically valid before touching any state.
+This phase ensures the transaction is structurally valid before touching any state.
 
 ### Phase 2: Guaranteed (Stateful)
 
@@ -117,6 +117,7 @@ Executes the Impact program against current ledger state. Effects from this phas
 
 - Look up contract state
 - Run Impact bytecode (replay public state changes)
+- Verify ZK proof against circuit verification key
 - Verify declared effects match actual execution results
 - Collect transaction fees
 - Process guaranteed token operations (Zswap offer)
@@ -167,12 +168,12 @@ See `references/impact-vm.md` for opcodes, value types, and execution details.
 Token operations are standard library circuit calls, not special syntax:
 
 ```compact
-// Receive a coin (typically in guaranteed phase)
-receive(coinInfo: CoinInfo): []
+// Receive a shielded coin (typically in guaranteed phase)
+receiveShielded(coin: ShieldedCoinInfo): []
 
-// Send a coin to a recipient
-send(
-  input: QualifiedCoinInfo,
+// Send a shielded coin to a recipient
+sendShielded(
+  input: QualifiedShieldedCoinInfo,
   recipient: Either<ZswapCoinPublicKey, ContractAddress>,
   value: Uint<128>
 ): SendResult
@@ -243,7 +244,7 @@ export circuit authorize(): [] {
   const sk = local_secret_key();
   const pk = get_public_key(sk);
   // disclose() needed: pk is derived from witness data
-  assert(disclose(pk == authority), "Not authorized");
+  assert(pk == authority, "Not authorized");
 }
 ```
 
@@ -265,7 +266,7 @@ export circuit deposit(amount: Uint<64>): [] {
   // Commit to the amount with randomness
   const commitment = persistentCommit<Uint<64>>(amount, rand);
   // MerkleTree.insert() hides the leaf value on-chain
-  deposits.insert(disclose(commitment));
+  deposits.insert(commitment);
 }
 
 export circuit withdraw(): [] {
@@ -285,7 +286,7 @@ export circuit withdraw(): [] {
     pad(32, "myapp:nul:"), secret
   ]);
   // disclose() needed: nullifier is derived from witness data
-  assert(disclose(!spentNullifiers.member(nullifier)), "Already spent");
+  assert(!spentNullifiers.member(disclose(nullifier)), "Already spent");
   spentNullifiers.insert(disclose(nullifier));
 }
 ```

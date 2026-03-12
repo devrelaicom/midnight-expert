@@ -1,6 +1,6 @@
 // Common ZK Circuit Patterns in Compact
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.20;
 
 import CompactStandardLibrary;
 

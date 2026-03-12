@@ -56,9 +56,9 @@ export circuit commitValue(value: Field): [] {
   );
   // Store the opening off-chain for later reveal
   store_opening(commitment, salt, value);
-  // Commitment clears witness taint on the input, but the result
-  // still needs disclose() for the ledger write
-  storedCommitment = disclose(commitment);
+  // persistentCommit clears witness taint on both input and result;
+  // no disclose() needed for the ledger write
+  storedCommitment = commitment;
 }
 ```
 
@@ -123,9 +123,8 @@ export ledger spentNullifiers: Set<Bytes<32>>;
 
 // Check and insert a nullifier
 const nul = deriveNullifier(currentRound, sk);
-// disclose() needed: nul is derived from witness data (sk);
-// Set.member() is a ledger operation whose argument is public
-assert(disclose(!spentNullifiers.member(nul)), "Already acted this round");
+// disclose() needed: nul is witness-derived; Set.member() argument must be public
+assert(!spentNullifiers.member(disclose(nul)), "Already acted this round");
 spentNullifiers.insert(disclose(nul));
 ```
 
@@ -208,8 +207,8 @@ export circuit act(): [] {
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:act-nul:"), sk
   ]);
-  // disclose() needed: nul is derived from witness data (sk)
-  assert(disclose(!usedNullifiers.member(nul)), "Already acted");
+  // disclose() needed: nul is witness-derived; Set.member() argument must be public
+  assert(!usedNullifiers.member(disclose(nul)), "Already acted");
   usedNullifiers.insert(disclose(nul));
 
   // ... perform the action
@@ -302,8 +301,8 @@ export circuit verifyThreshold(threshold: Uint<64>): [] {
   // Verify the witness value matches the on-chain commitment
   // persistentCommit<T> accepts any serializable type T
   const expected = persistentCommit<Uint<64>>(value, salt);
-  // disclose() needed: expected is derived from witness data
-  assert(disclose(expected == credentialCommitment), "Invalid credential");
+  // persistentCommit clears witness taint; no disclose() needed on result
+  assert(expected == credentialCommitment, "Invalid credential");
 
   // Disclose only the boolean result, NOT the value
   // disclose() needed: comparison involves witness data (value)
@@ -318,7 +317,7 @@ export circuit verifyRange(minimum: Uint<64>, maximum: Uint<64>): [] {
   const value = getCredentialValue();
   const salt = getCredentialSalt();
   const expected = persistentCommit<Uint<64>>(value, salt);
-  assert(disclose(expected == credentialCommitment), "Invalid credential");
+  assert(expected == credentialCommitment, "Invalid credential");
 
   // Disclose the combined range check as a single boolean
   assert(disclose(value >= minimum && value <= maximum), "Out of range");
@@ -336,9 +335,7 @@ witness getProfile(): [Bytes<32>, Uint<64>, Uint<64>];
 // Reveal age bracket but not name or exact income
 export circuit proveAgeAbove(minAge: Uint<64>): [] {
   const profile = getProfile();
-  const name = profile.0;     // NOT disclosed
-  const age = profile.1;      // comparison result disclosed
-  const income = profile.2;   // NOT disclosed
+  const [name, age, income] = profile;  // name and income NOT disclosed; age comparison result disclosed
 
   // Only the boolean result of the age comparison is made public
   // disclose() needed: age is witness data used in a conditional

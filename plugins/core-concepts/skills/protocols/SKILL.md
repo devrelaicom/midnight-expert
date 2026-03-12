@@ -5,7 +5,7 @@ description: Use when asking about Kachina smart contract protocol, Zswap token 
 
 # Midnight Protocols
 
-Midnight uses two foundational protocols: **Kachina** for privacy-preserving smart contracts and **Zswap** for shielded token transfers.
+Midnight uses two foundational protocols: **Kachina** for data-protecting smart contracts and **Zswap** for shielded token transfers.
 
 ## Protocol Selection
 
@@ -106,7 +106,7 @@ Offer {
     { commitment, type_value_commit, optional_contract, optional_ciphertext, zk_proof }
   ],
   transient: [...],
-  deltas: Map<RawTokenType, i128>
+  deltas: Map<string, bigint>
 }
 ```
 
@@ -136,7 +136,7 @@ Two transactions can merge if at least one has an empty contract call section. C
 Contracts issue custom tokens via Zswap:
 
 ```
-Token type = Hash(contract_address, domain_separator)
+Token type = Hash(domain_separator, contract_address)
 Contract can mint/burn tokens through Zswap stdlib operations
 ```
 
@@ -154,7 +154,7 @@ Output = {
 }
 ```
 
-Where CoinInfo = {value, type_, nonce}.
+Where CoinInfo = {value, type, nonce}.
 
 **Important**: The coin commitment is hash-based, not a Pedersen commitment. The `type_value_commit` field is a separate Pedersen commitment used only for balance verification.
 

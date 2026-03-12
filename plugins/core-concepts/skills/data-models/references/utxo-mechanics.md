@@ -12,7 +12,7 @@ A UTXO is created when:
 CoinCommitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
 ```
 
-Where `CoinInfo = { value, type_, nonce }`.
+Where `CoinInfo = { value, type, nonce }`.
 
 The commitment is added to the global Merkle tree of coin commitments.
 
@@ -54,7 +54,7 @@ Properties:
 CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
 ```
 
-Where `CoinInfo = { value, type_, nonce }`. The nullifier is computed from the raw coin data and the spending key, NOT from the commitment. Using the commitment would create a linkable relationship between nullifiers and commitments, defeating privacy.
+Where `CoinInfo = { value, type, nonce }`. The nullifier is computed from the raw coin data and the spending key, NOT from the commitment. Using the commitment would create a linkable relationship between nullifiers and commitments, defeating privacy.
 
 ### Privacy Properties
 
@@ -117,7 +117,7 @@ Midnight maintains a `TimeFilterMap<MerkleTreeRoot>` of valid past roots with ti
 
 ### Choosing Privacy Level
 
-The shielded/unshielded distinction is determined by the coin type and wallet configuration, not by different Compact syntax. The `send()` circuit call is the same regardless of privacy level. For selective disclosure, viewing keys are shared at the wallet level — this is external to the contract code.
+Shielded and unshielded operations use distinct Compact stdlib functions: `receiveShielded()`/`sendShielded()` (using `ShieldedCoinInfo`) for shielded coins, and `receiveUnshielded()`/`sendUnshielded()` (using `color: Bytes<32>` and `amount: Uint<128>`) for unshielded coins. These have fundamentally different signatures. For selective disclosure, viewing keys are shared at the wallet level.
 
 ## Parallel Processing
 

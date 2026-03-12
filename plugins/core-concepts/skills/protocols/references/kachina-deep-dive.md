@@ -2,7 +2,7 @@
 
 ## Formal Definition
 
-Kachina is a protocol for privacy-preserving smart contracts that:
+Kachina is a protocol for data-protecting smart contracts that:
 - Enables confidential, general-purpose computation
 - Maintains decentralization
 - Uses only non-interactive zero-knowledge proofs
@@ -149,7 +149,7 @@ Contract designers choose:
 
 ### Proof Characteristics
 
-Midnight uses PLONK with KZG10 polynomial commitments. Proofs are compact (typically under a kilobyte) and constant in size for a given circuit, regardless of:
+Midnight uses ZK Snarks. Proofs are sublinear in size with respect to the statement complexity, regardless of:
 - Contract complexity
 - State size
 - Computation performed

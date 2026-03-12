@@ -35,8 +35,6 @@ The Impact VM supports these value types:
 | `Array(n)` | Indexed collection where 0 < n < 16 (1 to 15 items) |
 | `Map` | Key-value mapping |
 | `MerkleTree(d)` | Merkle tree with depth d (1 <= d <= 32) |
-| `Set` | Unordered collection of unique elements |
-| `Counter` | Numeric counter with increment operation |
 
 **Array bounds note**: The specification defines `Array(n)` where `0 < n < 16`, meaning arrays must have between 1 and 15 items (inclusive). The upper bound 16 is exclusive.
 
@@ -51,6 +49,8 @@ The context is an `Array` with 5 entries providing execution environment informa
 | 2 | Block timestamp | Cell | Current block's timestamp |
 | 3 | Timestamp divergence bound | Cell | Maximum allowed divergence from real time |
 | 4 | Block hash | Cell | Hash of the current block |
+
+> **Caution**: Currently, only the first two entries (contract address and new coin allocations) are correctly initialized. Entries 2–4 are defined but not yet correctly populated.
 
 The context is read-only during execution.
 
@@ -71,7 +71,6 @@ The context is read-only during execution.
 |--------|-------------|
 | `add` | Addition |
 | `sub` | Subtraction |
-| `mul` | Multiplication |
 | `eq` | Equality comparison |
 
 ### Control Flow
@@ -80,7 +79,6 @@ The context is read-only during execution.
 |--------|-------------|
 | `jmp offset` | Jump forward by offset (never backward) |
 | `branch offset` | Conditional jump forward |
-| `halt` | Stop execution |
 | `noop` | No operation |
 
 All jump offsets must be positive, enforcing forward-only execution.
@@ -89,18 +87,12 @@ All jump offsets must be positive, enforcing forward-only execution.
 
 | Opcode | Description |
 |--------|-------------|
-| `load` | Read from contract state |
-| `store` | Write to contract state |
-| `insert` | Insert into collection (Map, Set, MerkleTree) |
-| `lookup` | Look up value in Map |
-| `member` | Check membership in Set |
+| `idx` / `idxc` / `idxp` / `idxpc` | Read from contract state (various indexing modes) |
+| `ins` / `insc` | Write to contract state (insert operations) |
 
 ### Effect Operations
 
-| Opcode | Description |
-|--------|-------------|
-| `emit` | Record a side effect (nullifier, commitment, mint) |
-| `call` | Invoke a contract operation |
+Effects are modified via `ins`/`idx` operations on the effects Array in the initial stack.
 
 ## Execution Flow
 
@@ -108,7 +100,7 @@ All jump offsets must be positive, enforcing forward-only execution.
 1. Initialize stack: [Context, Effects, State]
 2. Load Impact program (bytecode)
 3. Execute instructions sequentially (PC only moves forward)
-4. On halt: top of stack = new State
+4. On completion: stack returns to original shape; new State adopted if marked as storable
 5. Verify: accumulated Effects match declared Effects
 6. Commit new State to ledger
 ```
@@ -143,7 +135,7 @@ Compact source
   ├── Impact bytecode (public transcript)
   │   └── Executes on Impact VM (on-chain)
   └── ZK circuit (private computation)
-      └── Proves correctness off-chain (verified in well-formedness phase)
+      └── Proves correctness off-chain (verified in guaranteed phase)
 ```
 
 ### What Goes Where

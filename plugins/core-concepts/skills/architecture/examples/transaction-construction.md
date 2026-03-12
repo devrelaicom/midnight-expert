@@ -16,11 +16,11 @@ From your local wallet:
 MyCoin {
   coin_info: {
     value: 100,
-    type_: NIGHT,
+    type: NIGHT,
     nonce: 0x789...
   },
-  public_key: ZswapCoinPublicKey(0xpub123...),
-  secret_key: ZswapCoinSecretKey(0xsec456...),
+  public_key: CoinPublicKey(0xpub123...),
+  secret_key: CoinSecretKey(0xsec456...),
   merkle_index: 42
 }
 ```
@@ -36,7 +36,7 @@ merkle_root = getCurrentRoot()
 ### Step 3: Compute Nullifier
 
 ```
-nullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
+nullifier = Hash<(CoinInfo, CoinSecretKey)>
          = Hash<(coin_info, 0xsec456...)>
          = 0xnull...
 ```
@@ -46,7 +46,7 @@ nullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
 ```
 recipient_coin_info = CoinInfo {
   value: 50,
-  type_: NIGHT,
+  type: NIGHT,
   nonce: fresh_random()
 }
 
@@ -58,7 +58,7 @@ recipient_commitment = Hash<(recipient_coin_info, recipient_public_key)>
 ```
 change_coin_info = CoinInfo {
   value: 50,    // 100 - 50 = 50 change
-  type_: NIGHT,
+  type: NIGHT,
   nonce: fresh_random()
 }
 
@@ -71,30 +71,25 @@ change_commitment = Hash<(change_coin_info, my_public_key)>
 Offer {
   inputs: [{
     nullifier: 0xnull...,
-    type_value_commit: <multi-base Pedersen value commitment>,
-    merkle_root: merkle_root,
-    merkle_path: merkle_path,
-    zk_proof: generateInputProof(...)
+    contractAddress: contract_addr,
+    proof: generateInputProof(...)
   }],
   outputs: [
     {
       commitment: recipient_commitment,
-      type_value_commit: <multi-base Pedersen value commitment>,
-      ciphertext: encryptForRecipient(50, nonce),
-      zk_proof: generateOutputProof(...)
+      contractAddress: contract_addr,
+      proof: generateOutputProof(...)
     },
     {
       commitment: change_commitment,
-      type_value_commit: <multi-base Pedersen value commitment>,
-      ciphertext: encryptForSelf(50, nonce),
-      zk_proof: generateOutputProof(...)
+      contractAddress: contract_addr,
+      proof: generateOutputProof(...)
     }
   ],
-  balance: { NIGHT: 0 }  // 100 in, 100 out
+  transient: [],
+  deltas: { NIGHT: 0 }  // 100 in, 100 out
 }
 ```
-
-Note: `type_value_commit` fields are multi-base Pedersen value commitments used for homomorphic balance verification. The exact commitment formula is internal to the protocol.
 
 ### Step 7: Assemble Transaction
 
@@ -103,7 +98,7 @@ Transaction {
   guaranteed_zswap_offer: Offer,
   fallible_zswap_offer: None,
   contract_calls: None,
-  schnorr_proof: generateSchnorrProof(...)
+  binding_randomness: generateBindingRandomness(...)
 }
 ```
 
@@ -126,7 +121,7 @@ ContractCall {
   entry_point: "deposit",
   guaranteed_transcript: {
     effects: {
-      received_commitments: [{ value: 10, type_: NIGHT }]
+      received_commitments: [{ value: 10, type: NIGHT }]
     },
     program: <impact_program>
   },
@@ -142,7 +137,7 @@ Create output targeted to contract:
 ```
 contract_coin_info = CoinInfo {
   value: 10,
-  type_: NIGHT,
+  type: NIGHT,
   nonce: fresh_random()
 }
 
@@ -161,18 +156,19 @@ Transaction {
   guaranteed_zswap_offer: {
     inputs: [my_input],
     outputs: [contract_coin, my_change],
-    balance: { NIGHT: 0 }
+    transient: [],
+    deltas: { NIGHT: 0 }
   },
   contract_calls: [ContractCall],
-  schnorr_proof: generateSchnorrProof(...)
+  binding_randomness: generateBindingRandomness(...)
 }
 ```
 
-### Step 4: Schnorr Proof
+### Step 4: Binding Randomness
 
-One Schnorr proof per transaction proves the contract section doesn't inject value:
+Binding randomness opens the homomorphic Pedersen commitment:
 ```
-schnorr_proof = generateSchnorrProof(contract_calls, binding_data)
+binding_randomness = generateBindingRandomness(contract_calls, binding_data)
 ```
 
 ## Atomic Swap Transaction
@@ -186,9 +182,10 @@ Exchange tokens atomically with another party.
 MyOffer {
   inputs: [my_token_a_input],  // Spending 100 TOKEN_A
   outputs: [],
-  balance: {
-    TOKEN_A: -100,  // Giving away
-    TOKEN_B: +50    // Want to receive
+  transient: [],
+  deltas: {
+    TOKEN_A: +100,  // Giving away
+    TOKEN_B: -50    // Want to receive
   }
 }
 ```
@@ -206,9 +203,10 @@ TheirOffer {
     my_token_b_output,   // 50 TOKEN_B to me
     their_token_a_output // 100 TOKEN_A to them
   ],
-  balance: {
-    TOKEN_A: +100,  // Receiving
-    TOKEN_B: -50    // Giving away
+  transient: [],
+  deltas: {
+    TOKEN_A: -100,  // Receiving
+    TOKEN_B: +50    // Giving away
   }
 }
 ```
@@ -219,15 +217,15 @@ TheirOffer {
 MergedOffer {
   inputs: [my_token_a_input, their_token_b_input],
   outputs: [my_token_b_output, their_token_a_output],
-  balance: {
-    TOKEN_A: -100 + 100 = 0,
-    TOKEN_B: +50 - 50 = 0
+  deltas: {
+    TOKEN_A: +100 - 100 = 0,
+    TOKEN_B: -50 + 50 = 0
   }
 }
 
 Transaction {
   guaranteed_zswap_offer: MergedOffer,
-  schnorr_proof: ...
+  binding_randomness: ...
 }
 ```
 

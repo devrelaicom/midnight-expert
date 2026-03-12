@@ -12,7 +12,7 @@ Midnight's ledger has two main components:
 ZswapState {
   commitment_tree: MerkleTree<CoinCommitment>,
   commitment_tree_first_free: u32,
-  commitment_set: Set<CoinCommitment>,
+
   nullifiers: Set<CoinNullifier>,
   commitment_tree_history: TimeFilterMap<MerkleTreeRoot>
 }
@@ -30,12 +30,6 @@ ZswapState {
 - Points to next available tree position (`u32`)
 - Increments with each new coin
 - Never decreases (append-only)
-
-### Commitment Set
-
-- `Set<CoinCommitment>` that prevents duplicate commitments
-- Checked before inserting a new commitment into the tree
-- Ensures each coin commitment is unique
 
 ### Nullifiers
 
@@ -80,12 +74,10 @@ The address is computed from the initial contract state and a nonce, not from th
 
 ```
 1. Compute commitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
-2. Check commitment not already in commitment_set
-3. Insert commitment at commitment_tree_first_free
-4. Add commitment to commitment_set
-5. Increment commitment_tree_first_free
-6. Update Merkle root
-7. Add new root to commitment_tree_history
+2. Insert commitment at commitment_tree_first_free
+3. Increment commitment_tree_first_free
+4. Update Merkle root
+5. Add new root to commitment_tree_history
 ```
 
 ### Spending a Coin

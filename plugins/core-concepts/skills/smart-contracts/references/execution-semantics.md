@@ -16,14 +16,11 @@ User submits transaction
 
 Every node validates the transaction without accessing ledger state:
 
-1. **Verify ZK proof** against the circuit verification key -- confirms private computation was performed correctly
-2. **Verify Schnorr proof** for the transaction's zero-value contribution (one proof per transaction, Fiat-Shamir transformed)
-3. **Check structural validity** -- correct format, valid bytecodes, properly encoded fields
-4. **Validate token type consistency** -- token types in offers match declared types
+1. **Verify Schnorr proof** in the contract section
+2. **Check structural validity** -- correct format, valid bytecodes, properly encoded fields
+3. **Validate token type consistency** -- token types in offers match declared types
 
 This phase is stateless: it does not read from or write to the ledger. A transaction that fails well-formedness is rejected immediately and never touches state.
-
-**Key fact**: ZK proof verification happens here, not in the guaranteed phase. By the time the guaranteed phase runs, the proof has already been validated.
 
 ## Phase 2: Guaranteed (Stateful)
 
@@ -31,9 +28,10 @@ The Impact VM executes the guaranteed transcript against the current ledger stat
 
 1. **Contract lookup** -- locate contract state on the ledger
 2. **Execute Impact program** -- run the bytecode, which replays public state changes
-3. **Verify effect matching** -- confirm declared effects (nullifiers, commitments, mints) match actual execution results
-4. **Collect fees** -- deduct transaction fees from the guaranteed Zswap offer
-5. **Process guaranteed token operations** -- handle the guaranteed Zswap offer (inputs, outputs, mints)
+3. **Verify ZK proof** against the circuit verification key — confirms private computation was performed correctly
+4. **Verify effect matching** -- confirm declared effects (nullifiers, commitments, mints) match actual execution results
+5. **Collect fees** -- deduct transaction fees from the guaranteed Zswap offer
+6. **Process guaranteed token operations** -- handle the guaranteed Zswap offer (inputs, outputs, mints)
 
 If the guaranteed phase fails (e.g., contract not found, effect mismatch), the entire transaction is rejected.
 
@@ -64,7 +62,7 @@ ContractState = ImpactStateValue + Map<EntryPoint, ContractOperation>
 ContractOperation = SnarkVerifierKey
 ```
 
-The Impact VM manipulates the `ImpactStateValue` directly. The verification keys are used in phase 1 (well-formedness) to validate ZK proofs.
+The Impact VM manipulates the `ImpactStateValue` directly. The verification keys are used in phase 2 (guaranteed) to validate ZK proofs.
 
 ### Zswap State
 
@@ -74,9 +72,8 @@ The global Zswap state tracks token commitments and nullifiers:
 ZswapState:
   commitment_tree: MerkleTree          -- all coin commitments
   commitment_tree_first_free: u32      -- next free slot index
-  commitment_set: Set                  -- prevents duplicate commitments
   nullifiers: Set                      -- spent coin nullifiers
-  commitment_tree_history: TimeFilterMap -- historic roots for proof validity
+  commitment_tree_history: Set<MerkleTreeRoot> -- historic roots for proof validity
 ```
 
 ### Zswap State Update (Pseudocode)
@@ -90,9 +87,7 @@ For each transaction:
 
   // Process outputs (creating coins)
   for each output commitment:
-    assert(!commitment_set.member(commitment))  // prevent duplicates
     commitment_tree.insert(commitment)
-    commitment_set.insert(commitment)
     commitment_tree_first_free += 1
 
   // Verify balance
@@ -131,7 +126,7 @@ Each call sees the state changes from previous calls in the same transaction.
 
 ### Checkpoints
 
-Between contract calls, the VM creates a checkpoint. If a subsequent call fails in the fallible phase, the checkpoint allows partial rollback (only the failed call's fallible effects are reverted, not guaranteed effects).
+Within a contract call, the `ckpt` opcode marks the boundary between the guaranteed and fallible sections. If execution fails in the fallible section, only the fallible effects are reverted — guaranteed effects are preserved.
 
 ### Transaction Structure
 

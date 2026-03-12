@@ -83,7 +83,7 @@ export ledger tree: MerkleTree<32, Bytes<32>>;
 export ledger historicTree: HistoricMerkleTree<32, Bytes<32>>;
 ```
 
-MerkleTree supports depths 1 through 32 (`1 <= d <= 32`).
+MerkleTree supports depths 2 through 32 (`2 <= d <= 32`).
 
 Operations in circuits:
 
@@ -140,7 +140,7 @@ export sealed ledger adminKey: Bytes<32>;
 
 The `ledger { }` block syntax was removed in Compact 0.10.1 and causes a parse error.
 
-Use `export sealed ledger` for fields that should only be readable by the contract owner.
+Use `export sealed ledger` for fields that should only be written during contract initialization.
 
 ## Circuit Declarations
 
@@ -153,11 +153,11 @@ export circuit increment(): [] {
 
 export circuit transfer(recipient: Bytes<32>, amount: Uint<64>): [] {
   assert(amount > 0, "Amount must be positive");
-  balances.insert(disclose(recipient), amount);
+  balances.insert(disclose(recipient), disclose(amount));
 }
 
 export circuit getBalance(addr: Bytes<32>): Uint<64> {
-  return balances.lookup(addr);
+  return balances.lookup(disclose(addr));
 }
 ```
 
@@ -234,8 +234,8 @@ Parentheses are required. `const` is required. The `of` keyword is used (not `in
 
 ```compact
 assert(amount > 0, "Amount must be positive");
-assert(disclose(pk == authority), "Not authorized");
-assert(disclose(!nullifiers.member(nul)), "Already used");
+assert(pk == authority, "Not authorized");
+assert(!nullifiers.member(disclose(nul)), "Already used");
 ```
 
 Parentheses are required. A message string is expected. `assert condition;` without parentheses is a parse error.
@@ -340,12 +340,12 @@ Transient function outputs must NOT be stored in ledger state because the algori
 Token operations are standard library circuit calls, not special statement syntax:
 
 ```compact
-// Receive a coin
-receive(coinInfo: CoinInfo): []
+// Receive a shielded coin
+receiveShielded(coin: ShieldedCoinInfo): []
 
-// Send a coin
-send(
-  input: QualifiedCoinInfo,
+// Send a shielded coin
+sendShielded(
+  input: QualifiedShieldedCoinInfo,
   recipient: Either<ZswapCoinPublicKey, ContractAddress>,
   value: Uint<128>
 ): SendResult
@@ -393,12 +393,9 @@ The `disclose()` function marks the boundary between private (witness-tainted) a
 // Required when writing witness-derived values to ledger
 authority = disclose(pk);
 
-// Required when using witness data in assert conditions
-assert(disclose(pk == authority), "Not authorized");
-
 // Required when using witness data in Set/Map operations
 nullifiers.insert(disclose(nul));
-assert(disclose(!nullifiers.member(nul)), "Already used");
+assert(!nullifiers.member(disclose(nul)), "Already used");
 
 // Required when returning witness data from exported circuits
 return disclose(value);

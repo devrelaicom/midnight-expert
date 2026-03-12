@@ -27,7 +27,7 @@ Midnight combines ZK proofs, shielded tokens, and smart contracts into a unified
 └─────────────────────────────────────────────────────────┘
 ```
 
-> **Note**: "Kachina" is the academic research protocol name for Midnight's contract layer. It is not a user-facing component or product name.
+> **Note**: Kachina is the academic protocol underpinning Midnight's smart contract privacy model. It has its own documentation page and is referenced in developer-facing materials, though it is not a product name or SDK component.
 
 ## Transaction Anatomy
 
@@ -35,10 +35,10 @@ Every Midnight transaction contains:
 
 ```
 Transaction {
-  guaranteed_zswap_offer,    // Optional in API, required at protocol level for fees
+  guaranteed_zswap_offer,    // Always present; collects fees for all transaction phases
   fallible_zswap_offer?,     // Optional: may-fail token ops
-  contract_calls?,           // Optional: contract interactions
-  schnorr_proof              // One per transaction
+  contract_calls_or_deploys?, // Optional: contract interactions or deployments
+  binding_randomness         // Opens the homomorphic Pedersen commitment
 }
 ```
 
@@ -64,7 +64,7 @@ Offer {
   inputs: Coin[],      // Spent coins (nullifiers)
   outputs: Coin[],     // Created coins (commitments)
   transient: Coin[],   // Created and spent same tx
-  balance: Map<Type, Value>  // Net value per token
+  deltas: Map<Type, Value>   // Net value per token
 }
 ```
 
@@ -104,7 +104,7 @@ This allows verifying total value without revealing individual values.
 
 ### Binding Mechanism
 
-Transaction binding uses homomorphic Pedersen commitments rather than a simple hash. Commitments from all components (Zswap offers, contract calls, proofs) are homomorphically combined, ensuring:
+Transaction binding uses homomorphic Pedersen commitments rather than a simple hash. Commitments from all components (Zswap offers and contract calls) are homomorphically combined, ensuring:
 
 1. Zswap values balance (non-negative delta per token type)
 2. Contract effects match proofs
@@ -120,9 +120,8 @@ Ledger {
   zswap_state: {
     commitment_tree: MerkleTree,
     commitment_tree_first_free: u32,
-    commitment_set: Set<CoinCommitment>,
     nullifiers: Set<CoinNullifier>,
-    commitment_tree_history: TimeFilterMap<MerkleTreeRoot>
+    commitment_tree_history: Set<MerkleTreeRoot>
   },
   contract_map: Map<ContractAddress, ContractState>
 }
@@ -204,8 +203,8 @@ Tx1 (Party A)     Tx2 (Party B)
 ```
 Contract Address = Hash(contract_state, nonce)
 Token Type = Hash(contract_address, domain_separator)
-Coin Commitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
-Nullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
+Coin Commitment = Hash<(CoinInfo, CoinPublicKey)>
+Nullifier = Hash<(CoinInfo, CoinSecretKey)>
 ```
 
 ## Component Integration

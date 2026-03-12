@@ -4,8 +4,7 @@
 
 ```
 Transaction {
-  // Optional in API (guaranteedCoins: undefined | Offer),
-  // required at protocol level for fee payment
+  // Always present; collects fees for all transaction phases
   guaranteed_zswap_offer: Offer,
 
   // Optional: May-fail Zswap offer
@@ -14,8 +13,11 @@ Transaction {
   // Optional: Contract interactions
   contract_calls: Option<Vec<ContractCall>>,
 
-  // One Schnorr proof per transaction
-  schnorr_proof: SchnorrProof
+  // Optional: Token mints
+  mint: Option<AuthorizedMint>,
+
+  // Binding randomness for the homomorphic Pedersen commitment
+  binding_randomness: BindingRandomness
 }
 ```
 
@@ -28,7 +30,7 @@ Offer {
   inputs: Vec<Input>,
   outputs: Vec<Output>,
   transient: Vec<TransientCoin>,
-  balance: Map<TokenType, SignedValue>
+  deltas: Map<string, bigint>
 }
 ```
 
@@ -103,6 +105,23 @@ ContractCall {
 }
 ```
 
+### Contract Deploy
+
+```
+ContractDeploy {
+  // The compiled contract bytecode (Impact VM program)
+  program: Program,
+
+  // Initial contract state
+  initial_state: ContractState,
+
+  // ZK verification keys for the contract's circuits
+  verifier_keys: Vec<VerifierKey>
+}
+```
+
+Contract deploys are included alongside contract calls in the transaction's contract interactions segment.
+
 ## Transcript Structure
 
 ```
@@ -146,7 +165,7 @@ Transaction binding cryptographically links all transaction components:
 
 ### How It Works
 
-Transaction binding uses homomorphic Pedersen commitments. Commitments from all components — Zswap offers, contract calls, and proofs — are homomorphically combined to produce a single binding commitment.
+Transaction binding uses homomorphic Pedersen commitments. Commitments from all components — Zswap offers and contract calls — are homomorphically combined to produce a single binding commitment.
 
 All proofs commit to this binding, preventing component substitution.
 
@@ -182,9 +201,11 @@ This phase includes all proof verification:
 - Size limits respected
 
 **Proof Validation**:
-- All ZK proofs verify
+- Zswap offer ZK proofs verify
 - Schnorr proof verifies
 - Proof-to-data binding correct
+
+> **Note**: Contract call ZK proofs are verified in the **guaranteed phase**, not during well-formedness.
 
 **Balance Validation**:
 - Non-negative delta per token type (not equality)

@@ -25,7 +25,7 @@ Pairings enable verification without revealing values.
 
 ## PLONK Proving System
 
-Midnight uses the **PLONK** (Permutations over Lagrange-bases for Oecumenical Non-interactive Arguments of Knowledge) proving system with **KZG10** polynomial commitments.
+Midnight uses the **PLONK** (Permutations over Lagrange-bases for Oecumenical Non-interactive Arguments of Knowledge) proving system with polynomial commitments.
 
 ### Gate-Based Arithmetization
 
@@ -44,7 +44,6 @@ UniversalSetup(max_size) → SRS
 
 Key properties:
 - **Universal**: One SRS supports any circuit up to the maximum gate count
-- **Updatable**: Additional participants can strengthen the SRS security over time
 - **No per-circuit ceremony**: Per-circuit proving and verification keys are DERIVED from the universal SRS during compilation
 
 This is a significant improvement over earlier proving systems that required a new trusted ceremony for every circuit.
@@ -73,14 +72,14 @@ Verifier checks proof using:
 Verify(VerificationKey, Proof, PublicInputs) → bool
 ```
 
-Verification involves checking polynomial commitment (KZG10) evaluations via pairing checks.
+Verification involves checking polynomial commitment evaluations via pairing checks.
 
 **Cost**: Constant time (milliseconds), regardless of circuit complexity.
 
 ## Proof Size
 
 SNARK proofs are succinct:
-- Constant size (less than a kilobyte), independent of circuit complexity
+- Small size (less than a kilobyte)
 - Constant verification time
 - Efficient on-chain verification
 
@@ -101,9 +100,8 @@ Proof reveals nothing beyond statement truth.
 ## Cryptographic Primitives
 
 Midnight's ZK circuits use specific cryptographic primitives:
-- **Hashing** (`persistentHash`): Uses Poseidon hash — efficient in ZK circuits due to low gate count
-- **Commitments** (`persistentCommit`): Hash-based commitments for hiding values with randomness
-- **Balance proofs**: Use Pedersen commitments (multi-base, homomorphic) — a separate mechanism from coin commitments
+- **Hashing** (`persistentHash`): Uses SHA-256 — stable across upgrades, safe for ledger state
+- **Coin commitments** (`persistentCommit`): Hash-based commitments binding a value with randomness — used in shielded coin operations via `receiveShielded`/`sendShielded`
 
 ## Midnight's SNARK Usage
 
@@ -112,7 +110,6 @@ Midnight's ZK circuits use specific cryptographic primitives:
 Midnight uses a universal SRS that supports all deployed circuits:
 - The SRS is generated once and shared across all contracts
 - Per-circuit proving and verification keys are derived from it during compilation
-- The SRS is updatable, allowing ongoing security improvements
 
 ### Per-Circuit Keys
 

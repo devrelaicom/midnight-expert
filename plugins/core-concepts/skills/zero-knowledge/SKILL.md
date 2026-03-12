@@ -20,7 +20,7 @@ Midnight uses **ZK SNARKs** (Zero-Knowledge Succinct Non-interactive Arguments o
 | Property | Meaning |
 |----------|---------|
 | **Zero-Knowledge** | Verifier learns nothing beyond validity |
-| **Succinct** | Proof size small regardless of computation complexity |
+| **Succinct** | Proof small and fast to verify, regardless of computation size |
 | **Non-interactive** | No back-and-forth between prover and verifier |
 | **Argument of Knowledge** | Prover must actually know the secret |
 
@@ -77,7 +77,7 @@ witness (private): a = 6, b = 7
 ### Compact to Circuit
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.20;
 import CompactStandardLibrary;
 
 export ledger target: Field;
@@ -113,7 +113,7 @@ export circuit guess(): [] {
 ### In Contracts
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.20;
 import CompactStandardLibrary;
 
 export ledger public_target: Field;
@@ -152,7 +152,7 @@ Computationally infeasible to create valid proof without knowing witness.
 | Circuit compilation | One-time, expensive |
 | Proof generation | Seconds for typical contracts, depending on circuit complexity |
 | Proof verification | Milliseconds |
-| Proof size | Constant size (less than a kilobyte), independent of circuit complexity |
+| Proof size | Small (less than a kilobyte) |
 
 ## References
 

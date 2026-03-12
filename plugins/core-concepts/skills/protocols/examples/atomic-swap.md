@@ -25,8 +25,8 @@ Alice's Offer {
   ],
   outputs: [],  // Alice wants TOKEN_A, not creating NIGHT outputs
   deltas: {
-    NIGHT: -100,    // Alice giving 100 NIGHT
-    TOKEN_A: +50    // Alice wants 50 TOKEN_A
+    NIGHT: +100,    // Alice giving 100 NIGHT (inputs exceed outputs)
+    TOKEN_A: -50    // Alice wants 50 TOKEN_A (outputs exceed inputs)
   }
 }
 ```
@@ -47,8 +47,8 @@ Bob's Offer {
     { commitment: 0xddd..., value: 50 TOKEN_A, to: Alice }
   ],
   deltas: {
-    NIGHT: +100,    // Bob wants 100 NIGHT
-    TOKEN_A: -50    // Bob giving 50 TOKEN_A
+    NIGHT: -100,    // Bob wants 100 NIGHT (outputs exceed inputs)
+    TOKEN_A: +50    // Bob giving 50 TOKEN_A (inputs exceed outputs)
   }
 }
 ```
@@ -69,10 +69,7 @@ Merged Offer {
     Bob's NIGHT output,
     Alice's TOKEN_A output  // Constructed by Bob in Step 2
   ],
-  deltas: {
-    NIGHT: -100 + 100 = 0,
-    TOKEN_A: +50 - 50 = 0
-  }
+  deltas: {}  // All token types net to zero — balanced swap
 }
 ```
 
@@ -82,7 +79,7 @@ Now balanced.
 
 ```
 Transaction {
-  guaranteed_offer: Merged Offer
+  guaranteedCoins: Merged Offer
 }
 ```
 

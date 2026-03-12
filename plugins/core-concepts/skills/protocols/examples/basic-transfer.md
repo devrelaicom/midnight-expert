@@ -13,7 +13,7 @@ Alice has a coin (UTXO) she wants to send:
 ```
 Alice's Coin:
   commitment: Hash(CoinInfo, Alice's ZswapCoinPublicKey) = 0xabc...
-  CoinInfo: { value: 100, type_: NIGHT, nonce: 0x456... }
+  CoinInfo: { value: 100, type: NIGHT, nonce: 0x456... }
   secret_key: 0x123... (only Alice knows)
 ```
 
@@ -45,7 +45,7 @@ Output {
 }
 ```
 
-Where CoinInfo_new = {value: 100, type_: NIGHT, nonce: fresh_nonce}.
+Where CoinInfo_new = {value: 100, type: NIGHT, nonce: fresh_nonce}.
 
 ### 4. Build Offer
 
@@ -53,7 +53,7 @@ Where CoinInfo_new = {value: 100, type_: NIGHT, nonce: fresh_nonce}.
 Offer {
   inputs: [Alice's input],
   outputs: [Bob's output],
-  deltas: { NIGHT: 0 },  // Balanced (ignoring fees)
+  deltas: {},  // Balanced (ignoring fees)
 }
 ```
 
@@ -61,7 +61,7 @@ Offer {
 
 ```
 Transaction {
-  guaranteed_offer: Offer,
+  guaranteedCoins: Offer,
   // No contract calls needed
 }
 ```
@@ -80,7 +80,7 @@ Bob scans blockchain for outputs encrypted to his key:
 
 ```
 1. Decrypt ciphertext with Bob's private key
-2. Learn: CoinInfo (value = 100 NIGHT, type_, nonce)
+2. Learn: CoinInfo (value = 100 NIGHT, type, nonce)
 3. Compute commitment = Hash(CoinInfo, Bob's ZswapCoinPublicKey) and verify it matches
 4. Store locally: CoinInfo, commitment
 5. Bob can now spend this coin (using his ZswapCoinSecretKey to compute a nullifier)
@@ -100,8 +100,8 @@ Bob scans blockchain for outputs encrypted to his key:
 In Compact, token operations are stdlib circuit calls imported via `import CompactStandardLibrary;`:
 
 ```compact
-// send(input, recipient, value) is a stdlib call, not special syntax
-send(qualifiedCoinInfo, recipientKey, 100 as Uint<128>)
+// sendShielded(input, recipient, value) is a stdlib call, not special syntax
+sendShielded(qualifiedCoinInfo, recipientKey, 100 as Uint<128>)
 ```
 
 The Zswap machinery (commitments, nullifiers, proofs) happens automatically.

@@ -3,11 +3,10 @@
 ## Foundation
 
 Zswap extends Zerocash with:
-- Multi-asset support
-- Atomic swap capability
-- Contract integration
+- Native token support (multi-asset)
+- Atomic swaps
 
-Based on Zerocash (the academic protocol), with Midnight-specific extensions for smart contract integration and multi-asset support.
+Midnight adds its own variation on top of Zswap for smart contract integration via the Kachina protocol.
 
 ## Cryptographic Primitives
 
@@ -19,7 +18,7 @@ Coin commitments use a hash function, not Pedersen commitments:
 CoinCommitment = Hash(CoinInfo, ZswapCoinPublicKey)
 ```
 
-Where CoinInfo = {value, type_, nonce}.
+Where CoinInfo = {value, type, nonce}.
 
 **Properties**:
 - Binding: Cannot open to different coin info
@@ -51,7 +50,7 @@ The homomorphic property allows verifiers to check that inputs and outputs balan
 CoinNullifier = Hash(CoinInfo, ZswapCoinSecretKey)
 ```
 
-Where CoinInfo = {value, type_, nonce}. The coin commitment is NOT an input to nullifier computation.
+Where CoinInfo = {value, type, nonce}. The coin commitment is NOT an input to nullifier computation.
 
 **Properties**:
 - Deterministic: Same inputs produce the same nullifier
@@ -67,8 +66,7 @@ Offer {
   inputs: [Input, ...],
   outputs: [Output, ...],
   transient: [TransientCoin, ...],
-  deltas: Map<RawTokenType, i128>,
-  proofs: [ZKProof, ...]
+  deltas: Map<string, bigint>
 }
 ```
 
@@ -140,8 +138,8 @@ The contract section's zero-value contribution is proven via a Schnorr proof (on
 Each offer specifies a delta vector:
 ```
 deltas: {
-  NIGHT: -100,    // Spending 100 NIGHT
-  TOKEN_A: +50,   // Receiving 50 TOKEN_A
+  NIGHT: +100,    // Spending 100 NIGHT (inputs exceed outputs)
+  TOKEN_A: -50,   // Receiving 50 TOKEN_A (outputs exceed inputs)
 }
 ```
 
@@ -163,8 +161,7 @@ Offer1 + Offer2 = MergedOffer {
   inputs: Offer1.inputs + Offer2.inputs,
   outputs: Offer1.outputs + Offer2.outputs,
   transient: Offer1.transient + Offer2.transient,
-  deltas: Offer1.deltas + Offer2.deltas,
-  proofs: Offer1.proofs + Offer2.proofs
+  deltas: Offer1.deltas + Offer2.deltas
 }
 ```
 
@@ -188,7 +185,7 @@ Coins can specify contract address:
 
 Contracts create tokens via:
 ```
-TokenType = Hash(contract_address, domain_separator)
+TokenType = Hash(domain_separator, contract_address)
 ```
 
 Tokens are issued through Zswap mint operations in Compact contracts.
@@ -199,10 +196,10 @@ Token operations are stdlib circuit calls, imported via `import CompactStandardL
 
 ```compact
 // Receive a shielded coin targeted to this contract
-receive(coinInfo: CoinInfo): []
+receiveShielded(coin: ShieldedCoinInfo): []
 
-// Send value to a recipient (public key or contract address)
-send(input: QualifiedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): SendResult
+// Send value to a recipient
+sendShielded(input: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): SendResult
 
 // Mint an unshielded token
 mintUnshieldedToken(domainSep: Bytes<32>, value: Uint<64>, recipient: Either<ContractAddress, UserAddress>): Bytes<32>
@@ -226,7 +223,7 @@ mintUnshieldedToken(domainSep: Bytes<32>, value: Uint<64>, recipient: Either<Con
 
 ### Proof Characteristics
 
-Midnight uses PLONK with KZG10 polynomial commitments. Proof sizes are compact (typically under a kilobyte per proof) and constant for a given circuit.
+Midnight uses ZK Snarks. Proof sizes are sublinear with respect to circuit size.
 
 ### Verification Time
 

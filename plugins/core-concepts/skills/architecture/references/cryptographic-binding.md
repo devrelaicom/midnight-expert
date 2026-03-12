@@ -26,7 +26,7 @@ Commit(v) = v·G + r·H
 
 **Usage in Midnight**:
 ```
-Coin commitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
+Coin commitment = Hash<(CoinInfo, CoinPublicKey)>
 Balance verification via homomorphic Pedersen value commitments
 ```
 
@@ -65,7 +65,7 @@ Each ZK proof commits to:
 
 ### Pedersen-Based Binding
 
-Transaction binding uses homomorphic Pedersen commitments rather than a simple hash construction. Commitments from all transaction components — Zswap offers, contract calls, and proofs — are homomorphically combined to produce a single binding commitment.
+Transaction binding uses homomorphic Pedersen commitments rather than a simple hash construction. Commitments from all transaction components — Zswap offers and contract calls — are homomorphically combined to produce a single binding commitment.
 
 This approach preserves the homomorphic property needed for balance verification while cryptographically linking all components together.
 

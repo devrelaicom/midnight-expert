@@ -19,16 +19,13 @@ ZswapState {
   commitment_tree: MerkleTree,
 
   // Next available slot in tree
-  commitment_tree_first_free: u32,
-
-  // All coin commitments ever created (prevents duplicates)
-  commitment_set: Set<CoinCommitment>,
+  commitment_tree_first_free: bigint,
 
   // All spent coin nullifiers
   nullifiers: Set<CoinNullifier>,
 
   // Recent valid Merkle roots (expires over time)
-  commitment_tree_history: TimeFilterMap<MerkleTreeRoot>
+  commitment_tree_history: Set<MerkleTreeRoot>
 }
 ```
 
@@ -36,13 +33,11 @@ ZswapState {
 
 **Insert (new coin created)**:
 ```
-1. Compute commitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
-2. Check commitment NOT in commitment_set (prevents duplicates)
-3. Add commitment to commitment_set
-4. Insert at position commitment_tree_first_free
-5. Increment commitment_tree_first_free
-6. Recompute Merkle root
-7. Add new root to commitment_tree_history
+1. Compute commitment = Hash<(CoinInfo, CoinPublicKey)>
+2. Insert at position commitment_tree_first_free
+3. Increment commitment_tree_first_free
+4. Recompute Merkle root
+5. Add new root to commitment_tree_history
 ```
 
 **Verify (coin exists)**:
@@ -56,7 +51,7 @@ ZswapState {
 
 **Check (not spent)**:
 ```
-1. Compute nullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
+1. Compute nullifier = Hash<(CoinInfo, CoinSecretKey)>
 2. Check: nullifier NOT in nullifiers
 ```
 
@@ -73,7 +68,7 @@ Maintains recent Merkle roots for:
 - Concurrent transaction handling
 - Practical usability
 
-Window typically covers several blocks. Old roots expire over time via `TimeFilterMap`.
+Window typically covers several blocks. Old roots expire over time via the historic roots set.
 
 ## Contract State
 
@@ -135,8 +130,6 @@ Either ALL changes apply, or NONE do.
 
 ```
 For each output:
-  assert !commitment_set.contains(output.commitment)
-  commitment_set.insert(output.commitment)
   commitment_tree.insert(output.commitment)
 
 For each input:
@@ -166,12 +159,11 @@ ZK proofs bind:
 
 | Component | Prunable? | Notes |
 |-----------|-----------|-------|
-| `commitment_tree_history` | Yes | Old roots expire via TimeFilterMap |
+| `commitment_tree_history` | Yes | Old roots expire via the historic roots set |
 | Contract state | Current only | Historical states not needed |
 
 ### What Cannot Be Pruned
 
-- `commitment_set` — Must persist forever to prevent duplicate commitments
 - `nullifiers` — Must persist forever to prevent double-spend
 - Current contract states
 - The commitment tree itself
