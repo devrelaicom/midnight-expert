@@ -135,7 +135,7 @@ Check ledger data structure choices for unintended information leakage.
 
 Check cryptographic operations for correctness and privacy guarantees.
 
-- [ ] **`persistentHash` used where `persistentCommit` is needed.** `persistentHash` does NOT clear witness taint. The compiler still tracks the result as witness-derived. If the goal is to hide a private value on-chain, `persistentCommit` with a blinding factor (nonce/salt) is required. `persistentHash` only provides binding, not hiding.
+- [ ] **`persistentHash` used where `persistentCommit` is needed.** `persistentHash` does NOT clear witness taint. The compiler still tracks the result as witness-derived. If the goal is to hide a private value on-chain, `persistentCommit` (or `transientCommit` for in-circuit intermediates) with a blinding factor (nonce/salt) is required — both `persistentCommit` and `transientCommit` clear witness taint. `persistentHash` only provides binding, not hiding.
 
   ```compact
   // BAD — hash does not clear taint or hide the value
@@ -157,7 +157,7 @@ Check cryptographic operations for correctness and privacy guarantees.
   storedCommitment = disclose(transientCommit<Field>(value, salt));
 
   // GOOD — persistent result is stable across calls
-  storedCommitment = disclose(persistentCommit<Field>(value, salt));
+  storedCommitment = persistentCommit<Field>(value, salt);
   ```
 
 > **Tool:** `midnight-search-docs` can clarify the transient vs persistent guarantees if there is any ambiguity in the contract's usage.
