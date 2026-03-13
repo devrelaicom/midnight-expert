@@ -32,7 +32,7 @@
 // ("lares:election:cm-nul:" and "lares:election:rv-nul:").
 // ============================================================================
 
-pragma language_version >= 0.20;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 
