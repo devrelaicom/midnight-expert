@@ -12,12 +12,12 @@ A commitment hides a value behind cryptographic randomness while binding the
 committer to that value. Two operations are available: `persistentCommit` (with
 a blinding factor) and `persistentHash` (without).
 
-| Function | Has Blinding Factor | Hides Input from Disclosure | Use Case |
-|----------|--------------------|-----------------------------|----------|
-| `persistentCommit<T>(value, rand)` | Yes (`Bytes<32>`) | Yes (clears witness taint) | Hide a value you will reveal later |
-| `persistentHash<T>(value)` | No | No (witness taint preserved) | Derive a binding fingerprint (public keys, nullifiers) |
-| `transientCommit<T>(value, rand)` | Yes (`Field`) | Yes (clears witness taint) | In-circuit intermediates only; not ledger-safe |
-| `transientHash<T>(value)` | No | No (witness taint preserved) | In-circuit consistency checks only |
+| Function | Has Blinding Factor | Clears Witness Taint | Brute-Force Resistant | Use Case |
+|----------|--------------------|-----------------------|----------------------|----------|
+| `persistentCommit<T>(value, rand)` | Yes (`Bytes<32>`) | Yes | Yes | Hide a value you will reveal later |
+| `persistentHash<T>(value)` | No | No | No (small inputs vulnerable) | Derive a binding fingerprint (public keys, nullifiers) |
+| `transientCommit<T>(value, rand)` | Yes (`Field`) | Yes | Yes | In-circuit intermediates only; not ledger-safe |
+| `transientHash<T>(value)` | No | No | No (small inputs vulnerable) | In-circuit consistency checks only |
 
 **When to use commit vs hash:** Use `persistentCommit` when you need to hide a
 value on-chain and later prove you committed to it (commit-reveal schemes, sealed
@@ -550,5 +550,5 @@ Common mistakes that undermine privacy in Compact contracts.
 | Reusing salts across commitments | Breaks hiding: same value + same salt = same commitment output | Use unique randomness per commitment via witness-provided fresh bytes |
 | Using `Map<address, balance>` for private balances | All inserts, lookups, and transfers are visible on-chain | Use shielded tokens (zswap) from `compact-tokens` |
 | Disclosing MerkleTree leaf in `checkRoot` call | Defeats the purpose of anonymous membership proof | Let the ZK proof verify the path; only `disclose()` the digest |
-| Using `persistentHash` to "hide" witness data | Hash does not clear witness taint; compiler still requires `disclose()` | Use `persistentCommit` with randomness for actual hiding |
+| Using `persistentHash` to "hide" small-input-space witness data | Hash is one-way but without randomness, small input spaces (booleans, small integers) can be brute-forced; also does not clear witness taint | Use `persistentCommit` with randomness for brute-force resistance and taint clearing |
 | Fixed nullifier without round counter | User can only ever perform one action across all rounds | Incorporate a round counter or unique context into nullifier derivation |
