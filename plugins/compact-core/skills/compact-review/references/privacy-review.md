@@ -129,7 +129,7 @@ Check ledger data structure choices for unintended information leakage.
 
 - [ ] **Using `List` which reveals insertion order and all values.** `List` operations make all stored values and their insertion order visible on-chain. If the data should be private, consider whether a `MerkleTree` or off-chain storage is more appropriate.
 
-- [ ] **`MerkleTree.insert()` properly used to hide leaf content.** `MerkleTree.insert()` is the only ledger operation that hides its data argument on-chain. Verify that contracts relying on data privacy are actually using MerkleTree insertion for the sensitive data, not Map/Set/List which expose their contents.
+- [ ] **`MerkleTree` used for anonymous membership proofs.** `MerkleTree.insert()` is publicly visible on-chain like all ledger operations. The privacy benefit of MerkleTree is that ZK membership proofs do not reveal which specific leaf is being proven. Verify that contracts needing to hide leaf values use commitments (e.g., `persistentCommit`) before inserting, rather than relying on insert itself for privacy.
 
 ## Cryptographic Privacy Checklist
 

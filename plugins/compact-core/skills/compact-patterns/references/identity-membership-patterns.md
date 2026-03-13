@@ -308,7 +308,7 @@ constructor() {
   admin = disclose(get_public_key(local_secret_key()));
 }
 
-// Admin adds a member (leaf value is hidden on-chain by MerkleTree)
+// Admin adds a member (leaf is visible on-chain; privacy comes from membership proofs not revealing which leaf)
 export circuit addMember(memberPk: Bytes<32>): [] {
   const sk = local_secret_key();
   assert(disclose(get_public_key(sk) == admin), "Not admin");

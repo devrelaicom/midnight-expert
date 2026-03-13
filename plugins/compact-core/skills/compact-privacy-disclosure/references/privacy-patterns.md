@@ -180,8 +180,8 @@ invalidates all existing proofs.
 The Merkle membership proof involves coordinated on-chain and off-chain work:
 
 1. **Admin inserts commitments on-chain.** `tree.insert(commitment)` adds a
-   leaf. The leaf value is hidden on-chain (this is the unique privacy property
-   of MerkleTree inserts).
+   leaf. The leaf value is visible on-chain (like all ledger operations). Privacy
+   comes from membership proofs -- ZK path proofs do not reveal which leaf is being proven.
 
 2. **User obtains a MerkleTreePath off-chain.** The witness function queries
    the local copy of the tree state to find the path from the user's leaf to the
@@ -210,7 +210,7 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
   ]);
 }
 
-// Admin adds a member (leaf value is hidden on-chain)
+// Admin adds a member (leaf is visible on-chain; privacy via membership proofs)
 export circuit addMember(memberPk: Bytes<32>): [] {
   members.insert(disclose(memberPk));
 }

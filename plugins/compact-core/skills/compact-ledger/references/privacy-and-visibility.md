@@ -4,7 +4,7 @@ Deep reference for understanding what ledger operations reveal on-chain, how to 
 
 ## Core Rule
 
-Except for `MerkleTree` and `HistoricMerkleTree` insertions, **everything passed as an argument to a ledger operation, and all reads and writes of the ledger itself, are publicly visible on-chain**. What is public is the argument or ledger value itself, not the code that manipulates it.
+**Everything passed as an argument to a ledger operation, and all reads and writes of the ledger itself, are publicly visible on-chain** — including MerkleTree and HistoricMerkleTree insertions. What is public is the argument or ledger value itself, not the code that manipulates it. The privacy benefit of MerkleTree is in **membership proofs**, not in hiding inserted values.
 
 ```compact
 export ledger items: Set<Field>;
@@ -12,7 +12,8 @@ export ledger tree: MerkleTree<10, Field>;
 
 items.insert(value);      // Reveals value on-chain
 items.member(f(x));        // Reveals the *value* of f(x), but not x directly
-tree.insert(value);        // Does NOT reveal value on-chain
+tree.insert(value);        // Also reveals value on-chain (all ledger ops are visible)
+// Privacy comes from membership PROOFS — ZK path proofs hide which leaf is being proven
 ```
 
 ## Visibility Rules by Operation
@@ -72,9 +73,9 @@ Set operations reveal which element is being tested, inserted, or removed. This 
 
 | Operation | What Is Visible On-Chain |
 |-----------|------------------------|
-| `insert(leaf)` | **Nothing about the leaf value** |
+| `insert(leaf)` | The leaf value (like all ledger operations) |
 | `insertHash(hash)` | The hash (but not the preimage) |
-| `insertIndex(item, index)` | **Nothing about the item**; the index is visible |
+| `insertIndex(item, index)` | The item and index |
 | `insertHashIndex(hash, index)` | The hash and index |
 | `insertIndexDefault(index)` | The index |
 | `checkRoot(digest)` | The digest and result |
@@ -82,7 +83,7 @@ Set operations reveal which element is being tested, inserted, or removed. This 
 | `resetToDefault()` | The fact that a reset occurred |
 | `resetHistory()` | The fact that a reset occurred (HistoricMerkleTree only) |
 
-The `insert` and `insertIndex` operations are the only ledger operations in Compact that hide their data argument from on-chain observers. However, someone who guesses the leaf value can verify their guess against the tree.
+The privacy benefit of MerkleTree is not in hiding inserted values, but in **membership proofs**: ZK path proofs (via `merkleTreePathRoot` + `checkRoot`) do not reveal which specific leaf is being proven. This enables anonymous membership verification — proving you are in a set without revealing which member you are.
 
 ## MerkleTree vs Set: Privacy Comparison
 
@@ -139,9 +140,9 @@ Privacy implications: An observer sees that *someone* voted and sees the nullifi
 
 | Concern | `Set<T>` | `MerkleTree<N, T>` |
 |---------|---------|-------------------|
-| Insert reveals element | Yes | **No** |
+| Insert reveals element | Yes | Yes (all ledger ops are visible) |
 | Membership check reveals element | Yes | **No** (proven via ZK path) |
-| Observer can identify which member acted | Yes | **No** |
+| Observer can identify which member acted | Yes | **No** (ZK proof hides which leaf) |
 | Double-action prevention | Check membership directly | Use commitment/nullifier pattern |
 | Capacity | Unbounded | 2^N leaves |
 | Proof remains valid after new inserts | N/A | No (use `HistoricMerkleTree`) |
