@@ -62,7 +62,7 @@ Contracts implementing these modules may define their own witnesses for custom l
 
 ## Testing
 
-OpenZeppelin Compact contracts use **Vitest** with the `@openzeppelin-compact/contracts-simulator` package for local testing without blockchain deployment.
+OpenZeppelin Compact contracts use **Vitest** with the `@openzeppelin-compact/contracts-simulator` package (internal to the compact-contracts monorepo; not published to npm) for local testing without blockchain deployment.
 
 ### Test Architecture
 
