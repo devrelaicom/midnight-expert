@@ -31,7 +31,7 @@ struct QualifiedShieldedCoinInfo {
   nonce: Bytes<32>;
   color: Bytes<32>;
   value: Uint<128>;
-  mtIndex: Uint<64>;
+  mt_index: Uint<64>;
 }
 ```
 
@@ -40,9 +40,9 @@ struct QualifiedShieldedCoinInfo {
 | `nonce` | `Bytes<32>` | Coin randomness |
 | `color` | `Bytes<32>` | Token type identifier |
 | `value` | `Uint<128>` | Token amount |
-| `mtIndex` | `Uint<64>` | Index of this coin's commitment in the global Merkle tree |
+| `mt_index` | `Uint<64>` | Index of this coin's commitment in the global Merkle tree |
 
-**Qualified vs unqualified:** A `ShieldedCoinInfo` represents a coin that exists only in the current transaction (not yet committed to the ledger). A `QualifiedShieldedCoinInfo` represents a coin already committed to the ledger's Merkle tree, with its position tracked by `mtIndex`. Use `ShieldedCoinInfo` with `sendImmediateShielded` and `receiveShielded`; use `QualifiedShieldedCoinInfo` with `sendShielded` and `mergeCoin`.
+**Qualified vs unqualified:** A `ShieldedCoinInfo` represents a coin that exists only in the current transaction (not yet committed to the ledger). A `QualifiedShieldedCoinInfo` represents a coin already committed to the ledger's Merkle tree, with its position tracked by `mt_index`. Use `ShieldedCoinInfo` with `sendImmediateShielded` and `receiveShielded`; use `QualifiedShieldedCoinInfo` with `sendShielded` and `mergeCoin`.
 
 ### ShieldedSendResult
 
@@ -119,7 +119,7 @@ assert(coin.color == nativeToken(), "Not a native token");
 
 ### Usage Notes
 
-**`sendShielded` vs `sendImmediateShielded`:** Use `sendShielded` when spending a coin already stored in the ledger (a `QualifiedShieldedCoinInfo` with a valid `mtIndex`). Use `sendImmediateShielded` when spending a coin created within the same transaction (a `ShieldedCoinInfo`, such as the result of `mintShieldedToken` or a change coin from a prior send).
+**`sendShielded` vs `sendImmediateShielded`:** Use `sendShielded` when spending a coin already stored in the ledger (a `QualifiedShieldedCoinInfo` with a valid `mt_index`). Use `sendImmediateShielded` when spending a coin created within the same transaction (a `ShieldedCoinInfo`, such as the result of `mintShieldedToken` or a change coin from a prior send).
 
 **Always handle `ShieldedSendResult.change`:** When the input coin's value exceeds the send amount, the `change` field contains the leftover coin. If you do not store or send this change, the value is lost.
 

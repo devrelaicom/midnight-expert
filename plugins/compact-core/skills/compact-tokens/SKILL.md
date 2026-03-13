@@ -33,7 +33,7 @@ Key types:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Newly created coin (this transaction) |
-| `QualifiedShieldedCoinInfo` | `nonce`, `color`, `value`, `mtIndex: Uint<64>` | Existing coin on ledger, ready to spend |
+| `QualifiedShieldedCoinInfo` | `nonce`, `color`, `value`, `mt_index: Uint<64>` | Existing coin on ledger, ready to spend |
 | `ShieldedSendResult` | `change: Maybe<ShieldedCoinInfo>`, `sent: ShieldedCoinInfo` | Result of send operations |
 | `ZswapCoinPublicKey` | `bytes: Bytes<32>` | User public key for coin output |
 
