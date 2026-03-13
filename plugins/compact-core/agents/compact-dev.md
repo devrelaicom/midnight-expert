@@ -175,7 +175,7 @@ These are non-negotiable. Violating any of these produces compilation errors:
 - `persistentHash()` and `transientHash()` do NOT clear taint
 
 ### Privacy Patterns
-- **Commitments:** Use `persistentCommit<T>(value)` to hide values on-chain
+- **Commitments:** Use `persistentCommit<T>(value, rand)` where `rand: Bytes<32>` is witness-provided randomness
 - **Nullifiers:** Hash with unique domain separator to prevent double-spend: `persistentHash<Vector<2, Bytes<32>>>([pad(32, "app:nullifier:"), secret])`
 - **Merkle proofs:** Use `MerkleTree<N, T>` for anonymous membership; `.root()` is NOT available in circuits — verify via witness-provided path
 - **Authentication:** `public_key()` is NOT a builtin — use `persistentHash` with a domain-tagged pattern
