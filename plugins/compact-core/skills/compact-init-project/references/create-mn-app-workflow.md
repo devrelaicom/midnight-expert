@@ -177,7 +177,7 @@ For counter:
 1. Get test tokens from the Preprod faucet: https://faucet.preprod.midnight.network/
 2. Funding takes 2–3 minutes
 3. Run the deploy command
-4. DUST tokens are generated automatically by delegating tNight holdings
+4. DUST is generated automatically by delegating tNight holdings
 
 ### Relevant skills for writing contracts
 

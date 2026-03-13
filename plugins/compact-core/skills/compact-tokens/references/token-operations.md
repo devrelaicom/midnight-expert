@@ -321,7 +321,7 @@ const totalSupply = contractState.totalSupply;
 
 ### Wallet DUST Registration Flow
 
-Before submitting transactions that interact with tokens, the wallet must have sufficient DUST (fee tokens). The typical flow:
+Before submitting transactions that interact with tokens, the wallet must have sufficient DUST (fee resource). The typical flow:
 
 1. Create or restore a wallet with a seed phrase
 2. Request tNight from the faucet to the unshielded address
