@@ -164,7 +164,7 @@ These are non-negotiable. Violating any of these produces compilation errors:
 - **Uint to Bytes:** NOT direct — go through Field: `(amount as Field) as Bytes<32>`
 - **Boolean to Field:** NOT direct — go through Uint: `(flag as Uint<0..1>) as Field`
 - **Counter:** Use `.read()` — NOT `.value()` (does not exist)
-- **Map/Set:** `.lookup()` and `.member()` ARE available in circuits
+- **Map/Set:** `.lookup()` and `.member()` are ledger state operations — available in impure circuits that access ledger state, but NOT in `pure circuit` declarations
 
 ### Disclosure Rules
 - Witness-derived values flowing to **ledger writes** require `disclose()`
