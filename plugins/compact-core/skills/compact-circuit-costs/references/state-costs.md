@@ -57,10 +57,10 @@ Different ledger types offer different privacy characteristics at different cost
 | `Map<K, V>` | Key + value visible | Key + value visible | Key visible | Key visible |
 | `Set<T>` | Element visible | N/A | Element visible | Element visible |
 | `List<T>` | Element visible | Value visible | N/A | N/A |
-| `MerkleTree<N, T>` | **Leaf hidden** | N/A | **Proven via ZK** | N/A |
-| `HistoricMerkleTree<N, T>` | **Leaf hidden** | N/A | **Proven via ZK** | N/A |
+| `MerkleTree<N, T>` | Leaf visible | N/A | **Proven via ZK (hides which leaf)** | N/A |
+| `HistoricMerkleTree<N, T>` | Leaf visible | N/A | **Proven via ZK (hides which leaf)** | N/A |
 
-Key insight: `MerkleTree` is the only ADT where inserts are shielded and membership is proven without revealing which entry. This privacy comes at the cost of:
+Key insight: `MerkleTree` inserts are visible on-chain like all ledger operations, but membership is proven without revealing which entry (via ZK path proofs). This privacy comes at the cost of:
 - Pre-allocated storage (full tree)
 - Path proof computation (O(N) hashes in-circuit for depth N)
 - Off-chain path generation (witness provides the proof path)

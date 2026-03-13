@@ -115,12 +115,14 @@ The key principle: `disclose()` is only needed at public boundaries. All computa
 
 The standard library includes cryptographic functions that interact with witness taint tracking in specific ways. The critical distinction is between **commit** functions (which clear taint on their input) and **hash** functions (which do not).
 
-| Function | Signature | Cryptographically Hides Input? | Why |
-|----------|-----------|----------------------|-----|
-| `persistentCommit<T>` | `(value: T, rand: Bytes<32>): Bytes<32>` | **Yes** | Commitment cryptographically hides input; computationally binding and perfectly hiding |
-| `transientCommit<T>` | `(value: T, rand: Field): Field` | **Yes** | Same hiding property, circuit-efficient algorithm |
-| `persistentHash<T>` | `(value: T): Bytes<32>` | **No** | Hash output could theoretically be brute-forced; not considered sufficient to hide witness values |
-| `transientHash<T>` | `(value: T): Field` | **No** | Same reasoning as `persistentHash` |
+| Function | Signature | Brute-Force Resistant? | Clears Witness Taint? | Why |
+|----------|-----------|----------------------|----------------------|-----|
+| `persistentCommit<T>` | `(value: T, rand: Bytes<32>): Bytes<32>` | **Yes** | **Yes** | Random nonce prevents brute-force guessing even for small input spaces |
+| `transientCommit<T>` | `(value: T, rand: Field): Field` | **Yes** | **Yes** | Same property, circuit-efficient algorithm |
+| `persistentHash<T>` | `(value: T): Bytes<32>` | **No** | **No** | One-way (output cannot be reversed), but without a random nonce, small input spaces can be brute-forced |
+| `transientHash<T>` | `(value: T): Field` | **No** | **No** | Same as `persistentHash` |
+
+Both hash and commit functions produce one-way outputs that cannot be reverse-computed. The critical difference is that commits add a **random nonce** (blinding factor) that prevents an attacker from brute-forcing the preimage when the input space is small (e.g., a boolean, a small integer, or a known set of values). For high-entropy inputs, a hash also effectively hides the value.
 
 Important nuance: commits clear taint on both the *input* and the *output*. The commitment result does not carry witness taint, so `disclose()` is technically optional when storing it. However, using `disclose()` for explicitness is harmless and can improve readability.
 

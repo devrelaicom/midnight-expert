@@ -12,16 +12,13 @@ pragma language_version >= 0.20;
 
 > **Tip:** Run `compact compile --language-version` to find the language version supported by your installed compiler. Use that version in your pragma declaration.
 
-The version constraint uses comparison operators. Only major and minor versions are used -- patch versions are not included. An open-ended lower bound (e.g. `>= 0.20`) ensures the contract compiles with the current and future compatible compiler versions.
+The version constraint uses comparison operators. An open-ended lower bound (e.g. `>= 0.20`) ensures the contract compiles with the current and future compatible compiler versions.
 
 Common mistakes:
 
 | Wrong | Correct |
 |-------|---------|
-| `pragma language_version >= 0.20.0;` | `pragma language_version >= 0.20;` |
 | `pragma language_version 0.20;` | `pragma language_version >= 0.20;` |
-
-Including patch versions or using unsupported format can cause parse errors or version mismatch failures.
 
 ## Include Files
 

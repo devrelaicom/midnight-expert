@@ -4,6 +4,8 @@
 
 OpenZeppelin Compact contracts use **Vitest** as the test runner and the `@openzeppelin-compact/contracts-simulator` package for local testing without blockchain deployment. Each module follows a three-part test pattern: Mock Contract, Simulator, and Test File.
 
+> **Important:** `@openzeppelin-compact/contracts-simulator` is an **internal package** within the [OpenZeppelin compact-contracts monorepo](https://github.com/OpenZeppelin/compact-contracts) — it is marked `"private": true` and is **not published to the public npm registry**. To use it, you must clone the compact-contracts monorepo and work within its workspace structure (the package is resolved via workspace references). It is not installable via `npm install` in standalone projects.
+
 ## Setting Up Tests
 
 ### Project Structure
@@ -98,6 +100,8 @@ Simulators provide a type-safe TypeScript API for interacting with mock contract
 ### Creating a Simulator with `createSimulator`
 
 ```typescript
+// This package is internal to the compact-contracts monorepo and is not on npm.
+// You must work within the monorepo workspace for this import to resolve.
 import { createSimulator, type BaseSimulatorOptions } from '@openzeppelin-compact/contracts-simulator';
 import { Contract as MockFungibleToken, ledger } from '../../../../artifacts/MockFungibleToken/contract/index.js';
 import { FungibleTokenPrivateState, FungibleTokenWitnesses } from '../../witnesses/FungibleTokenWitnesses.js';

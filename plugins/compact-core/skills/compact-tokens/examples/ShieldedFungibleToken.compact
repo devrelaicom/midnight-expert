@@ -30,10 +30,15 @@
 // need to import this contract, not the individual library modules.
 // ============================================================================
 
+// NOTE: This is an excerpt from the OpenZeppelin midnight-apps project (cited above).
+// The ./openzeppelin/ShieldedERC20 import references the full OZ project structure,
+// but ShieldedERC20 is actually defined inline later in this file (the import is redundant).
+// This file cannot be compiled standalone — see the compact-examples openzeppelin skill.
+
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/ShieldedFungibleToken.compact)
 
-pragma language_version >= 0.20;
+pragma language_version >= 0.21;
 
 import
   { ShieldedCoinInfo, ShieldedSendResult, ZswapCoinPublicKey, ContractAddress, Either }
@@ -131,7 +136,7 @@ export circuit burn(coin: ShieldedCoinInfo, amount: Uint<128>): ShieldedSendResu
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/openzeppelin/ShieldedERC20.compact)
 
-pragma language_version >= 0.20;
+pragma language_version >= 0.21;
 
 /**
  * @module ShieldedToken (archived until further notice, DO NOT USE IN PRODUCTION)

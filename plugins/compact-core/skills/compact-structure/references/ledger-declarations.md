@@ -64,17 +64,17 @@ Nested ADTs are supported: `Map<K, Map<K2, V>>`, `Map<K, Set<T>>`, etc.
 
 ## On-Chain Visibility
 
-All ledger operations (reads, writes, ADT method arguments) are publicly visible on-chain, **except**:
+All ledger operations (reads, writes, ADT method arguments) are publicly visible on-chain, including `MerkleTree.insert()` and `HistoricMerkleTree.insert()`.
 
-- `MerkleTree.insert()` and `HistoricMerkleTree.insert()` — these hide the inserted leaf value
-- Someone who guesses the leaf value can verify it, but the value itself is not revealed
+The privacy benefit of MerkleTree is that **membership proofs** (ZK path proofs via `merkleTreePathRoot` + `checkRoot`) do not reveal which specific leaf is being proven. This enables anonymous membership verification patterns (e.g., proving you are in a voter list without revealing which voter you are).
 
 ```compact
 export ledger items: Set<Field>;
 export ledger tree: MerkleTree<10, Field>;
 
 items.insert(value);      // Reveals value on-chain
-tree.insert(value);       // Does NOT reveal value on-chain
+tree.insert(value);       // Also reveals value on-chain (all ledger ops are visible)
+// Privacy comes from membership PROOFS, not from insert
 ```
 
 ## ADT Operations
@@ -173,7 +173,7 @@ N is the tree depth (1 < N <= 32). Supports up to 2^N leaves.
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `.insert(leaf)` | `[]` | Add leaf (value stays hidden on-chain) |
+| `.insert(leaf)` | `[]` | Add leaf at next free index |
 | `.insertHash(leafHash)` | `[]` | Insert pre-hashed leaf |
 | `.insertIndex(leaf, index)` | `[]` | Insert leaf at a specific index |
 | `.insertHashIndex(leafHash, index)` | `[]` | Insert pre-hashed leaf at a specific index |

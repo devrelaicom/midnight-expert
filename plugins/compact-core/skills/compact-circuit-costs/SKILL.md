@@ -71,7 +71,7 @@ Complex anonymous circuits inside `map`/`fold` multiply: every statement in the 
 
 ### Compiler Optimizations
 
-The compiler performs these optimization passes automatically (in order):
+The compiler performs these **circuit-phase** optimization passes automatically (in order). These are a subset of the full compilation pipeline (~23 passes total including frontend, analysis, and emission phases):
 
 1. **Copy propagation** — Replaces variable references with their definitions
 2. **Constant folding** — Evaluates constant expressions at compile time (`3 + 4` → `7`)
@@ -103,7 +103,7 @@ Circuits can have a `gasLimit` set; execution fails if the limit is exceeded.
 | `Map<K, V>` | Variable | Grows with entries | Public (keys + values visible) | Medium |
 | `Set<T>` | Variable | Grows with entries | Public (elements visible) | Medium |
 | `List<T>` | Variable | Grows with entries | Public | Medium |
-| `MerkleTree<N, T>` | Fixed (2^N capacity) | Pre-allocated | **Private** (insertions hidden) | Higher |
+| `MerkleTree<N, T>` | Fixed (2^N capacity) | Pre-allocated | Insert public; **privacy via membership proofs** | Higher |
 | `HistoricMerkleTree<N, T>` | Fixed + root history | Pre-allocated + history | **Private** | Highest |
 
 `sealed` fields eliminate state-write circuit costs entirely since they are set once at construction.
@@ -140,7 +140,7 @@ What kind of data?
 ├── Key-value lookups → Map<K, V>
 │   └── Need nested state? → Map<K, V> where V is any ledger type (Counter, Set<T>, List<T>, MerkleTree, or another Map)
 ├── Membership checks →
-│   ├── Privacy required? → MerkleTree<N, T> (insertions hidden)
+│   ├── Privacy required? → MerkleTree<N, T> (membership proofs hide which leaf)
 │   └── No privacy needed? → Set<T> (cheaper, simpler)
 ├── Ordered sequence → List<T> (front-access only)
 └── Single immutable value → sealed ledger field (zero ongoing cost)

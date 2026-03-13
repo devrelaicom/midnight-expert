@@ -53,7 +53,7 @@ export ledger ledger_commitment: Bytes<32>;
 
 export circuit commit(value: Field): [] {
   const rand = get_random_value();
-  ledger_commitment = disclose(persistentCommit<Field>(value, rand));
+  ledger_commitment = persistentCommit<Field>(value, rand);
 }
 ```
 

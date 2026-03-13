@@ -7,7 +7,7 @@ After running `npx create-mn-app <name> --template hello-world`:
 ```
 <project-name>/
 ├── contracts/
-│   └── hello-world.compact           # Contract source (pragma language_version >= 0.16)
+│   └── hello-world.compact           # Contract source (pragma language_version >= 0.21)
 ├── src/
 │   ├── deploy.ts                     # Deploy contract to Preprod network
 │   ├── cli.ts                        # Interactive CLI for testing deployed contract
@@ -35,7 +35,7 @@ contracts/managed/hello-world/
 The scaffolded contract:
 
 ```compact
-pragma language_version >= 0.16;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 
@@ -86,9 +86,9 @@ After running `npx create-mn-app <name> --template counter`:
 
 The counter uses npm workspaces — both `contract` and `counter-cli` are workspace packages managed from the root.
 
-## SDK Package Versions (February 2026)
+## SDK Package Versions
 
-These are the versions used by `create-mn-app` v0.3.19 hello-world template:
+These are the versions used by `create-mn-app` v0.3.19 hello-world template (as of February 2026). Versions may have been updated since — use the `midnight-get-version-info` MCP tool to check current versions:
 
 | Package | Version |
 |---------|---------|

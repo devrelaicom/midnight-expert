@@ -19,7 +19,7 @@ Patterns for preserving user privacy in contract interactions.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.21;
 import CompactStandardLibrary;
 
 export ledger authority: Bytes<32>;
@@ -116,7 +116,7 @@ all transactions.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.21;
 import CompactStandardLibrary;
 
 export ledger credentialCommitment: Bytes<32>;

@@ -26,7 +26,7 @@ Check every ledger variable for correct abstract data type choice. Choosing the 
   | Counting occurrences | `Counter` | Conflict-free increments; `Field` would need read-modify-write |
   | Key-value store (public keys) | `Map<K, V>` | Direct lookup; Set can't store values |
   | Unique membership (public) | `Set<T>` | Built-in member check; Map wastes value slot |
-  | Anonymous membership (private) | `MerkleTree<N, T>` | Only insert hides leaf; Set reveals members |
+  | Anonymous membership (private) | `MerkleTree<N, T>` | Membership proofs hide which leaf; Set reveals members |
   | Anonymous + historic proofs | `HistoricMerkleTree<N, T>` | Root doesn't change on insert; regular MerkleTree invalidates existing proofs |
   | Ordered history | `List<T>` | Preserves insertion order; Set is unordered |
   | Single value | Direct `ledger var: T` | Simplest; no ADT overhead |

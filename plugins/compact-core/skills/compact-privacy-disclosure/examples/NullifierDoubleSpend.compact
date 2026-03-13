@@ -23,7 +23,7 @@
 //   - Observer CANNOT see: which commitment was spent, the secret
 //     behind any token, the link between a nullifier and its commitment
 
-pragma language_version >= 0.20;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 
@@ -133,8 +133,9 @@ export circuit issue(): [] {
   // No disclose() needed: persistentCommit clears witness taint on its output.
   const commitment = derive_commitment(secret, randomness);
 
-  // Insert into the Merkle tree. The leaf value (commitment) is hidden
-  // on-chain -- this is the key privacy property of MerkleTree.insert().
+  // Insert into the Merkle tree. The leaf value (commitment) is visible
+  // on-chain like all ledger operations. Privacy comes from membership
+  // proofs, which do not reveal which leaf is being proven.
   commitments.insert(commitment);
 }
 

@@ -119,7 +119,7 @@ console.log(`Current network: ${getNetworkId()}`);
 
 **Symptom:** `Error: Insufficient DUST balance` or transaction balancing fails.
 
-**Cause:** The wallet does not have enough DUST tokens to pay transaction fees.
+**Cause:** The wallet does not have enough DUST to pay transaction fees.
 
 **Fix:**
 

@@ -315,7 +315,7 @@ Unshielded token functions:
 | `Map<K, V>` | `insert`, `lookup`, `member`, `remove`, `size` | All ops visible on-chain |
 | `Set<T>` | `insert`, `member`, `remove`, `size` | All ops visible on-chain |
 | `List<T>` | `pushFront`, `popFront`, `head`, `length` | Ordered sequence |
-| `MerkleTree<N, T>` | `insert`, `checkRoot`, `insertHash`, `isFull` | Insert hides leaf value |
+| `MerkleTree<N, T>` | `insert`, `checkRoot`, `insertHash`, `isFull` | Insert is public; privacy via membership proofs |
 | `HistoricMerkleTree<N, T>` | Same + `resetHistory` | Accepts proofs against past roots |
 
 > For complete ADT operation tables, nested composition, and state design patterns, see the `compact-ledger` skill.

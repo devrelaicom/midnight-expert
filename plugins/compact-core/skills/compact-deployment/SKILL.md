@@ -52,7 +52,7 @@ compact compile  setNetworkId()   deployContract()   callTx.<name>()
 | **Node RPC** | `http://localhost:9944` | `https://rpc.preview.midnight.network` | `https://rpc.preprod.midnight.network` |
 | **Indexer (GraphQL)** | `http://localhost:8088/api/v3/graphql` | `https://indexer.preview.midnight.network/api/v3/graphql` | `https://indexer.preprod.midnight.network/api/v3/graphql` |
 | **Indexer (WebSocket)** | `ws://localhost:8088/api/v3/graphql/ws` | `wss://indexer.preview.midnight.network/api/v3/graphql/ws` | `wss://indexer.preprod.midnight.network/api/v3/graphql/ws` |
-| **Proof Server** | `http://localhost:6300` | `http://localhost:6300` | `http://localhost:6300` |
+| **Proof Server** | `http://localhost:6300` | `https://lace-proof-pub.preview.midnight.network` | `https://lace-proof-pub.preprod.midnight.network` |
 | **Faucet** | N/A | `https://faucet.preview.midnight.network` | `https://faucet.preprod.midnight.network` |
 
 The proof server should run locally for DApp development (to protect private data). The local network uses the `undeployed` network ID. The local ports match the Lace wallet's "Undeployed" network settings — no custom endpoint configuration required.

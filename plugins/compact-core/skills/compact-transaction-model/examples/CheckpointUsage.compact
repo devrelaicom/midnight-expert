@@ -39,7 +39,7 @@
 //
 // ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 
@@ -145,9 +145,10 @@ export circuit submitTask(taskId: Bytes<32>): [] {
   taskCount.increment(1);
 
   // --- PHASE BOUNDARY ---
-  // kernel.checkpoint() separates guaranteed from fallible. At most one
-  // checkpoint is allowed per circuit. It compiles to the ckpt opcode in
-  // the Impact VM.
+  // kernel.checkpoint() separates guaranteed from fallible. The compiler
+  // does not enforce a limit on the number of calls, but only the first
+  // checkpoint is semantically meaningful for phase separation. It compiles
+  // to the ckpt opcode in the Impact VM.
   kernel.checkpoint();
 
   // --- FALLIBLE PHASE ---

@@ -21,7 +21,7 @@ Transfers and mints to `ContractAddress` are disallowed in safe circuits. Tokens
 ### Basic Import and Setup
 
 ```compact
-pragma language_version >= 0.18.0;
+pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
 import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/token/FungibleToken"

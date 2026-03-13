@@ -55,7 +55,7 @@ Both track membership, but with different privacy properties:
 
 | Property | `Set<T>` | `MerkleTree<N, T>` |
 |----------|---------|-------------------|
-| Insert privacy | Element visible | **Element hidden** |
+| Insert privacy | Element visible | **Element visible** (use commitments to hide) |
 | Membership check | Element visible | **Element hidden** (proven via ZK) |
 | Capacity | Unbounded | 2^N leaves |
 | Proof complexity | O(1) | O(N) (tree depth) |

@@ -103,7 +103,7 @@ export default defineConfig({
 | Option | Value | Why It Matters |
 |--------|-------|----------------|
 | `mode` | `"node"` | Ensures the Node.js environment is used, which is required for cryptographic operations in `compact-runtime` (field arithmetic, hashing) |
-| `deps.interopDefault` | `true` | **Critical.** The Compact compiler generates CommonJS modules (`index.cjs`). This setting enables proper default export interop when importing CommonJS modules from ESM test files. Without it, imports from the generated code fail silently or return `undefined`. |
+| `deps.interopDefault` | `true` | **Critical.** The Compact compiler generates ES modules (`index.js`). This setting enables proper default export interop when importing the generated modules from test files. Without it, imports from the generated code may fail silently or return `undefined`. |
 | `globals` | `true` | Makes `describe`, `it`, `expect`, `beforeAll`, `beforeEach` available globally without explicit imports. Reduces boilerplate. |
 | `environment` | `"node"` | Runs tests in a Node.js environment rather than jsdom or other browser-like environments |
 | `include` | `["**/*.test.ts"]` | Matches test files by the `.test.ts` suffix convention |
@@ -264,7 +264,7 @@ Key settings:
 
 | Option | Value | Why |
 |--------|-------|-----|
-| `module` | `"Node16"` | Required for proper ESM/CJS interop with the generated CommonJS modules |
+| `module` | `"Node16"` | Required for proper module resolution with the generated ES modules and the mixed-module Midnight package ecosystem |
 | `moduleResolution` | `"Node16"` | Matches the module setting for correct resolution of `.js` imports |
 | `esModuleInterop` | `true` | Enables default import interop with CommonJS modules |
 | `skipLibCheck` | `true` | Skips type checking of `.d.ts` files in `node_modules`, which speeds up compilation |

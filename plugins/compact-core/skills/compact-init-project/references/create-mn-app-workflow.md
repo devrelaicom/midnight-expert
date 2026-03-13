@@ -146,7 +146,7 @@ ls contract/src/managed/counter/
 
 Expected directories: `compiler/`, `contract/`, `keys/`, `zkir/`
 
-**Note:** First compilation downloads ~500MB of ZK parameters. This may take several minutes depending on network speed.
+**Note:** First compilation downloads ZK parameters (a large download). This may take several minutes depending on network speed.
 
 ## Phase 6 — Summary & Next Steps
 
@@ -177,7 +177,7 @@ For counter:
 1. Get test tokens from the Preprod faucet: https://faucet.preprod.midnight.network/
 2. Funding takes 2–3 minutes
 3. Run the deploy command
-4. DUST tokens are generated automatically by delegating tNight holdings
+4. DUST is generated automatically by delegating tNight holdings
 
 ### Relevant skills for writing contracts
 

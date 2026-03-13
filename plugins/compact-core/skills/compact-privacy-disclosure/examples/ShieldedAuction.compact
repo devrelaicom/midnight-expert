@@ -43,7 +43,7 @@
 //
 // ============================================================================
 
-pragma language_version >= 0.20;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 

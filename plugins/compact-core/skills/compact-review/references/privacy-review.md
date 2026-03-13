@@ -129,13 +129,13 @@ Check ledger data structure choices for unintended information leakage.
 
 - [ ] **Using `List` which reveals insertion order and all values.** `List` operations make all stored values and their insertion order visible on-chain. If the data should be private, consider whether a `MerkleTree` or off-chain storage is more appropriate.
 
-- [ ] **`MerkleTree.insert()` properly used to hide leaf content.** `MerkleTree.insert()` is the only ledger operation that hides its data argument on-chain. Verify that contracts relying on data privacy are actually using MerkleTree insertion for the sensitive data, not Map/Set/List which expose their contents.
+- [ ] **`MerkleTree` used for anonymous membership proofs.** `MerkleTree.insert()` is publicly visible on-chain like all ledger operations. The privacy benefit of MerkleTree is that ZK membership proofs do not reveal which specific leaf is being proven. Verify that contracts needing to hide leaf values use commitments (e.g., `persistentCommit`) before inserting, rather than relying on insert itself for privacy.
 
 ## Cryptographic Privacy Checklist
 
 Check cryptographic operations for correctness and privacy guarantees.
 
-- [ ] **`persistentHash` used where `persistentCommit` is needed.** `persistentHash` does NOT clear witness taint. The compiler still tracks the result as witness-derived. If the goal is to hide a private value on-chain, `persistentCommit` with a blinding factor (nonce/salt) is required. `persistentHash` only provides binding, not hiding.
+- [ ] **`persistentHash` used where `persistentCommit` is needed.** `persistentHash` does NOT clear witness taint. The compiler still tracks the result as witness-derived. If the goal is to hide a private value on-chain, `persistentCommit` (or `transientCommit` for in-circuit intermediates) with a blinding factor (nonce/salt) is required — both `persistentCommit` and `transientCommit` clear witness taint. `persistentHash` only provides binding, not hiding.
 
   ```compact
   // BAD — hash does not clear taint or hide the value
@@ -157,7 +157,7 @@ Check cryptographic operations for correctness and privacy guarantees.
   storedCommitment = disclose(transientCommit<Field>(value, salt));
 
   // GOOD — persistent result is stable across calls
-  storedCommitment = disclose(persistentCommit<Field>(value, salt));
+  storedCommitment = persistentCommit<Field>(value, salt);
   ```
 
 > **Tool:** `midnight-search-docs` can clarify the transient vs persistent guarantees if there is any ambiguity in the contract's usage.

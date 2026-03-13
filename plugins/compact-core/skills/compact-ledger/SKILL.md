@@ -36,8 +36,8 @@ For exhaustive syntax rules and modifier details, see `references/types-and-oper
 | `Map<K, V>` | Key-value store | `insert`, `lookup`, `member`, `remove` | All ops visible |
 | `Set<T>` | Unique elements | `insert`, `member`, `remove` | All ops visible |
 | `List<T>` | Ordered sequence | `pushFront`, `popFront`, `head` | All ops visible |
-| `MerkleTree<N, T>` | Privacy-preserving set | `insert` (hidden), `checkRoot` | **Insert hides leaf** |
-| `HistoricMerkleTree<N, T>` | MerkleTree with root history | Same + `resetHistory` | **Insert hides leaf** |
+| `MerkleTree<N, T>` | Privacy-preserving set | `insert`, `checkRoot` | All ops visible; **privacy via membership proofs** |
+| `HistoricMerkleTree<N, T>` | MerkleTree with root history | Same + `resetHistory` | All ops visible; **privacy via membership proofs** |
 
 For complete operations tables with parameters, return types, and edge cases, see `references/types-and-operations.md`.
 
@@ -85,8 +85,8 @@ For constructor patterns, pitfalls, and multi-field initialization strategies, s
 
 ## On-Chain Visibility Summary
 
-All ledger operations are publicly visible on-chain **except**:
-- `MerkleTree.insert()` and `HistoricMerkleTree.insert()` -- these hide the inserted leaf value
+All ledger operations are publicly visible on-chain, including MerkleTree inserts.
+The privacy benefit of MerkleTree is in **membership proofs** -- ZK path proofs do not reveal which specific leaf is being proven.
 
 | Operation Type | Visible On-Chain |
 |---------------|-----------------|
@@ -95,7 +95,7 @@ All ledger operations are publicly visible on-chain **except**:
 | Map insert/lookup/member/remove | Yes -- key and value visible |
 | Set insert/member/remove | Yes -- element visible |
 | List pushFront/popFront | Yes -- element visible |
-| MerkleTree insert | **No** -- leaf value hidden |
+| MerkleTree insert | Yes -- leaf value visible |
 | MerkleTree checkRoot | Yes -- digest visible |
 
 For detailed per-operation visibility analysis, MerkleTree vs Set privacy comparison, disclosure rules, and privacy design patterns, see `references/privacy-and-visibility.md`.
