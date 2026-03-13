@@ -159,12 +159,12 @@ Every Compact source file should begin with a `pragma language_version` statemen
 ### Format
 
 ```compact
-pragma language_version >= 0.16 && <= 0.22;
+pragma language_version >= 0.21 && <= 0.22;
 ```
 
 The pragma uses comparison operators and logical `&&` to define a version range. Key rules:
 
-1. **Use bounded ranges.** Open-ended ranges (e.g., `>= 0.16`) imply your contract works with all future versions, which cannot be guaranteed. Always include an upper bound.
+1. **Use bounded ranges.** Open-ended ranges (e.g., `>= 0.21`) imply your contract works with all future versions, which cannot be guaranteed. Always include an upper bound.
 2. **Exact versions are also valid.** `pragma language_version 0.20;` pins to a single version. This is simpler but means you must update the pragma whenever the compiler updates.
 
 ### What Happens on Mismatch
@@ -187,8 +187,8 @@ When updating the compiler, check the release notes for language version changes
 
 | Mistake | Problem | Correct |
 |---|---|---|
-| `pragma language_version >= 0.14;` | No upper bound | `pragma language_version >= 0.16 && <= 0.22;` |
-| `pragma language_version >= 0.16 < 0.19;` | Missing `&&` between conditions | `pragma language_version >= 0.16 && <= 0.22;` |
+| `pragma language_version >= 0.14;` | No upper bound | `pragma language_version >= 0.21 && <= 0.22;` |
+| `pragma language_version >= 0.21 < 0.22;` | Missing `&&` between conditions | `pragma language_version >= 0.21 && <= 0.22;` |
 | No pragma at all | Compiler may reject or use default behavior | Always include a pragma |
 
 ## Integrating into CI

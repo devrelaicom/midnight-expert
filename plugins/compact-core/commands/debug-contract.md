@@ -36,7 +36,7 @@ Prompt the Task agent:
 > - Witness declarations with body `{ }` (should end with `;`, implementation in TypeScript)
 > - `pure function` keyword (should be `pure circuit`)
 > - `Cell<T>` wrapper (removed in v0.15, use type directly)
-> - Pragma missing `&&` between version conditions (should be `>= 0.16 && <= 0.18` format)
+> - Pragma missing `&&` between version conditions (should be `>= 0.21 && <= 0.22` format)
 >
 > **Hallucinated stdlib functions** (these do NOT exist in Compact):
 > `public_key()`, `verify_signature()`, `random()`, `hash()`, `encrypt()`, `decrypt()`, `sign()`, `verify()`, `to_string()`, `from_string()`, `concat()`, `slice()`, `length()`, `push()`, `pop()`, `map()`, `filter()`, `reduce()`, `sort()`, `reverse()`, `contains()`, `indexOf()`, `toString()`

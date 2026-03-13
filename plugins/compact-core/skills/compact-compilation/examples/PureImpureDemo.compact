@@ -35,7 +35,7 @@
 // Note: Only 2 circuits compiled (the impure ones), not 3.
 // The pure circuit "add" and internal helper "double" produce no ZK artifacts.
 
-pragma language_version >= 0.16;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 
