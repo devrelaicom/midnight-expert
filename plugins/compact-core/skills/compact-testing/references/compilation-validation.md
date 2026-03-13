@@ -159,7 +159,7 @@ Every Compact source file should begin with a `pragma language_version` statemen
 ### Format
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.16 && <= 0.22;
 ```
 
 The pragma uses comparison operators and logical `&&` to define a version range. Key rules:
@@ -188,8 +188,8 @@ When updating the compiler, check the release notes for language version changes
 
 | Mistake | Problem | Correct |
 |---|---|---|
-| `pragma language_version >= 0.14.0;` | Includes patch version and has no upper bound | `pragma language_version >= 0.16 && <= 0.18;` |
-| `pragma language_version >= 0.16.0 < 0.19.0;` | Wrong operator format | `pragma language_version >= 0.16 && <= 0.18;` |
+| `pragma language_version >= 0.14.0;` | Includes patch version and has no upper bound | `pragma language_version >= 0.16 && <= 0.22;` |
+| `pragma language_version >= 0.16.0 < 0.19.0;` | Wrong operator format | `pragma language_version >= 0.16 && <= 0.22;` |
 | No pragma at all | Compiler may reject or use default behavior | Always include a pragma |
 
 ## Integrating into CI
