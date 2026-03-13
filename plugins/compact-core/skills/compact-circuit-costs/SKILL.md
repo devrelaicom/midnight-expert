@@ -71,7 +71,7 @@ Complex anonymous circuits inside `map`/`fold` multiply: every statement in the 
 
 ### Compiler Optimizations
 
-The compiler performs these optimization passes automatically (in order):
+The compiler performs these **circuit-phase** optimization passes automatically (in order). These are a subset of the full compilation pipeline (~23 passes total including frontend, analysis, and emission phases):
 
 1. **Copy propagation** — Replaces variable references with their definitions
 2. **Constant folding** — Evaluates constant expressions at compile time (`3 + 4` → `7`)
