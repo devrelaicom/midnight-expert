@@ -42,7 +42,7 @@ For a detailed walkthrough of each directory, see `references/compilation-output
 | `keys/<circuit>.verifier` | Verifier key submitted on-chain during deployment | Exported impure circuits only |
 | `compiler/contract-info.json` | Circuit manifest (names, types, pure/impure flags) | Always |
 
-**File count formula**: For N exported impure circuits: **4N + 4** files total.
+**File count formula**: For N exported impure circuits: **N + 4** files (default with `--skip-zk`) or **2N + 4** files (with `--no-skip-zk` which generates keys).
 
 ## Pure vs Impure Circuits
 
