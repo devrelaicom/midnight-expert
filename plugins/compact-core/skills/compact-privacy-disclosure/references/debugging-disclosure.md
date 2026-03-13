@@ -119,8 +119,8 @@ If you did not intend to disclose the value, restructure the code to keep the
 data private:
 - **Use a commitment** instead of writing the raw value:
   `storedHash = disclose(persistentCommit<Field>(secret, rand))`
-- **Use a MerkleTree** instead of a Set for membership checks (insert hides
-  the leaf value)
+- **Use a MerkleTree** instead of a Set for membership checks (membership
+  proofs hide which leaf is being proven, though inserts are public)
 - **Move computation inside the proof** -- do not write intermediate results
   to the ledger if they contain witness data
 - **Use an internal circuit** instead of returning from an exported circuit,
@@ -365,18 +365,18 @@ reports the full path if disclosure is missing.
 **Do not disclose at the witness call site unless the witness always returns
 public data.** Placing `disclose()` directly on the witness call eliminates
 privacy for all downstream uses of that value. If the value flows to both a
-ledger write (public) and a MerkleTree insert (private), disclosing at the
-source makes the MerkleTree insert pointless.
+MerkleTree insert and other operations, disclosing at the source removes any
+option to keep it private in other contexts.
 
 ```compact
 // Wrong -- over-discloses; ALL uses of balance lose privacy
 const balance = disclose(getBalance());
-tree.insert(balance);       // Now public despite MerkleTree
+tree.insert(balance);       // Already public from disclose
 ledger_val = balance;       // Also public
 
-// Correct -- disclose only where needed
+// Correct -- disclose only where needed for ledger writes
 const balance = getBalance();
-tree.insert(balance);                  // Private (MerkleTree hides leaf)
+tree.insert(disclose(balance));        // Leaf visible on-chain (all ledger ops are)
 ledger_val = disclose(balance);        // Public (ledger write)
 ```
 

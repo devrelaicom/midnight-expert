@@ -2,6 +2,8 @@
 
 Complete reference for all types and their constructor functions provided by `import CompactStandardLibrary;`. Every definition below is verified against the official Compact API documentation and MCP codebase.
 
+> **Note on naming convention:** The official docs show camelCase names (e.g., `isSome`, `isLeft`); the current compiler uses snake_case (`is_some`, `is_left`). A migration to camelCase is planned but not yet deployed. This reference uses the snake_case names that the compiler currently expects.
+
 ## Types Overview
 
 | Type | Kind | Purpose |
@@ -18,13 +20,13 @@ Complete reference for all types and their constructor functions provided by `im
 
 ## Maybe\<T\>
 
-Encapsulates an optionally present value. If `isSome` is `false`, `value` should be `default<T>` by convention.
+Encapsulates an optionally present value. If `is_some` is `false`, `value` should be `default<T>` by convention.
 
 ### Definition
 
 ```compact
 struct Maybe<T> {
-  isSome: Boolean;
+  is_some: Boolean;
   value: T;
 }
 ```
@@ -43,15 +45,16 @@ Type parameters are required. `some(42)` is wrong; `some<Field>(42)` is correct.
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `.isSome` | `Boolean` | `true` if a value is present |
-| `.value` | `T` | The contained value (meaningful only when `isSome` is `true`) |
+| `.is_some` | `Boolean` | `true` if a value is present |
+| `.value` | `T` | The contained value (meaningful only when `is_some` is `true`) |
 
 ### Inspection Pattern
 
 ```compact
-const result = myMap.lookup(key);
-if (result.isSome) {
-  balance = (balance + result.value) as Uint<64>;
+// List.head() returns Maybe<T>
+const first = myList.head();
+if (first.is_some) {
+  const item = first.value;
 }
 ```
 
@@ -65,20 +68,20 @@ if (result.isSome) {
 ### TypeScript Representation
 
 ```typescript
-{ isSome: boolean, value: T }
+{ is_some: boolean, value: T }
 ```
 
 Where `T` maps to the corresponding TypeScript type for the inner Compact type.
 
 ## Either\<A, B\>
 
-Disjoint union of `A` and `B`. If `isLeft` is `true`, `left` should be populated; otherwise `right`. The unpopulated variant should be `default<>` by convention.
+Disjoint union of `A` and `B`. If `is_left` is `true`, `left` should be populated; otherwise `right`. The unpopulated variant should be `default<>` by convention.
 
 ### Definition
 
 ```compact
 struct Either<A, B> {
-  isLeft: Boolean;
+  is_left: Boolean;
   left: A;
   right: B;
 }
@@ -90,7 +93,7 @@ struct Either<A, B> {
 |-------------|-----------|-------------|
 | `left<A, B>(value)` | `circuit left<A, B>(value: A): Either<A, B>;` | Creates an Either with the left variant |
 | `right<A, B>(value)` | `circuit right<A, B>(value: B): Either<A, B>;` | Creates an Either with the right variant |
-| `default<Either<A, B>>` | -- | Equivalent to `left` with default values for both A and B |
+| `default<Either<A, B>>` | -- | Default has `is_left = false` (right variant) based on struct defaults |
 
 Both type parameters are required. `left(42)` is wrong; `left<Field, Boolean>(42)` is correct.
 
@@ -98,7 +101,7 @@ Both type parameters are required. `left(42)` is wrong; `left<Field, Boolean>(42
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `.isLeft` | `Boolean` | `true` if the left variant is populated |
+| `.is_left` | `Boolean` | `true` if the left variant is populated |
 | `.left` | `A` | The left variant value |
 | `.right` | `B` | The right variant value |
 
@@ -124,7 +127,7 @@ const toContract = right<ZswapCoinPublicKey, ContractAddress>(kernel.self());
 const toUserAddr = right<ContractAddress, UserAddress>(disclose(recipientAddr));
 
 // Inspect which variant
-if (recipient.isLeft) {
+if (recipient.is_left) {
   // recipient.left is the ZswapCoinPublicKey
 } else {
   // recipient.right is the ContractAddress
@@ -134,7 +137,7 @@ if (recipient.isLeft) {
 ### TypeScript Representation
 
 ```typescript
-{ isLeft: boolean, left: A, right: B }
+{ is_left: boolean, left: A, right: B }
 ```
 
 ## NativePoint
@@ -169,7 +172,7 @@ Note: This creates a `NativePoint` from raw field values. The resulting point is
 
 ### Default Value
 
-`default<NativePoint>` is the identity element of the curve group.
+`default<NativePoint>` is `{ x: 0, y: 0 }` (Compact struct default — not the curve identity element; do not use as a curve point).
 
 ### Deprecation Note
 
@@ -212,7 +215,7 @@ struct MerkleTreeDigest { field: Field; }
 
 ```compact
 const digest = merkleTreePathRoot<4, Field>(path);
-assert(merkleTree.checkRoot(digest) == true, "invalid root");
+assert(merkleTree.checkRoot(disclose(digest)) == true, "invalid root");
 ```
 
 ## MerkleTreePathEntry
@@ -271,7 +274,7 @@ witness getMerklePath(): MerkleTreePath<32, Bytes<32>>;
 export circuit verifyInclusion(): [] {
   const path = getMerklePath();
   const digest = merkleTreePathRoot<32, Bytes<32>>(path);
-  assert(tree.checkRoot(digest) == true, "not in tree");
+  assert(tree.checkRoot(disclose(digest)) == true, "not in tree");
 }
 ```
 
@@ -349,7 +352,7 @@ Summary of all stdlib constructor circuits for `Maybe` and `Either`.
 circuit some<T>(value: T): Maybe<T>;
 ```
 
-Creates a `Maybe<T>` with `isSome = true` and `.value` set to the given value.
+Creates a `Maybe<T>` with `is_some = true` and `.value` set to the given value.
 
 ### none\<T\>
 
@@ -357,7 +360,7 @@ Creates a `Maybe<T>` with `isSome = true` and `.value` set to the given value.
 circuit none<T>(): Maybe<T>;
 ```
 
-Creates a `Maybe<T>` with `isSome = false` and `.value` set to `default<T>`.
+Creates a `Maybe<T>` with `is_some = false` and `.value` set to `default<T>`.
 
 ### left\<A, B\>
 
@@ -365,7 +368,7 @@ Creates a `Maybe<T>` with `isSome = false` and `.value` set to `default<T>`.
 circuit left<A, B>(value: A): Either<A, B>;
 ```
 
-Creates an `Either<A, B>` with `isLeft = true`, `.left` set to the given value, and `.right` set to `default<B>`.
+Creates an `Either<A, B>` with `is_left = true`, `.left` set to the given value, and `.right` set to `default<B>`.
 
 ### right\<A, B\>
 
@@ -373,7 +376,7 @@ Creates an `Either<A, B>` with `isLeft = true`, `.left` set to the given value, 
 circuit right<A, B>(value: B): Either<A, B>;
 ```
 
-Creates an `Either<A, B>` with `isLeft = false`, `.right` set to the given value, and `.left` set to `default<A>`.
+Creates an `Either<A, B>` with `is_left = false`, `.right` set to the given value, and `.left` set to `default<A>`.
 
 ### Type Parameter Rules
 
@@ -397,13 +400,14 @@ const l = left(ownPublicKey()); // compile error
 Checking variants:
 
 ```compact
-const result: Maybe<Field> = myMap.lookup(key);
-if (result.isSome) {
-  // use result.value
+// List.head() returns Maybe<T>
+const first: Maybe<Field> = myList.head();
+if (first.is_some) {
+  // use first.value
 }
 
 const addr: Either<ZswapCoinPublicKey, ContractAddress> = getRecipient();
-if (addr.isLeft) {
+if (addr.is_left) {
   // use addr.left (ZswapCoinPublicKey)
 } else {
   // use addr.right (ContractAddress)
@@ -415,7 +419,7 @@ Using with List.head (returns Maybe<T>):
 ```compact
 // List.head() returns Maybe<T>
 const first = myList.head();             // returns Maybe<T>
-if (first.isSome) {
+if (first.is_some) {
   const item = first.value;
 }
 ```

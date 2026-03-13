@@ -236,7 +236,7 @@ When T involves `QualifiedShieldedCoinInfo`:
 
 ## MerkleTree\<N, T>
 
-A bounded Merkle tree of depth N containing values of type T. Supports up to 2^N leaves. The key privacy property: `insert()` hides the inserted leaf value on-chain.
+A bounded Merkle tree of depth N containing values of type T. Supports up to 2^N leaves. The key privacy property: **membership proofs** (ZK path proofs) do not reveal which specific leaf is being proven, enabling anonymous membership verification.
 
 ```compact
 export ledger tree: MerkleTree<10, Bytes<32>>;
@@ -248,7 +248,7 @@ N must satisfy: 1 < N <= 32.
 
 | Method | Parameters | Returns | Context | Description |
 |--------|-----------|---------|---------|-------------|
-| `insert(leaf)` | `leaf: T` | `[]` | Circuit | Add leaf at next free index; **value hidden on-chain** |
+| `insert(leaf)` | `leaf: T` | `[]` | Circuit | Add leaf at next free index |
 | `insertHash(hash)` | `hash: Bytes<32>` | `[]` | Circuit | Add leaf by its hash |
 | `insertIndex(item, index)` | `item: T, index: Uint<64>` | `[]` | Circuit | Add leaf at specific index |
 | `insertHashIndex(hash, index)` | `hash: Bytes<32>, index: Uint<64>` | `[]` | Circuit | Add hash at specific index |
@@ -262,10 +262,10 @@ N must satisfy: 1 < N <= 32.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `root()` | `MerkleTreeDigest` | Get the current tree root |
-| `pathForLeaf(index)` | `MerkleTreePath<N, T>` | Get proof path by leaf index (O(1) lookup) |
+| `pathForLeaf(index: bigint, leaf: value_type)` | `MerkleTreePath<N, T>` | Get proof path by index and leaf value |
 | `findPathForLeaf(leaf)` | `MerkleTreePath<N, T>` | Find proof path by leaf value (O(n) scan) |
 
-**Visibility:** `insert()` hides the leaf value. All other operations that take arguments reveal those arguments on-chain.
+**Visibility:** All operations (including `insert()`) reveal their arguments on-chain, like all ledger operations. The privacy benefit comes from membership proofs — ZK path proofs do not reveal which leaf is being proven.
 
 ### Membership Proof Pattern
 
@@ -282,7 +282,7 @@ export circuit insert(item: Field): [] {
 
 export circuit check(item: Field): [] {
   const path = findItem(item);
-  assert(items.checkRoot(merkleTreePathRoot<10, Field>(path.value)), "path must be valid");
+  assert(items.checkRoot(disclose(merkleTreePathRoot<10, Field>(path))), "path must be valid");
 }
 ```
 
@@ -299,7 +299,7 @@ function findItem(context: WitnessContext, item: bigint): MerkleTreePath<bigint>
 - **Depth bounds**: N must be > 1 and <= 32. `MerkleTree<1, T>` is invalid.
 - **Capacity**: A tree of depth N holds at most 2^N leaves. Check `isFull()` before inserting.
 - **Root not available in circuits**: `root()` is TypeScript-only. Use `checkRoot()` with a digest computed via `merkleTreePathRoot()` in circuits.
-- **Someone who guesses the leaf value can verify it**: While `insert()` hides the value, the tree structure allows verification of guessed values.
+- **Privacy via membership proofs**: `insert()` reveals the leaf value on-chain (like all ledger ops), but membership proofs via `merkleTreePathRoot()` + `checkRoot()` do not reveal which leaf is being proven. For private insertion, use `insertHash()` to insert a pre-hashed value.
 
 ## HistoricMerkleTree\<N, T>
 
@@ -346,6 +346,11 @@ ledger kernel: Kernel;
 | `claimUnshieldedCoinSpend(tokenType, recipient, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, recipient: Either<ContractAddress, UserAddress>, amount: Uint<64>` | `[]` | Circuit | Claim an unshielded coin spend |
 | `incUnshieldedOutputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Circuit | Increment unshielded outputs |
 | `incUnshieldedInputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Circuit | Increment unshielded inputs |
+| `balance(tokenType)` | `tokenType: Either<Bytes<32>, Bytes<32>>` | `Uint<64>` | Circuit | Query contract's unshielded balance |
+| `balanceLessThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Circuit | Check if balance < amount |
+| `balanceGreaterThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Circuit | Check if balance > amount |
+| `blockTimeGreaterThan(time)` | `time: Uint<64>` | `Boolean` | Circuit | Check if block time > time |
+| `blockTimeLessThan(time)` | `time: Uint<64>` | `Boolean` | Circuit | Check if block time < time |
 
 ### Common Usage
 

@@ -33,8 +33,7 @@ Privacy is the default in Compact. All witness-derived data is private unless ex
 |---------|---------|-----|
 | Ledger write (direct) | `owner = disclose(pk)` | Value becomes public on-chain |
 | Ledger write (ADT method) | `map.insert(disclose(key), val)` | Arguments to ADT ops are public |
-| Conditional (`if`) | `if (disclose(x == y)) { ... }` | Branch choice reveals information |
-| Conditional (`assert`) | `assert(disclose(x > 0), "msg")` | Assertion result is observable |
+| Conditional (`if`) with ledger writes | `if (disclose(x == y)) { balance = ... }` | Branch choice reveals information when it contains ledger writes |
 | Return from exported circuit | `return disclose(value)` | Return value leaves the ZK proof |
 | Cross-contract call | Calling another contract's circuit | Arguments cross trust boundary |
 | Constructor sealed field | `owner = disclose(pk)` | Sealed values are set publicly |
@@ -50,18 +49,18 @@ Privacy is the default in Compact. All witness-derived data is private unless ex
 
 ## Safe Stdlib Routines
 
-| Function | Signature | Clears Witness Taint? | Why |
+| Function | Signature | Cryptographically Hides Input? | Why |
 |----------|-----------|----------------------|-----|
 | `persistentCommit<T>` | `(value: T, rand: Bytes<32>): Bytes<32>` | **Yes** | Commitment cryptographically hides input |
 | `transientCommit<T>` | `(value: T, rand: Field): Field` | **Yes** | Same hiding property, circuit-efficient |
 | `persistentHash<T>` | `(value: T): Bytes<32>` | **No** | Hash could theoretically be brute-forced |
 | `transientHash<T>` | `(value: T): Field` | **No** | Same reasoning as persistentHash |
 
-Even though commits clear taint on the *input*, the commitment *result* still needs `disclose()` when written to ledger:
+Commits clear taint on the *input*, and `persistentCommit`/`transientCommit` results are implicitly disclosed when written to ledger via commit operations:
 
 ```compact
 const commitment = persistentCommit<Field>(secretValue, randomness);
-storedCommitment = disclose(commitment);  // disclose() for ledger write, not for witness tracking
+storedCommitment = commitment;  // commit results are implicitly disclosed by persistentCommit/transientCommit
 ```
 
 ## Common Disclosure Mistakes

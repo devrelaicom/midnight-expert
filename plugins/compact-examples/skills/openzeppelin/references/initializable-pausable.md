@@ -11,7 +11,7 @@ Many OpenZeppelin modules use the initializable pattern internally to ensure:
 ### Usage
 
 ```compact
-pragma language_version >= 0.18.0;
+pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
 import './compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Initializable';
@@ -68,7 +68,7 @@ Implements an emergency stop mechanism. Useful for:
 Combine with Ownable for access-controlled pause/unpause:
 
 ```compact
-pragma language_version >= 0.18.0;
+pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
 import './compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable'

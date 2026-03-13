@@ -21,7 +21,7 @@ An approximation of ERC-1155 written in Compact for the Midnight network. Manage
 ### Basic Multi-Token Contract
 
 ```compact
-pragma language_version >= 0.18.0;
+pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
 import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/token/MultiToken"

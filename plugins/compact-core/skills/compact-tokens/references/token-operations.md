@@ -31,7 +31,7 @@ struct QualifiedShieldedCoinInfo {
   nonce: Bytes<32>;
   color: Bytes<32>;
   value: Uint<128>;
-  mtIndex: Uint<64>;
+  mt_index: Uint<64>;
 }
 ```
 
@@ -40,9 +40,9 @@ struct QualifiedShieldedCoinInfo {
 | `nonce` | `Bytes<32>` | Coin randomness |
 | `color` | `Bytes<32>` | Token type identifier |
 | `value` | `Uint<128>` | Token amount |
-| `mtIndex` | `Uint<64>` | Index of this coin's commitment in the global Merkle tree |
+| `mt_index` | `Uint<64>` | Index of this coin's commitment in the global Merkle tree |
 
-**Qualified vs unqualified:** A `ShieldedCoinInfo` represents a coin that exists only in the current transaction (not yet committed to the ledger). A `QualifiedShieldedCoinInfo` represents a coin already committed to the ledger's Merkle tree, with its position tracked by `mtIndex`. Use `ShieldedCoinInfo` with `sendImmediateShielded` and `receiveShielded`; use `QualifiedShieldedCoinInfo` with `sendShielded` and `mergeCoin`.
+**Qualified vs unqualified:** A `ShieldedCoinInfo` represents a coin that exists only in the current transaction (not yet committed to the ledger). A `QualifiedShieldedCoinInfo` represents a coin already committed to the ledger's Merkle tree, with its position tracked by `mt_index`. Use `ShieldedCoinInfo` with `sendImmediateShielded` and `receiveShielded`; use `QualifiedShieldedCoinInfo` with `sendShielded` and `mergeCoin`.
 
 ### ShieldedSendResult
 
@@ -105,8 +105,8 @@ assert(coin.color == nativeToken(), "Not a native token");
 
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
-| `mintShieldedToken(domainSep, value, nonce, recipient)` | `domainSep: Bytes<32>, value: Uint<128>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>` | `ShieldedCoinInfo` | Mint a new shielded coin and send to recipient |
-| `evolveNonce(index, nonce)` | `index: Uint<64>, nonce: Bytes<32>` | `Bytes<32>` | Deterministically derive a nonce from a counter and prior nonce |
+| `mintShieldedToken(domainSep, value, nonce, recipient)` | `domainSep: Bytes<32>, value: Uint<64>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>` | `ShieldedCoinInfo` | Mint a new shielded coin and send to recipient |
+| `evolveNonce(index, nonce)` | `index: Uint<128>, nonce: Bytes<32>` | `Bytes<32>` | Deterministically derive a nonce from a counter and prior nonce |
 | `shieldedBurnAddress()` | -- | `Either<ZswapCoinPublicKey, ContractAddress>` | Returns an address that burns any coins sent to it |
 | `receiveShielded(coin)` | `coin: ShieldedCoinInfo` | `[]` | Receive a shielded coin addressed to this contract |
 | `sendShielded(input, recipient, value)` | `input: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>` | `ShieldedSendResult` | Send value from a ledger coin to recipient; returns change |
@@ -119,7 +119,7 @@ assert(coin.color == nativeToken(), "Not a native token");
 
 ### Usage Notes
 
-**`sendShielded` vs `sendImmediateShielded`:** Use `sendShielded` when spending a coin already stored in the ledger (a `QualifiedShieldedCoinInfo` with a valid `mtIndex`). Use `sendImmediateShielded` when spending a coin created within the same transaction (a `ShieldedCoinInfo`, such as the result of `mintShieldedToken` or a change coin from a prior send).
+**`sendShielded` vs `sendImmediateShielded`:** Use `sendShielded` when spending a coin already stored in the ledger (a `QualifiedShieldedCoinInfo` with a valid `mt_index`). Use `sendImmediateShielded` when spending a coin created within the same transaction (a `ShieldedCoinInfo`, such as the result of `mintShieldedToken` or a change coin from a prior send).
 
 **Always handle `ShieldedSendResult.change`:** When the input coin's value exceeds the send amount, the `change` field contains the leftover coin. If you do not store or send this change, the value is lost.
 
@@ -147,7 +147,7 @@ export ledger mintCount: Counter;
 export circuit mintToken(amount: Uint<64>): ShieldedCoinInfo {
   const idx = mintCount.read();
   mintCount.increment(1);
-  const nonce = evolveNonce(idx, nonceSeed);
+  const nonce = evolveNonce(mintCount.read() as Uint<128>, nonceSeed);
   return mintShieldedToken(
     pad(32, "mytoken:"),
     disclose(amount),
@@ -321,11 +321,11 @@ const totalSupply = contractState.totalSupply;
 
 ### Wallet DUST Registration Flow
 
-Before submitting transactions that interact with tokens, the wallet must have sufficient DUST (fee tokens). The typical flow:
+Before submitting transactions that interact with tokens, the wallet must have sufficient DUST (fee resource). The typical flow:
 
 1. Create or restore a wallet with a seed phrase
 2. Request tNight from the faucet to the unshielded address
-3. The wallet auto-delegates tNight to generate DUST tokens
+3. The wallet automatically registers tNIGHT UTXOs for DUST generation
 4. DUST is consumed for ZK proof generation and transaction fees
 
 ### TypeScript SDK Token Types

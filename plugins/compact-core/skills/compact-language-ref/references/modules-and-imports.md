@@ -7,19 +7,18 @@ Compact organizes code through pragmas, include files, modules, imports, and top
 Every Compact source file should begin with a pragma declaring the language version it targets. The pragma must be the first statement in the file (after any comments).
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 ```
 
-The version constraint uses a bounded range with comparison operators combined by `&&`. Only major and minor versions are used -- patch versions are not included. The bounded range ensures the contract compiles with any compatible compiler version within the specified window.
+> **Tip:** Run `compact compile --language-version` to find the language version supported by your installed compiler. Use that version in your pragma declaration.
+
+The version constraint uses comparison operators. An open-ended lower bound (e.g. `>= 0.20`) ensures the contract compiles with the current and future compatible compiler versions.
 
 Common mistakes:
 
 | Wrong | Correct |
 |-------|---------|
-| `pragma language_version >= 0.14.0;` | `pragma language_version >= 0.16 && <= 0.18;` |
-| `pragma language_version 0.18;` | `pragma language_version >= 0.16 && <= 0.18;` |
-
-Using only a lower bound without an upper bound or including patch versions can cause parse errors or version mismatch failures.
+| `pragma language_version 0.20;` | `pragma language_version >= 0.20;` |
 
 ## Include Files
 
@@ -109,7 +108,7 @@ Importing a module brings its exported identifiers into the current scope. Compa
 import CompactStandardLibrary;
 ```
 
-This brings all standard library types and circuits into scope, including `Counter`, `Map`, `Set`, `MerkleTree`, `Maybe`, `Either`, `CoinInfo`, and standard utility circuits.
+This brings all standard library types and circuits into scope, including `Counter`, `Map`, `Set`, `MerkleTree`, `Maybe`, `Either`, `ShieldedCoinInfo`, `QualifiedShieldedCoinInfo`, and standard utility circuits.
 
 ### Module Import
 
@@ -251,7 +250,7 @@ export ledger owner: Bytes<32>;
 Names imported from modules or the standard library can be re-exported so they are available in the TypeScript API:
 
 ```compact
-export { Maybe, Either, CoinInfo };
+export { Maybe, Either, ShieldedCoinInfo };
 ```
 
 ## File Organization Patterns
@@ -261,7 +260,7 @@ export { Maybe, Either, CoinInfo };
 For small contracts, keep everything in one file. This is the simplest approach:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 import CompactStandardLibrary;
 
 export ledger counter: Counter;
@@ -282,7 +281,7 @@ project/
 
 ```compact
 // main.compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 import CompactStandardLibrary;
 
 include "types";
@@ -309,7 +308,7 @@ module Auth {
 
 ```compact
 // main.compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 import CompactStandardLibrary;
 import "Auth" prefix Auth_;
 

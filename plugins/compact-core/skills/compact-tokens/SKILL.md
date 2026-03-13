@@ -23,7 +23,7 @@ This skill covers tokens on Midnight: choosing between shielded and unshielded a
 |------|----------|---------|-------|------------|
 | Shielded ledger | Blockchain ledger | Private | UTXO | Native privacy, maximum efficiency, hidden sender/recipient/value |
 | Unshielded ledger | Blockchain ledger | Transparent | UTXO | Full transparency, high performance, visible balances |
-| Shielded contract | Contract state | Private | Account (via `Map`) | Programmable logic, custom spend rules, ZK-proven |
+| Shielded contract | Contract state | Private | Account (via `Map`) | Programmable logic, custom spend rules, ZK-proven (currently limited — full support COMING SOON) |
 | Unshielded contract | Contract state | Transparent | Account (via `Map`) | Full programmability, visible operations |
 
 ## Shielded Token Operations
@@ -33,7 +33,7 @@ Key types:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Newly created coin (this transaction) |
-| `QualifiedShieldedCoinInfo` | `nonce`, `color`, `value`, `mtIndex: Uint<64>` | Existing coin on ledger, ready to spend |
+| `QualifiedShieldedCoinInfo` | `nonce`, `color`, `value`, `mt_index: Uint<64>` | Existing coin on ledger, ready to spend |
 | `ShieldedSendResult` | `change: Maybe<ShieldedCoinInfo>`, `sent: ShieldedCoinInfo` | Result of send operations |
 | `ZswapCoinPublicKey` | `bytes: Bytes<32>` | User public key for coin output |
 
@@ -41,20 +41,20 @@ Key functions:
 
 | Function | Signature | Returns |
 |----------|-----------|---------|
-| `mintShieldedToken` | `(domainSep: Bytes<32>, value: Uint<128>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>)` | `ShieldedCoinInfo` |
+| `mintShieldedToken` | `(domainSep: Bytes<32>, value: Uint<64>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>)` | `ShieldedCoinInfo` |
 | `receiveShielded` | `(coin: ShieldedCoinInfo)` | `[]` |
 | `sendShielded` | `(input: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>)` | `ShieldedSendResult` |
 | `sendImmediateShielded` | `(input: ShieldedCoinInfo, target: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>)` | `ShieldedSendResult` |
 | `mergeCoin` | `(a: QualifiedShieldedCoinInfo, b: QualifiedShieldedCoinInfo)` | `ShieldedCoinInfo` |
 | `mergeCoinImmediate` | `(a: QualifiedShieldedCoinInfo, b: ShieldedCoinInfo)` | `ShieldedCoinInfo` |
-| `evolveNonce` | `(index: Uint<64>, nonce: Bytes<32>)` | `Bytes<32>` |
+| `evolveNonce` | `(index: Uint<128>, nonce: Bytes<32>)` | `Bytes<32>` |
 | `shieldedBurnAddress` | `()` | `Either<ZswapCoinPublicKey, ContractAddress>` |
 | `ownPublicKey` | `()` | `ZswapCoinPublicKey` |
 
 ```compact
-export circuit mint(amount: Uint<128>): ShieldedCoinInfo {
+export circuit mint(amount: Uint<64>): ShieldedCoinInfo {
   counter.increment(1);
-  const newNonce = evolveNonce(counter, nonce);
+  const newNonce = evolveNonce(counter.read() as Uint<128>, nonce);
   nonce = newNonce;
   return mintShieldedToken(
     domain, disclose(amount), nonce,
@@ -122,7 +122,8 @@ On testnet, these are called **tNIGHT** and **tDUST**. Contracts cannot mint, se
 | `unshieldedBalance(color)` for conditional logic | `unshieldedBalanceGte(color, amount)` | `unshieldedBalance` locks the exact balance at construction time; comparison functions are more robust |
 | Omitting `disclose()` on token params | `mintShieldedToken(disclose(dom), ...)` | Witness-derived values passed to token functions must be disclosed |
 | Sending shielded to `ContractAddress` without `receiveShielded` | Call `receiveShielded(coin)` in the receiving contract | The receiving contract must explicitly accept the coin |
-| `Uint<64>` for shielded amounts in send/receive | `Uint<128>` | `ShieldedCoinInfo.value`, `sendShielded`, and `sendImmediateShielded` use `Uint<128>` (mint uses `Uint<128>` too) |
+| `Uint<64>` for shielded amounts in send/receive | `Uint<128>` | `ShieldedCoinInfo.value`, `sendShielded`, and `sendImmediateShielded` use `Uint<128>` |
+| `Uint<128>` for `mintShieldedToken` value | `Uint<64>` | `mintShieldedToken` accepts `Uint<64>` for the value parameter, not `Uint<128>` |
 | Minting unshielded to self without receiving | Call `receiveUnshielded(color, amount)` after `mintUnshieldedToken` | The contract must receive its own minted unshielded tokens to update its balance |
 
 ## Reference Routing

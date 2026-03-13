@@ -43,7 +43,7 @@ Compact provides three arithmetic operators. Division and modulo do not exist in
 | `-` | Subtract | `Uint<0..m>` | Runtime error if result would be negative |
 | `*` | Multiply | `Uint<0..m*n>` | Result widens; cast back before assignment |
 
-When either operand is `Field`, the result is `Field` and wraps modulo the field prime. Mixing `Field` and `Uint` in one expression is a type error -- cast the `Uint` first: `myUint as Field`. Because arithmetic widens result types, cast before assigning: `balance = (balance + amount) as Uint<64>;`.
+When either operand is `Field`, the result is `Field` and wraps modulo the field prime. Cast `Uint` to `Field` explicitly only if you want to force field arithmetic semantics. Because arithmetic widens result types, cast before assigning: `balance = (balance + amount) as Uint<64>;`.
 
 ### Comparison Operators
 
@@ -84,7 +84,9 @@ Compact uses the `as` keyword for casts. TypeScript-style angle-bracket casts ar
 | `Field` | `Uint<0..n>` | Checked (runtime) | `f as Uint<64>` |
 | `Field` | `Boolean` | Conversion | `f as Boolean` (0 -> false, else true) |
 | `Field` | `Bytes<N>` | Conversion (checked) | `f as Bytes<32>` |
-| `Boolean` | `Uint<0..n>` | Conversion | `flag as Uint<0..1>` (false -> 0, true -> 1) |
+| `Boolean` | `Uint<0..n>` | Conversion | `flag as Uint<0..1>` (false -> 0, true -> 1). Checked when n=0 (fails at runtime if true) |
+| `Boolean` | `Field` | Conversion | `flag as Field` (false -> 0, true -> 1) |
+| `Uint<0..m>` | `Boolean` | Conversion | `myUint as Boolean` (0 -> false, non-zero -> true) |
 | `Bytes<N>` | `Field` | Conversion (checked) | `b as Field` |
 | `enum` | `Field` | Conversion | `Choice.rock as Field` (variant index) |
 
@@ -92,10 +94,9 @@ Compact uses the `as` keyword for casts. TypeScript-style angle-bracket casts ar
 
 | From | To | Route | Example |
 |------|----|-------|---------|
-| `Boolean` | `Field` | Boolean -> Uint -> Field | `(flag as Uint<0..1>) as Field` |
 | `Uint<N>` | `Bytes<M>` | Uint -> Field -> Bytes | `(amount as Field) as Bytes<32>` |
 
-Direct `Boolean`-to-`Field` and `Uint`-to-`Bytes` casts are rejected. Go through the intermediate type.
+Direct `Uint`-to-`Bytes` casts are rejected. Go through `Field` as the intermediate type.
 
 For the complete cast path table, see `references/operators-and-expressions.md`.
 
@@ -135,11 +136,13 @@ For full documentation on variable declarations, destructuring, shadowing, block
 
 ### Pragma
 
-Every source file begins with a bounded version pragma using major.minor only (no patch versions):
+Every source file begins with a version pragma:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 ```
+
+> **Tip:** Run `compact compile --language-version` to check which language version your compiler supports.
 
 ### Standard Library Import
 
@@ -199,11 +202,11 @@ Use these when mixing persistent and transient operations in a single circuit.
 | Function | Signature | Purpose |
 |----------|-----------|---------|
 | `pad` | `pad(length, value): Bytes<N>` | Create fixed-size `Bytes<N>` from a string literal; pads with zero bytes; both args must be literals |
-| `disclose` | `disclose(value: T): T` | Mark a witness-derived value as publicly visible; required for ledger writes, conditionals, and returns |
-| `assert` | `assert(condition: Boolean, message?: string): []` | Abort the transaction if condition is false; the only error-handling mechanism |
-| `default` | `default<T>(): T` | Return the default value for any type (false, 0, all-zero bytes, first enum variant, etc.) |
+| `disclose` | `disclose(value: T): T` | Mark a witness-derived value as publicly visible; required for ledger writes, cross-contract calls, and returns |
+| `assert` | `assert(condition: Boolean, message: string): []` | Abort the transaction if condition is false; the only error-handling mechanism |
+| `default` | `default<T>: T` | Return the default value for any type (false, 0, all-zero bytes, first enum variant, etc.); keyword expression, not a function call |
 
-`disclose` is required whenever a witness-derived value flows to a ledger operation, controls a conditional, or is returned from an exported circuit. Commitments protect their inputs from disclosure, but the commitment result still needs `disclose()` when written to ledger.
+`disclose` is required whenever a witness-derived value is stored in the public ledger, returned from an exported circuit, or passed to another contract via a cross-contract call. Commitments protect their inputs and the commitment result from disclosure. No `disclose()` wrapper is needed, even when storing the commitment in the ledger.
 
 For full documentation on each function including examples, disclosure rules, and persistent vs. transient guidance, see `references/stdlib-functions.md`.
 
@@ -215,12 +218,11 @@ Common wrong-to-correct patterns:
 |-------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.14.0` | `pragma language_version >= 0.16 && <= 0.18;` |
+| `pragma >= 0.20.0` | `pragma language_version >= 0.20;` |
 | `Choice::rock` | `Choice.rock` |
 | `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` |
 | `counter.value()` | `counter.read()` |
 | `amount as Bytes<32>` | `(amount as Field) as Bytes<32>` |
-| `flag as Field` | `(flag as Uint<0..1>) as Field` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` |
 | `witness fn(): T { body }` | `witness fn(): T;` (declaration only) |
 

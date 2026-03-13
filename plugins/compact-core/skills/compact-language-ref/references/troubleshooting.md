@@ -53,7 +53,7 @@ export ledger ledger_commitment: Bytes<32>;
 
 export circuit commit(value: Field): [] {
   const rand = get_random_value();
-  ledger_commitment = disclose(persistentCommit<Field>(value, rand));
+  ledger_commitment = persistentCommit<Field>(value, rand);
 }
 ```
 
@@ -69,7 +69,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | `parse error: found "{" looking for ";"` | Using `Void` as a return type | Use empty tuple `[]` for circuits that return nothing |
 | `parse error: found ":" looking for ")"` | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
 | `parse error: found "{" after witness declaration` | Adding an implementation body to a witness | Witnesses are declarations only -- end with `;` and implement in TypeScript |
-| `version mismatch or parse error` | Pragma uses patch version (`0.14.0`) or wrong operator format | Use `pragma language_version >= 0.16 && <= 0.18;` |
+| `version mismatch or parse error` | Pragma uses patch version (`0.20.0`) or wrong operator format | Use `pragma language_version >= 0.20;` |
 
 ### Unbound Identifier Errors
 
@@ -85,7 +85,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 |---|---|---|
 | `incompatible combination of types Field and Uint` | Comparing or operating on `Field` with `Uint` without casting | Cast the `Uint` operand: `(myUint as Field)` |
 | `expected ... Uint<64> but received Uint<0..N>` | Arithmetic result has expanded bounded type | Cast result back: `(a + b) as Uint<64>` |
-| `cannot cast from type Uint<64> to type Bytes<32>` | Attempting a direct `Uint` to `Bytes` cast | Go through `Field` first: `(amount as Field) as Bytes<32>` |
+| `cannot cast from type Uint<64> to type Bytes<32>` | Using an older compiler version that does not support direct `Uint` to `Bytes` cast | Upgrade compiler, or go through `Field`: `(amount as Field) as Bytes<32>` |
 | `member access requires struct type` | Accessing a field on a non-struct type | Verify the base value is a struct. `Map.lookup()` and `Set.member()` are separate operations, not field accesses. |
 
 ### Disclosure Errors
@@ -152,29 +152,23 @@ export circuit store(key: Bytes<32>, value: Uint<64>): [] {
 
 ## Type Cast Errors in Detail
 
-### Uint to Bytes Requires Two Casts
+### Uint to Bytes Casting
 
-Direct casting from `Uint<N>` to `Bytes<M>` is not allowed. Route through `Field`:
+Direct `Uint<N> as Bytes<M>` compiles and works. The two-step route through `Field` is also valid:
 
 ```compact
-// Wrong -- cannot cast from type Uint<64> to type Bytes<32>
+// Direct cast -- compiles and works
 const b: Bytes<32> = amount as Bytes<32>;
 
-// Correct -- two-step cast through Field
-const b: Bytes<32> = (amount as Field) as Bytes<32>;
+// Alternative -- two-step cast through Field
+const b2: Bytes<32> = (amount as Field) as Bytes<32>;
 ```
 
-### Boolean to Field Requires Two Casts
+Both routes produce the same result.
 
-`Boolean` cannot cast directly to `Field`. Route through a bounded `Uint`:
+### Boolean to Field Cast
 
-```compact
-// Wrong -- no direct Boolean to Field cast
-const f: Field = flag as Field;
-
-// Correct -- go through Uint<0..1>
-const f: Field = (flag as Uint<0..1>) as Field;
-```
+Direct `Boolean as Field` is valid (false → 0, true → 1). The two-step route `(flag as Uint<0..1>) as Field` also works but is not required.
 
 ### Arithmetic Results Must Be Cast Back
 
@@ -198,7 +192,7 @@ Complete table of common syntax mistakes with the error each one produces.
 |---|---|---|
 | `ledger { field: Type; }` | `export ledger field: Type;` | `parse error: found "{" looking for an identifier` |
 | `circuit fn(): Void` | `circuit fn(): []` | `parse error: found "{" looking for ";"` |
-| `pragma language_version >= 0.14.0;` | `pragma language_version >= 0.16 && <= 0.18;` | version mismatch or parse error |
+| `pragma language_version >= 0.20.0;` | `pragma language_version >= 0.20;` | version mismatch or parse error |
 | `enum State { a, b }` | `export enum State { a, b }` | enum not accessible from TypeScript |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` | `implicit disclosure of witness value` |
 | `Cell<Field>` | `Field` | `unbound identifier "Cell"` |
@@ -207,7 +201,7 @@ Complete table of common syntax mistakes with the error each one produces.
 | `Choice::rock` | `Choice.rock` | `parse error: found ":" looking for ")"` |
 | `witness fn(): T { ... }` | `witness fn(): T;` | `parse error: found "{" after witness declaration` |
 | `pure function helper(): T` | `pure circuit helper(): T` | `unbound identifier "function"` |
-| `amount as Bytes<32>` | `(amount as Field) as Bytes<32>` | `cannot cast from type Uint<64> to type Bytes<32>` |
+| `(amount as Field) as Bytes<32>` | `amount as Bytes<32>` (direct cast also works) | Both routes are valid |
 | `ledger.insert(key, a + b)` | `ledger.insert(key, (a + b) as Uint<64>)` | `expected type Uint<64> but received Uint<0..N>` |
 | `export circuit fn(p: T): [] { ledger.insert(p, v); }` | `export circuit fn(p: T): [] { const d = disclose(p); ledger.insert(d, v); }` | `potential witness-value disclosure must be declared` |
 
