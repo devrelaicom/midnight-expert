@@ -1,5 +1,10 @@
 // AccessControlledToken.compact
 // A fungible token with role-based minting and burning using AccessControl.
+//
+// PREREQUISITE: This file must be placed in a project where `compact-contracts`
+// has been cloned as a submodule and `npm install` (or `yarn`) has been run
+// inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
+// See: https://github.com/OpenZeppelin/compact-contracts
 
 pragma language_version >= 0.21.0;
 
