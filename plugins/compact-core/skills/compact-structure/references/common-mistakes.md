@@ -35,12 +35,11 @@ export circuit doSomething(): [] {
 ### Pragma Format
 
 ```compact
-// Wrong - patch version not needed, wrong operator format
-pragma language_version >= 0.20.0;
-pragma language_version >= 0.20.0 < 0.22.0;
+// Wrong - missing && between conditions
+pragma language_version >= 0.20 < 0.22;
 
-// Correct - minimum version constraint without patch version
-pragma language_version >= 0.20;
+// Correct - use && to combine conditions
+pragma language_version >= 0.20 && <= 0.22;
 ```
 
 > **Tip:** Run `compact compile --language-version` to check your compiler's supported version.

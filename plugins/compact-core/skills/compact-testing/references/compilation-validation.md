@@ -165,8 +165,7 @@ pragma language_version >= 0.16 && <= 0.22;
 The pragma uses comparison operators and logical `&&` to define a version range. Key rules:
 
 1. **Use bounded ranges.** Open-ended ranges (e.g., `>= 0.16`) imply your contract works with all future versions, which cannot be guaranteed. Always include an upper bound.
-2. **Do not include patch versions.** Use `0.16` not `0.16.0`. The language version uses major.minor only.
-3. **Exact versions are also valid.** `pragma language_version 0.20;` pins to a single version. This is simpler but means you must update the pragma whenever the compiler updates.
+2. **Exact versions are also valid.** `pragma language_version 0.20;` pins to a single version. This is simpler but means you must update the pragma whenever the compiler updates.
 
 ### What Happens on Mismatch
 
@@ -188,8 +187,8 @@ When updating the compiler, check the release notes for language version changes
 
 | Mistake | Problem | Correct |
 |---|---|---|
-| `pragma language_version >= 0.14.0;` | Includes patch version and has no upper bound | `pragma language_version >= 0.16 && <= 0.22;` |
-| `pragma language_version >= 0.16.0 < 0.19.0;` | Wrong operator format | `pragma language_version >= 0.16 && <= 0.22;` |
+| `pragma language_version >= 0.14;` | No upper bound | `pragma language_version >= 0.16 && <= 0.22;` |
+| `pragma language_version >= 0.16 < 0.19;` | Missing `&&` between conditions | `pragma language_version >= 0.16 && <= 0.22;` |
 | No pragma at all | Compiler may reject or use default behavior | Always include a pragma |
 
 ## Integrating into CI

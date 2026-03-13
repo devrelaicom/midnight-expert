@@ -136,7 +136,7 @@ For full documentation on variable declarations, destructuring, shadowing, block
 
 ### Pragma
 
-Every source file begins with a bounded version pragma using major.minor only (no patch versions):
+Every source file begins with a version pragma:
 
 ```compact
 pragma language_version >= 0.20;
