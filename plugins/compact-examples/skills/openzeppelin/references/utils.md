@@ -5,7 +5,7 @@ Provides miscellaneous circuits and common utilities for Compact contract develo
 ## Usage
 
 ```compact
-pragma language_version >= 0.18.0;
+pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
 import './compact-contracts/node_modules/@openzeppelin-compact/contracts/src/utils/Utils'

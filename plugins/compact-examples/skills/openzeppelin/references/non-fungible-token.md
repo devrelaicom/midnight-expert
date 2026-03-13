@@ -24,7 +24,7 @@ Transfers and mints to `ContractAddress` are disallowed in safe circuits. `_unsa
 ### Simple NFT Contract
 
 ```compact
-pragma language_version >= 0.18.0;
+pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
 import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/token/NonFungibleToken"
