@@ -47,14 +47,14 @@ Key functions:
 | `sendImmediateShielded` | `(input: ShieldedCoinInfo, target: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>)` | `ShieldedSendResult` |
 | `mergeCoin` | `(a: QualifiedShieldedCoinInfo, b: QualifiedShieldedCoinInfo)` | `ShieldedCoinInfo` |
 | `mergeCoinImmediate` | `(a: QualifiedShieldedCoinInfo, b: ShieldedCoinInfo)` | `ShieldedCoinInfo` |
-| `evolveNonce` | `(index: Uint<64>, nonce: Bytes<32>)` | `Bytes<32>` |
+| `evolveNonce` | `(index: Uint<128>, nonce: Bytes<32>)` | `Bytes<32>` |
 | `shieldedBurnAddress` | `()` | `Either<ZswapCoinPublicKey, ContractAddress>` |
 | `ownPublicKey` | `()` | `ZswapCoinPublicKey` |
 
 ```compact
 export circuit mint(amount: Uint<64>): ShieldedCoinInfo {
   counter.increment(1);
-  const newNonce = evolveNonce(counter.read() as Uint<64>, nonce);
+  const newNonce = evolveNonce(counter.read() as Uint<128>, nonce);
   nonce = newNonce;
   return mintShieldedToken(
     domain, disclose(amount), nonce,
