@@ -93,7 +93,7 @@ export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
 
 | Rule | Detail |
 |------|--------|
-| At most one per circuit | A circuit can contain zero or one `kernel.checkpoint()` calls |
+| Typically one per circuit | A circuit usually contains zero or one `kernel.checkpoint()` calls. The compiler does not enforce a limit, but only the first checkpoint is semantically meaningful for phase separation |
 | Determines phase boundary | Code before checkpoint = guaranteed; code after = fallible |
 | No checkpoint = guaranteed-only | Without `kernel.checkpoint()`, the entire circuit body is guaranteed |
 | Maps to `ckpt` opcode | Compiles to a single Impact VM instruction that marks the phase boundary |
