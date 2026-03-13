@@ -146,7 +146,7 @@ ls contract/src/managed/counter/
 
 Expected directories: `compiler/`, `contract/`, `keys/`, `zkir/`
 
-**Note:** First compilation downloads ~500MB of ZK parameters. This may take several minutes depending on network speed.
+**Note:** First compilation downloads ZK parameters (a large download). This may take several minutes depending on network speed.
 
 ## Phase 6 — Summary & Next Steps
 
