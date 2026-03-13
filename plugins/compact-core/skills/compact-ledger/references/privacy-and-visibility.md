@@ -4,7 +4,7 @@ Deep reference for understanding what ledger operations reveal on-chain, how to 
 
 ## Core Rule
 
-Except for `MerkleTree` and `HistoricMerkleTree` insertions, **everything passed as an argument to a ledger operation, and all reads and writes of the ledger itself, are publicly visible on-chain**. What is public is the argument or ledger value itself, not the code that manipulates it.
+**Everything passed as an argument to a ledger operation, and all reads and writes of the ledger itself, are publicly visible on-chain** — including MerkleTree and HistoricMerkleTree insertions. What is public is the argument or ledger value itself, not the code that manipulates it. The privacy benefit of MerkleTree is in **membership proofs**, not in hiding inserted values.
 
 ```compact
 export ledger items: Set<Field>;
@@ -12,7 +12,8 @@ export ledger tree: MerkleTree<10, Field>;
 
 items.insert(value);      // Reveals value on-chain
 items.member(f(x));        // Reveals the *value* of f(x), but not x directly
-tree.insert(value);        // Does NOT reveal value on-chain
+tree.insert(value);        // Also reveals value on-chain (all ledger ops are visible)
+// Privacy comes from membership PROOFS — ZK path proofs hide which leaf is being proven
 ```
 
 ## Visibility Rules by Operation
@@ -72,9 +73,9 @@ Set operations reveal which element is being tested, inserted, or removed. This 
 
 | Operation | What Is Visible On-Chain |
 |-----------|------------------------|
-| `insert(leaf)` | **Nothing about the leaf value** |
+| `insert(leaf)` | The leaf value (like all ledger operations) |
 | `insertHash(hash)` | The hash (but not the preimage) |
-| `insertIndex(item, index)` | **Nothing about the item**; the index is visible |
+| `insertIndex(item, index)` | The item and index |
 | `insertHashIndex(hash, index)` | The hash and index |
 | `insertIndexDefault(index)` | The index |
 | `checkRoot(digest)` | The digest and result |
@@ -82,7 +83,7 @@ Set operations reveal which element is being tested, inserted, or removed. This 
 | `resetToDefault()` | The fact that a reset occurred |
 | `resetHistory()` | The fact that a reset occurred (HistoricMerkleTree only) |
 
-The `insert` and `insertIndex` operations are the only ledger operations in Compact that hide their data argument from on-chain observers. However, someone who guesses the leaf value can verify their guess against the tree.
+The privacy benefit of MerkleTree is not in hiding inserted values, but in **membership proofs**: ZK path proofs (via `merkleTreePathRoot` + `checkRoot`) do not reveal which specific leaf is being proven. This enables anonymous membership verification — proving you are in a set without revealing which member you are.
 
 ## MerkleTree vs Set: Privacy Comparison
 
@@ -121,14 +122,14 @@ export circuit vote(): [] {
 
   // Proves membership without revealing which voter
   assert(eligibleVoters.checkRoot(
-    merkleTreePathRoot<10, Bytes<32>>(path.value)
+    disclose(merkleTreePathRoot<10, Bytes<32>>(path))
   ), "Not eligible");
 
   // Nullifier prevents double voting without revealing identity
   const nullifier = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "vote:nullifier:"), sk
   ]);
-  assert(disclose(!votedNullifiers.member(nullifier)), "Already voted");
+  assert(disclose(!votedNullifiers.member(disclose(nullifier))), "Already voted");
   votedNullifiers.insert(disclose(nullifier));
 }
 ```
@@ -139,9 +140,9 @@ Privacy implications: An observer sees that *someone* voted and sees the nullifi
 
 | Concern | `Set<T>` | `MerkleTree<N, T>` |
 |---------|---------|-------------------|
-| Insert reveals element | Yes | **No** |
+| Insert reveals element | Yes | Yes (all ledger ops are visible) |
 | Membership check reveals element | Yes | **No** (proven via ZK path) |
-| Observer can identify which member acted | Yes | **No** |
+| Observer can identify which member acted | Yes | **No** (ZK proof hides which leaf) |
 | Double-action prevention | Check membership directly | Use commitment/nullifier pattern |
 | Capacity | Unbounded | 2^N leaves |
 | Proof remains valid after new inserts | N/A | No (use `HistoricMerkleTree`) |
@@ -259,14 +260,14 @@ export circuit useToken(): [] {
   // Prove the commitment exists (without revealing which one)
   const authPath = findAuthPath(get_public_key(sk));
   assert(commitments.checkRoot(
-    merkleTreePathRoot<10, Bytes<32>>(authPath)
+    disclose(merkleTreePathRoot<10, Bytes<32>>(authPath))
   ), "Not authorized");
 
   // Prevent reuse with a nullifier
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "nullifier:"), sk
   ]);
-  assert(disclose(!nullifiers.member(nul)), "Already used");
+  assert(disclose(!nullifiers.member(disclose(nul))), "Already used");
   nullifiers.insert(disclose(nul));
 }
 ```
@@ -361,18 +362,18 @@ Key types:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Describes a coin's properties |
-| `QualifiedShieldedCoinInfo` | coin + recipient | Coin with destination |
+| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mtIndex: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
 
 The standard library provides circuits for shielded operations:
 
 | Circuit | Purpose |
 |---------|---------|
-| `sendShielded(coin, recipient)` | Send shielded coin to recipient |
+| `sendShielded(coin: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): ShieldedSendResult` | Send shielded coin to recipient |
 | `receiveShielded(coin)` | Receive a shielded coin |
-| `sendImmediateShielded(coin, recipient)` | Send within same transaction |
+| `sendImmediateShielded(coin: ShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): ShieldedSendResult` | Send within same transaction |
 | `mergeCoin(coin1, coin2)` | Combine two coins |
 | `createZswapOutput(coin, recipient)` | Create a zswap output |
-| `mintShieldedToken(domainSep, amount)` | Mint new shielded tokens |
+| `mintShieldedToken(domainSep: Bytes<32>, value: Uint<64>, nonce: Bytes<32>, recipient: Either<ZswapCoinPublicKey, ContractAddress>): ShieldedCoinInfo` | Mint new shielded tokens |
 | `evolveNonce(index, nonce)` | Deterministically derive new nonce |
 | `shieldedBurnAddress()` | Get address that burns sent coins |
 

@@ -74,7 +74,7 @@ Every context where witness data crosses a public boundary requires `disclose()`
 | Ledger write (direct) | `owner = disclose(pk)` | Value becomes public on-chain |
 | Ledger write (ADT method) | `map.insert(disclose(key), val)` | Arguments to ADT operations are public |
 | Conditional (`if`) | `if (disclose(x == y)) { ... }` | Branch choice reveals information |
-| Conditional (`assert`) | `assert(disclose(x > 0), "msg")` | Assertion result is observable |
+| Conditional (`assert`) | `assert(x > 0, "msg")` | The compiler does not require `disclose()` in assert conditions, but `assert(disclose(...), "msg")` is also valid |
 | Return from exported circuit | `return disclose(value)` | Return value leaves the ZK proof |
 | Cross-contract call | Calling another contract's circuit | Arguments cross trust boundary |
 | Constructor sealed field | `owner = disclose(pk)` in constructor | Sealed values are set publicly |
@@ -115,14 +115,16 @@ The key principle: `disclose()` is only needed at public boundaries. All computa
 
 The standard library includes cryptographic functions that interact with witness taint tracking in specific ways. The critical distinction is between **commit** functions (which clear taint on their input) and **hash** functions (which do not).
 
-| Function | Signature | Clears Witness Taint? | Why |
-|----------|-----------|----------------------|-----|
-| `persistentCommit<T>` | `(value: T, rand: Bytes<32>): Bytes<32>` | **Yes** | Commitment cryptographically hides input; computationally binding and perfectly hiding |
-| `transientCommit<T>` | `(value: T, rand: Field): Field` | **Yes** | Same hiding property, circuit-efficient algorithm |
-| `persistentHash<T>` | `(value: T): Bytes<32>` | **No** | Hash output could theoretically be brute-forced; not considered sufficient to hide witness values |
-| `transientHash<T>` | `(value: T): Field` | **No** | Same reasoning as `persistentHash` |
+| Function | Signature | Brute-Force Resistant? | Clears Witness Taint? | Why |
+|----------|-----------|----------------------|----------------------|-----|
+| `persistentCommit<T>` | `(value: T, rand: Bytes<32>): Bytes<32>` | **Yes** | **Yes** | Random nonce prevents brute-force guessing even for small input spaces |
+| `transientCommit<T>` | `(value: T, rand: Field): Field` | **Yes** | **Yes** | Same property, circuit-efficient algorithm |
+| `persistentHash<T>` | `(value: T): Bytes<32>` | **No** | **No** | One-way (output cannot be reversed), but without a random nonce, small input spaces can be brute-forced |
+| `transientHash<T>` | `(value: T): Field` | **No** | **No** | Same as `persistentHash` |
 
-Important nuance: even though commits clear taint on the *input*, the commitment *result* still needs `disclose()` when written to the ledger. The compiler does not trace the *input* witness through the commitment, but the result is still a value being stored publicly.
+Both hash and commit functions produce one-way outputs that cannot be reverse-computed. The critical difference is that commits add a **random nonce** (blinding factor) that prevents an attacker from brute-forcing the preimage when the input space is small (e.g., a boolean, a small integer, or a known set of values). For high-entropy inputs, a hash also effectively hides the value.
+
+Important nuance: commits clear taint on both the *input* and the *output*. The commitment result does not carry witness taint, so `disclose()` is technically optional when storing it. However, using `disclose()` for explicitness is harmless and can improve readability.
 
 ```compact
 witness getSecret(): Field;
@@ -134,11 +136,11 @@ export circuit storeCommitment(): [] {
   const secretValue = getSecret();
   const randomness = getRandom();
 
-  // Commitment clears witness taint on the INPUT:
+  // Commitment clears witness taint on both INPUT and OUTPUT:
   const commitment = persistentCommit<Field>(secretValue, randomness);
 
-  // But the result still needs disclose when stored:
-  storedCommitment = disclose(commitment);  // disclose() for ledger write, not for witness tracking
+  // disclose() is optional here (taint already cleared), but used for explicitness:
+  storedCommitment = disclose(commitment);
 }
 ```
 

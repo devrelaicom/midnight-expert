@@ -12,7 +12,7 @@ Every Compact program follows a consistent anatomy that maps directly to on-chai
 A Compact contract is organized in this order:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 
 import CompactStandardLibrary;
 
@@ -55,19 +55,21 @@ export circuit do_something(): [] {
 Every contract starts with a version pragma and standard library import:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.20;
 import CompactStandardLibrary;
 ```
 
-The pragma must use bounded ranges without patch versions. The standard library provides `persistentHash`, `persistentCommit`, `pad`, `disclose`, `assert`, and `default`.
+> **Tip:** Run `compact compile --language-version` to check which language version your compiler supports.
+
+The pragma specifies a minimum version without patch numbers. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
 
 ## Data Types Quick Reference
 
 | Category | Types |
 |----------|-------|
 | **Primitives** | `Field`, `Boolean`, `Bytes<N>`, `Uint<N>`, `Uint<0..MAX>` |
-| **Collections** | `Vector<N, T>`, `List<T>`, `Maybe<T>`, `Either<L, R>` |
-| **Ledger ADTs** | `Counter`, `Map<K, V>`, `Set<T>`, `MerkleTree<N, T>`, `HistoricMerkleTree<N, T>` |
+| **Collections** | `Vector<N, T>`, `Maybe<T>`, `Either<L, R>` |
+| **Ledger ADTs** | `Counter`, `Map<K, V>`, `Set<T>`, `List<T>`, `MerkleTree<N, T>`, `HistoricMerkleTree<N, T>` |
 | **Opaque** | `Opaque<"string">`, `Opaque<"Uint8Array">` |
 | **Custom** | `enum`, `struct` |
 
@@ -83,7 +85,7 @@ ledger privateField: Field;                 // Not exported, internal only
 export sealed ledger immutable: Bytes<32>;  // Set once in constructor, immutable
 ```
 
-All ledger operations (reads, writes, ADT method calls) are publicly visible on-chain except for `MerkleTree` and `HistoricMerkleTree` insertions, which hide leaf values.
+All ledger operations (reads, writes, ADT method calls) are publicly visible on-chain except for `MerkleTree` and `HistoricMerkleTree` insertions, which store values using cryptographic hashes.
 
 For ADT operations (Counter, Map, Set, List, MerkleTree), consult `references/ledger-declarations.md`.
 
@@ -98,7 +100,7 @@ export pure circuit compute(x: Field): Field { ... }
 ```
 
 - `export` makes the circuit a transaction entry point
-- `pure` means no ledger state access (helper computation only)
+- `pure` means no ledger state access AND no witness calls (computation from inputs only)
 - Non-exported circuits are internal helpers
 
 For circuit rules, witness declarations, constructors, and pure circuits, consult `references/circuits-and-witnesses.md`.
@@ -164,10 +166,10 @@ export { Maybe, Either }   // Re-export stdlib types
 |---------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.16.0` | `pragma >= 0.16 && <= 0.18` |
+| `pragma >= 0.20.0` | `pragma >= 0.20` |
 | `enum State { ... }` (no export) | `export enum State { ... }` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` |
-| `Cell<Field>` | `Field` (Cell deprecated) |
+| `Cell<Field>` | `Field` (Cell implicit, cannot be written) |
 | `public_key(sk)` | `persistentHash<...>([pad(...), sk])` |
 | `counter.value()` | `counter.read()` |
 | `Choice::rock` | `Choice.rock` |

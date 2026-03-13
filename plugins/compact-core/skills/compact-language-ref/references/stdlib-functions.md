@@ -89,14 +89,14 @@ export ledger storedCommitment: Bytes<32>;
 export circuit commitValue(value: Field): [] {
   const rand = get_nonce();
   const valueBytes = value as Bytes<32>;
-  storedCommitment = disclose(persistentCommit<Vector<2, Bytes<32>>>(
+  storedCommitment = persistentCommit<Vector<2, Bytes<32>>>(
     [valueBytes, pad(32, "myapp:commit:")],
     rand
-  ));
+  );
 }
 ```
 
-Disclosure note: unlike hashing, commitment functions are considered sufficient to protect their input from disclosure (assuming the randomness is sufficiently random). You do not need a `disclose()` wrapper around the committed value itself. However, you still need `disclose()` when storing the commitment result in the public ledger because the result is derived from witness values.
+Disclosure note: unlike hashing, commitment functions are considered sufficient to protect their input from disclosure (assuming the randomness is sufficiently random). You do not need a `disclose()` wrapper around the committed value itself. You also do not need `disclose()` when storing the commitment result in the public ledger. The commitment is considered sufficient protection for its inputs and outputs.
 
 ### transientCommit
 
@@ -205,15 +205,15 @@ export circuit publish(value: Field): [] {
 }
 ```
 
-When using commitment functions (`persistentCommit`, `transientCommit`), the commitment itself is considered sufficient to protect the input from disclosure. You do not need `disclose()` around the committed value, but you still need it if you store the commitment result in the ledger and it was derived from witness data.
+When using commitment functions (`persistentCommit`, `transientCommit`), the commitment itself is considered sufficient to protect both its inputs and the commitment result from disclosure. You do not need `disclose()` around the committed value or when storing the commitment result in the ledger.
 
 ### assert
 
 ```compact
-assert(condition: Boolean, message?: string): []
+assert(condition: Boolean, message: string): []
 ```
 
-Aborts the transaction (fails the circuit proof) if the condition evaluates to false. The message is optional but recommended for debugging.
+Aborts the transaction (fails the circuit proof) if the condition evaluates to false. The message is required.
 
 ```compact
 export circuit withdraw(amount: Uint<64>): [] {
@@ -228,10 +228,10 @@ Assertions are the only error-handling mechanism in Compact. There are no except
 ### default
 
 ```compact
-default<T>(): T
+default<T>: T
 ```
 
-Returns the default value for any Compact type. Useful for initializing values and resetting state.
+Returns the default value for any Compact type. `default` is a keyword expression, not a function call -- no parentheses. Useful for initializing values and resetting state.
 
 | Type | Default |
 |------|---------|
@@ -244,9 +244,9 @@ Returns the default value for any Compact type. Useful for initializing values a
 | `Counter` | Counter at 0 |
 
 ```compact
-const emptyHash = default<Bytes<32>>();
-const zeroBal = default<Uint<64>>();
-const initialState = default<GameState>();   // first variant
+const emptyHash = default<Bytes<32>>;
+const zeroBal = default<Uint<64>>;
+const initialState = default<GameState>;   // first variant
 ```
 
 ## When to Use Persistent vs Transient

@@ -38,7 +38,7 @@ export type Ledger = {
   readonly owner: Uint8Array;
 };
 
-export declare function ledger(state: __compactRuntime.ContractState): Ledger;
+export declare function ledger(state: __compactRuntime.StateValue): Ledger;
 ```
 
 ## The Contract Class
@@ -76,7 +76,7 @@ The Contract class exposes three circuit interfaces:
 |-----------|----------|-------------------|-----------------|
 | `circuits` | All circuits | Yes (for impure) | Impure: yes, Pure: no |
 | `impureCircuits` | Only circuits that touch state/witnesses | Yes | Yes |
-| `pureCircuits` | Only `pure circuit` declarations | **No** | **No** |
+| `pureCircuits` (module-level export) | Only `pure circuit` declarations | **No** | **No** |
 
 ### impureCircuits
 
@@ -97,7 +97,7 @@ const result = await deployedContract.callTx.increment();
 
 ### pureCircuits
 
-Circuits marked `pure` in Compact run locally without generating proofs. Call them directly on the contract instance:
+Circuits marked `pure` in Compact run locally without generating proofs. `pureCircuits` is a **module-level const export** from the generated contract package, not a property of the Contract class:
 
 ```compact
 // Compact
@@ -107,8 +107,9 @@ export pure circuit computeHash(data: Bytes<32>): Bytes<32> {
 ```
 
 ```typescript
-// TypeScript — synchronous, local computation
-const hash: Uint8Array = contractInstance.pureCircuits.computeHash(myData);
+// TypeScript — module-level import, synchronous, local computation
+import { pureCircuits } from "./managed/mycontract/contract/index.js";
+const hash: Uint8Array = pureCircuits.computeHash(myData);
 ```
 
 Pure circuits are useful for:
@@ -153,16 +154,20 @@ if (contractState != null) {
 When deploying or joining a contract, you provide a string identifier for the private state store. This lets the runtime persist and retrieve private state across sessions:
 
 ```typescript
+// Wrap the Contract instance in a CompiledContract
+import { CompiledContract } from "@midnight-ntwrk/midnight-js-contracts";
+const compiledContract = new CompiledContract(contractInstance);
+
 // Deploying
 const deployed = await deployContract(providers, {
-  contract: contractInstance,
+  compiledContract: compiledContract,
   privateStateId: 'myContractPrivateState',
   initialPrivateState: createMyPrivateState(secretKey),
 });
 
 // Joining an existing deployment
 const found = await findDeployedContract(providers, {
-  contract: contractInstance,
+  compiledContract: compiledContract,
   contractAddress: address,
   privateStateId: 'myContractPrivateState',
   initialPrivateState: createMyPrivateState(secretKey),

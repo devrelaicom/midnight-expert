@@ -1,0 +1,306 @@
+// ============================================================================
+// ATOMIC SWAP — TRANSACTION MERGING AND ESCROW
+// ============================================================================
+//
+// This contract demonstrates the contract-side logic of an atomic swap,
+// using Midnight's transaction merging model.
+//
+// TRANSACTION MERGING:
+//   Zswap permits atomic swaps by allowing two transactions to be merged
+//   into a single composite transaction. The constraint: at least one of
+//   the two transactions must have an empty contract calls section. The
+//   merged transaction has the combined effect of both inputs.
+//
+//   In practice, one party creates a Zswap offer (a "half-transaction"
+//   containing inputs and outputs but no contract calls), and the other
+//   party creates a transaction with contract calls. These are merged
+//   off-chain before submission to the ledger.
+//
+// PEDERSEN COMMITMENTS:
+//   Midnight uses sparse multi-value Pedersen commitments for transaction
+//   integrity. Each input and output carries a commitment that is
+//   homomorphically summed across the merged transaction. Only the
+//   creators of the individual components know the opening randomnesses,
+//   ensuring funds are spent exactly as originally intended. This binding
+//   extends to contract calls via a Schnorr proof restricting the
+//   contract call contribution to carry no value vector.
+//
+// PRACTICAL USE CASE:
+//   Alice wants to swap Token A for Bob's Token B. This contract records
+//   Alice's offer on-chain (what she provides and what she wants). Bob
+//   inspects the offer and, if agreeable, calls acceptOffer(). The actual
+//   token movements happen at the Zswap layer via transaction merging —
+//   this contract tracks the escrow state and coordinates the agreement.
+//
+// NOTE: The token transfers themselves occur through Zswap offers merged
+// at the transaction level. This contract manages the coordination logic:
+// who is offering what, what they want in return, and whether the swap
+// has been completed or cancelled.
+//
+// ============================================================================
+
+pragma language_version >= 0.21;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+// CUSTOM TYPES
+// ============================================================================
+
+// EscrowStatus tracks the lifecycle of a swap offer.
+// Variants map to Field values (0, 1, 2, 3) on-chain.
+//   empty     — no active offer (initial state)
+//   offered   — an offer has been posted, awaiting a counterparty
+//   completed — the swap has been accepted and finalized
+//   cancelled — the offerer withdrew the offer before acceptance
+export enum EscrowStatus { empty, offered, completed, cancelled }
+
+// ============================================================================
+// LEDGER STATE
+// ============================================================================
+
+// The current status of the escrow. Only one offer is active at a time.
+// This simplifies the example — a production contract might use a Map of
+// offer IDs to support multiple concurrent swaps.
+export ledger escrowState: EscrowStatus;
+
+// What the offerer is providing. The key is a token color (a 32-byte
+// identifier for the asset type), and the value is the amount offered.
+// In Midnight's Zswap model, each token type is identified by a color
+// derived from hashing the minting contract address and a domain separator.
+export ledger offered: Map<Bytes<32>, Uint<64>>;
+
+// What the offerer wants in return. Same structure: token color to amount.
+// The counterparty must provide assets matching these entries.
+export ledger requested: Map<Bytes<32>, Uint<64>>;
+
+// Monotonic counter of all swap operations (offers created, accepted, or
+// cancelled). Incremented in the guaranteed phase so progress tracking
+// is never lost, even if fallible state updates fail.
+export ledger swapCount: Counter;
+
+// The public key of the party who created the current offer. Stored so
+// that only the original offerer can cancel, and so the acceptor can
+// verify the counterparty.
+export ledger offererKey: Bytes<32>;
+
+// ============================================================================
+// WITNESS DECLARATIONS
+// ============================================================================
+// Witnesses run off-chain on the prover's machine. They supply private
+// data to circuits. Implementation lives in TypeScript, not Compact.
+
+// Returns the caller's secret key for identity derivation.
+witness localSecretKey(): Bytes<32>;
+
+// ============================================================================
+// HELPER CIRCUITS
+// ============================================================================
+
+// Derive a public key from a secret key using persistentHash.
+// public_key() is NOT a builtin — this is the standard pattern.
+pure circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "atomicswap:pk:"),
+    sk
+  ]);
+}
+
+// ============================================================================
+// CIRCUIT: createOffer — ONE SIDE OF THE SWAP
+// ============================================================================
+//
+// The offerer calls this to record what they are providing and what they
+// want in return. This is the on-chain escrow record. The actual token
+// lockup happens at the Zswap layer when the offerer constructs their
+// half of the merged transaction.
+//
+// After calling createOffer, the offerer constructs a Zswap offer (a
+// transaction with the token outputs but no contract calls). A potential
+// counterparty can then merge their own transaction with the offerer's
+// Zswap offer, atomically executing the swap.
+//
+// GUARANTEED phase: increment the swap counter and set the escrow state.
+// All state changes here are permanent — if the fallible phase fails,
+// the counter and status still persist.
+
+export circuit createOffer(
+  offerColor: Bytes<32>,
+  offerAmount: Uint<64>,
+  requestColor: Bytes<32>,
+  requestAmount: Uint<64>
+): [] {
+  // --- GUARANTEED PHASE ---
+
+  // Verify no offer is currently active. Only one swap at a time.
+  assert(escrowState == EscrowStatus.empty, "An offer is already active");
+
+  // Record the offerer's identity for cancellation authorization.
+  const sk = localSecretKey();
+  const caller = publicKey(sk);
+  offererKey = disclose(caller);
+
+  // Increment the swap counter. This is in the guaranteed phase so
+  // the count advances regardless of fallible-phase outcomes.
+  swapCount.increment(1);
+
+  // Transition the escrow to the offered state.
+  escrowState = EscrowStatus.offered;
+
+  kernel.checkpoint();
+
+  // --- FALLIBLE PHASE ---
+
+  // Record what the offerer is providing and what they want.
+  // Map operations are in the fallible phase because they may conflict
+  // with concurrent transactions modifying the same keys.
+  offered.insert(disclose(offerColor), disclose(offerAmount));
+  requested.insert(disclose(requestColor), disclose(requestAmount));
+}
+
+// ============================================================================
+// CIRCUIT: acceptOffer — COMPLETING THE SWAP VIA TRANSACTION MERGING
+// ============================================================================
+//
+// The counterparty calls this to accept the current offer. This circuit
+// verifies the escrow state and marks the swap as completed.
+//
+// TRANSACTION MERGING CONTEXT:
+//   The counterparty's transaction (containing this contract call) is
+//   merged with the offerer's Zswap offer (containing token movements
+//   but no contract calls). The merged transaction atomically:
+//     1. Transfers the offerer's tokens to the counterparty (Zswap layer)
+//     2. Transfers the counterparty's tokens to the offerer (Zswap layer)
+//     3. Updates this contract's escrow state to completed (contract call)
+//
+//   Because Pedersen commitments are homomorphically summed across the
+//   merged transaction, the ledger verifies that the total value balances.
+//   Neither party can alter the other's contribution after merging.
+//
+// The actual token matching and balance verification happens at the Zswap
+// protocol level, not within this contract. This contract only tracks
+// the coordination state.
+
+export circuit acceptOffer(): [] {
+  // --- GUARANTEED PHASE ---
+
+  // The offer must be in the "offered" state to be accepted.
+  assert(escrowState == EscrowStatus.offered, "No active offer to accept");
+
+  // Increment the swap counter to track the acceptance event.
+  swapCount.increment(1);
+
+  // Mark the escrow as completed. Once completed, the offer cannot be
+  // cancelled or accepted again.
+  escrowState = EscrowStatus.completed;
+
+  kernel.checkpoint();
+
+  // --- FALLIBLE PHASE ---
+
+  // Clear the offer and request maps now that the swap is finalized.
+  // This resets the contract for potential future use.
+  offered.resetToDefault();
+  requested.resetToDefault();
+}
+
+// ============================================================================
+// CIRCUIT: cancelOffer — OFFERER WITHDRAWS BEFORE ACCEPTANCE
+// ============================================================================
+//
+// Only the original offerer can cancel. This prevents a counterparty
+// from blocking swaps by cancelling offers they did not create.
+//
+// After cancellation, the offerer's Zswap offer (the half-transaction
+// with token outputs) is no longer valid for merging because the
+// on-chain escrow state no longer matches. The offerer reclaims their
+// tokens by simply not submitting the Zswap offer to the network.
+
+export circuit cancelOffer(): [] {
+  // --- GUARANTEED PHASE ---
+
+  // The offer must be active to cancel.
+  assert(escrowState == EscrowStatus.offered, "No active offer to cancel");
+
+  // Verify the caller is the original offerer.
+  const sk = localSecretKey();
+  const caller = publicKey(sk);
+  assert(disclose(caller == offererKey), "Only the offerer can cancel");
+
+  // Track the cancellation event.
+  swapCount.increment(1);
+
+  // Transition to cancelled state.
+  escrowState = EscrowStatus.cancelled;
+
+  kernel.checkpoint();
+
+  // --- FALLIBLE PHASE ---
+
+  // Clear the offer and request maps.
+  offered.resetToDefault();
+  requested.resetToDefault();
+}
+
+// ============================================================================
+// CIRCUIT: resetEscrow — PREPARE FOR A NEW OFFER
+// ============================================================================
+//
+// After a swap completes or is cancelled, this resets the escrow to the
+// empty state so a new offer can be created. Separated from accept/cancel
+// to keep those circuits focused on their primary responsibility.
+
+export circuit resetEscrow(): [] {
+  // Only allow reset from terminal states (completed or cancelled).
+  // An active offer cannot be reset — it must be cancelled first.
+  assert(
+    escrowState == EscrowStatus.completed,
+    "Escrow must be completed or cancelled to reset"
+  );
+
+  escrowState = EscrowStatus.empty;
+  offererKey = pad(32, "");
+}
+
+// ============================================================================
+// CIRCUIT: resetFromCancelled — RESET AFTER CANCELLATION
+// ============================================================================
+//
+// Separate reset for the cancelled state. Compact does not support
+// logical OR in assertions, so we use separate circuits for each
+// terminal state.
+
+export circuit resetFromCancelled(): [] {
+  assert(
+    escrowState == EscrowStatus.cancelled,
+    "Escrow must be cancelled to reset"
+  );
+
+  escrowState = EscrowStatus.empty;
+  offererKey = pad(32, "");
+}
+
+// ============================================================================
+// PRIVACY ANALYSIS
+// ============================================================================
+//
+// What goes ON-CHAIN (public ledger state):
+//   - escrowState: the current status of the escrow (enum value)
+//   - offered/requested: token colors and amounts (Map entries)
+//   - swapCount: total number of swap operations
+//   - offererKey: the offerer's public key
+//
+// What stays PRIVATE (never leaves the prover):
+//   - The caller's secret key (used only for publicKey derivation)
+//   - Witness computations
+//
+// TRANSACTION MERGING PRIVACY:
+//   The merged transaction reveals only the net imbalance for each token
+//   type — not the individual inputs and outputs. Sparse Pedersen
+//   commitments ensure that the specific amounts and asset types within
+//   each party's contribution remain confidential. Only the parties who
+//   created the individual transaction components know their opening
+//   randomnesses, preventing third parties from decomposing the merged
+//   transaction into its original parts.
+//
+// ============================================================================

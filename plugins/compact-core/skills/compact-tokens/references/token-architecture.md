@@ -57,7 +57,7 @@ If only a portion of NIGHT is spent, the change UTXO backs a new DUST UTXO that 
 On the Midnight testnet (Preprod):
 
 1. Request **tNIGHT** from the faucet (1000 tNIGHT per request)
-2. **Delegate** tNIGHT via your wallet to generate **tDUST**
+2. **Register** tNIGHT UTXOs via your wallet to generate **tDUST**
 3. Wait for tDUST to accrue (typically 1-2 minutes for initial generation)
 4. Deploy and interact with contracts using tDUST for fees
 

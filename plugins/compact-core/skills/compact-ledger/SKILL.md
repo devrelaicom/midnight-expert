@@ -24,7 +24,7 @@ sealed ledger secret: Field;                 // Internal, set once in constructo
 | `sealed` | Can only be set during constructor (directly or via helper circuits called by constructor) |
 | `export sealed` | Both: publicly readable and immutable after deployment |
 
-Valid ledger types: any Compact type (`Field`, `Boolean`, `Bytes<N>`, `Uint<N>`, enums, structs), `Counter`, `Map<K, V>`, `Set<T>`, `List<T>`, `MerkleTree<N, T>`, `HistoricMerkleTree<N, T>`, and nested ADTs like `Map<K, Map<K2, V>>`.
+Valid ledger types: any Compact type (`Field`, `Boolean`, `Bytes<N>`, `Uint<N>`, enums, structs), `Counter`, `Map<K, V>`, `Set<T>`, `List<T>`, `MerkleTree<N, T>`, `HistoricMerkleTree<N, T>`, and nested ADTs like `Map<K, Map<K2, V>>`. **Note:** Nested ADTs are only permitted as `Map` values — e.g., `Map<K, Set<T>>` or `Map<K, List<T>>` are valid, but `Set<Map<K,V>>`, `List<Map<K,V>>`, etc. are invalid.
 
 For exhaustive syntax rules and modifier details, see `references/types-and-operations.md`.
 
@@ -36,8 +36,8 @@ For exhaustive syntax rules and modifier details, see `references/types-and-oper
 | `Map<K, V>` | Key-value store | `insert`, `lookup`, `member`, `remove` | All ops visible |
 | `Set<T>` | Unique elements | `insert`, `member`, `remove` | All ops visible |
 | `List<T>` | Ordered sequence | `pushFront`, `popFront`, `head` | All ops visible |
-| `MerkleTree<N, T>` | Privacy-preserving set | `insert` (hidden), `checkRoot` | **Insert hides leaf** |
-| `HistoricMerkleTree<N, T>` | MerkleTree with root history | Same + `resetHistory` | **Insert hides leaf** |
+| `MerkleTree<N, T>` | Privacy-preserving set | `insert`, `checkRoot` | All ops visible; **privacy via membership proofs** |
+| `HistoricMerkleTree<N, T>` | MerkleTree with root history | Same + `resetHistory` | All ops visible; **privacy via membership proofs** |
 
 For complete operations tables with parameters, return types, and edge cases, see `references/types-and-operations.md`.
 
@@ -68,9 +68,9 @@ export ledger count: Counter;
 witness local_secret_key(): Bytes<32>;
 
 constructor() {
-  owner = disclose(get_public_key(local_secret_key()));
+  owner = disclose(public_key(local_secret_key()));
   phase = Phase.registration;
-  count.increment(0);
+  // count starts at 0 by default — no initialization needed
 }
 ```
 
@@ -85,8 +85,8 @@ For constructor patterns, pitfalls, and multi-field initialization strategies, s
 
 ## On-Chain Visibility Summary
 
-All ledger operations are publicly visible on-chain **except**:
-- `MerkleTree.insert()` and `HistoricMerkleTree.insert()` -- these hide the inserted leaf value
+All ledger operations are publicly visible on-chain, including MerkleTree inserts.
+The privacy benefit of MerkleTree is in **membership proofs** -- ZK path proofs do not reveal which specific leaf is being proven.
 
 | Operation Type | Visible On-Chain |
 |---------------|-----------------|
@@ -95,7 +95,7 @@ All ledger operations are publicly visible on-chain **except**:
 | Map insert/lookup/member/remove | Yes -- key and value visible |
 | Set insert/member/remove | Yes -- element visible |
 | List pushFront/popFront | Yes -- element visible |
-| MerkleTree insert | **No** -- leaf value hidden |
+| MerkleTree insert | Yes -- leaf value visible |
 | MerkleTree checkRoot | Yes -- digest visible |
 
 For detailed per-operation visibility analysis, MerkleTree vs Set privacy comparison, disclosure rules, and privacy design patterns, see `references/privacy-and-visibility.md`.
@@ -104,9 +104,9 @@ For detailed per-operation visibility analysis, MerkleTree vs Set privacy compar
 
 The `Kernel` type provides access to contract metadata and token operations:
 
-```compact
-ledger kernel: Kernel;
+The `kernel` field is predefined by `import CompactStandardLibrary;` — do not declare it manually. Use it directly:
 
+```compact
 export circuit getSelf(): ContractAddress {
   return kernel.self();
 }
@@ -125,7 +125,7 @@ For the full Kernel API including zswap claim operations, see `references/types-
 
 | Wrong | Correct | Why |
 |-------|---------|-----|
-| `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax is deprecated |
+| `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax was removed in Compact 0.10.1 — causes a parse error |
 | `counter.value()` | `counter.read()` | `.value()` does not exist |
 | `map.lookup(key)` without member check | Check `map.member(key)` first | `lookup` on missing key returns default, not error |
 | `sealed ledger export x: T` | `export sealed ledger x: T` | `export` must come before `sealed` |

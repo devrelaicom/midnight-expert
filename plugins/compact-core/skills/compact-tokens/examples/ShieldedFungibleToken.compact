@@ -30,10 +30,15 @@
 // need to import this contract, not the individual library modules.
 // ============================================================================
 
+// NOTE: This is an excerpt from the OpenZeppelin midnight-apps project (cited above).
+// The ./openzeppelin/ShieldedERC20 import references the full OZ project structure,
+// but ShieldedERC20 is actually defined inline later in this file (the import is redundant).
+// This file cannot be compiled standalone — see the compact-examples openzeppelin skill.
+
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/ShieldedFungibleToken.compact)
 
-pragma language_version >= 0.20.0;
+pragma language_version >= 0.21;
 
 import
   { ShieldedCoinInfo, ShieldedSendResult, ZswapCoinPublicKey, ContractAddress, Either }
@@ -131,7 +136,7 @@ export circuit burn(coin: ShieldedCoinInfo, amount: Uint<128>): ShieldedSendResu
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/openzeppelin/ShieldedERC20.compact)
 
-pragma language_version >= 0.20.0;
+pragma language_version >= 0.21;
 
 /**
  * @module ShieldedToken (archived until further notice, DO NOT USE IN PRODUCTION)
@@ -210,8 +215,10 @@ module ShieldedERC20 { // DO NOT USE IN PRODUCTION!
   // decremented, causing it to overstate actual circulating supply.
   export ledger _totalSupply: Uint<128>;
 
-  // `sealed` means the value is stored encrypted on-chain; only the contract
-  // (in circuit execution) can read it. Off-chain observers cannot see the domain.
+  // `sealed` means this field is write-once: it can only be set during contract
+  // initialization (constructor). It CANNOT be modified after deployment.
+  // Note: sealed fields are stored in the PUBLIC ledger and are readable by
+  // anyone (including off-chain observers and TypeScript callers via ledger()).
   export sealed ledger _domain: Bytes<32>;
   export sealed ledger _name: Opaque<"string">;
   export sealed ledger _symbol: Opaque<"string">;
@@ -226,9 +233,9 @@ module ShieldedERC20 { // DO NOT USE IN PRODUCTION!
  */
   // Why disclose() is used here: parameters arrive as shielded (private) values
   // in the circuit. disclose() transitions them to public so they can be written
-  // to ledger state. For sealed ledger fields (_domain, _name, etc.) the value
-  // stays encrypted on-chain, but disclose() is still required by the compiler
-  // to prove the value is well-formed before storing it.
+  // to ledger state. For sealed ledger fields (_domain, _name, etc.), disclose()
+  // is required by the compiler to prove the value is well-formed before storing
+  // it. Note: these fields are stored in the public ledger, not encrypted.
   export circuit initialize(
  initNonce: Bytes<32>,
  name_: Opaque<"string">,

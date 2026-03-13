@@ -40,7 +40,7 @@ This is the single authoritative index of everything `import CompactStandardLibr
 | `map.has(key)` | Does not exist | `map.member(key)` |
 | `map.set(key, value)` | Does not exist | `map.insert(key, value)` |
 | `map.delete(key)` | Does not exist | `map.remove(key)` |
-| `CurvePoint` (old name) | Deprecated | `NativePoint` (current name, post-camelCase migration) |
+| `CurvePoint` (old name) | Deprecated | `NativePoint` (current name, renamed from CurvePoint in 0.20.28) |
 
 ## Complete Export Inventory
 
@@ -51,11 +51,11 @@ Every export from `import CompactStandardLibrary;`, organized by category. Use t
 | Name | Kind | Brief Description | Reference Location |
 |------|------|-------------------|--------------------|
 | `Maybe<T>` | type | Optional value container | `references/types-and-constructors.md` |
-| `Either<L, R>` | type | Disjoint union (sum type) | `references/types-and-constructors.md` |
+| `Either<A, B>` | type | Disjoint union (sum type) | `references/types-and-constructors.md` |
 | `NativePoint` | type | Elliptic curve point | `references/types-and-constructors.md` |
 | `MerkleTreeDigest` | type | Merkle root hash wrapper | `references/types-and-constructors.md` |
 | `MerkleTreePathEntry` | type | Sibling + direction in path | `references/types-and-constructors.md` |
-| `MerkleTreePath<N, T>` | type | Path from leaf to root | `references/types-and-constructors.md` |
+| `MerkleTreePath<#n, T>` | type | Path from leaf to root | `references/types-and-constructors.md` |
 | `ContractAddress` | type | Contract address wrapper | `references/types-and-constructors.md` |
 | `ZswapCoinPublicKey` | type | Coin public key for shielded ops | `references/types-and-constructors.md` |
 | `UserAddress` | type | User address wrapper | `references/types-and-constructors.md` |
@@ -91,16 +91,16 @@ Every export from `import CompactStandardLibrary;`, organized by category. Use t
 | `ecMul` | circuit | Scalar multiply NativePoint | `references/cryptographic-functions.md` |
 | `ecMulGenerator` | circuit | Scalar multiply generator | `references/cryptographic-functions.md` |
 | `hashToCurve<T>` | circuit | Map value to NativePoint | `references/cryptographic-functions.md` |
-| `nativePointX` | circuit | Get X coordinate of NativePoint | `references/cryptographic-functions.md` |
-| `nativePointY` | circuit | Get Y coordinate of NativePoint | `references/cryptographic-functions.md` |
-| `constructNativePoint` | circuit | Construct NativePoint from X, Y | `references/cryptographic-functions.md` |
+| `nativePointX` | circuit | Get X coordinate of NativePoint (deprecated: use `jubjubPointX` in v0.30.0+) | `references/cryptographic-functions.md` |
+| `nativePointY` | circuit | Get Y coordinate of NativePoint (deprecated: use `jubjubPointY` in v0.30.0+) | `references/cryptographic-functions.md` |
+| `constructNativePoint` | circuit | Construct NativePoint from X, Y (deprecated: use `constructJubjubPoint` in v0.30.0+) | `references/cryptographic-functions.md` |
 
 ### Merkle Tree Path Circuits
 
 | Name | Kind | Brief Description | Reference Location |
 |------|------|-------------------|--------------------|
-| `merkleTreePathRoot<N, T>` | circuit | Compute root from leaf + path | `references/cryptographic-functions.md` |
-| `merkleTreePathRootNoLeafHash<N>` | circuit | Compute root from pre-hashed leaf | `references/cryptographic-functions.md` |
+| `merkleTreePathRoot<#n, T>` | circuit | Compute root from leaf + path | `references/cryptographic-functions.md` |
+| `merkleTreePathRootNoLeafHash<#n>` | circuit | Compute root from pre-hashed leaf | `references/cryptographic-functions.md` |
 
 ### Utility Builtins
 
@@ -163,12 +163,12 @@ Types provided by the standard library. All are available after `import CompactS
 
 | Type | Generic Parameters | Fields Summary | Default Value |
 |------|--------------------|----------------|---------------|
-| `Maybe<T>` | `T` -- any type | `isSome: Boolean`, `value: T` | `{ isSome: false, value: default<T> }` |
-| `Either<L, R>` | `L`, `R` -- any types | `isLeft: Boolean`, `left: L`, `right: R` | `{ isLeft: true, left: default<L>, right: default<R> }` |
+| `Maybe<T>` | `T` -- any type | `is_some: Boolean`, `value: T` | `{ is_some: false, value: default<T> }` |
+| `Either<A, B>` | `A`, `B` -- any types | `is_left: Boolean`, `left: A`, `right: B` | `{ is_left: false, left: default<A>, right: default<B> }` (right variant, based on struct defaults) |
 | `NativePoint` | none | `x: Field`, `y: Field` | `{ x: 0, y: 0 }` |
 | `MerkleTreeDigest` | none | `field: Field` | `{ field: 0 }` |
 | `MerkleTreePathEntry` | none | `sibling: MerkleTreeDigest`, `goesLeft: Boolean` | `{ sibling: { field: 0 }, goesLeft: false }` |
-| `MerkleTreePath<N, T>` | `#N` -- depth, `T` -- leaf type | `leaf: T`, `path: Vector<N, MerkleTreePathEntry>` | Default leaf + default path |
+| `MerkleTreePath<#N, T>` | `#N` -- depth, `T` -- leaf type | `leaf: T`, `path: Vector<#N, MerkleTreePathEntry>` | Default leaf + default path |
 | `ContractAddress` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `ZswapCoinPublicKey` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `UserAddress` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
@@ -193,7 +193,7 @@ circuit right<A, B>(value: B): Either<A, B>;
 
 ```compact
 const found = some<Field>(42);
-if (found.isSome) {
+if (found.is_some) {
   const v = found.value;  // 42
 }
 
@@ -229,13 +229,13 @@ All EC operations use `NativePoint`, not the deprecated `CurvePoint`.
 | `ecMul` | `(a: NativePoint, b: Field): NativePoint` | Scalar multiplication |
 | `ecMulGenerator` | `(b: Field): NativePoint` | Multiply generator by scalar |
 | `hashToCurve<T>` | `(value: T): NativePoint` | Map arbitrary value to curve point |
-| `nativePointX` | `(p: NativePoint): Field` | Get X coordinate |
-| `nativePointY` | `(p: NativePoint): Field` | Get Y coordinate |
-| `constructNativePoint` | `(x: Field, y: Field): NativePoint` | Construct point from coordinates |
+| `nativePointX` | `(p: NativePoint): Field` | Get X coordinate (deprecated: use `jubjubPointX` in v0.30.0+) |
+| `nativePointY` | `(p: NativePoint): Field` | Get Y coordinate (deprecated: use `jubjubPointY` in v0.30.0+) |
+| `constructNativePoint` | `(x: Field, y: Field): NativePoint` | Construct point from coordinates (deprecated: use `constructJubjubPoint` in v0.30.0+) |
 
 Use cases: Pedersen commitments, key derivation building blocks, custom signature schemes. For example, Pedersen blinding: `ecAdd(ecMulGenerator(rc), ecMul(colorBase, value))`.
 
-> **Verification:** EC functions operate on `NativePoint`, not the deprecated `CurvePoint`. The type was renamed in the camelCase migration. Always verify with `midnight-compile-contract` when using EC operations, as these are newer additions. See `references/cryptographic-functions.md` for full documentation and examples.
+> **Verification:** EC functions operate on `NativePoint`, not the deprecated `CurvePoint`. The type was renamed from CurvePoint in release 0.20.28.0. Always verify with `midnight-compile-contract` when using EC operations, as these are newer additions. See `references/cryptographic-functions.md` for full documentation and examples.
 
 ## Merkle Tree Path Functions
 
@@ -254,10 +254,10 @@ For full documentation with off-chain path generation patterns and HistoricMerkl
 |----------|-----------|---------|
 | `pad` | `pad(length, value): Bytes<N>` | UTF-8 string to fixed-size bytes (both args must be literals) |
 | `disclose` | `disclose(value: T): T` | Mark witness-derived value as publicly visible |
-| `assert` | `assert(condition: Boolean, message?: string): []` | Abort transaction if false |
-| `default<T>` | `default<T>(): T` | Default value for any type |
+| `assert` | `assert(condition: Boolean, message: string): []` | Abort transaction if false |
+| `default<T>` | `default<T>` | Default value for any type |
 
-`disclose` is required whenever a witness-derived value flows to a ledger operation, controls a conditional, or is returned from an exported circuit. `pad` requires both arguments to be compile-time literals. `assert` is the only error-handling mechanism in Compact.
+`disclose` is required whenever a witness-derived value flows to a ledger operation, is used in a cross-contract call, or is returned from an exported circuit. `pad` requires both arguments to be compile-time literals. `assert` is the only error-handling mechanism in Compact.
 
 For deep documentation on each function including examples and disclosure rules, see `compact-language-ref/references/stdlib-functions.md`.
 
@@ -315,7 +315,7 @@ Unshielded token functions:
 | `Map<K, V>` | `insert`, `lookup`, `member`, `remove`, `size` | All ops visible on-chain |
 | `Set<T>` | `insert`, `member`, `remove`, `size` | All ops visible on-chain |
 | `List<T>` | `pushFront`, `popFront`, `head`, `length` | Ordered sequence |
-| `MerkleTree<N, T>` | `insert`, `checkRoot`, `insertHash`, `isFull` | Insert hides leaf value |
+| `MerkleTree<N, T>` | `insert`, `checkRoot`, `insertHash`, `isFull` | Insert is public; privacy via membership proofs |
 | `HistoricMerkleTree<N, T>` | Same + `resetHistory` | Accepts proofs against past roots |
 
 > For complete ADT operation tables, nested composition, and state design patterns, see the `compact-ledger` skill.
@@ -334,13 +334,13 @@ Unshielded token functions:
 | `map.has(key)` | `map.member(key)` | `.has()` does not exist on Map |
 | `map.set(key, value)` | `map.insert(key, value)` | `.set()` does not exist on Map |
 | `map.delete(key)` | `map.remove(key)` | `.delete()` does not exist on Map |
-| `CurvePoint` | `NativePoint` | `CurvePoint` was renamed in the camelCase migration |
+| `CurvePoint` | `NativePoint` | `CurvePoint` was renamed to `NativePoint` in release 0.20.28.0 (part of broader release with unshielded token support) |
 | `CoinInfo` | `ShieldedCoinInfo` | `CoinInfo` was renamed to `ShieldedCoinInfo` |
 | `SendResult` | `ShieldedSendResult` | `SendResult` was renamed to `ShieldedSendResult` |
 | `persistentHash(value)` (no generic) | `persistentHash<T>(value)` | Generic parameter is required |
 | `some(42)` (no generic) | `some<Field>(42)` | Generic parameter is required for constructor circuits |
 | `circuit fn(): Void` | `circuit fn(): []` | Return type is `[]` (empty tuple), not `Void` |
-| `merkleTreePathRoot(path)` (no generic) | `merkleTreePathRoot<N, T>(path)` | Requires depth and leaf type generics |
+| `merkleTreePathRoot(path)` (no generic) | `merkleTreePathRoot<#n, T>(path)` | Requires depth and leaf type generics |
 
 ## Reference Routing
 

@@ -49,7 +49,7 @@ circuit shadowing(): Field {
   // const answer = 12;  // rejected -- duplicate in the same block
   {
     const answer = 12;
-    assert answer != 42, "shadowing didn't work!";
+    assert(answer != 42, "shadowing didn't work!");
   }
   return answer;  // returns 42
 }
@@ -110,7 +110,7 @@ An `if` without an `else` is allowed when the circuit returns `[]`:
 export ledger count: Counter;
 
 export circuit maybeIncrement(flag: Boolean): [] {
-  if (flag) {
+  if (disclose(flag)) {
     count.increment(1);
   }
 }

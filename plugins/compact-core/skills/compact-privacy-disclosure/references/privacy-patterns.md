@@ -12,12 +12,12 @@ A commitment hides a value behind cryptographic randomness while binding the
 committer to that value. Two operations are available: `persistentCommit` (with
 a blinding factor) and `persistentHash` (without).
 
-| Function | Has Blinding Factor | Hides Input from Disclosure | Use Case |
-|----------|--------------------|-----------------------------|----------|
-| `persistentCommit<T>(value, rand)` | Yes (`Bytes<32>`) | Yes (clears witness taint) | Hide a value you will reveal later |
-| `persistentHash<T>(value)` | No | No (witness taint preserved) | Derive a binding fingerprint (public keys, nullifiers) |
-| `transientCommit<T>(value, rand)` | Yes (`Field`) | Yes (clears witness taint) | In-circuit intermediates only; not ledger-safe |
-| `transientHash<T>(value)` | No | No (witness taint preserved) | In-circuit consistency checks only |
+| Function | Has Blinding Factor | Clears Witness Taint | Brute-Force Resistant | Use Case |
+|----------|--------------------|-----------------------|----------------------|----------|
+| `persistentCommit<T>(value, rand)` | Yes (`Bytes<32>`) | Yes | Yes | Hide a value you will reveal later |
+| `persistentHash<T>(value)` | No | No | No (small inputs vulnerable) | Derive a binding fingerprint (public keys, nullifiers) |
+| `transientCommit<T>(value, rand)` | Yes (`Field`) | Yes | Yes | In-circuit intermediates only; not ledger-safe |
+| `transientHash<T>(value)` | No | No | No (small inputs vulnerable) | In-circuit consistency checks only |
 
 **When to use commit vs hash:** Use `persistentCommit` when you need to hide a
 value on-chain and later prove you committed to it (commit-reveal schemes, sealed
@@ -131,7 +131,7 @@ export ledger spentNullifiers: Set<Bytes<32>>;
 
 // Check and insert a nullifier
 const nul = deriveNullifier(currentRound, sk);
-assert(disclose(!spentNullifiers.member(nul)), "Already acted this round");
+assert(disclose(!spentNullifiers.member(disclose(nul))), "Already acted this round");
 spentNullifiers.insert(disclose(nul));
 ```
 
@@ -180,8 +180,8 @@ invalidates all existing proofs.
 The Merkle membership proof involves coordinated on-chain and off-chain work:
 
 1. **Admin inserts commitments on-chain.** `tree.insert(commitment)` adds a
-   leaf. The leaf value is hidden on-chain (this is the unique privacy property
-   of MerkleTree inserts).
+   leaf. The leaf value is visible on-chain (like all ledger operations). Privacy
+   comes from membership proofs -- ZK path proofs do not reveal which leaf is being proven.
 
 2. **User obtains a MerkleTreePath off-chain.** The witness function queries
    the local copy of the tree state to find the path from the user's leaf to the
@@ -210,7 +210,7 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
   ]);
 }
 
-// Admin adds a member (leaf value is hidden on-chain)
+// Admin adds a member (leaf is visible on-chain; privacy via membership proofs)
 export circuit addMember(memberPk: Bytes<32>): [] {
   members.insert(disclose(memberPk));
 }
@@ -233,7 +233,7 @@ export circuit act(): [] {
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:act-nul:"), sk
   ]);
-  assert(disclose(!usedNullifiers.member(nul)), "Already acted");
+  assert(disclose(!usedNullifiers.member(disclose(nul))), "Already acted");
   usedNullifiers.insert(disclose(nul));
 
   // ... perform the action
@@ -347,12 +347,12 @@ export circuit revealValue(): Field {
   assert(phase == Phase.reveal, "Not in reveal phase");
   const sk = local_secret_key();
   const pk = get_public_key(sk);
-  assert(disclose(commitments.member(pk)), "No commitment found");
+  assert(disclose(commitments.member(disclose(pk))), "No commitment found");
   const opening = getOpening();
-  const salt = opening.0;
-  const value = opening.1;
+  const salt = opening[0];
+  const value = opening[1];
   const expected = persistentCommit<Field>(value, salt);
-  assert(disclose(expected == commitments.lookup(pk)), "Commitment mismatch");
+  assert(disclose(expected == commitments.lookup(disclose(pk))), "Commitment mismatch");
   return disclose(value);
 }
 ```
@@ -460,9 +460,9 @@ witness getProfile(): [Bytes<32>, Field, Field];
 // Reveal age bracket but not name or exact income
 export circuit proveAgeAbove(minAge: Field): [] {
   const profile = getProfile();
-  const name = profile.0;     // NOT disclosed
-  const age = profile.1;      // comparison result disclosed
-  const income = profile.2;   // NOT disclosed
+  const name = profile[0];     // NOT disclosed
+  const age = profile[1];      // comparison result disclosed
+  const income = profile[2];   // NOT disclosed
 
   // Only the boolean result of the age comparison is made public
   assert(disclose(age >= minAge), "Age requirement not met");
@@ -550,5 +550,5 @@ Common mistakes that undermine privacy in Compact contracts.
 | Reusing salts across commitments | Breaks hiding: same value + same salt = same commitment output | Use unique randomness per commitment via witness-provided fresh bytes |
 | Using `Map<address, balance>` for private balances | All inserts, lookups, and transfers are visible on-chain | Use shielded tokens (zswap) from `compact-tokens` |
 | Disclosing MerkleTree leaf in `checkRoot` call | Defeats the purpose of anonymous membership proof | Let the ZK proof verify the path; only `disclose()` the digest |
-| Using `persistentHash` to "hide" witness data | Hash does not clear witness taint; compiler still requires `disclose()` | Use `persistentCommit` with randomness for actual hiding |
+| Using `persistentHash` to "hide" small-input-space witness data | Hash is one-way but without randomness, small input spaces (booleans, small integers) can be brute-forced; also does not clear witness taint | Use `persistentCommit` with randomness for brute-force resistance and taint clearing |
 | Fixed nullifier without round counter | User can only ever perform one action across all rounds | Incorporate a round counter or unique context into nullifier derivation |

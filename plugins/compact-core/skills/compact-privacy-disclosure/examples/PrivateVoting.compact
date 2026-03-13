@@ -32,7 +32,7 @@
 // ("lares:election:cm-nul:" and "lares:election:rv-nul:").
 // ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version >= 0.21;
 
 import CompactStandardLibrary;
 
@@ -50,13 +50,13 @@ export ledger phase: Phase;
 // Admin public key — set once in constructor, used for access control
 export sealed ledger admin: Bytes<32>;
 
-// HistoricMerkleTree for eligible voters: insert hides which voter was
-// registered. HistoricMerkleTree is used (instead of MerkleTree) so that
+// HistoricMerkleTree for eligible voters: insert is visible on-chain, but
+// membership proofs hide which voter is acting. HistoricMerkleTree is used (instead of MerkleTree) so that
 // proofs generated before new voters are added remain valid.
 // Depth 10 supports up to 2^10 = 1024 voters.
 export ledger voters: HistoricMerkleTree<10, Bytes<32>>;
 
-// HistoricMerkleTree for committed votes: insert hides the vote content.
+// HistoricMerkleTree for committed votes: leaf values are visible on-chain,
 // Each leaf is a commitment hash that binds the voter to their ballot choice.
 // Depth 10 supports up to 1024 committed votes.
 export ledger committedVotes: HistoricMerkleTree<10, Bytes<32>>;
@@ -161,14 +161,12 @@ circuit requireAdmin(): [] {
 
 // Register a voter during the setup phase.
 // The voter's public key is inserted into the HistoricMerkleTree,
-// which HIDES the leaf value on-chain. An observer sees that a voter
-// was registered but cannot determine which public key was added.
+// where the leaf value is visible on-chain. Privacy comes from membership
+// proofs — an observer cannot determine which registered voter is acting.
 export circuit registerVoter(voterPk: Bytes<32>): [] {
   assert(phase == Phase.setup, "Not in setup phase");
   requireAdmin();
-  // disclose() required: voterPk is a circuit parameter (treated as
-  // witness data). MerkleTree.insert() hides the leaf value on-chain,
-  // but the compiler still requires disclose() for the argument.
+  // disclose() is required here because voterPk is witness-tainted.
   voters.insert(disclose(voterPk));
 }
 
@@ -210,7 +208,7 @@ export circuit advancePhase(): [] {
 //   4. Verify voter is in the eligible voters tree
 //   5. Derive commitment nullifier (disclosed — prevents double commit)
 //   6. Compute vote commitment (disclosed commitment hash only, not ballot)
-//   7. Insert commitment into committedVotes tree (leaf hidden on-chain)
+//   7. Insert commitment into committedVotes tree (leaf visible on-chain; vote content hidden by commitment)
 export circuit commitVote(ballot: Bytes<32>): [] {
   assert(phase == Phase.commit, "Not in commit phase");
 
@@ -236,17 +234,17 @@ export circuit commitVote(ballot: Bytes<32>): [] {
   // Set.member() (a ledger operation). Revealing the nullifier is
   // intentional — it prevents double-voting. The nullifier cannot
   // be linked to the voter's public key due to domain separation.
-  assert(disclose(!commitNullifiers.member(cmNullifier)), "Already committed");
+  assert(disclose(!commitNullifiers.member(disclose(cmNullifier))), "Already committed");
   commitNullifiers.insert(disclose(cmNullifier));
 
   // --- Step 3: Create and store vote commitment ---
   const rand = getCommitRandomness();
   const commitment = computeVoteCommitment(ballot, rand);
   // Insert into committedVotes tree — the leaf value (commitment hash)
-  // is HIDDEN on-chain by the MerkleTree insert operation.
+  // is visible on-chain, but the underlying ballot choice is hidden
+  // because only the commitment hash is stored, not the raw ballot.
   // disclose() required: commitment is derived from witness data (ballot
-  // and randomness). Even though MerkleTree.insert hides the value
-  // on-chain, the compiler requires disclose() for the argument.
+  // and randomness).
   committedVotes.insert(disclose(commitment));
 }
 
@@ -283,7 +281,7 @@ export circuit revealVote(): [] {
   // disclose() required: nullifier is witness-derived and used in
   // Set.member() (ledger operation). Different domain separator from
   // commitment nullifier prevents correlation between commit and reveal.
-  assert(disclose(!revealNullifiers.member(rvNullifier)), "Already revealed");
+  assert(disclose(!revealNullifiers.member(disclose(rvNullifier))), "Already revealed");
   revealNullifiers.insert(disclose(rvNullifier));
 
   // --- Step 4: Tally the vote ---
@@ -310,7 +308,7 @@ export circuit getTally(): [Uint<64>, Uint<64>] {
 //
 // What is PRIVATE (hidden from on-chain observers):
 //   - Which voter committed or revealed (Merkle proof hides identity)
-//   - The ballot choice during the commit phase (MerkleTree insert hides leaf)
+//   - The ballot choice during the commit phase (hidden by commitment hash, not by insert)
 //   - The voter's secret key (never disclosed, only used in ZK proofs)
 //   - The relationship between commit and reveal transactions
 //     (different domain separators for cm-nul and rv-nul)
