@@ -1,0 +1,112 @@
+// Token Handling Patterns in Compact
+// Demonstrates receiving, sending, minting, and shielded/unshielded patterns
+// using correct Compact syntax and standard library circuit calls.
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// =============================================================================
+// LEDGER STATE
+// =============================================================================
+
+// Individual export ledger declarations (block syntax removed in v0.15)
+export ledger received_count: Counter;
+export ledger total_supply: Counter;
+export ledger accepted_token: Bytes<32>;
+
+// =============================================================================
+// RECEIVING TOKENS
+// =============================================================================
+
+// Receive a shielded coin into the contract.
+// The coin data is provided by the user via a witness declaration.
+// receiveShielded() is a circuit call that takes a ShieldedCoinInfo value.
+export circuit receivePayment(
+): [] {
+  const coin: ShieldedCoinInfo = witness("coin");
+  receiveShielded(coin);
+  received_count.increment(1);
+}
+
+// =============================================================================
+// SENDING TOKENS
+// =============================================================================
+
+// Send tokens to a recipient.
+// sendShielded() is a circuit call: sendShielded(input, recipient, value) -> SendResult
+// - input: QualifiedShieldedCoinInfo (existing coin on ledger with Merkle index)
+// - recipient: Either<ZswapCoinPublicKey, ContractAddress>
+// - value: Uint<128>
+export circuit sendReward(
+  amount: Uint<128>
+): SendResult {
+  const input: QualifiedShieldedCoinInfo = witness("input_coin");
+  const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+
+  return sendShielded(input, recipient, disclose(amount));
+}
+
+// =============================================================================
+// CUSTOM TOKEN MINTING
+// =============================================================================
+
+// Mint new custom tokens.
+// mintToken() is a circuit call:
+//   mintToken(domainSep: Bytes<32>, value: Uint<128>, nonce: Bytes<32>,
+//             recipient: Either<ZswapCoinPublicKey, ContractAddress>): CoinInfo
+// Token type = Hash(contractAddress, domainSeparator)
+export circuit mint(
+  amount: Uint<128>,
+  domain_separator: Bytes<32>,
+  nonce: Bytes<32>
+): CoinInfo {
+  const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+
+  const newCoin = mintToken(
+    disclose(domain_separator),
+    disclose(amount),
+    disclose(nonce),
+    recipient
+  );
+
+  total_supply.increment(1);
+  return newCoin;
+}
+
+// =============================================================================
+// SHIELDED VS UNSHIELDED
+// =============================================================================
+
+// By default, tokens are shielded (private).
+// The commitment Hash<(CoinInfo, ZswapCoinPublicKey)> hides value, type, and owner.
+
+// For regulatory compliance, viewing keys can be shared.
+// This doesn't change the contract code -- it's a wallet-level feature.
+
+// Pattern: Accept a shielded coin deposit
+// Shielded coin deposit using receiveShielded().
+export circuit flexibleDeposit(
+): [] {
+  const coin: ShieldedCoinInfo = witness("coin");
+  receiveShielded(coin);
+}
+
+// =============================================================================
+// TOKEN TYPE IDENTIFICATION
+// =============================================================================
+
+// nativeToken() returns the native token type identifier (256-bit zero value).
+// tokenType() computes a custom token type from a domain separator.
+// Token type filtering and validation happens at the Zswap protocol level,
+// not within the contract itself.
+
+// Example: get native and custom token type identifiers
+export circuit getTokenTypes(
+  domain_separator: Bytes<32>
+): [] {
+  const native = nativeToken();
+  const custom = tokenType(domain_separator, self());
+}

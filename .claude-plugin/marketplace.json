@@ -1,6 +1,6 @@
 {
   "name": "midnight-expert",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI agent plugins for the Midnight data-protection blockchain. Covers Compact smart contract development, privacy-preserving patterns, DApp frontend design, and Midnight toolchain management.",
   "owner": {
     "name": "Aaron Bassett",
@@ -14,6 +14,10 @@
     {
       "name": "compact-examples",
       "source": "./plugins/compact-examples"
+    },
+    {
+      "name": "core-concepts",
+      "source": "./plugins/core-concepts"
     },
     {
       "name": "midnight-plugin-utils",

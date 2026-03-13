@@ -224,3 +224,5 @@ reviews/
 # Midnight
 # =========================
 .compact/
+docs/plans/
+docs/findings/

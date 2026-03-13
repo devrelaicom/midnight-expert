@@ -1,0 +1,280 @@
+// ============================================================================
+// private-vault.compact -- Private Deposit and Withdrawal Vault
+// ============================================================================
+//
+// Demonstrates:
+//   - Commitment-based deposits (hide amounts behind cryptographic randomness)
+//   - Merkle tree membership proofs (prove deposit exists without revealing which)
+//   - Nullifier-based double-spend prevention
+//   - Correct witness declaration syntax (no body, no export)
+//   - Correct assert syntax: assert(condition, "message")
+//   - Correct Merkle proof pattern: merkleTreePathRoot + checkRoot (no .member)
+//   - Correct persistentHash signature: single typed argument, wrap multiple in Vector
+//   - Correct persistentCommit signature: persistentCommit<T>(value, rand: Bytes<32>)
+//   - disclose() annotations at every public boundary
+//   - Uint<64> for amounts (comparison operators require Uint<N>, not Field)
+//   - All local bindings use `const` (no `let` keyword exists)
+//
+// Privacy properties:
+//   - Deposit amounts are hidden (committed with randomness, inserted into MerkleTree)
+//   - Withdrawal identity is hidden (Merkle proof hides which deposit is being spent)
+//   - Secret key never leaves the ZK proof
+//
+// What is visible on-chain:
+//   - Number of deposits and withdrawals (tree/set sizes)
+//   - Nullifier values (but unlinkable to depositor identity)
+//   - That a valid membership proof was provided (root check passes)
+//   - The minimum deposit amount (public parameter)
+//
+// Key corrections from original:
+//   - Witnesses are declaration-only (no body)
+//   - `export ledger` per field (not `ledger { }` block)
+//   - `[]` return type (not `Void`)
+//   - `import CompactStandardLibrary;` (not `import { fn } from "path"`)
+//   - `assert(condition, "message")` with parentheses
+//   - `merkleTreePathRoot(path)` + `checkRoot(digest)` (no `.member(value, path)`)
+//   - `persistentHash<Vector<N, Bytes<32>>>([...])` (not multi-arg)
+//   - `Uint<64>` for amounts (not `Field`) to enable comparisons
+//   - `disclose()` at every witness-to-public boundary
+//
+// ============================================================================
+
+pragma language_version >= 0.16 && <= 0.18;
+import CompactStandardLibrary;
+
+// --- Ledger declarations ---
+// Individual `export ledger` per field (not deprecated block syntax)
+
+// HistoricMerkleTree for deposit commitments.
+// HistoricMerkleTree is used (instead of MerkleTree) so that proofs generated
+// before new deposits are added remain valid.
+// Depth 20 supports up to 2^20 = ~1 million deposits.
+// MerkleTree.insert() HIDES the leaf value on-chain.
+export ledger deposits: HistoricMerkleTree<20, Bytes<32>>;
+
+// Set of spent nullifiers to prevent double-withdrawal.
+// Nullifiers are public by design -- they are derived values that reveal
+// nothing about the depositor's identity or the deposit amount.
+export ledger spentNullifiers: Set<Bytes<32>>;
+
+// Minimum deposit amount (public, settable by admin).
+// Uint<64> because comparison operators (>=) only work on Uint<N>, not Field.
+export ledger minDeposit: Uint<64>;
+
+// Admin authority for setting parameters.
+export ledger admin: Bytes<32>;
+
+// --- Witness declarations ---
+// Declaration-only: no body, no `export`.
+// Logic is implemented off-chain in TypeScript.
+
+// Returns the user's secret key (never disclosed on-chain)
+witness local_secret_key(): Bytes<32>;
+
+// Returns cryptographically secure randomness for commitment blinding
+// (must be unique per deposit -- never reuse)
+witness get_randomness(): Bytes<32>;
+
+// Returns the Merkle path proving a deposit commitment exists in the tree.
+// The MerkleTreePath<20, Bytes<32>> struct has fields:
+//   leaf: Bytes<32>
+//   path: Vector<20, MerkleTreePathEntry>
+// where MerkleTreePathEntry has: sibling: MerkleTreeDigest, goesLeft: Boolean
+witness get_merkle_path(commitment: Bytes<32>): MerkleTreePath<20, Bytes<32>>;
+
+// Returns the deposit amount for withdrawal (stored off-chain during deposit)
+witness get_deposit_amount(): Uint<64>;
+
+// Returns the randomness used during deposit (stored off-chain during deposit)
+witness get_deposit_randomness(): Bytes<32>;
+
+// Stores deposit opening off-chain for later withdrawal
+// (commitment, amount, randomness -- needed to reconstruct commitment)
+witness store_deposit(commitment: Bytes<32>, amount: Uint<64>, rand: Bytes<32>): [];
+
+// --- Helper circuits ---
+
+// Derive a public key from a secret key.
+// persistentHash uses SHA-256 and produces stable output across compiler versions.
+circuit get_public_key(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "vault:pk:"), sk
+  ]);
+}
+
+// Compute a deposit commitment from an amount and randomness.
+// persistentCommit<T>(value: T, rand: Bytes<32>): Bytes<32>
+// The commitment hides the amount behind cryptographic randomness.
+// persistentCommit clears witness taint on the input.
+circuit compute_commitment(amount: Uint<64>, rand: Bytes<32>): Bytes<32> {
+  return persistentCommit<Uint<64>>(amount, rand);
+}
+
+// Derive a nullifier from a secret key and commitment.
+// Domain-separated to prevent cross-purpose correlation.
+// persistentHash takes exactly ONE argument -- wrap multiples in a Vector.
+circuit derive_nullifier(sk: Bytes<32>, commitment: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "vault:nul:"),
+    sk,
+    commitment
+  ]);
+}
+
+// Verify the caller is the admin.
+circuit requireAdmin(): [] {
+  const sk = local_secret_key();
+  const pk = get_public_key(sk);
+  // disclose() required: pk is derived from witness data.
+  assert(disclose(pk == admin), "Not admin");
+}
+
+// --- Constructor ---
+
+// Initialize the vault with the deployer as admin and a default minimum deposit.
+constructor() {
+  const sk = local_secret_key();
+  // disclose() required: writing witness-derived value to ledger.
+  admin = disclose(get_public_key(sk));
+  minDeposit = 100 as Uint<64>;
+}
+
+// --- Admin circuits ---
+
+// Set the minimum deposit amount. Only admin can call this.
+export circuit setMinDeposit(newMin: Uint<64>): [] {
+  requireAdmin();
+  assert(newMin > 0, "Minimum must be positive");
+  minDeposit = newMin;
+}
+
+// --- Deposit circuit ---
+
+// Deposit an amount into the vault.
+//
+// Privacy flow:
+//   1. Amount comes from the circuit parameter (visible on-chain as the
+//      circuit is called with this value)
+//   2. Randomness comes from witness (private)
+//   3. Commitment = persistentCommit(amount, rand) -- hides amount
+//   4. Commitment inserted into MerkleTree -- leaf value hidden on-chain
+//   5. Opening stored off-chain for later withdrawal
+//
+// What the observer sees:
+//   - That a deposit was made (circuit call is visible)
+//   - The deposit amount (it's a circuit parameter)
+//   - That something was inserted into the tree (but not the leaf value)
+//
+// For fully private amounts, the amount should come from a witness
+// and the deposit value should be sent via shielded tokens.
+export circuit deposit(amount: Uint<64>): [] {
+  // Comparison operators (>=) only work on Uint<N>, not Field
+  assert(amount >= minDeposit, "Below minimum deposit");
+
+  const rand = get_randomness();
+  const commitment = compute_commitment(amount, rand);
+
+  // Store the opening off-chain for later withdrawal.
+  // The witness implementation saves (commitment, amount, rand) securely.
+  store_deposit(commitment, amount, rand);
+
+  // Insert commitment into the Merkle tree.
+  // MerkleTree.insert() HIDES the leaf value on-chain.
+  // disclose() required: commitment is derived from witness data (rand).
+  // Even though MerkleTree.insert hides the value, the compiler
+  // requires disclose() for the argument.
+  deposits.insert(disclose(commitment));
+}
+
+// --- Withdrawal circuit ---
+
+// Withdraw a deposit by proving it exists without revealing which one.
+//
+// Privacy flow:
+//   1. Secret key from witness (never disclosed)
+//   2. Retrieve stored amount and randomness from witness
+//   3. Recompute commitment from amount + randomness
+//   4. Get Merkle path from witness, compute root
+//   5. Verify root matches on-chain tree (proves deposit exists)
+//   6. Derive nullifier from (sk, commitment) -- prevents double-spend
+//   7. Insert nullifier into spent set
+//
+// What the observer sees:
+//   - That a withdrawal happened (circuit call visible)
+//   - The nullifier value (but cannot link to depositor or deposit)
+//   - That a valid Merkle proof was provided (root check passed)
+//   - The observer CANNOT see: which deposit, the amount, or who withdrew
+//
+export circuit withdraw(): [] {
+  const sk = local_secret_key();
+
+  // --- Step 1: Reconstruct the deposit commitment ---
+  // Retrieve the stored opening (amount, randomness) from off-chain storage.
+  const amount = get_deposit_amount();
+  const rand = get_deposit_randomness();
+  const commitment = compute_commitment(amount, rand);
+
+  // --- Step 2: Prove the commitment exists in the tree ---
+  // Get the Merkle path from the witness (off-chain tree query).
+  // Pass the whole MerkleTreePath struct -- there is no .value field.
+  const path = get_merkle_path(commitment);
+
+  // Compute the Merkle root from the path.
+  // merkleTreePathRoot recomputes the root by hashing up from the leaf.
+  const digest = merkleTreePathRoot<20, Bytes<32>>(path);
+
+  // Verify the computed root matches a valid on-chain root.
+  // HistoricMerkleTree.checkRoot() accepts proofs against any prior
+  // version of the tree, so this proof remains valid even if new
+  // deposits have been added since the proof was generated.
+  // disclose() required: digest is derived from witness data (the path).
+  assert(deposits.checkRoot(disclose(digest)), "Deposit not found in tree");
+
+  // --- Step 3: Prevent double-withdrawal ---
+  // Derive a nullifier from the secret key and commitment.
+  // Domain separator "vault:nul:" prevents cross-purpose correlation.
+  const nullifier = derive_nullifier(sk, commitment);
+
+  // Check that this nullifier has not been used before.
+  // Set.member() is the correct method (not .contains()).
+  // disclose() required: nullifier is derived from witness data (sk).
+  assert(disclose(!spentNullifiers.member(nullifier)), "Deposit already withdrawn");
+
+  // Record the nullifier to prevent future double-spend.
+  // disclose() required: nullifier is witness-derived.
+  spentNullifiers.insert(disclose(nullifier));
+
+  // --- Step 4: Release funds ---
+  // In a full implementation, this would use token operations:
+  //   send(qualifiedCoinInfo, recipient, amount)
+  // to transfer the deposited value back to the user.
+  // Token operations are stdlib circuit calls, not special syntax.
+}
+
+// ============================================================================
+// Privacy Analysis
+// ============================================================================
+//
+// What is PRIVATE (hidden from on-chain observers):
+//   - Which deposit is being withdrawn (Merkle proof hides identity)
+//   - The withdrawal amount (never disclosed)
+//   - The depositor's secret key (never leaves ZK proof)
+//   - The randomness used in commitments (witness data)
+//   - The link between a deposit and its withdrawal
+//
+// What is PUBLIC (visible on-chain):
+//   - Deposit amounts (circuit parameter -- see note above for improvement)
+//   - Nullifier values (but unlinkable to identity)
+//   - Number of deposits and withdrawals
+//   - Minimum deposit threshold
+//   - Admin public key
+//   - That valid proofs were provided (root checks, nullifier checks)
+//
+// Remaining risks:
+//   - Deposit amounts are visible at deposit time (could be made private
+//     by accepting amount as witness input and using shielded tokens)
+//   - Small deposit sets reduce anonymity
+//   - Timing analysis may correlate deposits and withdrawals
+//   - The admin who sets minDeposit is publicly known
+//
+// ============================================================================
