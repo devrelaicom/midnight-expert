@@ -40,7 +40,7 @@ Network ID: `undeployed`. Node preset: `dev`.
 | Node RPC | `https://rpc.preview.midnight.network` |
 | Indexer (GraphQL) | `https://indexer.preview.midnight.network/api/v3/graphql` |
 | Indexer (WebSocket) | `wss://indexer.preview.midnight.network/api/v3/graphql/ws` |
-| Proof Server | `http://localhost:6300` (always local) |
+| Proof Server | `https://lace-proof-pub.preview.midnight.network` (or `http://localhost:6300` for local) |
 | Faucet | `https://faucet.preview.midnight.network` |
 
 ### Preprod
@@ -50,7 +50,7 @@ Network ID: `undeployed`. Node preset: `dev`.
 | Node RPC | `https://rpc.preprod.midnight.network` |
 | Indexer (GraphQL) | `https://indexer.preprod.midnight.network/api/v3/graphql` |
 | Indexer (WebSocket) | `wss://indexer.preprod.midnight.network/api/v3/graphql/ws` |
-| Proof Server | `http://localhost:6300` (always local) |
+| Proof Server | `https://lace-proof-pub.preprod.midnight.network` (or `http://localhost:6300` for local) |
 | Faucet | `https://faucet.preprod.midnight.network` |
 
 ### Configuration Object Pattern
