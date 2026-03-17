@@ -1,71 +1,168 @@
-// Token Handling Patterns in Compact
-// Demonstrates receiving, sending, minting, and shielded/unshielded patterns
-// using correct Compact syntax and standard library circuit calls.
+// ============================================================================
+// token-handling.compact -- Token Handling Patterns
+// ============================================================================
+//
+// Demonstrates:
+//   - Receiving shielded tokens (receiveShielded)
+//   - Sending shielded tokens (sendShielded)
+//   - Receiving unshielded tokens (receiveUnshielded)
+//   - Sending unshielded tokens (sendUnshielded)
+//   - Minting new shielded tokens (mintShieldedToken)
+//   - Minting new unshielded tokens (mintUnshieldedToken)
+//   - Token type identification (nativeToken, tokenType)
+//   - Correct witness declaration syntax (no body, no export)
+//   - disclose() annotations at every public boundary
+//
+// Privacy properties:
+//   - Shielded coins hide value, type, and owner behind commitments
+//   - Unshielded coins expose value for regulatory compliance
+//   - Nullifiers prevent double-spend without revealing which coin was spent
+//
+// What is visible on-chain:
+//   - Ledger state changes (counters, stored token type)
+//   - Unshielded coin values and recipients
+//   - That valid proofs were provided for shielded operations
+//
+// Stdlib function signatures (from compiler source):
+//   receiveShielded(coin: ShieldedCoinInfo): []
+//   sendShielded(input: QualifiedShieldedCoinInfo,
+//                recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+//                value: Uint<128>): ShieldedSendResult
+//   receiveUnshielded(color: Bytes<32>, amount: Uint<128>): []
+//   sendUnshielded(color: Bytes<32>, amount: Uint<128>,
+//                  recipient: Either<ContractAddress, UserAddress>): []
+//   mintShieldedToken(domainSep: Bytes<32>, amount: Uint<64>,
+//                     nonce: Bytes<32>,
+//                     recipient: Either<ZswapCoinPublicKey, ContractAddress>): CoinInfo
+//   mintUnshieldedToken(domainSep: Bytes<32>, amount: Uint<64>,
+//                       recipient: Either<ContractAddress, UserAddress>): Bytes<32>
+//   nativeToken(): Bytes<32>
+//   tokenType(domainSep: Bytes<32>, addr: ContractAddress): Bytes<32>
+//   kernel.self(): ContractAddress
+//
+// ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
-
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 // =============================================================================
 // LEDGER STATE
 // =============================================================================
 
-// Individual export ledger declarations (block syntax removed in v0.15)
+// Track total number of shielded deposits received
 export ledger received_count: Counter;
+
+// Track total supply of minted tokens
 export ledger total_supply: Counter;
+
+// Store the accepted token type for this contract
 export ledger accepted_token: Bytes<32>;
 
 // =============================================================================
-// RECEIVING TOKENS
+// WITNESS DECLARATIONS
+// =============================================================================
+// Declaration-only: no body, no `export`.
+// Logic is implemented off-chain in TypeScript.
+
+// Returns a shielded coin to receive (from user's wallet)
+witness get_coin(): ShieldedCoinInfo;
+
+// Returns a qualified shielded coin (existing coin with Merkle index) for spending
+witness get_shielded_input(): QualifiedShieldedCoinInfo;
+
+// Returns the recipient's ZswapCoinPublicKey for shielded transfers
+witness get_recipient_key(): ZswapCoinPublicKey;
+
+// Returns a user address for unshielded transfers
+witness get_user_address(): UserAddress;
+
+// Returns cryptographic nonce for minting (must be unique per mint)
+witness get_nonce(): Bytes<32>;
+
+// Returns the token color (type identifier) for unshielded operations
+witness get_token_color(): Bytes<32>;
+
+// =============================================================================
+// RECEIVING SHIELDED TOKENS
 // =============================================================================
 
 // Receive a shielded coin into the contract.
-// The coin data is provided by the user via a witness declaration.
-// receiveShielded() is a circuit call that takes a ShieldedCoinInfo value.
-export circuit receivePayment(
-): [] {
-  const coin: ShieldedCoinInfo = witness("coin");
+// The coin data is provided by the user via a witness.
+// receiveShielded() adds the coin to the Zswap state as a shielded output.
+export circuit receivePayment(): [] {
+  const coin = get_coin();
   receiveShielded(coin);
   received_count.increment(1);
 }
 
 // =============================================================================
-// SENDING TOKENS
+// SENDING SHIELDED TOKENS
 // =============================================================================
 
-// Send tokens to a recipient.
-// sendShielded() is a circuit call: sendShielded(input, recipient, value) -> SendResult
-// - input: QualifiedShieldedCoinInfo (existing coin on ledger with Merkle index)
-// - recipient: Either<ZswapCoinPublicKey, ContractAddress>
-// - value: Uint<128>
-export circuit sendReward(
-  amount: Uint<128>
-): SendResult {
-  const input: QualifiedShieldedCoinInfo = witness("input_coin");
-  const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
+// Send shielded tokens to a recipient identified by ZswapCoinPublicKey.
+// sendShielded() consumes the input coin and creates a new shielded output
+// for the recipient, returning a ShieldedSendResult with change information.
+export circuit sendReward(amount: Uint<128>): ShieldedSendResult {
+  const input = get_shielded_input();
+  const recipientKey = get_recipient_key();
   const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
 
   return sendShielded(input, recipient, disclose(amount));
 }
 
 // =============================================================================
-// CUSTOM TOKEN MINTING
+// RECEIVING UNSHIELDED TOKENS
 // =============================================================================
 
-// Mint new custom tokens.
-// mintToken() is a circuit call:
-//   mintToken(domainSep: Bytes<32>, value: Uint<128>, nonce: Bytes<32>,
-//             recipient: Either<ZswapCoinPublicKey, ContractAddress>): CoinInfo
-// Token type = Hash(contractAddress, domainSeparator)
-export circuit mint(
-  amount: Uint<128>,
-  domain_separator: Bytes<32>,
-  nonce: Bytes<32>
-): CoinInfo {
-  const recipientKey: ZswapCoinPublicKey = witness("recipient_key");
-  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+// Receive unshielded tokens into this contract.
+// Unshielded tokens have visible values -- useful for regulatory compliance,
+// public accounting, or when transparency is required.
+// receiveUnshielded() takes a token color (type) and amount, not a coin object.
+export circuit receiveUnshieldedPayment(color: Bytes<32>, amount: Uint<128>): [] {
+  receiveUnshielded(disclose(color), disclose(amount));
+  received_count.increment(1);
+}
 
-  const newCoin = mintToken(
+// =============================================================================
+// SENDING UNSHIELDED TOKENS
+// =============================================================================
+
+// Send unshielded tokens to a user address.
+// The color, amount, and recipient are all publicly visible on-chain.
+export circuit sendUnshieldedReward(color: Bytes<32>, amount: Uint<128>): [] {
+  const userAddr = get_user_address();
+  const recipient = right<ContractAddress, UserAddress>(userAddr);
+
+  sendUnshielded(disclose(color), disclose(amount), recipient);
+}
+
+// Send unshielded tokens to this contract itself.
+// kernel.self() returns the current contract's address.
+export circuit sendUnshieldedToSelf(color: Bytes<32>, amount: Uint<128>): [] {
+  sendUnshielded(
+    disclose(color),
+    disclose(amount),
+    left<ContractAddress, UserAddress>(kernel.self())
+  );
+}
+
+// =============================================================================
+// MINTING SHIELDED TOKENS
+// =============================================================================
+
+// Mint new shielded custom tokens.
+// Token type = Hash(contractAddress, domainSeparator).
+// The minted coin is shielded -- its value and owner are hidden.
+// mintShieldedToken amount parameter is Uint<64>.
+export circuit mintShielded(
+  amount: Uint<64>,
+  domain_separator: Bytes<32>
+): CoinInfo {
+  const recipientKey = get_recipient_key();
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+  const nonce = get_nonce();
+
+  const newCoin = mintShieldedToken(
     disclose(domain_separator),
     disclose(amount),
     disclose(nonce),
@@ -77,21 +174,38 @@ export circuit mint(
 }
 
 // =============================================================================
-// SHIELDED VS UNSHIELDED
+// MINTING UNSHIELDED TOKENS
 // =============================================================================
 
-// By default, tokens are shielded (private).
-// The commitment Hash<(CoinInfo, ZswapCoinPublicKey)> hides value, type, and owner.
+// Mint new unshielded custom tokens.
+// The minted coin's value is publicly visible on-chain.
+export circuit mintUnshielded(
+  amount: Uint<64>,
+  domain_separator: Bytes<32>
+): Bytes<32> {
+  const userAddr = get_user_address();
+  const recipient = right<ContractAddress, UserAddress>(userAddr);
 
-// For regulatory compliance, viewing keys can be shared.
-// This doesn't change the contract code -- it's a wallet-level feature.
+  const tokenId = mintUnshieldedToken(
+    disclose(domain_separator),
+    disclose(amount),
+    recipient
+  );
 
-// Pattern: Accept a shielded coin deposit
-// Shielded coin deposit using receiveShielded().
-export circuit flexibleDeposit(
-): [] {
-  const coin: ShieldedCoinInfo = witness("coin");
-  receiveShielded(coin);
+  total_supply.increment(1);
+  return tokenId;
+}
+
+// Mint unshielded tokens to this contract itself.
+export circuit mintUnshieldedToSelf(
+  amount: Uint<64>,
+  domain_separator: Bytes<32>
+): Bytes<32> {
+  return mintUnshieldedToken(
+    disclose(domain_separator),
+    disclose(amount),
+    left<ContractAddress, UserAddress>(kernel.self())
+  );
 }
 
 // =============================================================================
@@ -99,14 +213,42 @@ export circuit flexibleDeposit(
 // =============================================================================
 
 // nativeToken() returns the native token type identifier (256-bit zero value).
-// tokenType() computes a custom token type from a domain separator.
-// Token type filtering and validation happens at the Zswap protocol level,
-// not within the contract itself.
+// tokenType() computes a custom token type from a domain separator and
+// a contract address. Use kernel.self() for the current contract.
+// Token type filtering and validation happens at the Zswap protocol level.
 
-// Example: get native and custom token type identifiers
-export circuit getTokenTypes(
-  domain_separator: Bytes<32>
-): [] {
-  const native = nativeToken();
-  const custom = tokenType(domain_separator, self());
+// Initialize the accepted token type for this contract
+constructor() {
+  // Set the accepted token to the native token by default
+  accepted_token = nativeToken();
 }
+
+// Query and store a custom token type for this contract
+export circuit setCustomToken(domain_separator: Bytes<32>): [] {
+  // Compute the custom token type = Hash(contractAddress, domainSeparator)
+  accepted_token = tokenType(domain_separator, kernel.self());
+}
+
+// ============================================================================
+// Privacy Analysis
+// ============================================================================
+//
+// SHIELDED operations (receiveShielded, sendShielded, mintShieldedToken):
+//   Private: coin value, coin type, owner identity, transaction linkage
+//   Public: that a shielded operation occurred, nullifier (unlinkable)
+//
+// UNSHIELDED operations (receiveUnshielded, sendUnshielded, mintUnshieldedToken):
+//   Private: nothing -- values and recipients are visible
+//   Public: coin value, recipient address, token type (color)
+//
+// Choose shielded for:
+//   - Maximum privacy (value + identity hidden)
+//   - Unlinkable transactions
+//   - Default for most use cases
+//
+// Choose unshielded for:
+//   - Regulatory compliance (auditable balances)
+//   - Public accounting or governance
+//   - When transparency is a feature, not a bug
+//
+// ============================================================================

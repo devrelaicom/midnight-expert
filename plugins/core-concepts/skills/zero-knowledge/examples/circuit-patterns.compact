@@ -1,6 +1,23 @@
-// Common ZK Circuit Patterns in Compact
+// ============================================================================
+// circuit-patterns.compact -- Common ZK Circuit Patterns
+// ============================================================================
+//
+// This file contains illustrative patterns demonstrating common ZK proof
+// use cases in Compact. Each pattern is self-contained but they share a
+// single file for reference convenience. In practice, adapt individual
+// patterns into your own contract files.
+//
+// Patterns:
+//   1. Prove knowledge without revealing (hash preimage)
+//   2. Range proof
+//   3. Membership proof (Merkle tree)
+//   4. Conditional logic with selective disclosure
+//   5. Commitment verification
+//   6. Multi-constraint proofs
+//
+// ============================================================================
 
-pragma language_version 0.20;
+pragma language_version 0.21;
 
 import CompactStandardLibrary;
 
@@ -67,28 +84,25 @@ export circuit proveMembership(): [] {
 }
 
 // =============================================================================
-// PATTERN 4: CONDITIONAL LOGIC
+// PATTERN 4: CONDITIONAL LOGIC WITH PRIVATE BRANCHING
 // =============================================================================
 
 export ledger threshold: Uint<64>;
-export ledger premium_count: Counter;
-export ledger regular_count: Counter;
+export ledger conditional_count: Counter;
 
 // Witness declaration
 witness get_secret_balance(): Uint<64>;
 
-// ZK-proven conditional execution
+// ZK-proven conditional with selective disclosure
 export circuit conditionalAction(): [] {
   const secret_balance = get_secret_balance();
-  // The condition itself is proven without revealing balance
-  // Note: comparison only works on Uint<N>
-  if secret_balance >= threshold {
-    premium_count.increment(1);
-  } else {
-    regular_count.increment(1);
-  }
-  // Verifier learns: One counter increased
-  // Verifier does NOT learn: Which branch or actual balance
+  // Always increment the single counter — hides which "category" applied
+  conditional_count.increment(1);
+  // Selectively disclose only whether threshold is met
+  // disclose() needed: comparison involves witness data
+  assert(disclose(secret_balance >= threshold), "Below threshold");
+  // Verifier learns: balance meets threshold, action count increased
+  // Verifier does NOT learn: actual balance value
 }
 
 // =============================================================================
@@ -106,7 +120,7 @@ export circuit verifyCommitment(): [] {
   const committed_value = get_committed_value();
   const randomness = get_randomness();
   // Reconstruct commitment from private inputs
-  const computed = persistentCommit(committed_value, randomness);
+  const computed = persistentCommit<Field>(committed_value, randomness);
 
   // Prove it matches stored commitment
   assert(computed == stored_commitment, "Commitment does not match");

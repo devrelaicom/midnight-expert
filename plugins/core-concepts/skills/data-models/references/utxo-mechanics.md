@@ -8,7 +8,7 @@ A UTXO is created when:
 - A transaction output specifies a new coin
 - The coin has: value, type, owner public key, nonce
 
-```
+```text
 CoinCommitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
 ```
 
@@ -37,7 +37,7 @@ The entire UTXO is consumed -- partial spends are impossible. Change is returned
 
 The nullifier prevents double-spending:
 
-```
+```text
 CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
 ```
 
@@ -50,7 +50,7 @@ Properties:
 
 ### Formula
 
-```
+```text
 CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
 ```
 
@@ -75,7 +75,7 @@ Bitcoin references prior outputs directly by txid+index, revealing which coin wa
 
 ### Commitment Tree
 
-```
+```text
         Root
        /    \
      H01    H23
@@ -123,7 +123,7 @@ Shielded and unshielded operations use distinct Compact stdlib functions: `recei
 
 UTXOs enable natural parallelism:
 
-```
+```text
 UTXO A -> Tx1
 UTXO B -> Tx2  <- Can process simultaneously
 UTXO C -> Tx3

@@ -28,7 +28,7 @@ Commitment functions **clear witness taint** on their inputs and on the commitme
 
 ### persistentCommit
 
-```
+```text
 persistentCommit<T>(value: T, rand: Bytes<32>): Bytes<32>
 ```
 
@@ -39,7 +39,7 @@ persistentCommit<T>(value: T, rand: Bytes<32>): Bytes<32>
 
 ### transientCommit
 
-```
+```text
 transientCommit<T>(value: T, rand: Field): Field
 ```
 
@@ -51,7 +51,7 @@ transientCommit<T>(value: T, rand: Field): Field
 
 ### persistentHash (not a commitment)
 
-```
+```text
 persistentHash<T>(value: T): Bytes<32>
 ```
 
@@ -63,7 +63,7 @@ persistentHash<T>(value: T): Bytes<32>
 
 ### transientHash (not a commitment)
 
-```
+```text
 transientHash<T>(value: T): Field
 ```
 
@@ -77,7 +77,7 @@ transientHash<T>(value: T): Field
 The standard commit-reveal pattern uses two phases: a commit phase where the value is hidden behind a commitment, and a reveal phase where the value and randomness are disclosed so observers can verify the commitment was honest.
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export enum Phase { commit, reveal, finalized }

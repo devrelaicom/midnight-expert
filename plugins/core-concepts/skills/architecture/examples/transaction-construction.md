@@ -12,7 +12,7 @@ Send 50 NIGHT from your wallet to a recipient.
 ### Step 1: Identify Spendable Coin
 
 From your local wallet:
-```
+```text
 MyCoin {
   coin_info: {
     value: 100,
@@ -28,14 +28,14 @@ MyCoin {
 ### Step 2: Generate Merkle Path
 
 Query the current commitment tree:
-```
+```text
 merkle_path = getMerklePath(index: 42)
 merkle_root = getCurrentRoot()
 ```
 
 ### Step 3: Compute Nullifier
 
-```
+```text
 nullifier = Hash<(CoinInfo, CoinSecretKey)>
          = Hash<(coin_info, 0xsec456...)>
          = 0xnull...
@@ -43,7 +43,7 @@ nullifier = Hash<(CoinInfo, CoinSecretKey)>
 
 ### Step 4: Create Recipient Output
 
-```
+```text
 recipient_coin_info = CoinInfo {
   value: 50,
   type: NIGHT,
@@ -55,7 +55,9 @@ recipient_commitment = Hash<(recipient_coin_info, recipient_public_key)>
 
 ### Step 5: Create Change Output
 
-```
+```text
+// Note: Fees are omitted for simplicity. In practice, excess value
+// after balancing becomes the transaction fee.
 change_coin_info = CoinInfo {
   value: 50,    // 100 - 50 = 50 change
   type: NIGHT,
@@ -67,7 +69,7 @@ change_commitment = Hash<(change_coin_info, my_public_key)>
 
 ### Step 6: Build Zswap Offer
 
-```
+```text
 Offer {
   inputs: [{
     nullifier: 0xnull...,
@@ -93,7 +95,7 @@ Offer {
 
 ### Step 7: Assemble Transaction
 
-```
+```text
 Transaction {
   guaranteed_zswap_offer: Offer,
   fallible_zswap_offer: None,
@@ -115,7 +117,7 @@ Call a contract function while also transferring tokens.
 
 Each ContractCall contains both guaranteed and fallible transcripts:
 
-```
+```text
 ContractCall {
   contract_address: ContractAddress(0xcontract...),
   entry_point: "deposit",
@@ -134,7 +136,7 @@ ContractCall {
 ### Step 2: Prepare Zswap for Contract
 
 Create output targeted to contract:
-```
+```text
 contract_coin_info = CoinInfo {
   value: 10,
   type: NIGHT,
@@ -151,7 +153,7 @@ contract_coin = Output {
 
 ### Step 3: Build Combined Transaction
 
-```
+```text
 Transaction {
   guaranteed_zswap_offer: {
     inputs: [my_input],
@@ -167,7 +169,7 @@ Transaction {
 ### Step 4: Binding Randomness
 
 Binding randomness opens the homomorphic Pedersen commitment:
-```
+```text
 binding_randomness = generateBindingRandomness(contract_calls, binding_data)
 ```
 
@@ -178,7 +180,7 @@ Exchange tokens atomically with another party.
 
 ### My Offer (Partial)
 
-```
+```text
 MyOffer {
   inputs: [my_token_a_input],  // Spending 100 TOKEN_A
   outputs: [],
@@ -196,7 +198,7 @@ MyOffer {
 
 ### Counterparty Offer (Partial)
 
-```
+```text
 TheirOffer {
   inputs: [their_token_b_input],  // Spending 50 TOKEN_B
   outputs: [
@@ -213,7 +215,7 @@ TheirOffer {
 
 ### Merged Transaction
 
-```
+```text
 MergedOffer {
   inputs: [my_token_a_input, their_token_b_input],
   outputs: [my_token_b_output, their_token_a_output],
@@ -234,7 +236,7 @@ Transaction {
 ### Pattern: Fee Payment
 
 Always include slightly more input than output:
-```
+```text
 Input: 100 NIGHT
 Outputs: 50 (recipient) + 49.9 (change)
 Fee: 0.1 NIGHT (implicit, non-negative delta)
@@ -243,7 +245,7 @@ Fee: 0.1 NIGHT (implicit, non-negative delta)
 ### Pattern: Multiple Inputs
 
 Combine multiple small coins:
-```
+```text
 inputs: [coin1, coin2, coin3]  // Total 30 + 50 + 20 = 100
 outputs: [recipient_90, change_10]
 ```
@@ -251,7 +253,7 @@ outputs: [recipient_90, change_10]
 ### Pattern: Multiple Recipients
 
 Single transaction, multiple outputs:
-```
+```text
 outputs: [
   recipient1_output,
   recipient2_output,

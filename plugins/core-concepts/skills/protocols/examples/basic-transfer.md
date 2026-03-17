@@ -10,7 +10,7 @@ A simple private token transfer from Alice to Bob using Zswap.
 
 Alice has a coin (UTXO) she wants to send:
 
-```
+```text
 Alice's Coin:
   commitment: Hash(CoinInfo, Alice's ZswapCoinPublicKey) = 0xabc...
   CoinInfo: { value: 100, type: NIGHT, nonce: 0x456... }
@@ -21,7 +21,7 @@ Alice's Coin:
 
 Alice creates an input to spend her coin:
 
-```
+```text
 Input {
   nullifier: Hash(CoinInfo, ZswapCoinSecretKey),  // Unlinkable to commitment
   type_value_commit: Pedersen(NIGHT, 100),          // For balance verification
@@ -36,7 +36,7 @@ The nullifier is computed from CoinInfo and Alice's secret key -- the commitment
 
 Alice creates an output for Bob:
 
-```
+```text
 Output {
   commitment: Hash(CoinInfo_new, Bob's ZswapCoinPublicKey),  // Hash-based, NOT Pedersen
   type_value_commit: Pedersen(NIGHT, 100),                    // Pedersen, for balance verification
@@ -49,17 +49,19 @@ Where CoinInfo_new = {value: 100, type: NIGHT, nonce: fresh_nonce}.
 
 ### 4. Build Offer
 
-```
+```text
 Offer {
   inputs: [Alice's input],
   outputs: [Bob's output],
-  deltas: {},  // Balanced (ignoring fees)
+  deltas: {},  // Balanced — see fee note below
 }
 ```
 
+> **Note:** Fees are omitted from this example for simplicity. In practice, the guaranteed offer's excess value (sum of inputs minus sum of outputs minus fees) must be non-negative, with the excess becoming the transaction fee.
+
 ### 5. Submit Transaction
 
-```
+```text
 Transaction {
   guaranteedCoins: Offer,
   // No contract calls needed
@@ -78,7 +80,7 @@ Transaction {
 
 Bob scans blockchain for outputs encrypted to his key:
 
-```
+```text
 1. Decrypt ciphertext with Bob's private key
 2. Learn: CoinInfo (value = 100 NIGHT, type, nonce)
 3. Compute commitment = Hash(CoinInfo, Bob's ZswapCoinPublicKey) and verify it matches

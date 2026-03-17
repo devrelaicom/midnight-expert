@@ -15,7 +15,7 @@ The non-Turing-completeness is enforced by the instruction set: `jmp` and `branc
 
 The VM stack is initialized with three elements:
 
-```
+```text
 [Context, Effects, State]
 ```
 
@@ -96,7 +96,7 @@ Effects are modified via `ins`/`idx` operations on the effects Array in the init
 
 ## Execution Flow
 
-```
+```text
 1. Initialize stack: [Context, Effects, State]
 2. Load Impact program (bytecode)
 3. Execute instructions sequentially (PC only moves forward)
@@ -130,7 +130,7 @@ Compact code compiles to two outputs:
 1. **Impact bytecode** -- the public state changes (runs on-chain in the VM)
 2. **ZK circuits** -- the private computation (proven off-chain)
 
-```
+```text
 Compact source
   ├── Impact bytecode (public transcript)
   │   └── Executes on Impact VM (on-chain)

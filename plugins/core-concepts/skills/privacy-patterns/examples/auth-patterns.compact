@@ -21,7 +21,7 @@
 //   - `import CompactStandardLibrary;` (not `import { fn } from "path"`)
 // ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 // ============================================================================

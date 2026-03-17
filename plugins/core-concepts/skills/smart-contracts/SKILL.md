@@ -1,6 +1,7 @@
 ---
 name: core-concepts:smart-contracts
-description: Use when asking about Midnight smart contracts, Compact language basics, Impact VM, contract state separation, circuit entry points, deployment, or transaction execution model.
+description: This skill should be used when the user asks about Midnight smart contracts, Compact programming language (syntax, types, ledger declarations, witness functions, circuits, disclose annotations), Impact VM bytecode execution, contract state separation (public ledger vs private witness), ZK proof generation, token operations, deployment, constructor syntax, the three-phase transaction execution model, or common contract patterns like counters, commitments, nullifiers, and Merkle proofs.
+version: 0.1.0
 ---
 
 # Midnight Smart Contracts
@@ -26,7 +27,7 @@ A Compact contract consists of four elements:
 Each field is declared individually with `export ledger`:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export ledger counter: Counter;
@@ -83,6 +84,21 @@ pure circuit double(x: Field): Field {
 ```
 
 There is no `function` keyword in Compact. Use `circuit` for helpers that may access ledger state, and `pure circuit` for purely computational helpers.
+
+### 5. Constructor (Initialization)
+
+The optional `constructor()` block runs once at deployment to initialize ledger state:
+
+```compact
+constructor() {
+  const sk = local_secret_key();
+  // disclose() required: writing witness-derived value to ledger
+  authority = disclose(get_public_key(sk));
+  minDeposit = 100 as Uint<64>;
+}
+```
+
+The constructor has no parameters, no return type declaration, and no `export` or `circuit` keyword. It can access witnesses and ledger state like any circuit. It executes only during contract deployment.
 
 ## Public vs Private State
 
@@ -192,7 +208,7 @@ These are imported via `import CompactStandardLibrary;` -- there is no selective
 
 A deployment transaction contains the initial contract state and a nonce:
 
-```
+```text
 Deployment Transaction = Initial Contract State + Nonce
 Contract Address = Hash(initial_state, nonce)
 ```
@@ -206,7 +222,7 @@ The contract address is deterministically derived from the deployment data. The 
 The simplest contract uses the `Counter` ADT for thread-safe counting:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export ledger count: Counter;
@@ -243,8 +259,8 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
 export circuit authorize(): [] {
   const sk = local_secret_key();
   const pk = get_public_key(sk);
-  // disclose() needed: pk is derived from witness data
-  assert(pk == authority, "Not authorized");
+  // disclose() needed: pk is derived from witness data (sk)
+  assert(disclose(pk == authority), "Not authorized");
 }
 ```
 
@@ -295,7 +311,7 @@ See `examples/private-vault.compact` for a complete private vault example.
 
 ## Important Syntax Notes
 
-- Every `.compact` file needs: `pragma language_version >= 0.16 && <= 0.18;`
+- Every `.compact` file needs: `pragma language_version 0.21;`
 - Import: `import CompactStandardLibrary;` (not `import { fn } from "path"`)
 - Assert: `assert(condition, "message")` -- parentheses required
 - If: `if (condition) { }` -- parentheses required
@@ -322,3 +338,4 @@ See `examples/private-vault.compact` for a complete private vault example.
 |---------|------|-------------|
 | Counter with Counter ADT | `examples/counter.compact` | Basic ledger operations, Counter type |
 | Private vault with deposits/withdrawals | `examples/private-vault.compact` | Commitments, Merkle proofs, nullifiers |
+| TypeScript witness implementation | `examples/counter-witnesses.ts` | Witness pattern for counter contract |

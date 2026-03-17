@@ -4,7 +4,7 @@ How Midnight transactions execute, from submission to finalization. Covers the t
 
 ## Transaction Lifecycle
 
-```
+```text
 User submits transaction
   → Phase 1: Well-Formedness (stateless validation)
   → Phase 2: Guaranteed (stateful, always persists)
@@ -57,7 +57,7 @@ This two-phase design allows contracts to separate critical operations (guarante
 
 Each contract has an `ImpactStateValue` plus a map of entry points to verification keys:
 
-```
+```text
 ContractState = ImpactStateValue + Map<EntryPoint, ContractOperation>
 ContractOperation = SnarkVerifierKey
 ```
@@ -68,7 +68,7 @@ The Impact VM manipulates the `ImpactStateValue` directly. The verification keys
 
 The global Zswap state tracks token commitments and nullifiers:
 
-```
+```text
 ZswapState:
   commitment_tree: MerkleTree          -- all coin commitments
   commitment_tree_first_free: u32      -- next free slot index
@@ -78,7 +78,7 @@ ZswapState:
 
 ### Zswap State Update (Pseudocode)
 
-```
+```text
 For each transaction:
   // Process inputs (spending coins)
   for each input nullifier:
@@ -114,7 +114,7 @@ The VM verifies that actual execution produces exactly these effects. Any mismat
 
 Contract calls within a transaction execute sequentially:
 
-```
+```text
 Transaction with calls [C1, C2, C3]:
   Execute C1 → checkpoint state
   Execute C2 → checkpoint state
@@ -132,7 +132,7 @@ Within a contract call, the `ckpt` opcode marks the boundary between the guarant
 
 Each `ContractCall` declares both a `guaranteed_transcript` and a `fallible_transcript`:
 
-```
+```text
 ContractCall:
   guaranteed_transcript:
     gas_bound: u64

@@ -64,7 +64,7 @@ Each `MerkleTreePathEntry` has:
 
 ## merkleTreePathRoot Function
 
-```
+```text
 merkleTreePathRoot<N, T>(path: MerkleTreePath<N, T>): MerkleTreeDigest
 ```
 
@@ -83,7 +83,7 @@ const digest = merkleTreePathRoot<16, Bytes<32>>(memberPath);
 The canonical four-step pattern for anonymous membership verification:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export ledger members: HistoricMerkleTree<16, Bytes<32>>;

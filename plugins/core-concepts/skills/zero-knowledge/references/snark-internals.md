@@ -12,7 +12,7 @@ ZK SNARKs use elliptic curve cryptography for:
 ### Bilinear Pairings
 
 A pairing is a function:
-```
+```text
 e: G1 × G2 → GT
 ```
 
@@ -38,7 +38,7 @@ PLONK uses gate-based arithmetization rather than constraint matrices:
 
 PLONK uses a **universal Structured Reference String (SRS)** — a single trusted setup ceremony that works for ALL circuits up to a maximum size.
 
-```
+```text
 UniversalSetup(max_size) → SRS
 ```
 
@@ -55,7 +55,7 @@ Prover creates proof using:
 - Public inputs
 - Proving key (derived from universal SRS)
 
-```
+```text
 Prove(ProvingKey, Witness, PublicInputs) → Proof
 ```
 
@@ -68,7 +68,7 @@ Verifier checks proof using:
 - Public inputs
 - Verification key (derived from universal SRS)
 
-```
+```text
 Verify(VerificationKey, Proof, PublicInputs) → bool
 ```
 
@@ -102,6 +102,8 @@ Proof reveals nothing beyond statement truth.
 Midnight's ZK circuits use specific cryptographic primitives:
 - **Hashing** (`persistentHash`): Uses SHA-256 — stable across upgrades, safe for ledger state
 - **Coin commitments** (`persistentCommit`): Hash-based commitments binding a value with randomness — used in shielded coin operations via `receiveShielded`/`sendShielded`
+
+The "persistent" prefix indicates these functions use SHA-256, producing stable outputs across compiler versions — safe for storing in ledger state. Their counterparts (`transientHash`, `transientCommit`) use circuit-optimized algorithms that may change between compiler versions. Transient outputs must never be stored on-chain.
 
 ## Midnight's SNARK Usage
 
