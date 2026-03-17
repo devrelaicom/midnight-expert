@@ -1,6 +1,7 @@
 ---
 name: compact-patterns
-description: This skill should be used when the user asks about Compact contract design patterns, reusable contract building blocks, access control patterns (owner-only, RBAC, multi-sig), pausable or emergency stop patterns, initializable contracts, state machine patterns, time-locked operations, commit-reveal schemes, sealed-bid auctions, escrow patterns, treasury or pot management, multi-party authorization, voting or governance contracts, registry or allowlist patterns, credential verification, domain-separated identity, anonymous membership with Merkle proofs, round-based unlinkability, selective disclosure, or how to combine multiple patterns together.
+description: This skill should be used when the user asks about Compact contract design patterns, reusable building blocks, or how to combine patterns. Covers access control (owner-only, RBAC, pausable, initializable), state management (state machine, time-locked), commitment schemes (commit-reveal, sealed-bid auction), value handling (escrow, treasury), governance (multi-sig, voting), identity and membership (registry, credential, anonymous Merkle membership), and privacy (unlinkability, selective disclosure).
+version: 0.1.0
 ---
 
 # Compact Contract Patterns

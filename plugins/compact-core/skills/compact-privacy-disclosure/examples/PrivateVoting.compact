@@ -133,6 +133,12 @@ circuit computeVoteCommitment(ballot: Bytes<32>, rand: Bytes<32>): Bytes<32> {
   ]);
 }
 
+// SECURITY NOTE: persistentHash with a small ballot space (e.g., "yes"/"no")
+// is brute-forceable even with randomness. For production voting contracts,
+// consider using persistentCommit which provides proper hiding guarantees.
+// persistentHash is used here for educational purposes to demonstrate the
+// disclose() requirement difference from persistentCommit.
+
 // --- Constructor ---
 
 // Deploy the contract with the admin's identity.
@@ -240,11 +246,10 @@ export circuit commitVote(ballot: Bytes<32>): [] {
   // --- Step 3: Create and store vote commitment ---
   const rand = getCommitRandomness();
   const commitment = computeVoteCommitment(ballot, rand);
-  // Insert into committedVotes tree — the leaf value (commitment hash)
-  // is visible on-chain, but the underlying ballot choice is hidden
-  // because only the commitment hash is stored, not the raw ballot.
-  // disclose() required: commitment is derived from witness data (ballot
-  // and randomness).
+  // disclose() required here because computeVoteCommitment uses persistentHash,
+  // which does NOT clear witness taint (unlike persistentCommit which does).
+  // Compare with NullifierDoubleSpend.compact where persistentCommit is used
+  // and disclose() is not needed on the insert call.
   committedVotes.insert(disclose(commitment));
 }
 

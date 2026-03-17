@@ -1,6 +1,7 @@
 ---
 name: compact-circuit-costs
-description: This skill should be used when the user asks about Compact circuit costs, ZK proof generation costs, gate counts, loop unrolling behavior, hash function cost tradeoffs (transientHash vs persistentHash), commitment function costs (transientCommit vs persistentCommit), pure circuit optimization benefits, vector operation costs (map/fold/slice unrolling), compiler optimization passes, runtime gas model (readTime, computeTime, bytesWritten, bytesDeleted), ledger state storage costs, or how to write cost-efficient Compact smart contracts on Midnight.
+description: This skill should be used when the user asks about Compact circuit costs, ZK proof generation costs, gate counts, loop unrolling behavior, hash function cost tradeoffs (transientHash vs persistentHash), commitment function costs (transientCommit vs persistentCommit), pure circuit optimization benefits, vector operation costs (map/fold/slice unrolling), compiler optimization passes, runtime gas model (readTime, computeTime, bytesWritten, bytesDeleted), ledger state storage costs, privacy-cost tradeoffs, or how to write cost-efficient Compact smart contracts on Midnight.
+version: 0.1.0
 ---
 
 # Circuit Costs & Optimization

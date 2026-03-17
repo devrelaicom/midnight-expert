@@ -66,24 +66,24 @@ export interface NetworkConfig {
 }
 
 const standaloneConfig: NetworkConfig = {
-  indexer: "http://127.0.0.1:8088/api/v3/graphql",
-  indexerWS: "ws://127.0.0.1:8088/api/v3/graphql/ws",
-  node: "http://127.0.0.1:9944",
-  proofServer: "http://127.0.0.1:6300",
+  indexer: "http://localhost:8088/api/v3/graphql",
+  indexerWS: "ws://localhost:8088/api/v3/graphql/ws",
+  node: "http://localhost:9944",
+  proofServer: "http://localhost:6300",
 };
 
 const previewConfig: NetworkConfig = {
   indexer: "https://indexer.preview.midnight.network/api/v3/graphql",
   indexerWS: "wss://indexer.preview.midnight.network/api/v3/graphql/ws",
   node: "https://rpc.preview.midnight.network",
-  proofServer: "http://127.0.0.1:6300",
+  proofServer: "http://localhost:6300",
 };
 
 const preprodConfig: NetworkConfig = {
   indexer: "https://indexer.preprod.midnight.network/api/v3/graphql",
   indexerWS: "wss://indexer.preprod.midnight.network/api/v3/graphql/ws",
   node: "https://rpc.preprod.midnight.network",
-  proofServer: "http://127.0.0.1:6300",
+  proofServer: "http://localhost:6300",
 };
 ```
 

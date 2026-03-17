@@ -18,7 +18,7 @@ Without atomicity:
 
 Alice offers her NIGHT, wants TOKEN_A:
 
-```
+```text
 Alice's Offer {
   inputs: [
     { nullifier: 0xaaa..., value: 100 NIGHT, proof: ... }
@@ -35,9 +35,11 @@ This offer is **incomplete**: deltas don't balance.
 
 ### Step 2: Bob Creates Complementary Offer
 
-Bob offers TOKEN_A, wants NIGHT. Bob also constructs an output for Alice (he knows her public key from the order book):
+Bob offers TOKEN_A, wants NIGHT. Bob also constructs an output for Alice (he knows her public key from the order book).
 
-```
+> **Note:** Bob needs Alice's `ZswapCoinPublicKey` (not just an address) to construct the output commitment for her. This key must be available via the order book or a separate communication channel.
+
+```text
 Bob's Offer {
   inputs: [
     { nullifier: 0xbbb..., value: 50 TOKEN_A, proof: ... }
@@ -59,7 +61,7 @@ Also incomplete alone (deltas don't balance without Alice's input).
 
 Anyone (Alice, Bob, or a relay) can merge:
 
-```
+```text
 Merged Offer {
   inputs: [
     Alice's NIGHT input,
@@ -77,7 +79,7 @@ Now balanced.
 
 ### Step 4: Complete Transaction
 
-```
+```text
 Transaction {
   guaranteedCoins: Merged Offer
 }
@@ -123,7 +125,7 @@ Observers don't see:
 
 For exchanges:
 
-```
+```text
 1. Makers post partial offers (incomplete deltas)
 2. Takers find matching offers
 3. Taker creates complementary offer
@@ -136,7 +138,7 @@ For exchanges:
 
 Zswap supports N-party atomic swaps:
 
-```
+```text
 Alice: -100 NIGHT, +50 TOKEN_A
 Bob: -50 TOKEN_A, +30 TOKEN_B
 Carol: -30 TOKEN_B, +100 NIGHT

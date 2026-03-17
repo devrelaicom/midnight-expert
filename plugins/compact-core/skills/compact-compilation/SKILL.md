@@ -1,6 +1,7 @@
 ---
 name: compact-compilation
 description: This skill should be used when the user asks about compiling Compact contracts, compiler output/artifacts, ZKIR files, prover/verifier keys, circuit metrics (k-value, rows), interpreting compiler errors, pure vs impure circuit compilation differences, the --skip-zk flag, contract-info.json, TypeScript binding generation, or the build output directory structure.
+version: 0.1.0
 ---
 
 # Compact Compilation
@@ -42,7 +43,7 @@ For a detailed walkthrough of each directory, see `references/compilation-output
 | `keys/<circuit>.verifier` | Verifier key submitted on-chain during deployment | Exported impure circuits only |
 | `compiler/contract-info.json` | Circuit manifest (names, types, pure/impure flags) | Always |
 
-**File count formula**: For N exported impure circuits: **N + 4** files (default with `--skip-zk`) or **2N + 4** files (with `--no-skip-zk` which generates keys).
+**File count formula**: For N exported impure circuits: **2N + 4** files (default with `--skip-zk`: N `.zkir` + N `.bzkir` + 3 contract + 1 metadata) or **4N + 4** files (with `--no-skip-zk`: adds N `.prover` + N `.verifier` keys).
 
 ## Pure vs Impure Circuits
 

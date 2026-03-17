@@ -44,6 +44,14 @@ Comprehensive review of Compact smart contract code covering 11 categories inclu
 /compact-core:review-compact contracts/
 ```
 
+### `/compact-core:debug-contract`
+
+Interactive debugging workflow for Compact smart contract errors. Uses symptom-driven triage to route to the appropriate domain-specific skill.
+
+```
+/compact-core:debug-contract
+```
+
 ## Agents
 
 ### compact-dev
@@ -145,6 +153,19 @@ Project scaffolding with `create-mn-app` — templates, project structure, and f
 Review checklists for 11 categories of Compact contract review — privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, witness-contract consistency, architecture, code quality, and testing.
 
 **Triggers on**: code review, security review, privacy review
+
+### compact-debugging
+
+Interactive debugging process — symptom-driven triage, fix tracking, and escalation for compiler failures, proof generation issues, witness mismatches, and compatibility problems.
+
+**Triggers on**: debugging errors, compiler failures, "won't compile", proof generation issues, version mismatches
+
+## Companion Plugins
+
+Some features reference skills from companion plugins:
+
+- **midnight-tooling** — CLI installation, proof server management, devnet, release notes
+- **devs** — General code review, TypeScript, and security skills used by the reviewer agent
 
 ## License
 

@@ -15,9 +15,11 @@ Cryptographic binding ensures transaction integrity:
 Used for value binding in Zswap.
 
 **Structure**:
-```
+```text
 Commit(v) = v·G + r·H
 ```
+
+where G and H are independent generator points on the elliptic curve and r is a random blinding factor.
 
 **Properties**:
 - **Hiding**: Cannot determine v from commitment
@@ -25,7 +27,7 @@ Commit(v) = v·G + r·H
 - **Homomorphic**: Commit(a) + Commit(b) = Commit(a+b)
 
 **Usage in Midnight**:
-```
+```text
 Coin commitment = Hash<(CoinInfo, CoinPublicKey)>
 Balance verification via homomorphic Pedersen value commitments
 ```
@@ -41,7 +43,7 @@ One Schnorr proof per transaction. This is a lightweight ZK proof variant (not a
 Without this, contracts could create value from nothing by hiding it in their section.
 
 **Structure**:
-```
+```text
 SchnorrProof {
   commitment: Point,    // What we're proving about
   challenge: Scalar,    // Fiat-Shamir challenge
@@ -84,7 +86,7 @@ This approach preserves the homomorphic property needed for balance verification
 
 The two offers are balanced separately with different adjustments:
 
-```
+```text
 Guaranteed offer:
   For each token type t:
     sum(inputs[t]) - sum(outputs[t]) - fees[t] + mints[t] >= 0
@@ -98,7 +100,7 @@ Both must have a non-negative delta per token type. No actual values are reveale
 
 ### Multi-Asset Balancing
 
-```
+```text
 For each offer, per token type:
   delta[type] = sum(inputs) - sum(outputs) + adjustments
 
@@ -110,7 +112,7 @@ For valid transaction:
 
 ### How Proofs Link Together
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │              Transaction                     │
 │                                             │

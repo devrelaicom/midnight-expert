@@ -14,7 +14,7 @@ Midnight adds its own variation on top of Zswap for smart contract integration v
 
 Coin commitments use a hash function, not Pedersen commitments:
 
-```
+```text
 CoinCommitment = Hash(CoinInfo, ZswapCoinPublicKey)
 ```
 
@@ -31,7 +31,7 @@ These are stored in the commitment Merkle tree as leaves.
 
 Separate from coin commitments, Pedersen commitments are used for the `type_value_commit` field on inputs and outputs. These exist solely for **balance verification**:
 
-```
+```text
 type_value_commit = type·G_t + value·G_v + randomness·G_r
 ```
 
@@ -46,7 +46,7 @@ The homomorphic property allows verifiers to check that inputs and outputs balan
 
 ### Nullifiers
 
-```
+```text
 CoinNullifier = Hash(CoinInfo, ZswapCoinSecretKey)
 ```
 
@@ -61,7 +61,7 @@ Where CoinInfo = {value, type, nonce}. The coin commitment is NOT an input to nu
 
 ### Complete Offer
 
-```
+```text
 Offer {
   inputs: [Input, ...],
   outputs: [Output, ...],
@@ -72,7 +72,7 @@ Offer {
 
 ### Input Structure
 
-```
+```text
 Input {
   nullifier: Bytes<32>,
   type_value_commit: PedersenCommit,
@@ -91,7 +91,7 @@ Input {
 
 ### Output Structure
 
-```
+```text
 Output {
   commitment: Bytes<32>,
   type_value_commit: PedersenCommit,
@@ -118,14 +118,14 @@ Coins created and spent in same transaction:
 ### Per-Token Accounting
 
 For each token type:
-```
+```text
 sum(input_values) = sum(output_values) + fees
 ```
 
 ### Homomorphic Verification
 
 Using the homomorphic property of the **Pedersen value commitments** (type_value_commit fields):
-```
+```text
 sum(input_type_value_commits) - sum(output_type_value_commits) = Commit(delta)
 ```
 
@@ -136,7 +136,7 @@ The contract section's zero-value contribution is proven via a Schnorr proof (on
 ### Multi-Asset Balancing
 
 Each offer specifies a delta vector:
-```
+```text
 deltas: {
   NIGHT: +100,    // Spending 100 NIGHT (inputs exceed outputs)
   TOKEN_A: -50,   // Receiving 50 TOKEN_A (outputs exceed inputs)
@@ -156,7 +156,7 @@ Two offers can merge if:
 
 ### Merge Process
 
-```
+```text
 Offer1 + Offer2 = MergedOffer {
   inputs: Offer1.inputs + Offer2.inputs,
   outputs: Offer1.outputs + Offer2.outputs,
@@ -184,7 +184,7 @@ Coins can specify contract address:
 ### Token Issuance
 
 Contracts create tokens via:
-```
+```text
 TokenType = Hash(domain_separator, contract_address)
 ```
 

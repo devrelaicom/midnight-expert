@@ -7,7 +7,7 @@ Comprehensive syntax reference for the Compact smart contract language. All exam
 Every Compact file follows this structure:
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 // Type declarations (enums, structs)

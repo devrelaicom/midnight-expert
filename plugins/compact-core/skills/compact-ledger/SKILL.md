@@ -1,6 +1,7 @@
 ---
 name: compact-ledger
-description: This skill should be used when the user asks about Compact ledger declarations, ledger modifiers (export, sealed), ledger ADT types (Counter, Map, Set, List, MerkleTree, HistoricMerkleTree), ADT operations and methods, constructor initialization of state, state design choices (Map vs Set vs MerkleTree, Counter vs Uint), nested ADT composition, on-chain privacy and visibility of state operations, disclosure rules for ledger writes, the Kernel ledger and kernel.self(), or the Midnight token and coin system (CoinInfo, ShieldedCoinInfo, zswap).
+description: This skill should be used when the user asks about Compact ledger declarations, ledger modifiers (export, sealed), ledger ADT types (Counter, Map, Set, List, MerkleTree, HistoricMerkleTree), ADT operations and methods, constructor initialization of state, state design choices (Map vs Set vs MerkleTree, Counter vs Uint), nested ADT composition, on-chain privacy and visibility of state operations, disclosure rules for ledger writes including disclose() usage, default<T> for ADT initialization, the Kernel ledger and kernel.self(), or the Midnight token and coin system (ShieldedCoinInfo, QualifiedShieldedCoinInfo, zswap).
+version: 0.1.0
 ---
 
 # Compact Ledger & On-Chain State
@@ -68,7 +69,7 @@ export ledger count: Counter;
 witness local_secret_key(): Bytes<32>;
 
 constructor() {
-  owner = disclose(public_key(local_secret_key()));
+  owner = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), local_secret_key()]));
   phase = Phase.registration;
   // count starts at 0 by default — no initialization needed
 }

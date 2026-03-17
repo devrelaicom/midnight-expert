@@ -1,6 +1,7 @@
 ---
 name: compact-tokens
 description: This skill should be used when the user asks about Midnight tokens, token types (NIGHT, DUST, shielded, unshielded), minting and burning tokens, token transfers, token colors and domain separators, the zswap protocol, ShieldedCoinInfo, QualifiedShieldedCoinInfo, Kernel mint operations, contract token patterns (FungibleToken, NonFungibleToken, MultiToken), the account model vs UTXO model for tokens, sendShielded, receiveShielded, sendUnshielded, mintShieldedToken, mintUnshieldedToken, unshieldedBalance, OpenZeppelin Compact token contracts, or choosing between shielded and unshielded token approaches.
+version: 0.1.0
 ---
 
 # Compact Tokens
@@ -23,7 +24,7 @@ This skill covers tokens on Midnight: choosing between shielded and unshielded a
 |------|----------|---------|-------|------------|
 | Shielded ledger | Blockchain ledger | Private | UTXO | Native privacy, maximum efficiency, hidden sender/recipient/value |
 | Unshielded ledger | Blockchain ledger | Transparent | UTXO | Full transparency, high performance, visible balances |
-| Shielded contract | Contract state | Private | Account (via `Map`) | Programmable logic, custom spend rules, ZK-proven (currently limited — full support COMING SOON) |
+| Shielded contract | Contract state | Private | Account (via `Map`) | Private balances via ZK proofs, but no post-issuance spend enforcement — contract cannot freeze, pause, or claw back coins once received (see Known Limitations in `references/token-patterns.md`). OpenZeppelin ShieldedERC20 is archived; use unshielded contract tokens for custom logic. |
 | Unshielded contract | Contract state | Transparent | Account (via `Map`) | Full programmability, visible operations |
 
 ## Shielded Token Operations

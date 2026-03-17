@@ -8,7 +8,7 @@ Midnight's ledger has two main components:
 
 ## Zswap State
 
-```
+```text
 ZswapState {
   commitment_tree: MerkleTree<CoinCommitment>,
   commitment_tree_first_free: u32,
@@ -45,7 +45,7 @@ ZswapState {
 
 ## Contract Map
 
-```
+```text
 ContractMap = Map<ContractAddress, ContractState>
 ```
 
@@ -54,7 +54,7 @@ A contract state consists of an Impact state value plus a map of entry point nam
 ### Contract Address
 
 Derived from deployment:
-```
+```text
 address = Hash(contract_state, nonce)
 ```
 
@@ -68,11 +68,13 @@ The address is computed from the initial contract state and a nonce, not from th
 | MerkleTree | Root only on-chain | Contents private |
 | Set | Membership structure | Contents private |
 
+These are Compact contract state types used within the Impact VM. They correspond to on-chain data structures managed by the Midnight ledger.
+
 ## State Transitions
 
 ### Adding a Coin
 
-```
+```text
 1. Compute commitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
 2. Insert commitment at commitment_tree_first_free
 3. Increment commitment_tree_first_free
@@ -82,7 +84,7 @@ The address is computed from the initial contract state and a nonce, not from th
 
 ### Spending a Coin
 
-```
+```text
 1. Verify nullifier not in nullifiers set
 2. Verify Merkle proof against valid root in commitment_tree_history
 3. Verify ZK proof of ownership
@@ -91,7 +93,7 @@ The address is computed from the initial contract state and a nonce, not from th
 
 ### Updating Contract State
 
-```
+```text
 1. Lookup contract by address
 2. Verify ZK proof matches circuit (using stored verifier keys)
 3. Execute Impact program
@@ -103,7 +105,7 @@ The address is computed from the initial contract state and a nonce, not from th
 
 ### Native Token
 
-```
+```text
 type = 0x0000...0000  (256-bit zero)
 ```
 
@@ -111,7 +113,7 @@ The native token TYPE IDENTIFIER is the 256-bit zero value. This identifies the 
 
 ### Custom Tokens
 
-```
+```text
 type = Hash(contract_address, domain_separator)
 ```
 
@@ -122,7 +124,7 @@ The domain separator allows one contract to issue multiple token types.
 ### Zswap Balance Equation
 
 Per token type:
-```
+```text
 sum(input_values) - sum(output_values) + mints >= 0
 ```
 

@@ -65,11 +65,11 @@ export circuit isApprovedForAll(
 }
 
 export circuit transferFrom(
-  from: Either<ZswapCoinPublicKey, ContractAddress>,
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
   to: Either<ZswapCoinPublicKey, ContractAddress>,
   id: Uint<128>, value: Uint<128>,
 ): [] {
-  return MultiToken_transferFrom(from, to, id, value);
+  return MultiToken_transferFrom(fromAddress, to, id, value);
 }
 ```
 
@@ -102,13 +102,13 @@ None.
 | `balanceOf` | `(account: Either<...>, id: Uint<128>) → Uint<128>` | k=10, rows=439 | Balance of token type for account |
 | `setApprovalForAll` | `(operator: Either<...>, approved: Boolean) → []` | k=10, rows=404 | Set operator approval. Operator must not be zero. |
 | `isApprovedForAll` | `(account: Either<...>, operator: Either<...>) → Boolean` | k=10, rows=619 | Check operator approval |
-| `transferFrom` | `(from: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1882 | Transfer. Caller must be `from` or approved. `to` must not be ContractAddress or zero. |
-| `_transfer` | `(from: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1487 | Internal transfer. No caller check. `to` must not be ContractAddress. |
-| `_unsafeTransferFrom` | `(from: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1881 | Unsafe: allows ContractAddress |
-| `_unsafeTransfer` | `(from: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1486 | Unsafe variant of _transfer |
+| `transferFrom` | `(fromAddress: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1882 | Transfer. Caller must be `fromAddress` or approved. `to` must not be ContractAddress or zero. |
+| `_transfer` | `(fromAddress: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1487 | Internal transfer. No caller check. `to` must not be ContractAddress. |
+| `_unsafeTransferFrom` | `(fromAddress: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1881 | Unsafe: allows ContractAddress |
+| `_unsafeTransfer` | `(fromAddress: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1486 | Unsafe variant of _transfer |
 | `_setURI` | `(newURI: Opaque<"string">) → []` | k=10, rows=39 | Update base URI |
 | `_mint` | `(to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=10, rows=912 | Mint tokens. `to` must not be ContractAddress or zero. |
 | `_unsafeMint` | `(to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=10, rows=911 | Unsafe: allows ContractAddress |
-| `_burn` | `(from: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=10, rows=688 | Burn tokens. `from` must not be zero, must have sufficient balance. |
-| `_update` | `(from: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1482 | Low-level: mints if `from` is zero, burns if `to` is zero. |
+| `_burn` | `(fromAddress: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=10, rows=688 | Burn tokens. `fromAddress` must not be zero, must have sufficient balance. |
+| `_update` | `(fromAddress: Either<...>, to: Either<...>, id: Uint<128>, value: Uint<128>) → []` | k=11, rows=1482 | Low-level: mints if `fromAddress` is zero, burns if `to` is zero. |
 | `_setApprovalForAll` | `(owner: Either<...>, operator: Either<...>, approved: Boolean) → []` | k=10, rows=518 | Internal operator approval. Operator must not be zero. |

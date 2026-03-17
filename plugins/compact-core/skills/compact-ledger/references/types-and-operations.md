@@ -328,7 +328,9 @@ All `MerkleTree` operations plus:
 The special `Kernel` type provides access to contract metadata and token operations.
 
 ```compact
-ledger kernel: Kernel;
+// kernel is auto-provided by `import CompactStandardLibrary;`
+// Do NOT declare it explicitly — redeclaration causes a compile error:
+//   "another binding found for kernel in the same scope"
 ```
 
 ### Operations
@@ -355,7 +357,9 @@ ledger kernel: Kernel;
 ### Common Usage
 
 ```compact
-ledger kernel: Kernel;
+// kernel is auto-provided by `import CompactStandardLibrary;`
+// Do NOT declare it explicitly — redeclaration causes a compile error:
+//   "another binding found for kernel in the same scope"
 
 export circuit getSelf(): ContractAddress {
   return kernel.self();

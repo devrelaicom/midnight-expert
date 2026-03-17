@@ -459,7 +459,7 @@ The compiler resolves the index through copy propagation and constant folding.
 
 ## Proving Time Benchmarks
 
-PLONK proving benchmarks (Intel Core i9-10885H) showing how circuit size affects proving time:
+PLONK proving benchmarks (Intel Core i9-10885H) showing how circuit size affects proving time. Benchmarks captured 2025; relative scaling ratios between circuit sizes are more reliable than absolute times.
 
 | Circuit Size (rows) | Compile Time | Prove Time | Verify Time |
 |---------------------|-------------|------------|-------------|

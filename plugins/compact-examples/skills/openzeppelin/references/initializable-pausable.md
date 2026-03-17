@@ -14,7 +14,8 @@ Many OpenZeppelin modules use the initializable pattern internally to ensure:
 pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
-import './compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Initializable';
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Initializable"
+  prefix Initializable_;
 
 export ledger _fieldAfterDeployment: Field;
 
@@ -71,9 +72,9 @@ Combine with Ownable for access-controlled pause/unpause:
 pragma language_version >= 0.21.0;
 
 import CompactStandardLibrary;
-import './compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable'
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
   prefix Pausable_;
-import './compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable'
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"
   prefix Ownable_;
 
 constructor(initOwner: Either<ZswapCoinPublicKey, ContractAddress>) {

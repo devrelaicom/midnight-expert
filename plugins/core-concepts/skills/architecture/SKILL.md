@@ -1,6 +1,7 @@
 ---
 name: core-concepts:architecture
-description: Use when asking about Midnight transaction structure, system architecture, building blocks, how Zswap/Kachina/Impact components fit together, bindings, commitments, or Schnorr proofs.
+description: This skill should be used when the user asks about Midnight network architecture, transaction structure, guaranteed vs fallible sections, Zswap/Kachina/Impact integration, ledger and state management, cryptographic binding (Pedersen commitments, Schnorr proofs, ZK-SNARKs), balance verification, nullifiers, address derivation, transaction merging, atomic swaps, fee handling, or the privacy model separating private and public domains.
+version: 0.1.0
 ---
 
 # Midnight Architecture
@@ -9,7 +10,7 @@ Midnight combines ZK proofs, shielded tokens, and smart contracts into a unified
 
 ## System Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    Midnight Network                      │
 ├─────────────────────────────────────────────────────────┤
@@ -33,7 +34,7 @@ Midnight combines ZK proofs, shielded tokens, and smart contracts into a unified
 
 Every Midnight transaction contains:
 
-```
+```text
 Transaction {
   guaranteed_zswap_offer,    // Always present; collects fees for all transaction phases
   fallible_zswap_offer?,     // Optional: may-fail token ops
@@ -59,7 +60,7 @@ Transaction {
 
 Token movement layer:
 
-```
+```text
 Offer {
   inputs: Coin[],      // Spent coins (nullifiers)
   outputs: Coin[],     // Created coins (commitments)
@@ -72,7 +73,7 @@ Offer {
 
 Computation layer. Each ContractCall contains both guaranteed and fallible transcripts (split via the `ckpt` opcode within a single call):
 
-```
+```text
 ContractCall {
   contract_address: ContractAddress,   // Bytes<32>
   entry_point: String,
@@ -96,7 +97,7 @@ Three complementary cryptographic guarantees ensure transaction integrity:
 
 Midnight extends Zswap's Pedersen commitment scheme:
 
-```
+```text
 Commitment(v1) + Commitment(v2) = Commitment(v1 + v2)
 ```
 
@@ -104,18 +105,13 @@ This allows verifying total value without revealing individual values.
 
 ### Binding Mechanism
 
-Transaction binding uses homomorphic Pedersen commitments rather than a simple hash. Commitments from all components (Zswap offers and contract calls) are homomorphically combined, ensuring:
-
-1. Zswap values balance (non-negative delta per token type)
-2. Contract effects match proofs
-3. All components cryptographically linked
-4. No value created from nothing
+Transaction binding uses homomorphic Pedersen commitments rather than a simple hash. Commitments from all components (Zswap offers and contract calls) are homomorphically combined, ensuring values balance, effects match proofs, and no value is created from nothing. See `references/cryptographic-binding.md` for detailed binding mechanics.
 
 ## State Architecture
 
 ### Ledger Structure
 
-```
+```text
 Ledger {
   zswap_state: {
     commitment_tree: MerkleTree,
@@ -131,7 +127,7 @@ Ledger {
 
 Contract state consists of an Impact state value plus a map of entry point names to operations (SNARK verifier keys):
 
-```
+```text
 ContractState {
   state: ImpactValue,                            // Impact state value
   operations: Map<String, SNARKVerifierKey>       // Entry point → verifier key
@@ -144,7 +140,7 @@ Contract Merkle trees are `MerkleTree(d)` Impact values with compile-time-fixed 
 
 ### Transaction Processing
 
-```
+```text
 1. Well-formedness Check (stateless)
    ├─ Format validation
    ├─ ZK proof verification
@@ -167,7 +163,7 @@ Contract Merkle trees are `MerkleTree(d)` Impact values with compile-time-fixed 
 
 The two offers are balanced separately with different adjustments:
 
-```
+```text
 Guaranteed offer:
   For each token type: sum(inputs) - sum(outputs) - fees + mints >= 0
 
@@ -183,7 +179,7 @@ Excess becomes the transaction fee paid to the network.
 
 Zswap enables atomic composition:
 
-```
+```text
 Tx1 (Party A)     Tx2 (Party B)
      ↓                 ↓
      └─────┬───────────┘
@@ -198,20 +194,35 @@ Tx1 (Party A)     Tx2 (Party B)
 - Values must balance when combined
 - Proofs remain independently valid
 
+**Why contract calls cannot be merged:** Each contract call includes its own ZK proof bound to a specific transcript. Combining two independent contract call transcripts would require a new proof that neither party can generate unilaterally, since each proof depends on private witness data known only to its creator.
+
 ## Address Derivation
 
-```
+```text
 Contract Address = Hash(contract_state, nonce)
+```
+Uniquely identifies a deployed contract instance.
+
+```text
 Token Type = Hash(contract_address, domain_separator)
+```
+Identifies a specific token issued by a contract.
+
+```text
 Coin Commitment = Hash<(CoinInfo, CoinPublicKey)>
+```
+Represents a coin in the commitment tree (hides value and owner).
+
+```text
 Nullifier = Hash<(CoinInfo, CoinSecretKey)>
 ```
+Prevents double-spending of a coin (unlinkable to the original commitment).
 
 ## Component Integration
 
 ### How Tokens Flow
 
-```
+```text
 User Wallet                    Contract
     │                              │
     │ ──── Zswap Input ────────→  │  (spend coin)
@@ -223,7 +234,7 @@ User Wallet                    Contract
 
 ### How Privacy Works
 
-```
+```text
 Private Domain          Public Domain
 ──────────────          ─────────────
 User secrets     ──ZK Proof──→  Transcript
@@ -236,7 +247,7 @@ Witness data                    Commitments
 
 ### Simple Value Transfer
 
-```
+```text
 1. Construct Zswap offer
    - Input: Your coin (create nullifier)
    - Output: Recipient coin (create commitment)
@@ -247,7 +258,7 @@ Witness data                    Commitments
 
 ### Contract Interaction
 
-```
+```text
 1. Prepare witness data (private inputs)
 2. Construct contract call
 3. Generate ZK proof (proves valid execution)
@@ -257,7 +268,7 @@ Witness data                    Commitments
 
 ### Atomic Swap
 
-```
+```text
 1. Party A: Create partial offer (gives TokenX)
 2. Party B: Create partial offer (gives TokenY, wants TokenX)
 3. Merge offers off-chain

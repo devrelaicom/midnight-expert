@@ -1,6 +1,7 @@
 ---
 name: core-concepts:protocols
-description: Use when asking about Kachina smart contract protocol, Zswap token transfers, atomic swaps, shielded transfers, offers, coins, or private transaction mechanisms in Midnight.
+description: This skill should be used when the user asks about Kachina smart contract protocol, Zswap token transfers, atomic swaps, shielded transfers, offers, coins, nullifiers, commitments, confidential smart contracts, the two-state model (public/private state), token minting, how ZK proofs enable privacy in Midnight protocol transactions, or private transaction mechanisms.
+version: 0.1.0
 ---
 
 # Midnight Protocols
@@ -23,7 +24,7 @@ Kachina enables confidential, general-purpose smart contracts while maintaining 
 
 ### Core Architecture
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │           On-Chain (Public)             │
 │  - Contract code                        │
@@ -66,10 +67,10 @@ ZK proofs bridge these states: prove something about private state without revea
 
 ### Use Cases
 
-- DeFi protocols with private balances
-- Supply chain with confidential data
-- Healthcare with patient privacy
-- Any computation mixing public and private data
+- DeFi protocols with confidential balances and private trade execution
+- Supply chain verification with confidential commercial data
+- Healthcare systems with patient privacy via selective disclosure
+- Any computation mixing public coordination with private user data
 
 ## Zswap Protocol
 
@@ -77,7 +78,7 @@ Zswap is a shielded token mechanism for confidential atomic swaps, based on Zero
 
 ### Core Concept
 
-```
+```text
 Zswap Offer = Inputs + Outputs + Transient + Deltas
 ```
 
@@ -97,7 +98,7 @@ Zswap Offer = Inputs + Outputs + Transient + Deltas
 
 ### Offer Structure
 
-```
+```text
 Offer {
   inputs: [
     { nullifier, type_value_commit, merkle_proof, zk_proof }
@@ -114,7 +115,7 @@ Offer {
 
 Zswap enables multi-party atomic exchanges:
 
-```
+```text
 Party A: Offers 10 TokenX
 Party B: Offers 5 TokenY
             |
@@ -135,48 +136,26 @@ Two transactions can merge if at least one has an empty contract call section. C
 
 Contracts issue custom tokens via Zswap:
 
-```
+```text
 Token type = Hash(domain_separator, contract_address)
 Contract can mint/burn tokens through Zswap stdlib operations
 ```
 
 ### Zswap Outputs
 
-Creating new coins:
+New coins are created as hash-based commitments (`Hash(CoinInfo, ZswapCoinPublicKey)`), paired with a separate Pedersen value commitment for balance verification. See `references/zswap-internals.md` for the complete output structure.
 
-```
-Output = {
-  commitment: Hash(CoinInfo, ZswapCoinPublicKey),  // Hash-based coin commitment
-  type_value_commit: Pedersen(type, value),          // Pedersen commitment for balance verification
-  contract_address: optional,                        // For contract-targeted coins
-  ciphertext: optional,                              // Encrypted for recipient
-  zk_proof: validity_proof
-}
-```
-
-Where CoinInfo = {value, type, nonce}.
-
-**Important**: The coin commitment is hash-based, not a Pedersen commitment. The `type_value_commit` field is a separate Pedersen commitment used only for balance verification.
+> **Important**: The coin commitment is hash-based, not a Pedersen commitment. The `type_value_commit` field is a separate Pedersen commitment used only for balance verification.
 
 ### Zswap Inputs
 
-Spending existing coins:
+Coins are spent by publishing a nullifier (`Hash(CoinInfo, ZswapCoinSecretKey)`) with a Merkle proof of commitment existence and a ZK validity proof. The commitment itself is NOT an input to nullifier computation, making nullifiers unlinkable to the original commitment. See `references/zswap-internals.md` for the complete input structure.
 
-```
-Input = {
-  nullifier: Hash(CoinInfo, ZswapCoinSecretKey),    // Hash-based nullifier
-  type_value_commit: Pedersen(type, value),           // For balance verification
-  contract_address: optional,
-  merkle_proof: path_to_commitment,
-  zk_proof: validity_proof
-}
-```
-
-**Critical**: The nullifier is computed from CoinInfo and the secret key -- the commitment itself is NOT an input to nullifier computation. This makes nullifiers unlinkable to the original commitment without knowledge of the secret key.
+> **Critical**: The nullifier is computed from CoinInfo and the secret key -- the commitment itself is NOT an input to nullifier computation. This makes nullifiers unlinkable to the original commitment without knowledge of the secret key.
 
 ## Protocol Interaction
 
-```
+```text
 ┌──────────────────────────────────────────┐
 │              Transaction                  │
 ├──────────────────────────────────────────┤
@@ -189,11 +168,16 @@ Input = {
 
 Transactions combine Zswap (value movement) with Kachina (computation).
 
+- **Guaranteed offer**: Token operations that must succeed for the transaction to be valid. Fees are collected here. Effects always persist.
+- **Fallible offer**: Optional token operations that may fail without affecting the guaranteed section. Used for operations that depend on external state (swaps, conditional transfers).
+
+See `core-concepts:architecture` for the full three-phase execution model.
+
 ## Practical Application
 
 ### Simple Transfer
 
-```
+```text
 1. Create Zswap offer with:
    - Input: Your coin (nullifier + proof)
    - Output: Recipient's new coin (commitment)
@@ -203,17 +187,19 @@ Transactions combine Zswap (value movement) with Kachina (computation).
 
 ### Atomic Swap
 
-```
-1. Party A creates partial offer: -10 TokenX
-2. Party B creates partial offer: -5 TokenY, +10 TokenX
-3. Merge offers (balanced)
+```text
+1. Party A creates partial offer: NIGHT: +10, TokenX: -10
+   // Positive delta = inputs exceed outputs = giving that token type
+2. Party B creates partial offer: TokenX: +10, NIGHT: -10
+   // Bob gives TokenX, wants NIGHT
+3. Merge offers (deltas sum to zero — balanced)
 4. Submit single transaction
 5. Both transfers atomic
 ```
 
 ### Contract + Transfer
 
-```
+```text
 1. Zswap offer moves tokens
 2. Contract call updates state
 3. Both bound cryptographically

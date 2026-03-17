@@ -71,7 +71,7 @@ Midnight tokens exist at the intersection of two axes: **where they live** (ledg
 |----------|----------|---------|-------|--------------------|--------------------|
 | Shielded Ledger | Blockchain ledger | Private | UTXO | Native privacy, maximum efficiency | Private payments, confidential transfers |
 | Unshielded Ledger | Blockchain ledger | Transparent | UTXO | Full transparency, high performance | NIGHT tokens, public treasuries, exchange listings |
-| Shielded Contract | Smart contract | Private | Account | Programmable + private (currently limited) | Private equity, confidential voting tokens |
+| Shielded Contract | Smart contract | Private | Account | Private balances via ZK, but no post-issuance spend enforcement (archived by OpenZeppelin) | Not recommended — use unshielded contract or shielded ledger tokens |
 | Unshielded Contract | Smart contract | Transparent | Account | ERC-20-like, rich logic | DeFi, governance, gaming currencies |
 
 ### Shielded Ledger Tokens
@@ -88,7 +88,7 @@ Unshielded ledger tokens are also UTXO-based but fully transparent. Transaction 
 
 Shielded contract tokens use account-model state inside smart contracts but leverage Midnight's private state for confidentiality. The contract maintains balances and logic privately using Compact's witness and ZK proof mechanisms.
 
-> **Note**: Shielded contract token support is currently limited. The docs mark this capability as [COMING SOON] for full feature parity with unshielded contract tokens.
+> **Warning**: Shielded contract tokens have a fundamental limitation: once a user receives shielded coins, the contract cannot enforce any rules on how they are spent. The contract cannot freeze, pause, or claw back tokens post-issuance. Additionally, total supply tracking is unreliable because users can burn tokens directly via `shieldedBurnAddress()` without the contract's knowledge. OpenZeppelin has archived their ShieldedERC20 module and recommends using unshielded tokens until the Midnight network offers solutions. See the Known Limitations table in `token-patterns.md` for the full list.
 
 ### Unshielded Contract Tokens
 

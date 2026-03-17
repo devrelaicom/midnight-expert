@@ -442,14 +442,15 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   const nonce = get_randomness();
   ```
 
-- [ ] **`public_key()` instead of `publicKey()`.** The correct function name uses camelCase, not snake_case. The function signature is `publicKey(secretKey, domain)` or derived from a domain-separated hash. LLMs sometimes generate `public_key()` due to snake_case conventions in other languages.
+- [ ] **`public_key()` or `publicKey()` instead of domain-separated hash.** Neither `public_key()` nor `publicKey()` exists in the Compact standard library. LLMs frequently hallucinate these function names. The correct pattern for deriving a public key is a domain-separated hash:
 
   ```compact
-  // BAD — wrong function name (snake_case)
+  // BAD — neither function exists (unbound identifier error)
   const pk = public_key(sk);
-
-  // GOOD — correct camelCase function name
   const pk = publicKey(sk);
+
+  // GOOD — domain-separated hash pattern
+  const pk = persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk]);
   ```
 
 - [ ] **`CurvePoint` instead of `NativePoint`.** The correct type name for elliptic curve points in Compact is `NativePoint`, not `CurvePoint`. `CurvePoint` was the old type name (now rejected by the compiler) and persists only as the TypeScript runtime interface name. LLMs hallucinate `CurvePoint` or `EllipticCurvePoint` because they appear in older documentation or are invented from convention.

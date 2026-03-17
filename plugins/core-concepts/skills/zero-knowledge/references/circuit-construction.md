@@ -4,7 +4,7 @@
 
 ### Compilation Pipeline
 
-```
+```text
 Compact Source
      ↓
   Compiler
@@ -16,6 +16,9 @@ Circuit IR
 Proving/Verification Keys
 (derived from universal SRS)
 ```
+
+- **Circuit IR**: Intermediate representation that captures the contract logic as abstract circuit operations, before ZK-specific transformations.
+- **ZKIR**: Zero-Knowledge IR — the final circuit representation optimized for the PLONK proving system, with concrete gate assignments and wire routing.
 
 ### What Becomes Constraints
 
@@ -45,7 +48,7 @@ Proving/Verification Keys
 ### Example
 
 ```compact
-pragma language_version 0.20;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export ledger hash: Bytes<32>;
@@ -71,12 +74,14 @@ Circuit has:
 ### Minimize Gates
 
 ```compact
-// More gates (comparison requires bit decomposition, only works on Uint<N>)
-if amount > 100 { ... }
+// More expensive (bit decomposition required for ordering)
+if (amount > threshold) { ... }
 
-// Fewer gates (equality is cheaper)
-if amount == 100 { ... }
+// Cheaper (direct field comparison)
+if (amount == target) { ... }
 ```
+
+Note: these are not equivalent operations — choose based on your actual requirement. The point is that comparison operators (`>`, `<`, `>=`, `<=`) are more expensive in ZK circuits than equality checks (`==`, `!=`) because they require bit decomposition.
 
 ### Batch Operations
 
@@ -116,16 +121,23 @@ Verification is constant time regardless of circuit size. This is the "succinct"
 
 ## Debugging Circuits
 
+### Common Compiler Errors
+
+- **"potential witness-value disclosure must be declared"**: A witness-derived value flows to a public context without `disclose()`. Add `disclose()` at the public boundary.
+- **"no compatible function named X is in scope"**: Missing type parameter on a generic function (e.g., `persistentCommit` needs `persistentCommit<T>`). Check the function's generic signature.
+- **"parse error: found X looking for Y"**: Syntax error. Common causes: missing parentheses on `if`/`assert`/`for`, using `let` instead of `const`, missing semicolons.
+
+### TypeScript-Side Testing
+
+Test witness implementations independently before integrating:
+1. Verify witness functions return correctly typed values
+2. Test Merkle path computation against known tree states
+3. Validate nullifier derivation produces deterministic results
+
 ### Unsatisfied Constraints
 
-When a proof fails:
-1. Witness doesn't satisfy some constraint
-2. Check assert conditions
-3. Verify input values
-
-### Circuit Too Large
-
-If circuit exceeds limits:
-1. Reduce hash operations
-2. Simplify comparisons
-3. Split into multiple circuits
+When proof generation fails:
+1. The witness doesn't satisfy some circuit constraint
+2. Check that assert conditions are satisfiable with your inputs
+3. Verify Merkle paths are computed against the correct tree version
+4. Ensure committed values match the stored commitments exactly

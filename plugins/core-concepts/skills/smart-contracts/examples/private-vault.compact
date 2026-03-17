@@ -39,7 +39,7 @@
 //
 // ============================================================================
 
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 // --- Ledger declarations ---
@@ -145,7 +145,8 @@ constructor() {
 export circuit setMinDeposit(newMin: Uint<64>): [] {
   requireAdmin();
   assert(newMin > 0, "Minimum must be positive");
-  minDeposit = newMin;
+  // disclose() required: newMin is an exported circuit parameter (witness-tainted).
+  minDeposit = disclose(newMin);
 }
 
 // --- Deposit circuit ---
@@ -238,7 +239,7 @@ export circuit withdraw(): [] {
   // Check that this nullifier has not been used before.
   // Set.member() is the correct method (not .contains()).
   // disclose() required: nullifier is derived from witness data (sk).
-  assert(disclose(!spentNullifiers.member(nullifier)), "Deposit already withdrawn");
+  assert(!spentNullifiers.member(disclose(nullifier)), "Deposit already withdrawn");
 
   // Record the nullifier to prevent future double-spend.
   // disclose() required: nullifier is witness-derived.

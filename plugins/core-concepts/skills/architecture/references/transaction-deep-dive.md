@@ -2,7 +2,7 @@
 
 ## Complete Transaction Anatomy
 
-```
+```text
 Transaction {
   // Always present; collects fees for all transaction phases
   guaranteed_zswap_offer: Offer,
@@ -25,7 +25,7 @@ Transaction {
 
 ### Offer Structure
 
-```
+```text
 Offer {
   inputs: Vec<Input>,
   outputs: Vec<Output>,
@@ -36,7 +36,7 @@ Offer {
 
 ### Input Components
 
-```
+```text
 Input {
   // Public: Prevents double-spend
   nullifier: Bytes<32>,
@@ -58,7 +58,7 @@ Input {
 
 ### Output Components
 
-```
+```text
 Output {
   // Public: New coin identifier
   commitment: Bytes<32>,
@@ -83,7 +83,7 @@ Output {
 
 Each ContractCall contains both guaranteed and fallible transcripts. The split between guaranteed and fallible is within each call (via the `ckpt` opcode), not between two separate call lists:
 
-```
+```text
 ContractCall {
   // Target contract
   contract_address: ContractAddress,    // Bytes<32>
@@ -107,7 +107,7 @@ ContractCall {
 
 ### Contract Deploy
 
-```
+```text
 ContractDeploy {
   // The compiled contract bytecode (Impact VM program)
   program: Program,
@@ -124,7 +124,7 @@ Contract deploys are included alongside contract calls in the transaction's cont
 
 ## Transcript Structure
 
-```
+```text
 Transcript {
   // Gas bound for execution
   gas_bound: u64,
@@ -171,7 +171,7 @@ All proofs commit to this binding, preventing component substitution.
 
 ## Proof Relationships
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │                 Transaction                      │
 ├─────────────────────────────────────────────────┤
@@ -236,7 +236,7 @@ This phase includes all proof verification:
 
 ## Fee Handling
 
-```
+```text
 Fees paid via Zswap balance:
 
 Guaranteed offer balance must satisfy:
@@ -248,7 +248,7 @@ Excess becomes the transaction fee paid to the network.
 
 ## Transaction Lifecycle
 
-```
+```text
 1. Construction (User)
    └─ Build offers, calls, proofs
 

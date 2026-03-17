@@ -2,7 +2,7 @@
 
 ## Global State Structure
 
-```
+```text
 GlobalState {
   zswap: ZswapState,
   contracts: Map<ContractAddress, ContractState>
@@ -13,7 +13,7 @@ GlobalState {
 
 ### Components
 
-```
+```text
 ZswapState {
   // Merkle tree of all coin commitments
   commitment_tree: MerkleTree,
@@ -32,7 +32,7 @@ ZswapState {
 ### Commitment Tree Operations
 
 **Insert (new coin created)**:
-```
+```text
 1. Compute commitment = Hash<(CoinInfo, CoinPublicKey)>
 2. Insert at position commitment_tree_first_free
 3. Increment commitment_tree_first_free
@@ -41,7 +41,7 @@ ZswapState {
 ```
 
 **Verify (coin exists)**:
-```
+```text
 1. Receive: commitment, Merkle path, claimed root
 2. Verify claimed root in commitment_tree_history
 3. Verify path leads from commitment to root
@@ -50,13 +50,13 @@ ZswapState {
 ### Nullifier Set Operations
 
 **Check (not spent)**:
-```
+```text
 1. Compute nullifier = Hash<(CoinInfo, CoinSecretKey)>
 2. Check: nullifier NOT in nullifiers
 ```
 
 **Insert (mark spent)**:
-```
+```text
 1. Add nullifier to nullifiers
 2. Nullifier can never be added again
 ```
@@ -68,7 +68,7 @@ Maintains recent Merkle roots for:
 - Concurrent transaction handling
 - Practical usability
 
-Window typically covers several blocks. Old roots expire over time via the historic roots set.
+Window covers a configurable number of recent blocks. Old roots expire over time via the historic roots set.
 
 ## Contract State
 
@@ -76,7 +76,7 @@ Window typically covers several blocks. Old roots expire over time via the histo
 
 Contract state consists of an Impact state value plus a map of entry point names to operations (SNARK verifier keys):
 
-```
+```text
 ContractState {
   state: ImpactValue,                            // Impact state value
   operations: Map<String, SNARKVerifierKey>       // Entry point → verifier key
@@ -87,7 +87,7 @@ Contract Merkle trees are `MerkleTree(d)` Impact values with compile-time-fixed 
 
 ### Contract Address
 
-```
+```text
 ContractAddress = Hash(contract_state, nonce)    // Bytes<32>
 ```
 
@@ -107,7 +107,7 @@ ContractAddress = Hash(contract_state, nonce)    // Bytes<32>
 
 All state changes in a transaction are atomic:
 
-```
+```text
 Before: State_n
 Transaction: Tx
 After: State_n+1
@@ -117,7 +117,7 @@ Either ALL changes apply, or NONE do.
 
 ### Contract State Update Flow
 
-```
+```text
 1. Load current state: S_current
 2. Execute Impact program with transaction inputs
 3. Compute resulting effects: E_result
@@ -128,7 +128,7 @@ Either ALL changes apply, or NONE do.
 
 ### Zswap State Update Flow
 
-```
+```text
 For each output:
   commitment_tree.insert(output.commitment)
 

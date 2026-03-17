@@ -1,6 +1,7 @@
 ---
 name: compact-witness-ts
 description: This skill should be used when the user asks about implementing Compact witness functions in TypeScript, the WitnessContext pattern, private state management, Compact-to-TypeScript type mappings (Field to bigint, Bytes to Uint8Array, Uint to bigint), compiler-generated .d.ts files (Witnesses interface, Circuits type, Contract class), the Compact JavaScript runtime, how contract.circuits works, pure circuits in TypeScript, reading ledger state from TypeScript, the witness return tuple pattern [PrivateState, ReturnValue], or how to connect a Compact contract to its TypeScript implementation.
+version: 0.1.0
 ---
 
 # TypeScript Witness Implementation & Contract Runtime

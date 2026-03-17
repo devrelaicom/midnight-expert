@@ -45,7 +45,7 @@ circuit computeHash(data: Bytes<32>): Bytes<32> {
 
 #### `pure`
 
-A pure circuit cannot read or modify ledger state. Use for stateless helper computations:
+A pure circuit cannot read or modify ledger state AND cannot call witness functions. Use for stateless helper computations:
 
 ```compact
 export pure circuit add(a: Field, b: Field): Field {

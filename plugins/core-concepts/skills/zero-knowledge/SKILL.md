@@ -1,6 +1,7 @@
 ---
 name: core-concepts:zero-knowledge
-description: Use when asking about zero-knowledge proofs, ZK SNARKs, circuit compilation, witness data, prover/verifier roles, constraints, or how Midnight uses ZK for privacy.
+description: This skill should be used when the user asks about zero-knowledge proofs, ZK SNARKs, PLONK proving system, circuit compilation, circuit optimization, witness data, prover/verifier roles, constraint systems, structured reference string (SRS), proof generation, proof verification, polynomial commitments, disclose() for privacy boundaries, or how Midnight uses ZK cryptography for transaction privacy and data protection.
+version: 0.1.0
 ---
 
 # Zero-Knowledge Proofs in Midnight
@@ -36,9 +37,9 @@ The proof demonstrates: "I know private inputs that, when combined with public d
 
 ### Circuit Mental Model
 
-Contract logic compiles to **circuits** - mathematical constraint systems.
+Contract logic compiles to **circuits** - mathematical constraint systems. Here "circuit" refers to an arithmetic circuit — a directed acyclic graph of addition and multiplication gates over a finite field — not an electrical circuit.
 
-```
+```text
 Compact Code → Circuit Constraints → ZK Proof
 ```
 
@@ -46,7 +47,7 @@ A circuit defines relationships between variables. The proof shows you know vari
 
 ### Proof Lifecycle
 
-```
+```text
 1. Setup      → Universal SRS generated once; per-circuit keys derived from it
 2. Witness    → Prover assembles private inputs
 3. Prove      → Generate proof from witness + circuit
@@ -67,7 +68,7 @@ When a Compact contract executes:
 
 Circuits express computations as gate constraints:
 
-```
+```text
 // Conceptual: proving x * y = z without revealing x, y
 gate constraint: a * b = c
 public input: c = 42
@@ -77,7 +78,7 @@ witness (private): a = 6, b = 7
 ### Compact to Circuit
 
 ```compact
-pragma language_version 0.20;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export ledger target: Field;
@@ -112,22 +113,23 @@ export circuit guess(): [] {
 
 ### In Contracts
 
+Prove you know the preimage of a public hash without revealing it:
+
 ```compact
-pragma language_version 0.20;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
-export ledger public_target: Field;
+export ledger target_hash: Bytes<32>;
 
-// Witnesses - private inputs provided by TypeScript
-witness get_secret_a(): Field;
-witness get_secret_b(): Field;
+witness get_secret(): Bytes<32>;
 
-// Prove knowledge of factors without revealing them
-export circuit proveFactors(): [] {
-  const secret_a = get_secret_a();
-  const secret_b = get_secret_b();
-  // Constraint: factors multiply to public target
-  assert(secret_a * secret_b == public_target, "Factors do not match target");
+// Prove knowledge of a hash preimage without revealing it
+export circuit proveKnowledge(): [] {
+  const secret = get_secret();
+  // Constraint: Hash(secret) must equal public target
+  assert(persistentHash<Bytes<32>>(secret) == target_hash, "Hash does not match target");
+  // Verifier learns: "prover knows a valid preimage"
+  // Verifier does NOT learn: the actual secret value
 }
 ```
 
@@ -144,6 +146,9 @@ Checking a proof is fast (milliseconds) regardless of original computation compl
 
 ### Soundness
 Computationally infeasible to create valid proof without knowing witness.
+
+### disclose()
+Marks the boundary between private (witness-tainted) and public data in Compact. Required when witness-derived values flow to public context (ledger writes, assert conditions, circuit returns). Commitment functions (`persistentCommit`) clear witness taint; hash functions (`persistentHash`) do not. See `core-concepts:smart-contracts` for full syntax reference.
 
 ## Performance Characteristics
 

@@ -16,7 +16,7 @@ export ledger nonce: Bytes<32>;
 
 export circuit mint(amount: Uint<64>, recipient: Either<ZswapCoinPublicKey, ContractAddress>): ShieldedCoinInfo {
   counter.increment(1);
-  const newNonce = evolveNonce(counter, nonce);
+  const newNonce = evolveNonce(counter.read() as Uint<128>, nonce);
   nonce = newNonce;
   const domain = pad(32, "mytoken:");
   return mintShieldedToken(disclose(domain), disclose(amount), nonce,

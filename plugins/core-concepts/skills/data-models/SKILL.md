@@ -1,6 +1,7 @@
 ---
 name: core-concepts:data-models
-description: Use when asking about UTXO vs account models, ledger tokens, shielded/unshielded tokens, nullifiers, coins, balances, or choosing between token paradigms in Midnight.
+description: This skill should be used when the user asks about UTXO vs account models, ledger tokens, shielded/unshielded tokens, nullifiers, coin commitments, the Zswap commitment tree, double-spend prevention, token balances, parallel transaction processing, choosing between token paradigms in Midnight, minting tokens, token type identification, or the ledger structure.
+version: 0.1.0
 ---
 
 # Midnight Data Models
@@ -24,7 +25,7 @@ UTXO = Unspent Transaction Output. Each token is a discrete digital coin that mu
 
 ### Core Mechanics
 
-```
+```text
 Creation -> Existence -> Consumption -> Prevention of Reuse
 ```
 
@@ -37,7 +38,7 @@ Creation -> Existence -> Consumption -> Prevention of Reuse
 
 Unlike Bitcoin, which references prior outputs directly by txid+index (revealing which coin was spent), Midnight uses nullifiers:
 
-```
+```text
 CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
 ```
 
@@ -55,7 +56,7 @@ Each UTXO independently chooses privacy level:
 // Receiving a shielded coin (CoinInfo provided by witness)
 receiveShielded(coin);
 
-// Sending shielded tokens — returns SendResult with change info
+// Sending shielded tokens — returns ShieldedSendResult with change info
 sendShielded(input, recipient, value);
 ```
 
@@ -104,22 +105,8 @@ Token types are 256-bit collision-resistant hashes:
 const native = nativeToken();
 
 // Custom token type = Hash(contractAddress, domainSeparator)
-const custom = tokenType(domainSep, self());
+const custom = tokenType(domainSep, kernel.self());
 ```
-
-## Practical Application
-
-### Choose UTXO When:
-1. Users need transaction privacy
-2. High throughput required (parallel processing)
-3. Simple value transfers dominate
-4. Regulatory compliance via selective disclosure (viewing keys)
-
-### Choose Account When:
-1. Complex state logic required
-2. Tokens interact with sophisticated contract logic
-3. Privacy is secondary to functionality
-4. Integration with existing DeFi patterns
 
 ## References
 

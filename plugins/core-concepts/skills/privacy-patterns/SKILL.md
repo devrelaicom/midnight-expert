@@ -1,11 +1,14 @@
 ---
 name: core-concepts:privacy-patterns
-description: Use when implementing privacy-preserving logic in Compact, working with hashes, commitments, Merkle trees, nullifier patterns, or keeping data private on-chain.
+description: This skill should be used when implementing privacy-preserving logic in Compact smart contracts, including commitment schemes (persistentCommit, persistentHash), nullifier patterns, Merkle tree membership proofs (HistoricMerkleTree), anonymous authentication, commit-reveal protocols, selective disclosure, domain separation, witness taint management, disclose() for privacy boundaries, and keeping data private on-chain.
+version: 0.1.0
 ---
 
 # Privacy Patterns in Midnight
 
 Privacy-preserving design patterns for Compact smart contracts. Covers commitment schemes, nullifiers, Merkle tree membership proofs, round-based unlinkability, selective disclosure, and threat analysis. For basic visibility rules per ledger operation, see `compact-ledger`. For standard library function signatures, see `compact-standard-library`. For shielded token privacy, see `compact-tokens`.
+
+**When not to use this skill:** For basic ledger visibility rules per operation, see `compact-ledger`. For token balance operations and shielded coin mechanics, see `compact-tokens`. For standard library function signatures and type details, see `compact-standard-library`.
 
 ## Pattern Selection Guide
 
@@ -37,7 +40,7 @@ A commitment hides a value behind cryptographic randomness while binding the com
 **Column note**: "Clears Witness Taint" means the compiler no longer requires `disclose()` for values that flowed through the function's input. The commitment cryptographically hides the input, so the compiler considers it safe. Hash functions do not provide this guarantee because hash outputs could theoretically be brute-forced.
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 // Witnesses are declaration-only; logic is implemented in TypeScript
@@ -51,7 +54,7 @@ export circuit commitValue(value: Field): [] {
   const salt = get_randomness();
   const valueBytes = value as Bytes<32>;
   const commitment = persistentCommit<Vector<2, Bytes<32>>>(
-    [valueBytes, pad(32, "myapp:commit:")],
+    [valueBytes, pad(32, "myapp:commit:")],  // pad(N, str): pads or truncates string to exactly N bytes
     salt
   );
   // Store the opening off-chain for later reveal
@@ -136,7 +139,11 @@ The Midnight zerocash implementation demonstrates the canonical commitment and n
 // From zerocash.compact -- nullifier derivation
 circuit derive_nullifier(coin: coin_info, sk: zk_secret_key): nullifier {
   // Note: domain "lares:zerocash:commit" is intentionally named this way
-  // in the reference implementation despite being a nullifier derivation
+  // in the reference implementation despite being a nullifier derivation.
+  // This is a historical naming artifact from the reference implementation
+  // where the same function was reused for both commitment and nullifier
+  // derivation with different inputs. The domain string was not updated
+  // when the function's purpose diverged.
   return nullifier{ bytes: disclose(persistentHash<Vector<4, Bytes<32>>>([
     pad(32, "lares:zerocash:commit"),
     coin.nonce.bytes,
@@ -167,7 +174,7 @@ Use `HistoricMerkleTree<N, T>` instead of `MerkleTree<N, T>` when members are ad
 ### Full Flow: Anonymous Authentication with Nullifier
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 export ledger members: HistoricMerkleTree<16, Bytes<32>>;
@@ -283,7 +290,7 @@ Selective disclosure proves a property about private data without revealing the 
 Prove a witness-held value exceeds a threshold without revealing the value. Note: comparison operators (`>=`, `<=`, `>`, `<`) only work on `Uint<N>`, not `Field`.
 
 ```compact
-pragma language_version >= 0.16 && <= 0.18;
+pragma language_version 0.21;
 import CompactStandardLibrary;
 
 // Witnesses return Uint<64> because comparison operators

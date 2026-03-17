@@ -27,7 +27,7 @@ Kachina realizes an ideal functionality where:
 
 ### Two-State Model
 
-```
+```text
 ┌─────────────────────────────────────┐
 │         Public State                │
 │  - Stored on blockchain             │
@@ -53,7 +53,7 @@ Kachina realizes an ideal functionality where:
 
 Users maintain transcripts of contract interactions:
 
-```
+```text
 Transcript = [(Query1, Response1), (Query2, Response2), ...]
 ```
 
@@ -131,7 +131,7 @@ Contracts are state machines that:
 
 ### Authorization Model
 
-```
+```text
 To perform action:
 1. Prove right to perform action (via ZK)
 2. Prove action follows contract rules (via ZK)
@@ -149,17 +149,7 @@ Contract designers choose:
 
 ### Proof Characteristics
 
-Midnight uses ZK Snarks. Proofs are sublinear in size with respect to the statement complexity, regardless of:
-- Contract complexity
-- State size
-- Computation performed
-
-### Verification Cost
-
-On-chain verification:
-- Constant time per proof
-- Parallelizable across transactions
-- Independent of private computation
+Proof sizes are sublinear with respect to circuit complexity. Verification time is constant per proof (milliseconds), regardless of the computation proven.
 
 ### User Requirements
 

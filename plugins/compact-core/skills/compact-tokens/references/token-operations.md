@@ -88,7 +88,7 @@ struct ContractAddress { bytes: Bytes<32>; }
 
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
-| `nativeToken()` | -- | `Bytes<32>` | Returns the color of the native token (tNight) |
+| `nativeToken()` | -- | `Bytes<32>` | Returns the color of the native token (tNIGHT) |
 | `tokenType(domainSep, contract)` | `domainSep: Bytes<32>, contract: ContractAddress` | `Bytes<32>` | Computes a globally namespaced token color from a domain separator and contract address |
 
 A contract can issue tokens for any domain separator it chooses, but collision resistance prevents it from minting another contract's token type. The resulting `Bytes<32>` is used as the `color` field in `ShieldedCoinInfo` and as the color parameter in unshielded functions.
@@ -324,7 +324,7 @@ const totalSupply = contractState.totalSupply;
 Before submitting transactions that interact with tokens, the wallet must have sufficient DUST (fee resource). The typical flow:
 
 1. Create or restore a wallet with a seed phrase
-2. Request tNight from the faucet to the unshielded address
+2. Request tNIGHT from the faucet to the unshielded address
 3. The wallet automatically registers tNIGHT UTXOs for DUST generation
 4. DUST is consumed for ZK proof generation and transaction fees
 

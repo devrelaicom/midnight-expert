@@ -1,6 +1,7 @@
 ---
 name: compact-deployment
-description: This skill should be used when the user asks about deploying Compact contracts to a Midnight network, configuring providers (indexer, node, proof server), setting up wallets (WalletFacade, HD wallet, shielded/unshielded/dust wallets), connecting to Midnight networks (undeployed, preview, preprod), using deployContract or findDeployedContract, configuring the proof server, managing contract addresses, calling deployed circuits via callTx, reading ledger state from an indexer, the deployment lifecycle from compilation to live contract, or troubleshooting deployment errors.
+description: This skill should be used when the user asks about deploying Compact contracts to a Midnight network, configuring providers (indexer, node, proof server) and MidnightProviders, setting up wallets (WalletFacade, HD wallet, shielded/unshielded/dust wallets), connecting to Midnight networks (undeployed, preview, preprod), using deployContract or findDeployedContract, configuring the proof server, managing contract addresses, calling deployed circuits via callTx, reading ledger state from an indexer, the deployment lifecycle from compilation to live contract, or troubleshooting deployment errors.
+version: 0.1.0
 ---
 
 # Compact Contract Deployment
