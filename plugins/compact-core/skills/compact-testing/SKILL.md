@@ -1,6 +1,7 @@
 ---
 name: compact-testing
-description: This skill should be used when the user asks about testing Compact smart contracts, writing unit tests for circuits, setting up Vitest for Compact projects, the Simulator pattern for contract testing, creating test context (createConstructorContext, createCircuitContext, sampleContractAddress), calling impureCircuits or circuits in tests, asserting ledger state with the ledger() function, testing assertion failures and error cases, multi-user testing, private state in tests, Compact compiler validation, compilation errors, CI pipeline testing, compact compile as a test gate, or test-driven development for Midnight contracts.
+description: This skill should be used when the user asks about testing Compact smart contracts with Vitest, including the Simulator pattern, context lifecycle (createConstructorContext, createCircuitContext, sampleContractAddress), calling impureCircuits or pureCircuits, asserting ledger and private state, testing assertion failures, multi-user scenarios, or using compact compile as a CI test gate.
+version: 0.1.0
 ---
 
 # Compact Contract Testing
@@ -20,9 +21,9 @@ setNetworkId("undeployed");
 
 const contract = new Contract({ /* witnesses, if any */ });
 const initialState = { privateCounter: 0 };
-const deployCtx = createConstructorContext(initialState, "0100");
-const { currentPrivateState, currentContractState } = contract.initialState(deployCtx);
-let ctx = createCircuitContext(sampleContractAddress(), "0200", currentContractState, currentPrivateState);
+const deployCtx = createConstructorContext(initialState, "0".repeat(64));
+const { currentPrivateState, currentContractState, currentZswapLocalState } = contract.initialState(deployCtx);
+let ctx = createCircuitContext(sampleContractAddress(), currentZswapLocalState, currentContractState, currentPrivateState);
 
 const result = contract.impureCircuits.increment(ctx);
 ctx = result.context;
@@ -41,9 +42,9 @@ class MySimulator {
 
   constructor(initialPrivateState: MyPrivateState) {
     this.contract = new Contract<MyPrivateState>(witnesses);
-    const deployCtx = createConstructorContext(initialPrivateState, "0100");
-    const { currentPrivateState, currentContractState } = this.contract.initialState(deployCtx);
-    this.ctx = createCircuitContext(sampleContractAddress(), "0200", currentContractState, currentPrivateState);
+    const deployCtx = createConstructorContext(initialPrivateState, "0".repeat(64));
+    const { currentPrivateState, currentContractState, currentZswapLocalState } = this.contract.initialState(deployCtx);
+    this.ctx = createCircuitContext(sampleContractAddress(), currentZswapLocalState, currentContractState, currentPrivateState);
   }
 
   myCircuit(args) {

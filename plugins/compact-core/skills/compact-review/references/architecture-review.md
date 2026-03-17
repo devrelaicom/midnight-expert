@@ -236,13 +236,11 @@ Check the division of logic between circuit (on-chain verification) and witness 
   ```compact
   // BAD — complex computation inside circuit increases proof cost
   export circuit process(data: Vector<100, Field>): [] {
-    // Sorting, searching, aggregating all inside circuit
-    // Every operation adds to proof generation time
-    let sum = 0;
-    for (let i = 0; i < 100; i++) {
-      sum = sum + data[i];
-    }
-    result = disclose(sum);
+    // Every fold iteration unrolls into gates, multiplying proof cost
+    const sum = fold(data, 0, (acc: Field, item: Field): Field {
+      return acc + item;
+    });
+    result_field = disclose(sum as Field);
   }
 
   // GOOD — witness computes, circuit verifies
@@ -263,7 +261,7 @@ Check the division of logic between circuit (on-chain verification) and witness 
 
   ```compact
   constructor(organizer_secret_key: Bytes<32>, costs_param: Costs) {
-    organizer = public_key(organizer_secret_key);
+    organizer = persistentHash<Vector<2, Bytes<32>>>([pad(32, "dao:org:"), organizer_secret_key]);
     state = LedgerState.setup;
     costs = disclose(costs_param);
   }

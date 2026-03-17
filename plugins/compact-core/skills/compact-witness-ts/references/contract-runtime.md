@@ -54,6 +54,8 @@ import { witnesses } from "./witnesses.js";
 const contractInstance = new MyContract.Contract(witnesses);
 ```
 
+> **Import styles:** Both named imports (`import { Contract } from "..."`) and namespace imports (`import * as MyContract from "..."`) work. Named imports are more common in Midnight examples.
+
 The `Witnesses` interface type-checks your implementations at compile time — if your witness functions have wrong signatures, TypeScript reports the error.
 
 ### Constructor Arguments

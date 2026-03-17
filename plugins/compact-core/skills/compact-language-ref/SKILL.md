@@ -1,6 +1,7 @@
 ---
 name: compact-language-ref
-description: This skill should be used when the user asks about Compact language mechanics, syntax reference, types (Field, Bytes, Uint, Boolean, Opaque, Vector, Maybe, Either, enums, structs), type casting with "as", operators, arithmetic, control flow, for loops, modules, imports, include, stdlib functions, or Compact compiler errors and wrong syntax patterns.
+description: This skill should be used when the user asks about Compact language mechanics, syntax reference, types (Field, Bytes, Uint, Boolean, Opaque, Vector, Maybe, Either, enums, structs), type casting with "as", operators, arithmetic, control flow, for loops, modules, imports, include, pragma, stdlib functions (persistentHash, transientHash, disclose, assert, pad, default), map and fold operations, or Compact compiler errors and wrong syntax patterns.
+version: 0.1.0
 ---
 
 # Compact Language Reference
@@ -90,13 +91,13 @@ Compact uses the `as` keyword for casts. TypeScript-style angle-bracket casts ar
 | `Bytes<N>` | `Field` | Conversion (checked) | `b as Field` |
 | `enum` | `Field` | Conversion | `Choice.rock as Field` (variant index) |
 
-### Multi-Step Casts (No Direct Path)
+### Optional Multi-Step Casts
 
-| From | To | Route | Example |
-|------|----|-------|---------|
-| `Uint<N>` | `Bytes<M>` | Uint -> Field -> Bytes | `(amount as Field) as Bytes<32>` |
+| From | To | Direct | Via Field |
+|------|----|--------|-----------|
+| `Uint<N>` | `Bytes<M>` | `amount as Bytes<32>` | `(amount as Field) as Bytes<32>` |
 
-Direct `Uint`-to-`Bytes` casts are rejected. Go through `Field` as the intermediate type.
+Both routes compile and produce the same result. The `Field` intermediate step is optional.
 
 For the complete cast path table, see `references/operators-and-expressions.md`.
 
@@ -222,7 +223,6 @@ Common wrong-to-correct patterns:
 | `Choice::rock` | `Choice.rock` |
 | `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` |
 | `counter.value()` | `counter.read()` |
-| `amount as Bytes<32>` | `(amount as Field) as Bytes<32>` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` |
 | `witness fn(): T { body }` | `witness fn(): T;` (declaration only) |
 

@@ -1,6 +1,7 @@
 ---
 name: compact-privacy-disclosure
 description: This skill should be used when the user asks about Midnight's privacy model, the disclose() function and disclosure rules, how to fix disclosure compiler errors, privacy-by-default design, witness protection program, commitment schemes (persistentCommit, transientCommit), nullifier patterns for double-spend prevention, MerkleTree membership proofs for anonymous authentication, unlinkable actions via round-based keys, selective disclosure, commit-reveal schemes, shielded vs transparent state design, what is visible on-chain, safe stdlib routines (transientCommit hiding witness data), or debugging "potential witness-value disclosure must be declared" errors.
+version: 0.1.0
 ---
 
 # Compact Privacy & Disclosure
@@ -56,11 +57,14 @@ Privacy is the default in Compact. All witness-derived data is private unless ex
 | `persistentHash<T>` | `(value: T): Bytes<32>` | **No** | Hash could theoretically be brute-forced |
 | `transientHash<T>` | `(value: T): Field` | **No** | Same reasoning as persistentHash |
 
-Commits clear taint on the *input*, and `persistentCommit`/`transientCommit` results are implicitly disclosed when written to ledger via commit operations:
+Commit functions (`persistentCommit`, `transientCommit`) clear witness taint on both the input and the output. The commitment result does not carry witness taint, so `disclose()` is not required when storing it in ledger state. Hash functions (`persistentHash`, `transientHash`) do NOT clear taint — values derived from hashes still require `disclose()`.
 
 ```compact
 const commitment = persistentCommit<Field>(secretValue, randomness);
-storedCommitment = commitment;  // commit results are implicitly disclosed by persistentCommit/transientCommit
+storedCommitment = commitment;  // No disclose() needed — persistentCommit clears taint
+
+const hash = persistentHash<Field>(secretValue);
+storedHash = disclose(hash);  // disclose() required — persistentHash does NOT clear taint
 ```
 
 ## Common Disclosure Mistakes

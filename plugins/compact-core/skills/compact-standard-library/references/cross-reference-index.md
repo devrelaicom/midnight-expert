@@ -38,8 +38,7 @@ Alphabetical index of every Compact standard library export. Use this as a quick
 | `merkleTreePathRootNoLeafHash<N>` | circuit | Compute root from pre-hashed leaf | `compact-standard-library/references/cryptographic-functions.md` |
 | `mintShieldedToken` | circuit | Mint new shielded coin | `compact-tokens/references/token-operations.md` |
 | `mintUnshieldedToken` | circuit | Mint unshielded token | `compact-tokens/references/token-operations.md` |
-| `JubjubPoint` | type | Elliptic curve point (stdlib re-export of compiler-internal NativePoint) | `compact-standard-library/references/types-and-constructors.md` |
-| `NativePoint` | compiler native | Elliptic curve point (compiler-internal; stdlib exports this as `JubjubPoint`) | `compact-standard-library/references/types-and-constructors.md` |
+| `NativePoint` | type | Elliptic curve point | `compact-standard-library/references/types-and-constructors.md` |
 | `nativePointX` | compiler native | Get X coordinate of NativePoint (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
 | `nativePointY` | compiler native | Get Y coordinate of NativePoint (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
 | `nativeToken` | circuit | Native token color (zero) | `compact-tokens/references/token-operations.md` |

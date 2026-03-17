@@ -1,6 +1,7 @@
 ---
 name: compact-review
-description: This skill should be used when reviewing Compact smart contract code, TypeScript witness implementations, or test files for a Midnight project. It provides category-specific checklists for privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, witness-contract consistency, architecture, code quality, testing adequacy, and documentation. Use this skill when you need structured review checklists and severity classification criteria for any of these categories. Load the appropriate reference file for your assigned review category.
+description: This skill should be used when reviewing Compact smart contract code, TypeScript witness implementations, or test files for a Midnight project. Applies when a user asks to "review my Compact contract", "audit this smart contract", "check my Midnight code", or "run a code review checklist". Provides category-specific checklists covering privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, witness-contract consistency, architecture, code quality, testing, and documentation.
+version: 0.1.0
 ---
 
 # Compact Code Review Checklists
@@ -9,23 +10,23 @@ This skill contains review checklists for 11 categories of Compact smart contrac
 
 ## How to Use
 
-You will be assigned a **review category** by the review-compact command or coordinator. Load the reference file for your assigned category and apply every checklist item to the code under review.
+The assigned review category determines which reference file to load. Load the reference file for your assigned category and apply every checklist item to the code under review.
 
 ## Category Reference Map
 
 | Category | Reference File | Focus |
 |----------|---------------|-------|
-| Privacy & Disclosure | `privacy-review` | `disclose()` usage, witness data leaks, Set vs MerkleTree, persistentHash vs persistentCommit, salt reuse, conditional disclosure |
-| Security & Cryptographic Correctness | `security-review` | Access control, hash/commit usage, domain separation, nullifiers, commitments, Merkle paths, error leakage |
-| Token & Economic Security | `token-security-review` | Double-spend, overflow, unsafe transfers, missing receiveShielded, authorization |
-| Concurrency & Contention | `concurrency-review` | Read-then-write patterns, Counter ops, transaction conflicts |
-| Compilation & Type Safety | `compilation-review` | Deprecated syntax, return types, disclosure errors, casts, generics |
-| Performance & Circuit Efficiency | `performance-review` | Proof cost, ledger reads, MerkleTree depth, redundant computation, loops |
-| Witness-Contract Consistency | `witness-consistency-review` | Name matching, type mappings, private state patterns, WitnessContext |
-| Architecture, State Design & Composability | `architecture-review` | ADT selection, depth planning, visibility, modules, decomposition |
-| Code Quality & Best Practices | `code-quality-review` | Naming, complexity, dead code, stdlib hallucinations, idioms |
-| Testing Adequacy | `testing-review` | Edge cases, negative tests, private state testing, witness mocks |
-| Documentation | `documentation-review` | Circuit docs, witness contracts, ledger semantics |
+| Privacy & Disclosure | `references/privacy-review.md` | `disclose()` usage, witness data leaks, Set vs MerkleTree, persistentHash vs persistentCommit, salt reuse, conditional disclosure |
+| Security & Cryptographic Correctness | `references/security-review.md` | Access control, hash/commit usage, domain separation, nullifiers, commitments, Merkle paths, error leakage |
+| Token & Economic Security | `references/token-security-review.md` | Double-spend, overflow, unsafe transfers, missing receiveShielded, authorization |
+| Concurrency & Contention | `references/concurrency-review.md` | Read-then-write patterns, Counter ops, transaction conflicts |
+| Compilation & Type Safety | `references/compilation-review.md` | Deprecated syntax, return types, disclosure errors, casts, generics |
+| Performance & Circuit Efficiency | `references/performance-review.md` | Proof cost, ledger reads, MerkleTree depth, redundant computation, loops |
+| Witness-Contract Consistency | `references/witness-consistency-review.md` | Name matching, type mappings, private state patterns, WitnessContext |
+| Architecture, State Design & Composability | `references/architecture-review.md` | ADT selection, depth planning, visibility, modules, decomposition |
+| Code Quality & Best Practices | `references/code-quality-review.md` | Naming, complexity, dead code, stdlib hallucinations, idioms |
+| Testing Adequacy | `references/testing-review.md` | Edge cases, negative tests, private state testing, witness mocks |
+| Documentation | `references/documentation-review.md` | Circuit docs, witness contracts, ledger semantics |
 
 ## Severity Classification
 

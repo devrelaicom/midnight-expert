@@ -27,10 +27,10 @@ For a contract with **N exported impure circuits**, the compiler produces:
 | Category | Files | Count |
 |----------|-------|-------|
 | contract/ | `index.d.ts`, `index.js`, `index.js.map` | 3 |
-| zkir/ | One `.zkir` per exported impure circuit | N |
-| keys/ | One directory per exported impure circuit (only with `--no-skip-zk`) | N (or 0) |
+| zkir/ | One `.zkir` + one `.bzkir` per exported impure circuit | 2N |
+| keys/ | One `.prover` + one `.verifier` per exported impure circuit (only with `--no-skip-zk`) | 2N (or 0) |
 | compiler/ | `contract-info.json` | 1 |
-| **Total** | | **N + 4** (default) or **2N + 4** (with `--no-skip-zk`) |
+| **Total** | | **2N + 4** (default) or **4N + 4** (with `--no-skip-zk`) |
 
 Pure circuits and non-exported (internal) circuits do not add any files to `zkir/` or `keys/`. By default, ZK key generation is skipped (`--skip-zk`) and the `keys/` directory is not populated.
 

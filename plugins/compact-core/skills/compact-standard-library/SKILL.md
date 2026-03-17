@@ -1,6 +1,7 @@
 ---
 name: compact-standard-library
-description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, CurvePoint, NativePoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library, prevent hallucination of non-existent stdlib functions, or search the Midnight MCP for stdlib source code.
+description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, NativePoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), deprecated stdlib names (CurvePoint, CoinInfo), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library, prevent hallucination of non-existent stdlib functions, or search the Midnight MCP for stdlib source code.
+version: 0.1.0
 ---
 
 # Compact Standard Library Reference
@@ -26,21 +27,7 @@ This is the single authoritative index of everything `import CompactStandardLibr
 3. If uncertain, use `midnight-search-compact` to find real usage examples
 4. For critical code, compile a minimal contract with `midnight-compile-contract`
 
-### Common Hallucination Traps
-
-| Hallucinated Function | Reality | Use Instead |
-|-----------------------|---------|-------------|
-| `public_key(sk)` | Does not exist | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "domain:pk:"), sk])` |
-| `hash(value)` | Does not exist | `persistentHash<T>(value)` or `transientHash<T>(value)` |
-| `verify(sig, msg, pk)` | Does not exist | Build from EC primitives |
-| `encrypt(value)` / `decrypt(value)` | Do not exist | Use commitments |
-| `random()` / `randomBytes()` | Do not exist | Use witness functions |
-| `counter.value()` | Does not exist | `counter.read()` |
-| `map.get(key)` | Does not exist | `map.lookup(key)` |
-| `map.has(key)` | Does not exist | `map.member(key)` |
-| `map.set(key, value)` | Does not exist | `map.insert(key, value)` |
-| `map.delete(key)` | Does not exist | `map.remove(key)` |
-| `CurvePoint` (old name) | Deprecated | `NativePoint` (current name, renamed from CurvePoint in 0.20.28) |
+**Common Hallucination Traps:** See the complete "Common Mistakes & Non-Existent Functions" table at the end of this document for the full list of functions that do NOT exist in the standard library.
 
 ## Complete Export Inventory
 
@@ -91,9 +78,9 @@ Every export from `import CompactStandardLibrary;`, organized by category. Use t
 | `ecMul` | circuit | Scalar multiply NativePoint | `references/cryptographic-functions.md` |
 | `ecMulGenerator` | circuit | Scalar multiply generator | `references/cryptographic-functions.md` |
 | `hashToCurve<T>` | circuit | Map value to NativePoint | `references/cryptographic-functions.md` |
-| `nativePointX` | circuit | Get X coordinate of NativePoint (deprecated: use `jubjubPointX` in v0.30.0+) | `references/cryptographic-functions.md` |
-| `nativePointY` | circuit | Get Y coordinate of NativePoint (deprecated: use `jubjubPointY` in v0.30.0+) | `references/cryptographic-functions.md` |
-| `constructNativePoint` | circuit | Construct NativePoint from X, Y (deprecated: use `constructJubjubPoint` in v0.30.0+) | `references/cryptographic-functions.md` |
+| `nativePointX` | circuit | Get X coordinate of NativePoint | `references/cryptographic-functions.md` |
+| `nativePointY` | circuit | Get Y coordinate of NativePoint | `references/cryptographic-functions.md` |
+| `constructNativePoint` | circuit | Construct NativePoint from X, Y | `references/cryptographic-functions.md` |
 
 ### Merkle Tree Path Circuits
 
@@ -229,9 +216,9 @@ All EC operations use `NativePoint`, not the deprecated `CurvePoint`.
 | `ecMul` | `(a: NativePoint, b: Field): NativePoint` | Scalar multiplication |
 | `ecMulGenerator` | `(b: Field): NativePoint` | Multiply generator by scalar |
 | `hashToCurve<T>` | `(value: T): NativePoint` | Map arbitrary value to curve point |
-| `nativePointX` | `(p: NativePoint): Field` | Get X coordinate (deprecated: use `jubjubPointX` in v0.30.0+) |
-| `nativePointY` | `(p: NativePoint): Field` | Get Y coordinate (deprecated: use `jubjubPointY` in v0.30.0+) |
-| `constructNativePoint` | `(x: Field, y: Field): NativePoint` | Construct point from coordinates (deprecated: use `constructJubjubPoint` in v0.30.0+) |
+| `nativePointX` | `(p: NativePoint): Field` | Get X coordinate |
+| `nativePointY` | `(p: NativePoint): Field` | Get Y coordinate |
+| `constructNativePoint` | `(x: Field, y: Field): NativePoint` | Construct point from coordinates |
 
 Use cases: Pedersen commitments, key derivation building blocks, custom signature schemes. For example, Pedersen blinding: `ecAdd(ecMulGenerator(rc), ecMul(colorBase, value))`.
 

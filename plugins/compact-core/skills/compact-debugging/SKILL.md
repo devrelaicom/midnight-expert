@@ -1,6 +1,7 @@
 ---
 name: compact-debugging
-description: Use when debugging Compact smart contract errors, compiler failures, proof generation issues, TypeScript witness mismatches, compatibility problems between Midnight components, or unexpected runtime behavior. Also use when consecutive fix attempts reveal new problems in different areas.
+description: This skill should be used when a user needs help debugging Compact smart contract errors, including compiler failures ("parse error", "unbound identifier"), proof generation issues, TypeScript witness type mismatches, disclosure errors ("potential witness-value disclosure must be declared"), or compatibility problems between Midnight components. Also applies when a user says their contract "won't compile", "worked before but broke after update", or when consecutive fix attempts keep revealing new errors. This skill orchestrates the debugging process and routes to domain-specific compact-core skills.
+version: 0.1.0
 ---
 
 # Compact Contract Debugging
@@ -130,13 +131,13 @@ Surface a warning (non-blocking) when detecting:
 
 ## Red Flags — Stop Immediately
 
-If you catch yourself thinking:
+Stop immediately if the reasoning pattern matches any of the following.
 
-- "Quick fix for now, investigate later"
-- "One more fix attempt" (after multiple failures)
-- "This should work" (without understanding why)
-- "Let me just try..." (without hypothesis)
-- "It works on my machine" (without investigating difference)
+- Applying a quick fix with the intention of investigating later
+- Attempting yet another fix after multiple consecutive failures without re-evaluating the approach
+- Proceeding with a fix without understanding why it should work
+- Trying something without first forming a testable hypothesis
+- Dismissing an environment difference without investigating it
 
 **If any of these apply:** Stop. Return to Phase 1 (Root Cause Investigation) before attempting any fix.
 

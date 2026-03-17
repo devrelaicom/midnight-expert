@@ -292,3 +292,5 @@ export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
 | Circuit param to ledger ADT method | Yes | `map.insert(disclose(key), v)` |
 | Pure computation on witness values | No | `const hash = persistentHash(secret)` |
 | Returning witness value from exported circuit | Yes | `return disclose(value)` |
+
+> **Note:** `assert` conditions do not require `disclose()`, but values that flow from the assert branch to ledger writes, function returns, or other disclosure contexts still require `disclose()` at those points.

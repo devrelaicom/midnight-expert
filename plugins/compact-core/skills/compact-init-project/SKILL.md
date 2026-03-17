@@ -1,6 +1,7 @@
 ---
 name: compact-init-project
-description: This skill should be used when the user asks to create a new Midnight project, scaffold a Compact smart contract project, use create-mn-app, initialize a DApp, set up a new Midnight application, start a new project, use a project template, set up hello-world or counter template, or is doing first-time Midnight development environment setup. Also triggered by "new project", "start a project", "init project", "create-mn-app", or "scaffold".
+description: This skill should be used when the user asks to create a new Midnight project, scaffold a Compact smart contract project, use create-mn-app, initialize a DApp, set up a new Midnight application, start a new project, use a project template, set up hello-world or counter template, or set up a Midnight development environment for the first time. Also triggered by "new project", "start a project", "init project", "create-mn-app", or "scaffold".
+version: 0.1.0
 ---
 
 # Initialize a New Midnight/Compact Project

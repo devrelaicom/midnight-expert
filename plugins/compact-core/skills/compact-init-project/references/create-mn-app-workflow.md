@@ -14,7 +14,7 @@ Run `/midnight-tooling:doctor` to verify the development environment is ready.
 **If any check FAILs:**
 1. Report the failures to the user
 2. For missing Compact CLI: run `/midnight-tooling:install-cli`
-3. For Docker issues: refer to `midnight-tooling:proof-server` skill
+3. For Docker issues: refer to `/midnight-tooling:proof-server` skill
 4. For Node.js issues: user must install Node.js 22+ from https://nodejs.org/
 5. Re-run `/midnight-tooling:doctor` after fixes to confirm
 
