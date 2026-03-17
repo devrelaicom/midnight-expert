@@ -78,11 +78,11 @@ export circuit isApprovedForAll(
 }
 
 export circuit transferFrom(
-  from: Either<ZswapCoinPublicKey, ContractAddress>,
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
   to: Either<ZswapCoinPublicKey, ContractAddress>,
   tokenId: Uint<128>
 ): [] {
-  NonFungibleToken_transferFrom(from, to, tokenId);
+  NonFungibleToken_transferFrom(fromAddress, to, tokenId);
 }
 ```
 
@@ -119,8 +119,8 @@ None.
 | `getApproved` | `(tokenId: Uint<128>) → Either<...>` | k=10, rows=409 | Get approved for token. Token must exist. |
 | `setApprovalForAll` | `(operator: Either<...>, approved: Boolean) → []` | k=10, rows=409 | Set operator approval |
 | `isApprovedForAll` | `(owner: Either<...>, operator: Either<...>) → Boolean` | k=10, rows=621 | Check operator approval |
-| `transferFrom` | `(from: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1966 | Transfer. `to` must not be ContractAddress or zero. Token must be owned by `from`. Caller must be authorized. |
-| `_unsafeTransferFrom` | `(from: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1963 | Unsafe variant allowing ContractAddress |
+| `transferFrom` | `(fromAddress: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1966 | Transfer. `to` must not be ContractAddress or zero. Token must be owned by `fromAddress`. Caller must be authorized. |
+| `_unsafeTransferFrom` | `(fromAddress: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1963 | Unsafe variant allowing ContractAddress |
 | `_ownerOf` | `(tokenId: Uint<128>) → Either<...>` | k=10, rows=253 | Owner without revert |
 | `_getApproved` | `(tokenId: Uint<128>) → Either<...>` | k=10, rows=253 | Approved without revert |
 | `_isAuthorized` | `(owner: Either<...>, spender: Either<...>, tokenId: Uint<128>) → Boolean` | k=11, rows=1098 | Check authorization |
@@ -128,8 +128,8 @@ None.
 | `_mint` | `(to: Either<...>, tokenId: Uint<128>) → []` | k=10, rows=1013 | Mint. Token must not exist. `to` not ContractAddress or zero. |
 | `_unsafeMint` | `(to: Either<...>, tokenId: Uint<128>) → []` | k=10, rows=1010 | Unsafe: allows ContractAddress |
 | `_burn` | `(tokenId: Uint<128>) → []` | k=10, rows=479 | Burn. Clears approval. Token must exist. |
-| `_transfer` | `(from: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1224 | Internal transfer. No caller check. |
-| `_unsafeTransfer` | `(from: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1221 | Unsafe variant |
+| `_transfer` | `(fromAddress: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1224 | Internal transfer. No caller check. |
+| `_unsafeTransfer` | `(fromAddress: Either<...>, to: Either<...>, tokenId: Uint<128>) → []` | k=11, rows=1221 | Unsafe variant |
 | `_approve` | `(to: Either<...>, tokenId: Uint<128>, auth: Either<...>) → []` | k=11, rows=1109 | Internal approve with auth check |
 | `_setApprovalForAll` | `(owner: Either<...>, operator: Either<...>, approved: Boolean) → []` | k=10, rows=524 | Internal operator approval |
 | `_requireOwned` | `(tokenId: Uint<128>) → Either<...>` | k=10, rows=288 | Revert if token doesn't exist. Returns owner. |

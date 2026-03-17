@@ -65,11 +65,11 @@ export circuit transfer(to: Either<ZswapCoinPublicKey, ContractAddress>, value: 
 }
 
 export circuit transferFrom(
-  from: Either<ZswapCoinPublicKey, ContractAddress>,
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
   to: Either<ZswapCoinPublicKey, ContractAddress>,
   value: Uint<128>,
 ): Boolean {
-  return FungibleToken_transferFrom(from, to, value);
+  return FungibleToken_transferFrom(fromAddress, to, value);
 }
 
 export circuit approve(spender: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): Boolean {
@@ -119,10 +119,10 @@ None.
 | `_unsafeTransfer` | `(to: Either<...>, value: Uint<128>) → Boolean` | k=11, rows=1170 | Unsafe: allows ContractAddress recipients |
 | `allowance` | `(owner: Either<...>, spender: Either<...>) → Uint<128>` | k=10, rows=624 | Returns spender's allowance over owner's tokens |
 | `approve` | `(spender: Either<...>, value: Uint<128>) → Boolean` | k=10, rows=452 | Set allowance. Spender must not be zero. |
-| `transferFrom` | `(from: Either<...>, to: Either<...>, value: Uint<128>) → Boolean` | k=11, rows=1821 | Transfer with allowance. `to` must not be ContractAddress. Deducts from allowance. |
-| `_unsafeTransferFrom` | `(from: Either<...>, to: Either<...>, value: Uint<128>) → Boolean` | k=11, rows=1818 | Unsafe: allows ContractAddress recipients |
-| `_transfer` | `(from: Either<...>, to: Either<...>, value: Uint<128>) → []` | k=11, rows=1312 | Internal transfer. No caller check. `to` must not be ContractAddress. |
-| `_unsafeUncheckedTransfer` | `(from: Either<...>, to: Either<...>, value: Uint<128>) → []` | k=11, rows=1309 | Unsafe variant of _transfer |
+| `transferFrom` | `(fromAddress: Either<...>, to: Either<...>, value: Uint<128>) → Boolean` | k=11, rows=1821 | Transfer with allowance. `to` must not be ContractAddress. Deducts from allowance. |
+| `_unsafeTransferFrom` | `(fromAddress: Either<...>, to: Either<...>, value: Uint<128>) → Boolean` | k=11, rows=1818 | Unsafe: allows ContractAddress recipients |
+| `_transfer` | `(fromAddress: Either<...>, to: Either<...>, value: Uint<128>) → []` | k=11, rows=1312 | Internal transfer. No caller check. `to` must not be ContractAddress. |
+| `_unsafeUncheckedTransfer` | `(fromAddress: Either<...>, to: Either<...>, value: Uint<128>) → []` | k=11, rows=1309 | Unsafe variant of _transfer |
 | `_mint` | `(account: Either<...>, value: Uint<128>) → []` | k=10, rows=752 | Create tokens. Account must not be ContractAddress or zero. |
 | `_unsafeMint` | `(account: Either<...>, value: Uint<128>) → []` | k=10, rows=749 | Unsafe: allows ContractAddress |
 | `_burn` | `(account: Either<...>, value: Uint<128>) → []` | k=10, rows=773 | Destroy tokens. Account must not be zero, must have sufficient balance. |

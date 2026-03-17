@@ -48,8 +48,8 @@ import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/tok
   prefix FungibleToken_;
 
 constructor(
-  _name: Maybe<Opaque<"string">>,
-  _symbol: Maybe<Opaque<"string">>,
+  _name: Opaque<"string">,
+  _symbol: Opaque<"string">,
   _decimals: Uint<8>,
   _owner: Either<ZswapCoinPublicKey, ContractAddress>
 ) {
@@ -79,12 +79,12 @@ export circuit transfer(to: Either<ZswapCoinPublicKey, ContractAddress>, value: 
   return FungibleToken_transfer(to, value);
 }
 export circuit transferFrom(
-  from: Either<ZswapCoinPublicKey, ContractAddress>,
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
   to: Either<ZswapCoinPublicKey, ContractAddress>,
   value: Uint<128>
 ): Boolean {
   Pausable_assertNotPaused();
-  return FungibleToken_transferFrom(from, to, value);
+  return FungibleToken_transferFrom(fromAddress, to, value);
 }
 export circuit approve(spender: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): Boolean {
   Pausable_assertNotPaused();
