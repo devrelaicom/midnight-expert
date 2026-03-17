@@ -24,7 +24,7 @@ This skill covers tokens on Midnight: choosing between shielded and unshielded a
 |------|----------|---------|-------|------------|
 | Shielded ledger | Blockchain ledger | Private | UTXO | Native privacy, maximum efficiency, hidden sender/recipient/value |
 | Unshielded ledger | Blockchain ledger | Transparent | UTXO | Full transparency, high performance, visible balances |
-| Shielded contract | Contract state | Private | Account (via `Map`) | Programmable logic, custom spend rules, ZK-proven (currently limited — full support COMING SOON) |
+| Shielded contract | Contract state | Private | Account (via `Map`) | Private balances via ZK proofs, but no post-issuance spend enforcement — contract cannot freeze, pause, or claw back coins once received (see Known Limitations in `references/token-patterns.md`). OpenZeppelin ShieldedERC20 is archived; use unshielded contract tokens for custom logic. |
 | Unshielded contract | Contract state | Transparent | Account (via `Map`) | Full programmability, visible operations |
 
 ## Shielded Token Operations
