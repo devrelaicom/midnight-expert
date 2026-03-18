@@ -1,6 +1,6 @@
 ---
 name: indexer-graphql-api
-description: This skill should be used when the user asks about indexer GraphQL, indexer queries, indexer subscriptions, indexer mutations, GraphQL API, contractAction query, block query, wallet connect, shieldedTransactions subscription, unshieldedTransactions, dustLedgerEvents, zswapLedgerEvents, indexer endpoint, api/v4/graphql, indexer network endpoints, or GraphQL query limits.
+description: This skill should be used when the user asks about indexer GraphQL, indexer queries, indexer subscriptions, indexer mutations, GraphQL API, contractAction query, block query, wallet connect, shieldedTransactions subscription, unshieldedTransactions, dustLedgerEvents, zswapLedgerEvents, indexer endpoint, api/v4/graphql, indexer network endpoints, or GraphQL query limits. Covers "how to query blocks", "how to subscribe to contract events", "GraphQL schema", and "WebSocket subscription".
 version: 0.1.0
 ---
 
@@ -26,6 +26,8 @@ The v3 endpoint paths (`/api/v3/graphql` and `/api/v3/graphql/ws`) still work as
 | Max complexity | 200 |
 | Max depth | 15 |
 | Request body limit | 1 MiB |
+
+> **See also:** `references/error-handling.md` — error responses when limits are exceeded.
 
 ## Network Endpoints
 
@@ -92,6 +94,8 @@ query {
 }
 ```
 
+> **See also:** `references/pagination-and-offsets.md` — BlockOffset and TransactionOffset types. `examples/http-requests.md` — full curl examples for queries.
+
 ## Mutations
 
 | Mutation | Parameters | Returns | Purpose |
@@ -112,6 +116,8 @@ mutation {
   disconnect(sessionId: "session-uuid-here")
 }
 ```
+
+> **See also:** `examples/http-requests.md` — curl examples for connect and disconnect mutations. `references/error-handling.md` — invalid session ID errors.
 
 ## Subscriptions
 
@@ -174,6 +180,8 @@ subscription {
 }
 ```
 
+> **See also:** `references/pagination-and-offsets.md` — offset-based resumption for each subscription. `examples/websocket-subscriptions.md` — TypeScript examples using graphql-ws.
+
 ## Key Types
 
 ### ContractAction Interface
@@ -202,7 +210,7 @@ All contract actions share these fields:
 |-------|---------|
 | `SUCCESS` | All transaction phases completed successfully |
 | `PARTIAL_SUCCESS` | Guaranteed phase succeeded, fallible phase failed |
-| `FAILURE` | Transaction failed |
+| `FAILURE` | Transaction failed entirely |
 
 ### TransactionFees
 
@@ -210,6 +218,8 @@ All contract actions share these fields:
 |-------|-------------|
 | `paidFees` | Actual fees paid |
 | `estimatedFees` | Fees estimated before submission |
+
+> **See also:** `references/graphql-types.md` — complete type definitions including Block, Transaction, TokenBalance, RelevantTransaction, UnshieldedTransaction, and SyncProgress.
 
 ## Cross-References
 
