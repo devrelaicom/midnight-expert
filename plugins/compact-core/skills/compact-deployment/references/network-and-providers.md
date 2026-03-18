@@ -87,6 +87,8 @@ const preprodConfig: NetworkConfig = {
 };
 ```
 
+> **Important:** All `@midnight-ntwrk/*` packages are published on the **public npm registry**. Do not configure custom registries, `.npmrc` overrides, `.yarnrc.yml` overrides, or scoped registry settings. If you see custom registry configuration in Midnight SDK source repositories, those settings are for SDK contributors — not SDK consumers.
+
 ## The MidnightProviders Object
 
 Deployment and interaction require a `MidnightProviders` bundle containing 6 providers:

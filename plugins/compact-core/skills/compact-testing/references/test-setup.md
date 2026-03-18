@@ -68,6 +68,8 @@ npm install --save-dev vitest typescript
 npm install @midnight-ntwrk/compact-runtime @midnight-ntwrk/midnight-js-network-id
 ```
 
+> **Note:** All `@midnight-ntwrk/*` packages are on the **public npm registry**. Do not add custom registry configuration. Verify available versions with `npm view @midnight-ntwrk/compact-runtime versions`.
+
 The `compact-runtime` and `midnight-js-network-id` packages are runtime dependencies (not just dev dependencies) because they are also used in production code (witnesses, DApp integration). The Compact compiler itself (`compact`) is installed separately via the Midnight toolchain and is not an npm dependency.
 
 ### Version Compatibility
