@@ -1,0 +1,13 @@
+{
+  "name": "midnight-node",
+  "version": "0.1.0",
+  "description": "Technical reference for the Midnight node — Substrate-based architecture, runtime pallets, RPC interface, configuration, operations, and governance",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": ["midnight", "node", "substrate", "polkadot-sdk", "rpc", "pallets", "governance", "validator"]
+}
