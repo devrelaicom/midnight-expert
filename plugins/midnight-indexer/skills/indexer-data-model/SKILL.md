@@ -1,6 +1,6 @@
 ---
 name: indexer-data-model
-description: This skill should be used when the user asks about the indexer data model, what the indexer indexes, indexer schema, contract actions, unshielded UTXOs, ledger events, dust generation, SPO data, blocks table, transactions table, zswap events, indexer database, or the contract action lifecycle.
+description: This skill should be used when the user asks about the indexer data model, what the indexer indexes, indexer schema, contract actions, unshielded UTXOs, ledger events, DUST generation, Decentralized Unshielded Staking Token, SPO data, blocks table, transactions table, zswap events, indexer database, or the contract action lifecycle. Covers "what tables does the indexer have", "indexer entity relationships", and "what data does the indexer store".
 version: 0.1.0
 ---
 
@@ -19,7 +19,7 @@ The indexer processes every finalized block and extracts nine categories of data
 5. **Unshielded UTXOs** — Creation and spending tracking, owner addresses, token types, DUST registration status
 6. **Ledger events** — Zswap events (inputs/outputs) and DUST events (initial UTXOs, dtime updates, spend processing, parameter changes)
 7. **DUST generation** — cNIGHT registrations from Cardano, generation rate and capacity tracking
-8. **System parameters** — D-parameter and Terms & Conditions history
+8. **System parameters** — D-parameter and Terms & Conditions history (both stored in the `system_parameters_d` table)
 9. **SPO data** — Identities, committee membership, epoch performance, stake distribution, pool metadata
 
 ## Database Schema
@@ -54,6 +54,8 @@ The indexer processes every finalized block and extracts nine categories of data
 |-------|---------|
 | `wallets` | Wallet sessions with encrypted viewing keys |
 | `relevant_transactions` | Wallet-to-transaction association for shielded scanning |
+
+When a wallet connects via the `connect` mutation, its viewing key is encrypted using `APP__INFRA__SECRET` and stored in the `wallets` table. The wallet-indexer then scans each new block, attempting to decrypt transaction outputs with the viewing key. Transactions that decrypt successfully are "relevant" to that wallet and inserted into `relevant_transactions`, a many-to-many join table linking `wallets` to `transactions`. This join table enables the `shieldedTransactions` subscription to stream only the transactions a specific wallet can view.
 
 ### Governance and SPO Tables
 
