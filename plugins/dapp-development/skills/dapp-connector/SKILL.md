@@ -1,6 +1,6 @@
 ---
 name: dapp-connector
-description: This skill should be used when the user asks about the DApp connector, Lace wallet, wallet connect, InitialAPI, ConnectedAPI, WalletConnectedAPI, DAppConnectorAPIError, browser wallet, React wallet, Next.js wallet, wallet integration, Lace setup, connecting to Lace, wallet detection, shielded address, unshielded address, building MidnightProviders from the DApp Connector in a browser context, or bridging the wallet to SDK providers.
+description: This skill should be used when the user asks about the DApp connector, Lace wallet, wallet connection, InitialAPI, ConnectedAPI, WalletConnectedAPI, DAppConnectorAPIError, browser wallet, React wallet, Next.js wallet, wallet integration, Lace setup, wallet detection, shielded address, unshielded address, building MidnightProviders in a browser context, bridging wallet to SDK providers, window.midnight, getConfiguration, FetchZkConfigProvider, or balanceUnsealedTransaction.
 version: 0.1.0
 ---
 
@@ -15,7 +15,7 @@ window.midnight.mnLace  ->  InitialAPI.connect(networkId)  ->  ConnectedAPI
      (injected)                                                (WalletConnectedAPI & HintUsage)
 ```
 
-1. **Detect** -- Check `window.midnight?.mnLace` for the injected wallet object
+1. **Detect** -- Check `window.midnight?.mnLace` for the injected wallet object. For TypeScript window augmentation, see `references/connector-api-types.md`.
 2. **Connect** -- Call `connect(networkId)` with the target network (`"undeployed"`, `"preview"`, or `"preprod"`)
 3. **Interact** -- Use the returned `ConnectedAPI` for addresses, balances, transfers, and proving
 
@@ -77,6 +77,8 @@ Call `hintUsage` to pre-declare which methods the DApp intends to use. This allo
 | `submitTransaction(tx)` | `void` | Submit a balanced and proven transaction |
 | `signData(data, options)` | `Signature` | Sign arbitrary data with the unshielded key |
 | `getProvingProvider(keyMaterialProvider)` | `ProvingProvider` | Delegate ZK proving to the wallet |
+
+> All WalletConnectedAPI methods are async and return `Promise<...>` wrappers around the types shown above.
 
 ### Configuration Object
 
@@ -200,7 +202,7 @@ interface WalletState {
   error: string | null;
 }
 
-function useWalletConnection() {
+export function useWalletConnection() {
   const [state, setState] = useState<WalletState>({
     connectedApi: null,
     isConnecting: false,
@@ -247,7 +249,7 @@ function useWalletConnection() {
 import { useState, useEffect } from "react";
 import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
 
-function WalletBalances({ api }: { api: ConnectedAPI }) {
+export function WalletBalances({ api }: { api: ConnectedAPI }) {
   const [shielded, setShielded] = useState<Record<string, bigint>>({});
   const [unshielded, setUnshielded] = useState<Record<string, bigint>>({});
 

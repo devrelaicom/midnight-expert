@@ -1,6 +1,6 @@
 ---
 name: midnight-sdk
-description: This skill should be used when the user asks about the Midnight SDK, midnight-js packages, SDK packages, MidnightProviders, deployContract, findDeployedContract, callTx, submitCallTx, the transaction lifecycle, SDK types, testkit-js, FinalizedTxData, WalletProvider, MidnightProvider, PublicDataProvider, ProofProvider, SDK integration, contract maintenance, verifier keys, submitInsertVerifierKeyTx, replaceAuthority, observable patterns, contract state subscriptions, low-level transaction API, or advanced SDK usage beyond basic deployment.
+description: Midnight SDK, midnight-js packages, MidnightProviders, deployContract, findDeployedContract, callTx, submitCallTx, transaction lifecycle, SDK types, testkit-js, FinalizedTxData, WalletProvider, MidnightProvider, PublicDataProvider, ProofProvider, ZkConfigProvider, contract maintenance, verifier keys, replaceAuthority, observable patterns, state subscriptions, setNetworkId, indexerPublicDataProvider, httpClientProofProvider, @midnight-ntwrk, set up providers, or connect to indexer.
 version: 0.1.0
 ---
 
@@ -21,7 +21,7 @@ Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightPr
 | `@midnight-ntwrk/midnight-js-node-zk-config-provider` | Node.js ZK asset loading | `NodeZkConfigProvider` |
 | `@midnight-ntwrk/midnight-js-fetch-zk-config-provider` | Browser ZK asset loading | `FetchZkConfigProvider` |
 | `@midnight-ntwrk/midnight-js-logger-provider` | Optional structured logging | `loggerProvider()` |
-| `@midnight-ntwrk/midnight-js-utils` | Utility functions | `toHex` |
+| `@midnight-ntwrk/midnight-js-utils` | Utility functions | `toHex` (as of the current release, `toHex` is the primary utility export) |
 
 All packages are published on the **public npm registry** under the `@midnight-ntwrk` scope. Do not configure custom registries or `.npmrc` overrides.
 
@@ -473,6 +473,7 @@ Both types provide the on-chain confirmation data needed to verify that the oper
 | Forgetting to unsubscribe from observables | Store subscription references and call `unsubscribe()` in cleanup |
 | Using `callTx` when you only need to submit | Use `submitCallTxAsync` to avoid blocking on finalization |
 | Mixing circuit keys from different contracts | Each contract has its own `ImpureCircuitId` type; do not share providers across contracts with different circuit sets |
+| Using mismatched versions of `@midnight-ntwrk` packages | Pin all SDK dependencies to the same release version. |
 
 ## Reference Files
 
