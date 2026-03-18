@@ -1,12 +1,14 @@
 ---
 name: proof-server-configuration
-description: This skill should be used when the user asks about proof server configuration, proof server flags, proof server CLI options, num-workers setting, job-capacity setting, job-timeout setting, no-fetch-params flag, MIDNIGHT_PROOF_SERVER environment variables, proof server tuning, proof server port configuration, proof server verbose mode, proof server memory requirements, proof server startup time, proof server resource planning, or proof server production settings.
+description: This skill covers proof server CLI flags, environment variables, and tuning guidance. Use it when the user asks about proof server configuration, num-workers, job-capacity, job-timeout, no-fetch-params, how many workers should I use, proof server slow, proof server out of memory, proof server environment variables, proof server Docker configuration, port configuration, verbose mode, memory requirements, startup time, resource planning, or production settings.
 version: 0.1.0
 ---
 
 # Proof Server Configuration
 
-Complete reference for all CLI flags and environment variables that control the Midnight proof server. For basic Docker setup and running, see `midnight-tooling:proof-server`. For internal architecture, see `proof-server-architecture`.
+Complete reference for all CLI flags and environment variables that control the Midnight proof server. For basic Docker setup and running, see `midnight-tooling:proof-server`. For internal architecture, see `proof-server:proof-server-architecture`.
+
+> Replace `<version>` in image tags below with the version matching your target Midnight network. Check `midnight-tooling:release-notes` for current versions.
 
 ## CLI Flags & Environment Variables
 
@@ -36,7 +38,7 @@ MIDNIGHT_PROOF_SERVER_PORT=6301 midnight-proof-server
 
 # Docker
 docker run -d --name midnight-proof-server -p 6301:6301 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server --port 6301
+  midnightntwrk/proof-server:<version> -- midnight-proof-server --port 6301
 ```
 
 When changing the port with Docker, update both the container port (`--port` flag inside the container) and the Docker port mapping (`-p` flag).
@@ -51,7 +53,7 @@ midnight-proof-server -v
 
 # Docker (recommended for development)
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server -v
+  midnightntwrk/proof-server:<version> -- midnight-proof-server -v
 ```
 
 ### `--num-workers`
@@ -67,7 +69,7 @@ MIDNIGHT_PROOF_SERVER_NUM_WORKERS=4 midnight-proof-server
 
 # Docker
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server --num-workers 4
+  midnightntwrk/proof-server:<version> -- midnight-proof-server --num-workers 4
 ```
 
 Worker count does not need to match CPU core count exactly. Proving is CPU-intensive, so more workers than cores leads to contention. Fewer workers than cores leaves headroom for the HTTP server and garbage collection.
@@ -113,7 +115,7 @@ MIDNIGHT_PROOF_SERVER_NO_FETCH_PARAMS=true midnight-proof-server
 
 # Docker — fast startup for development
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server --no-fetch-params -v
+  midnightntwrk/proof-server:<version> -- midnight-proof-server --no-fetch-params -v
 ```
 
 ## Environment Profiles
@@ -124,14 +126,14 @@ Default settings work well for development. The server starts with 2 workers and
 
 ```bash
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server -v
+  midnightntwrk/proof-server:<version> -- midnight-proof-server -v
 ```
 
 For faster startup during iterative development, skip parameter pre-fetching:
 
 ```bash
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server --no-fetch-params -v
+  midnightntwrk/proof-server:<version> -- midnight-proof-server --no-fetch-params -v
 ```
 
 ### Production
@@ -141,7 +143,7 @@ Scale workers based on available CPU cores and set capacity limits to prevent re
 ```bash
 docker run -d --name midnight-proof-server -p 6300:6300 \
   --memory=8g \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server \
+  midnightntwrk/proof-server:<version> -- midnight-proof-server \
   --num-workers 8 \
   --job-capacity 50 \
   --job-timeout 300
@@ -153,7 +155,7 @@ Minimal configuration for automated testing where fast startup matters more than
 
 ```bash
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server \
+  midnightntwrk/proof-server:<version> -- midnight-proof-server \
   --no-fetch-params \
   --num-workers 1 \
   --job-capacity 5

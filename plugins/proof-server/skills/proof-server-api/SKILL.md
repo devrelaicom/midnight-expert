@@ -1,12 +1,12 @@
 ---
 name: proof-server-api
-description: This skill should be used when the user asks about the proof server API, prove endpoint, check endpoint, k-value endpoint, proof server endpoints, proof generation API, fetch-params endpoint, proof-versions endpoint, proof server REST API, prove-tx deprecated endpoint, proof server HTTP interface, proof server request format, proof server response format, binary serialization format, proof server status codes, proof server CORS, or proof server error codes.
+description: This skill covers the proof server REST API and HTTP interface. Use it when the user asks about the prove, check, k-value, fetch-params, or proof-versions endpoints, the deprecated prove-tx endpoint, proof generation API, proof server health check, proof server readiness check, proof server port, worker utilization, queue capacity, request/response format, binary serialization format, status codes, CORS policy, or error codes.
 version: 0.1.0
 ---
 
 # Proof Server API Reference
 
-Complete HTTP API reference for the Midnight proof server. The server listens on port 6300 by default. For basic setup and Docker usage, see `midnight-tooling:proof-server`. For internal architecture details, see `proof-server-architecture`.
+Complete HTTP API reference for the Midnight proof server. The server listens on port 6300 by default. For basic setup and Docker usage, see `midnight-tooling:proof-server`. For internal architecture details, see `proof-server:proof-server-architecture`.
 
 ## Endpoint Summary
 
@@ -48,8 +48,10 @@ Returns the proof server version as a plain text string.
 **Response (200):**
 
 ```text
-8.0.2
+<version>
 ```
+
+> Replace `<version>` with the version matching your target Midnight network. Check `midnight-tooling:release-notes` for current versions.
 
 ### `GET /ready`
 
@@ -204,6 +206,8 @@ success
 
 This endpoint is useful for pre-warming the parameter cache for specific circuit sizes without waiting for a proving request to trigger the fetch.
 
+> **Note:** This endpoint is only available when the server was started **without** `--no-fetch-params`. When `--no-fetch-params` is set, the parameter-fetching subsystem is disabled entirely and this endpoint returns an error. In that mode, parameters are fetched on-demand when the first `/prove` request for each k-value arrives. See `proof-server:proof-server-configuration` for details on the flag.
+
 ## CORS Policy
 
 The proof server uses a permissive CORS policy -- all origins are allowed. This enables browser-based DApps to call the proof server directly during development. In production, the proof server typically runs behind a reverse proxy or is accessed server-side.
@@ -234,7 +238,7 @@ DApp ←── Wallet SDK ←── Proof (binary) ←────────�
 
 ### Pre-warming Parameters
 
-If the server was started with `--no-fetch-params` for fast startup, pre-warm parameters for expected circuit sizes:
+If the server was started without `--no-fetch-params`, pre-warm parameters for expected circuit sizes:
 
 ```bash
 # Fetch params for k-values 10 through 15

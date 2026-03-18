@@ -1,12 +1,14 @@
 ---
 name: proof-server-operations
-description: This skill should be used when the user asks about proof server monitoring, proof server health check patterns, proof server readiness checks, proof server busy status, proof server troubleshooting, proof server logs, proof server capacity planning, proof server performance, proof server job queue monitoring, proof server Docker health check, proof server Kubernetes health check, proof server 503 errors, proof server 429 errors, proof server timeout issues, proof server memory issues, or proof server debugging.
+description: This skill covers monitoring, troubleshooting, and capacity planning for the proof server. Use it when the user asks about health check patterns, readiness checks, busy status, logs, performance, job queue monitoring, Docker or Kubernetes health checks, 503 errors, 429 errors, 400 errors, timeout issues, memory issues, debugging, version mismatch, version compatibility, scaling, horizontal scaling, or how to diagnose proof server issues.
 version: 0.1.0
 ---
 
 # Proof Server Operations
 
-Operational guide for monitoring, health checking, troubleshooting, and capacity planning the Midnight proof server. For basic Docker setup, see `midnight-tooling:proof-server`. For configuration flags, see `proof-server-configuration`. For architecture internals, see `proof-server-architecture`.
+Operational guide for monitoring, health checking, troubleshooting, and capacity planning the Midnight proof server. For basic Docker setup, see `midnight-tooling:proof-server`. For configuration flags, see `proof-server:proof-server-configuration`. For architecture internals, see `proof-server:proof-server-architecture`.
+
+> Replace `<version>` in image tags below with the version matching your target Midnight network. Check `midnight-tooling:release-notes` for current versions.
 
 ## Monitoring
 
@@ -44,11 +46,21 @@ curl -s http://localhost:6300/ready | jq .
 | `/ready` | 503 | Job queue is full, server is busy |
 | `/prove` | 429 | Request rejected, capacity limit reached |
 
+### Pre-warming Parameters
+
+Use `/fetch-params/{k}` to pre-warm the parameter cache for specific circuit sizes (only available when the server was started without `--no-fetch-params`):
+
+```bash
+# Pre-warm parameters for k-value 13
+curl -sf http://localhost:6300/fetch-params/13
+```
+
 ### Monitoring Script
 
 ```bash
 #!/bin/bash
 # Check proof server operational status
+# Requires: curl, jq
 READY=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:6300/ready)
 if [ "$READY" = "200" ]; then
   STATS=$(curl -s http://localhost:6300/ready)
@@ -76,7 +88,7 @@ docker run -d --name midnight-proof-server \
   --health-interval=30s \
   --health-timeout=10s \
   --health-retries=3 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server -v
+  midnightntwrk/proof-server:<version> -- midnight-proof-server -v
 ```
 
 ### Docker Compose Health Check
@@ -84,7 +96,7 @@ docker run -d --name midnight-proof-server \
 ```yaml
 services:
   proof-server:
-    image: midnightntwrk/proof-server:8.0.2
+    image: midnightntwrk/proof-server:<version>
     command: ["midnight-proof-server", "-v"]
     ports:
       - "6300:6300"
@@ -119,6 +131,8 @@ readinessProbe:
 
 Use `/health` for liveness (is the process alive?) and `/ready` for readiness (can it handle proving requests?). The readiness probe returns 503 when the server is at capacity, which causes Kubernetes to stop routing traffic to the pod.
 
+> **Note:** During startup, while the server is pre-fetching ZK parameters (the default behavior without `--no-fetch-params`), `/ready` may return 503. This is expected behavior, not an error. The server becomes fully ready once parameter pre-fetch completes, which can take 2-5 minutes depending on network speed and cache state.
+
 ## Log Analysis
 
 ### Enabling Verbose Logs
@@ -127,7 +141,7 @@ Start the proof server with `-v` (or `--verbose`) to enable DEBUG-level logging:
 
 ```bash
 docker run -d --name midnight-proof-server -p 6300:6300 \
-  midnightntwrk/proof-server:8.0.2 -- midnight-proof-server -v
+  midnightntwrk/proof-server:<version> -- midnight-proof-server -v
 ```
 
 ### Viewing Logs

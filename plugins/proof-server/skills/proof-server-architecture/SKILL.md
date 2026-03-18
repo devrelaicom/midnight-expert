@@ -1,6 +1,6 @@
 ---
 name: proof-server-architecture
-description: This skill should be used when the user asks about proof server architecture, worker pool, job queue, job lifecycle, proving pipeline, ZKIR versioning, key material management, zswap resolver, proof server internals, how the proof server works internally, proof server components, proof server Rust codebase, proof server binary structure, proof server dependencies, proof server Docker image build, or proof server multi-arch support.
+description: This skill covers proof server internals and how the proof server works. Use it when the user asks about architecture, worker pool, job queue, job lifecycle, proving pipeline, concurrency, capacity limiting, garbage collection, ZKIR versioning, key material management, key prefetching, binary serialization format, the midnight-proof-server binary, Rust codebase, components, dependencies, Docker image build, or multi-arch support.
 version: 0.1.0
 ---
 
@@ -140,7 +140,7 @@ Health and metadata endpoints (`/health`, `/ready`, `/version`, `/proof-versions
 | `midnight-transient-crypto` | Transient hash and commitment functions |
 | `midnight-serialize` | Binary serialization/deserialization |
 
-The workspace version is **8.0.2**.
+The workspace version is **<version>**. Version numbers reflect the release at time of writing and may have been superseded. Replace `<version>` with the version matching your target Midnight network. Check `midnight-tooling:release-notes` for current versions.
 
 ## Docker / OCI Image
 
