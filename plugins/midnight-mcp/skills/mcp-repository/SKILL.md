@@ -1,6 +1,6 @@
 ---
 name: mcp-repository
-description: This skill should be used when the user asks about getting a file from a Midnight repo, listing example contracts, checking latest updates, checking breaking changes, getting a file at a specific version, comparing syntax between versions, upgrade checks, repo context, midnight-get-file, midnight-list-examples, midnight-get-latest-updates, midnight-check-breaking-changes, midnight-get-file-at-version, midnight-compare-syntax, midnight-upgrade-check, midnight-get-repo-context, or browsing Midnight repository content.
+description: Use when the user asks to show me what changed between versions, how do I upgrade from version X to Y, what example contracts are available, or asks about browsing repo content, listing examples, checking updates, breaking changes, comparing syntax, upgrade checks, midnight-get-file, midnight-list-examples, midnight-get-latest-updates, midnight-check-breaking-changes, midnight-get-file-at-version, midnight-compare-syntax, midnight-upgrade-check, or midnight-get-repo-context.
 ---
 
 # Midnight MCP Repository Tools
@@ -26,6 +26,11 @@ Retrieve a file from a Midnight repository using repo aliases.
 | `counter` | Counter example | Simple counter contract example |
 | `bboard` | Bulletin board example | Bulletin board DApp example |
 | `welcome` | Welcome example | Introductory example contract |
+
+**Response includes:**
+
+- Full file content at the latest version
+- File path and repository metadata
 
 Use this tool when you need the exact content of a specific file. Prefer this over search tools when you know the repository and file path.
 
@@ -59,6 +64,12 @@ Retrieve recent commits across Midnight repositories. Shows what has changed rec
 |-----------|----------|-------------|
 | `repo` | No | Filter to a specific repository. Omit for updates across all repos |
 | `limit` | No | Number of recent commits to return |
+
+**Response includes:**
+
+- Commit messages and timestamps
+- Affected files and repositories
+- Author information
 
 Use this tool to check what has changed recently, to find when a feature was added, or to verify whether a reported bug has been fixed.
 
@@ -94,6 +105,12 @@ Retrieve the exact content of a file at a specific tagged version. Use this when
 | `path` | Yes | File path within the repository |
 | `version` | Yes | Version tag or commit reference |
 
+**Response includes:**
+
+- Full file content at the specified version
+- Version tag and repository metadata
+- File path confirmation
+
 ## midnight-compare-syntax
 
 Diff the syntax or API surface between two versions. Shows what changed in the language, compiler, or SDK between releases.
@@ -128,11 +145,17 @@ Combines version checking, breaking change detection, and migration guidance int
 | `to` | Yes | Target version |
 | `component` | No | Specific component to check |
 
+**Response includes:**
+
+- Breaking changes between the specified versions
+- Step-by-step migration instructions
+- Version comparison (installed vs. target)
+
 **Equivalent to calling:**
 
-1. `midnight-check-version` — What version is installed vs. what is available
-2. `midnight-check-breaking-changes` — What breaks between the two versions
-3. Migration guidance — Step-by-step instructions for the upgrade
+1. `midnight-check-breaking-changes` — What breaks between the two versions
+2. Migration guidance — Step-by-step instructions for the upgrade
+3. Version context via `midnight-check-version` (from `mcp-health`) — What version is installed vs. what is available
 
 ### midnight-get-repo-context
 
@@ -145,11 +168,17 @@ Combines version information, syntax reference, and example listings into a sing
 | `component` | No | Specific component to get context for |
 | `version` | No | Target version |
 
+**Response includes:**
+
+- Current version information for the component
+- Syntax reference and API surface for the target version
+- Relevant example contracts and their metadata
+
 **Equivalent to calling:**
 
-1. `midnight-check-version` — Current version information
-2. `midnight-compare-syntax` — Syntax reference for the target version
-3. `midnight-list-examples` — Relevant examples for the component
+1. `midnight-compare-syntax` — Syntax reference for the target version
+2. `midnight-list-examples` — Relevant examples for the component
+3. Version context via `midnight-check-version` (from `mcp-health`) — Current version information
 
 ### When to Use Compound vs. Individual Tools
 
