@@ -1,6 +1,6 @@
 ---
 name: node-architecture
-description: This skill should be used when the user asks about the Midnight node architecture, Substrate runtime, Polkadot SDK, pallets, consensus mechanism, AURA, GRANDPA, BEEFY, MMR, ledger storage, ParityDB, transaction lifecycle, ZK proof verification, Cardano integration, partner chains, cNIGHT bridging, transaction filtering, throttle pallet, node source layout, epoch configuration, block production, finality, or light client support.
+description: Midnight node architecture, Substrate runtime, Polkadot SDK, pallets, consensus, AURA, GRANDPA, BEEFY, MMR, ledger storage, ParityDB, transaction lifecycle, ZK proof verification, Cardano integration, partner chains, cNIGHT bridging, transaction filtering, throttle pallet, source layout, epoch, block production, finality, light client, how does the Midnight node produce blocks, what pallets does Midnight use, how do transactions flow through the node, how does Midnight connect to Cardano.
 version: 0.1.0
 ---
 
@@ -8,7 +8,7 @@ version: 0.1.0
 
 The Midnight node is a Substrate-based blockchain client built on Polkadot SDK (polkadot-stable2509) and the Cardano Partner Chain framework (v1.8.1). It produces blocks, finalizes them, verifies ZK proofs, manages ledger state, and bridges to the Cardano mainchain.
 
-**Current version:** node-0.22.0
+**Current version:** node-0.22.0 — These version identifiers track upstream releases and may change with new Midnight releases.
 
 ## Source Layout
 
@@ -24,9 +24,9 @@ midnight-node/
 └── ...
 ```
 
-## Runtime Pallets (28 Total)
+## Runtime Pallets (approximately 28)
 
-The runtime composes 28 pallets organized by function.
+The runtime composes approximately 28 pallets organized by function. The exact count depends on how umbrella entries (such as partner chain bridge pallets) are counted individually.
 
 ### Standard Substrate
 

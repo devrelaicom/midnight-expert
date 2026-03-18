@@ -1,6 +1,6 @@
 ---
 name: node-governance
-description: This skill should be used when the user asks about Midnight governance, federated authority, Council, TechnicalCommittee, governance motions, governance voting, governance proposals, two-body governance, runtime upgrades, D-parameter, validator selection balance, governance membership, Cardano mainchain governance sync, motion lifecycle, governance approval threshold, governance close window, or governance root operations.
+description: Midnight governance, federated authority, Council, TechnicalCommittee, Technical Committee, Substrate, pallet, governance motions, voting, proposals, two-body governance, runtime upgrades, D-parameter, systemParameters_getDParameter, pallet_system_parameters, validator selection balance, membership, Cardano mainchain governance sync, motion lifecycle, approval threshold, 5-day voting window, governance root operations, how does voting work on Midnight, how are governance members selected.
 version: 0.1.0
 ---
 
@@ -77,6 +77,13 @@ on-chain   votes     reached     approved
 | Voting window | 5 days from proposal |
 | Both bodies required | Yes — a motion approved by only one body does not execute |
 | Execution | Automatic upon close if both bodies have approved |
+
+### Motion Failure Paths
+
+| Scenario | Outcome |
+|----------|---------|
+| Motion does not reach 2/3 threshold within the voting window | Motion expires without effect; no on-chain state changes occur |
+| One body approves but the other rejects or fails to reach threshold | Proposal fails; the approval from the first body is not carried forward. A fresh motion must be submitted to retry |
 
 ## Governance Membership
 

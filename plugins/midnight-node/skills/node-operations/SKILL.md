@@ -1,6 +1,6 @@
 ---
 name: node-operations
-description: This skill should be used when the user asks about running the Midnight node, validator mode, full node, archive node, dev mode, Docker deployment, midnight-node-docker, Prometheus metrics, node monitoring, memory monitoring, graceful shutdown, P2P networking, bootnodes, node keys, port 30333, node troubleshooting, blocks not finalizing, mainchain follower errors, IPC errors, state sync issues, node logs, node peers, or node health checks.
+description: Running the Midnight node, validator mode, full node, archive node, dev mode, Docker deployment, midnight-node-docker, Prometheus metrics, node monitoring, memory monitoring, graceful shutdown, P2P networking, bootnodes, node keys, port 30333, node troubleshooting, blocks not finalizing, mainchain follower errors, IPC errors, state sync issues, node logs, node peers, node health checks, start a node, deploy a node, node not syncing, node crashes, out of memory, check node status.
 version: 0.1.0
 ---
 
@@ -35,6 +35,8 @@ midnight-node --chain preview \
   --rpc-external --rpc-cors all
 ```
 
+> **Security Warning:** `--rpc-external --rpc-cors all` exposes the RPC interface to all network interfaces without restriction. Use only for local development. In production, use a reverse proxy with TLS and restrict CORS origins.
+
 ### Archive Node
 
 Retains all historical state. Required for block explorers, indexers, and historical queries.
@@ -60,13 +62,27 @@ Development mode automatically:
 - Enables all RPC methods
 - Uses ephemeral storage (deleted on shutdown with `--tmp`)
 
+## Hardware Requirements
+
+Minimum recommended specifications by node type:
+
+| Node Type | CPU | RAM | Storage |
+|-----------|-----|-----|---------|
+| Full node | 4 cores | 8 GB | 100 GB SSD |
+| Archive node | 4 cores | 16 GB | 500 GB SSD |
+| Validator | 8 cores | 16 GB | 200 GB SSD (NVMe recommended) |
+
+These are estimates for a Substrate-based chain and may increase as chain state grows. Monitor disk usage and plan capacity accordingly.
+
 ## Docker Deployment
 
 The Midnight node is distributed as a Docker image via `midnight-node-docker`.
 
+> Replace `<version>` with the latest release tag. Check the Midnight release notes for the current version.
+
 ```bash
 # Pull the node image
-docker pull midnightntwrk/midnight-node:0.22.0
+docker pull midnightntwrk/midnight-node:<version>
 
 # Run a full node
 docker run -d --name midnight-node \
@@ -74,11 +90,13 @@ docker run -d --name midnight-node \
   -p 30333:30333 \
   -p 9615:9615 \
   -v midnight-data:/data \
-  midnightntwrk/midnight-node:0.22.0 \
+  midnightntwrk/midnight-node:<version> \
   midnight-node --chain preview \
     --rpc-external --rpc-cors all \
     --prometheus-external
 ```
+
+> **Security Warning:** `--rpc-external --rpc-cors all` exposes the RPC interface to all network interfaces without restriction. Use only for local development. In production, use a reverse proxy with TLS and restrict CORS origins.
 
 ### Port Mapping
 

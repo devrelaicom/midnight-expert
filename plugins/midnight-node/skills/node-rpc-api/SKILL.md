@@ -1,6 +1,6 @@
 ---
 name: node-rpc-api
-description: This skill should be used when the user asks about the Midnight node RPC API, node WebSocket endpoint, port 9944, midnight_contractState, midnight_zswapStateRoot, midnight_ledgerStateRoot, midnight_apiVersions, midnight_ledgerVersion, systemParameters RPC, sidechain RPC, partner chain RPC, system_health, chain_getBlock, state_getStorage, author_submitExtrinsic, grandpa_roundState, beefy RPC, mmr RPC, rpc.discover, OpenRPC, node endpoint URLs, or node API methods.
+description: Midnight node RPC API, WebSocket, port 9944, midnight_contractState, midnight_zswapStateRoot, midnight_ledgerStateRoot, midnight_apiVersions, midnight_ledgerVersion, systemParameters RPC, sidechain RPC, system_health, chain_getBlock, state_getStorage, author_submitExtrinsic, grandpa_roundState, beefy RPC, mmr RPC, rpc.discover, OpenRPC, subscribe, subscription, query contract state, submit transaction to node, connect to Midnight RPC, subscribe to block headers, check node sync status.
 version: 0.1.0
 ---
 
@@ -178,6 +178,43 @@ These methods interact with the Cardano partner chain integration.
 |--------|-------------|
 | `beefy_getFinalizedHead` | Latest BEEFY-finalized block hash |
 | `beefy_subscribeJustifications` | Subscribe to BEEFY justifications |
+
+## Subscription Usage Example
+
+Subscriptions use WebSocket to push updates to the client. The following example subscribes to new block headers via `chain_subscribeNewHeads`.
+
+```bash
+# Subscribe to new block headers
+wscat -c ws://localhost:9944 -x '{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "chain_subscribeNewHeads",
+  "params": []
+}'
+```
+
+The node returns a subscription ID, then pushes notifications as new blocks arrive:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "chain_newHead",
+  "params": {
+    "subscription": "<subscription_id>",
+    "result": {
+      "parentHash": "0x...",
+      "number": "0x1a2b",
+      "stateRoot": "0x...",
+      "extrinsicsRoot": "0x...",
+      "digest": {
+        "logs": ["0x..."]
+      }
+    }
+  }
+}
+```
+
+To unsubscribe, send `chain_unsubscribeNewHeads` with the subscription ID.
 
 ## Cross-References
 
