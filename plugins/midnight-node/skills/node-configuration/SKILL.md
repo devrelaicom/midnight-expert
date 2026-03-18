@@ -1,6 +1,6 @@
 ---
 name: node-configuration
-description: This skill should be used when the user asks about Midnight node configuration, node CLI flags, node environment variables, chain spec, validator keys, AURA seed, GRANDPA seed, BEEFY key, cross chain seed, node presets, TOML config, network selection, qanet, preview, preprod, perfnet, devnet chain spec, pc-chain-config, cnight-config, federated-authority-config, system-parameters-config, state pruning, blocks pruning, rpc-external, SHOW_CONFIG, node storage cache, trie cache, memory threshold, allow non SSL, block stability margin, cardano security parameter, or Substrate CLI flags.
+description: This skill should be used when the user asks about configuring a Midnight node, including CLI flags, environment variables, TOML presets, chain spec files, network selection (qanet, preview, preprod, perfnet, devnet), validator key setup (AURA seed, GRANDPA seed, BEEFY key, cross-chain seed), Substrate pruning and RPC flags, or debugging configuration with SHOW_CONFIG.
 version: 0.1.0
 ---
 
