@@ -1,6 +1,6 @@
 ---
 name: mcp-simulate
-description: This skill should be used when the user asks about simulating a Compact contract, deploying a contract in simulation, calling a circuit in simulation, reading simulation state, managing simulation sessions, MCP simulation, midnight-simulate-deploy, midnight-simulate-call, midnight-simulate-state, midnight-simulate-delete, contract simulation lifecycle, or testing contract behavior interactively.
+description: Use when the user asks to test my contract, try out my Compact code, run my contract locally, check if my contract works, debug my contract logic, or mentions my simulation expired, or asks about simulating a contract, deploying in simulation, calling a circuit, reading simulation state, MCP simulation, contract simulation lifecycle, midnight-simulate-deploy, midnight-simulate-call, midnight-simulate-state, or midnight-simulate-delete.
 ---
 
 # Midnight MCP Simulation Tools
@@ -129,6 +129,22 @@ Sessions expire after 15 minutes of inactivity. If you receive a session-not-fou
 
 **Multi-circuit interaction** — Test that circuits interact correctly by calling them in various orders and verifying that the resulting state is consistent.
 
+## Common Errors
+
+Simulation tools return structured error responses. The most frequent errors:
+
+| Error | Trigger | Quick fix |
+|-------|---------|-----------|
+| `session_not_found` | Session expired (15 min inactivity) or deleted | Deploy a new session, replay calls |
+| `circuit_not_found` | Typo or calling a non-exported circuit | Check spelling; use `midnight-simulate-state` to list circuits |
+| `type_mismatch` | Wrong argument type, count, or format | Consult `references/argument-formats.md` for type mapping |
+| `assertion_failure` | Contract `assert()` failed | Read the assertion message; inspect state for preconditions |
+| `compilation_error` | Invalid Compact source in deploy | Fix source; use `compact-core:compact-compilation` to verify |
+
+Failed circuit calls (assertion failure, type mismatch) do not modify ledger state -- no rollback is needed.
+
+For detailed error payloads and recovery steps, see `references/common-errors.md`.
+
 ## Cross-References
 
 | Topic | Skill / Plugin |
@@ -137,3 +153,6 @@ Sessions expire after 15 minutes of inactivity. If you receive a session-not-fou
 | Compact compilation for verifying source before simulation | `compact-core:compact-compilation` |
 | Verification methodology using simulation | `compact-core:verify-correctness` |
 | Compact standard library for understanding circuit behavior | `compact-core:compact-standard-library` |
+| Full simulation lifecycle worked example | `examples/simulation-lifecycle.md` |
+| Argument formats and Compact-to-JSON type mapping | `references/argument-formats.md` |
+| Common error payloads and recovery steps | `references/common-errors.md` |
