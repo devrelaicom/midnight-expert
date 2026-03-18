@@ -5,7 +5,7 @@ description: Use when the user asks about listing available tools, what the MCP 
 
 # Midnight MCP Tool Overview
 
-The Midnight MCP server exposes 32 tools across 7 categories. This skill covers what each category does, which tool to use for a given task, and how to minimize token usage.
+The Midnight MCP server exposes 32 tools across 8 categories. This skill covers what each category does, which tool to use for a given task, and how to minimize token usage.
 
 > **Note:** The routing table below lists 29 unique tool names. The total of 32 includes compound tools counted in both their own rows and the categories they compose, plus Meta-category tools (`midnight-get-update-instructions`, `midnight-get-status`) that overlap with Health. The category counts reflect functional groupings, not a deduplicated list.
 

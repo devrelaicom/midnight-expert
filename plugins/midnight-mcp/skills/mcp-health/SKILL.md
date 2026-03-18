@@ -73,7 +73,7 @@ List all compiler versions available through the MCP server, with their correspo
 
 Use this tool to check which compiler versions are available for `midnight-compile-contract`, or to determine the correct compiler version for a specific Compact language version.
 
-**Linking to compilation:** Pass the desired version string from this tool's output as the `compilerVersion` parameter to `midnight-compile-contract`. For example, if this tool lists version `"0.5.0"`, use `"compilerVersion": "0.5.0"` in your compile call.
+**Linking to compilation:** Pass the desired version string from this tool's output in the `versions` array parameter of `midnight-compile-contract`. For example, if this tool lists version `"0.5.0"`, use `"versions": ["0.5.0"]` in your compile call.
 
 ## midnight-list-libraries
 
