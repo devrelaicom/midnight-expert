@@ -1,11 +1,13 @@
 ---
 name: mcp-overview
-description: This skill should be used when the user asks about Midnight MCP tools, which MCP tool to use for a task, tool categories, tool routing, suggesting the right tool, MCP overview, midnight tool routing, available MCP capabilities, or how to choose between midnight MCP tools.
+description: Use when the user asks about listing available tools, what the MCP server can do, compound tools, saving tokens, call frequency, rate limiting, which MCP tool to use for a task, tool categories, tool routing, suggesting the right tool, MCP overview, midnight tool routing, available MCP capabilities, or how to choose between midnight MCP tools.
 ---
 
 # Midnight MCP Tool Overview
 
 The Midnight MCP server exposes 32 tools across 7 categories. This skill covers what each category does, which tool to use for a given task, and how to minimize token usage.
+
+> **Note:** The routing table below lists 29 unique tool names. The total of 32 includes compound tools counted in both their own rows and the categories they compose, plus Meta-category tools (`midnight-get-update-instructions`, `midnight-get-status`) that overlap with Health. The category counts reflect functional groupings, not a deduplicated list.
 
 ## Tool Categories
 

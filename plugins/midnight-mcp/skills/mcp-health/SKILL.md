@@ -1,6 +1,6 @@
 ---
 name: mcp-health
-description: This skill should be used when the user asks about midnight health check, MCP server status, MCP version, checking the MCP server version, compiler versions available in MCP, update instructions for the MCP server, listing available libraries, MCP troubleshooting, midnight-health-check, midnight-get-status, midnight-check-version, midnight-get-update-instructions, midnight-list-compiler-versions, midnight-list-libraries, rate limiting, cache stats, or diagnosing MCP server connection issues.
+description: Diagnose and manage the Midnight MCP server. Use when the user asks is the MCP server running, MCP server down, what compilers are available, OpenZeppelin libraries, update MCP, upgrade MCP server, or asks about health check, MCP status, MCP version, MCP troubleshooting, rate limiting, cache stats, midnight-health-check, midnight-get-status, midnight-check-version, midnight-get-update-instructions, midnight-list-compiler-versions, or midnight-list-libraries.
 ---
 
 # Midnight MCP Health and Diagnostics Tools
@@ -19,6 +19,8 @@ Check server health and API connectivity. Use this as the first diagnostic step 
 - API endpoint connectivity
 - Service uptime
 
+**Interpreting results:** If the server reports unhealthy status, check network connectivity first, then verify the server process is running. If uptime is very low, the server may have recently restarted — check logs for crash details.
+
 ## midnight-get-status
 
 View current rate limits and cache statistics. Use this to check whether you are approaching rate limits or to understand cache hit rates.
@@ -30,6 +32,8 @@ View current rate limits and cache statistics. Use this to check whether you are
 - Rate limit status (requests remaining, reset time)
 - Cache statistics (hit rate, size, eviction counts)
 - Active session count
+
+**Interpreting results:** If requests remaining is below 10, reduce call frequency and prefer compound tools. If the cache hit rate is low, you may be issuing too many unique queries — try reusing previous results. The reset time indicates when your rate limit quota refreshes.
 
 ## midnight-check-version
 
@@ -68,6 +72,8 @@ List all compiler versions available through the MCP server, with their correspo
 - Default compiler version
 
 Use this tool to check which compiler versions are available for `midnight-compile-contract`, or to determine the correct compiler version for a specific Compact language version.
+
+**Linking to compilation:** Pass the desired version string from this tool's output as the `compilerVersion` parameter to `midnight-compile-contract`. For example, if this tool lists version `"0.5.0"`, use `"compilerVersion": "0.5.0"` in your compile call.
 
 ## midnight-list-libraries
 

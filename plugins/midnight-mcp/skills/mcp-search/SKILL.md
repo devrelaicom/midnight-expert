@@ -1,6 +1,6 @@
 ---
 name: mcp-search
-description: This skill should be used when the user asks about midnight search, searching Compact code, searching TypeScript SDK code, searching Midnight documentation, fetching docs, MCP search tools, semantic search over Midnight repos, midnight-search-compact, midnight-search-typescript, midnight-search-docs, midnight-fetch-docs, or optimizing search queries for the Midnight MCP server.
+description: Use when the user asks to find Compact examples, look up SDK types, search Midnight codebase, evaluate search result reliability, or asks about midnight search, searching Compact code, searching TypeScript SDK code, searching Midnight documentation, fetching docs, MCP search tools, semantic search over Midnight repos, optimizing search queries, midnight-search-compact, midnight-search-typescript, midnight-search-docs, or midnight-fetch-docs.
 ---
 
 # Midnight MCP Search Tools
@@ -124,6 +124,18 @@ For comprehensive results on a topic, combine `midnight-search-compact` with `mi
 2. Use `midnight-search-docs` to find the conceptual explanation and any caveats
 
 This two-call approach covers both implementation and documentation. Do not exceed 2 search calls per question — additional calls rarely add value beyond what the first two provide.
+
+## Interpreting Results
+
+All search tools return a `relevanceScore` with each result. Use these thresholds consistently across all four tools:
+
+| Score Range | Interpretation |
+|-------------|---------------|
+| 0.7 and above | High confidence — result is directly relevant to the query |
+| 0.3 to 0.7 | Moderate confidence — review the result to confirm relevance before relying on it |
+| Below 0.3 | Low confidence — result is often tangentially related; do not treat as authoritative |
+
+Low-scoring results can still contain useful context, but always verify critical information from low-scoring results against an independent source (compilation, `npm view`, or official documentation).
 
 ## Trusted Sources
 

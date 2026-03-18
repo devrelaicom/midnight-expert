@@ -1,6 +1,6 @@
 ---
 name: mcp-analyze
-description: This skill should be used when the user asks about analyzing a Compact contract, compiling a contract via MCP, visualizing a contract, proving a contract, formatting a contract, compiling an archive, MCP compile, MCP analyze, contract analysis pipelines, midnight-analyze-contract, midnight-compile-contract, midnight-compile-archive, midnight-visualize-contract, midnight-prove-contract, midnight-format-contract, midnight-diff-contracts, semantic contract diff, or circuit visualization.
+description: Use when the user asks to check contract for errors, compile my Compact code, show contract call graph, privacy analysis, compare two contracts, format my code, or asks about MCP compile, MCP analyze, contract analysis, semantic contract diff, circuit visualization, midnight-analyze-contract, midnight-compile-contract, midnight-compile-archive, midnight-visualize-contract, midnight-prove-contract, midnight-format-contract, or midnight-diff-contracts.
 ---
 
 # Midnight MCP Analysis and Compilation Tools
@@ -59,6 +59,13 @@ Compile a Compact contract with configurable options. Use `skipZk=true` for fast
 | Multi-version compatibility | `versions: ["0.X.0", "0.Y.0"]` | Per-version time |
 | Auto-detect language version | `detect: true` | Adds detection overhead |
 
+**`skipZk` / `fullCompile` interaction:**
+
+- **`skipZk: true`** — Skips ZK circuit generation entirely. Fast syntax and type checking only (~1-2s)
+- **`fullCompile: true`** — Performs full compilation including ZK proof generation (~10-30s)
+- **Both omitted** — Standard compilation runs, which includes ZK circuit generation but may not produce all deployment artifacts. Equivalent to neither flag being set
+- **Both set** — `skipZk` takes precedence; ZK circuit generation is skipped. Do not set both — use one or the other
+
 **When to use each strategy:**
 
 - **`skipZk: true`** — During development, when checking if code compiles, validating syntax corrections, or iterating on contract design. Covers syntax errors, type mismatches, and missing exports
@@ -96,6 +103,8 @@ Generate a visual representation of a contract's circuit call graph and ledger a
 - Export boundaries showing which circuits are exposed to external callers
 
 Use this tool to understand complex contracts with many interacting circuits, to identify unexpected ledger access patterns, or to document contract architecture.
+
+**Rendering note:** Present Mermaid output in a fenced code block with the `mermaid` language identifier for rendering.
 
 ## midnight-prove-contract
 
