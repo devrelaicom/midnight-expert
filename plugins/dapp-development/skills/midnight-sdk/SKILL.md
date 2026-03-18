@@ -1,0 +1,482 @@
+---
+name: midnight-sdk
+description: This skill should be used when the user asks about the Midnight SDK, midnight-js packages, SDK packages, MidnightProviders, deployContract, findDeployedContract, callTx, submitCallTx, the transaction lifecycle, SDK types, testkit-js, FinalizedTxData, WalletProvider, MidnightProvider, PublicDataProvider, ProofProvider, SDK integration, contract maintenance, verifier keys, submitInsertVerifierKeyTx, replaceAuthority, observable patterns, contract state subscriptions, low-level transaction API, or advanced SDK usage beyond basic deployment.
+version: 0.1.0
+---
+
+# Midnight SDK Reference
+
+Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For basic contract deployment patterns, see `compact-core:compact-deployment`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `dapp-development:dapp-connector`.
+
+## SDK Package Map
+
+| Package | Purpose | Key Exports |
+|---------|---------|-------------|
+| `@midnight-ntwrk/midnight-js-contracts` | Contract deployment and interaction | `deployContract`, `findDeployedContract`, `submitCallTx`, `callTx`, `submitCallTxAsync`, `submitTxAsync`, `createUnprovenCallTx`, `getStates`, `getPublicStates`, `getUnshieldedBalances`, `verifyContractState`, `submitInsertVerifierKeyTx`, `submitRemoveVerifierKeyTx`, `submitReplaceAuthorityTx`, `replaceAuthority` |
+| `@midnight-ntwrk/midnight-js-types` | Core type definitions | `MidnightProviders`, `WalletProvider`, `MidnightProvider`, `PublicDataProvider`, `PrivateStateProvider`, `ProofProvider`, `ZkConfigProvider` |
+| `@midnight-ntwrk/midnight-js-network-id` | Network configuration | `setNetworkId` |
+| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | Indexer connection | `indexerPublicDataProvider()` |
+| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | Proof server communication | `httpClientProofProvider()` |
+| `@midnight-ntwrk/midnight-js-level-private-state-provider` | LevelDB private state (Node.js) | `levelPrivateStateProvider()` |
+| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | Node.js ZK asset loading | `NodeZkConfigProvider` |
+| `@midnight-ntwrk/midnight-js-fetch-zk-config-provider` | Browser ZK asset loading | `FetchZkConfigProvider` |
+| `@midnight-ntwrk/midnight-js-logger-provider` | Optional structured logging | `loggerProvider()` |
+| `@midnight-ntwrk/midnight-js-utils` | Utility functions | `toHex` |
+
+All packages are published on the **public npm registry** under the `@midnight-ntwrk` scope. Do not configure custom registries or `.npmrc` overrides.
+
+## MidnightProviders Deep Dive
+
+`MidnightProviders<ICK, PSI, PS>` bundles the six providers required for contract deployment and interaction:
+
+```typescript
+import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
+
+interface MidnightProviders<ICK extends string, PSI extends string, PS> {
+  walletProvider: WalletProvider;
+  midnightProvider: MidnightProvider;
+  publicDataProvider: PublicDataProvider;
+  privateStateProvider: PrivateStateProvider<PSI, PS>;
+  zkConfigProvider: ZkConfigProvider<ICK>;
+  proofProvider: ProofProvider<ICK>;
+}
+```
+
+### Type Parameters
+
+| Parameter | Meaning | Example |
+|-----------|---------|---------|
+| `ICK` | Impure circuit keys -- union of circuit names that have witnesses | `"transfer" \| "mint"` |
+| `PSI` | Private state identifier -- the key used in the private state store | `typeof "myContractState"` |
+| `PS` | Private state type -- the shape of off-chain state | `{ secretKey: Uint8Array }` |
+
+### Provider Details
+
+#### WalletProvider
+
+Handles transaction balancing (adding fee inputs/outputs) and provides signing keys:
+
+```typescript
+interface WalletProvider {
+  /** Get the shielded coin public key for receiving funds */
+  getCoinPublicKey(): string;
+
+  /** Get the encryption public key for encrypted outputs */
+  getEncryptionPublicKey(): string;
+
+  /** Balance an unproven transaction by adding fee inputs/outputs */
+  balanceTx(
+    tx: UnprovenTransaction,
+    newCoins?: ShieldedCoinInfo[],
+    ttl?: Date,
+  ): Promise<BalancedProvingRecipe>;
+}
+```
+
+- **Node.js**: Built from `WalletFacade` (see `compact-core:compact-deployment`)
+- **Browser**: Built from `ConnectedAPI.balanceUnsealedTransaction` (see `dapp-development:dapp-connector`)
+
+#### MidnightProvider
+
+Submits finalized transactions to the Midnight node:
+
+```typescript
+interface MidnightProvider {
+  /** Submit a finalized (balanced + proven) transaction */
+  submitTx(tx: FinalizedTransaction): Promise<TransactionId>;
+}
+```
+
+- **Node.js**: Built from `WalletFacade`
+- **Browser**: Built from `ConnectedAPI.submitTransaction`
+
+#### PublicDataProvider
+
+Connects to the indexer for on-chain state queries and subscriptions:
+
+```typescript
+interface PublicDataProvider {
+  queryContractState(address: ContractAddress): Promise<ContractState | null>;
+  watchForDeployTxData(address: ContractAddress): Observable<DeployTxData>;
+  contractStateObservable(
+    address: ContractAddress,
+    options?: { type: "latest" },
+  ): Observable<ContractState>;
+}
+```
+
+Created identically in both Node.js and browser via `indexerPublicDataProvider(httpUrl, wsUrl)`.
+
+#### PrivateStateProvider
+
+Persists off-chain contract state that witnesses access:
+
+```typescript
+interface PrivateStateProvider<PSI extends string, PS> {
+  get(id: PSI): Promise<PS | null>;
+  set(id: PSI, state: PS): Promise<void>;
+  remove(id: PSI): Promise<void>;
+}
+```
+
+- **Node.js**: `levelPrivateStateProvider()` using LevelDB
+- **Browser**: In-memory `Map` or IndexedDB (see `dapp-development:dapp-connector`)
+
+#### ZkConfigProvider
+
+Loads ZK circuit configurations from compiled assets:
+
+```typescript
+interface ZkConfigProvider<ICK extends string> {
+  getZkConfig(circuitId: ICK): Promise<ZkConfig>;
+}
+```
+
+- **Node.js**: `NodeZkConfigProvider` reads from filesystem
+- **Browser**: `FetchZkConfigProvider` fetches via HTTP
+
+#### ProofProvider
+
+Communicates with the proof server to generate ZK proofs:
+
+```typescript
+interface ProofProvider<ICK extends string> {
+  prove(circuitId: ICK, inputs: ProveInputs): Promise<Proof>;
+}
+```
+
+Created via `httpClientProofProvider(proofServerUrl, zkConfigProvider)` in both environments.
+
+## Transaction Lifecycle
+
+Every contract interaction follows a five-stage pipeline:
+
+```
+Build       ->  Prove       ->  Balance     ->  Submit      ->  Finalize
+callTx          proofProvider   walletProvider  midnightProvider  publicDataProvider
+(construct tx)  (generate ZK    (add fee        (send to node)   (confirm on-chain)
+                 proof)          inputs/outputs)
+```
+
+### High-Level API
+
+`callTx` on a deployed/found contract performs all five stages:
+
+```typescript
+const deployed = await deployContract(providers, options);
+
+// Single call does: build -> prove -> balance -> submit -> finalize
+const txData = await deployed.callTx.myCircuit(arg1, arg2);
+
+// txData contains:
+txData.public.txId;         // TransactionId
+txData.public.txHash;       // string
+txData.public.blockHeight;  // bigint
+```
+
+### Low-Level API
+
+For fine-grained control, use individual functions:
+
+```typescript
+import {
+  createUnprovenCallTx,
+  submitCallTx,
+  submitCallTxAsync,
+} from "@midnight-ntwrk/midnight-js-contracts";
+
+// Step 1: Build the unproven transaction
+const unproven = await createUnprovenCallTx(
+  deployed,
+  providers,
+  "myCircuit",
+  [arg1, arg2],
+);
+
+// Step 2+3+4+5: Prove, balance, submit, and finalize
+const txData = await submitCallTx(providers, unproven);
+
+// OR: Steps 2+3+4 only (return after submission, don't wait for finalization)
+const txId = await submitCallTxAsync(providers, unproven);
+```
+
+### Async Submission Variants
+
+For operations that do not need to wait for on-chain confirmation:
+
+| Function | Waits for finalization? | Returns |
+|----------|------------------------|---------|
+| `callTx.circuitName()` | Yes | `FinalizedCallTxData` |
+| `submitCallTx(providers, unproven)` | Yes | `FinalizedCallTxData` |
+| `submitCallTxAsync(providers, unproven)` | No | `TransactionId` |
+| `submitTxAsync(providers, tx)` | No | `TransactionId` |
+
+Use async variants for fire-and-forget operations or when managing finalization separately via observables.
+
+## State Query Functions
+
+Query contract and balance state without submitting transactions:
+
+```typescript
+import {
+  getStates,
+  getPublicStates,
+  getUnshieldedBalances,
+  verifyContractState,
+} from "@midnight-ntwrk/midnight-js-contracts";
+
+// Get both public and private state
+const { publicState, privateState } = await getStates(
+  deployed,
+  providers,
+);
+
+// Get only public (on-chain) state
+const publicState = await getPublicStates(deployed, providers);
+
+// Get unshielded token balances for the connected wallet
+const balances = await getUnshieldedBalances(providers);
+// Returns Record<string, bigint>
+
+// Verify that on-chain state matches expected state
+const isValid = await verifyContractState(deployed, providers);
+```
+
+## Contract Maintenance
+
+### Verifier Key Management
+
+Verifier keys authorize which circuits can be called on a deployed contract. Manage them post-deployment:
+
+```typescript
+import {
+  submitInsertVerifierKeyTx,
+  submitRemoveVerifierKeyTx,
+} from "@midnight-ntwrk/midnight-js-contracts";
+
+// Add a new verifier key (enables a new circuit)
+await submitInsertVerifierKeyTx(providers, {
+  contractAddress,
+  circuitId: "newCircuit",
+  verifierKey: newVerifierKeyBytes,
+});
+
+// Remove a verifier key (disables a circuit)
+await submitRemoveVerifierKeyTx(providers, {
+  contractAddress,
+  circuitId: "oldCircuit",
+});
+```
+
+Verifier key insertion is required when upgrading contract logic or enabling circuits that were not included in the original deployment.
+
+### Authority Management
+
+The contract authority controls who can modify verifier keys. Transfer authority to enable governance transitions:
+
+```typescript
+import {
+  submitReplaceAuthorityTx,
+  replaceAuthority,
+} from "@midnight-ntwrk/midnight-js-contracts";
+
+// Replace the contract authority
+await submitReplaceAuthorityTx(providers, {
+  contractAddress,
+  newAuthority: newAuthorityPublicKey,
+});
+
+// Alternative: replaceAuthority() for use within contract interactions
+const result = await replaceAuthority(deployed, providers, newAuthorityPublicKey);
+```
+
+Authority replacement is irreversible. The new authority must be a valid public key that controls the signing key for subsequent verifier key operations.
+
+## Observable Patterns
+
+The SDK uses RxJS observables for reactive state management:
+
+### Contract State Subscriptions
+
+```typescript
+import { map, distinctUntilChanged } from "rxjs";
+import { MyContract } from "./managed/mycontract/contract/index.js";
+
+// Subscribe to all state changes
+const stateSubscription = providers.publicDataProvider
+  .contractStateObservable(contractAddress, { type: "latest" })
+  .pipe(
+    map((state) => MyContract.ledger(state.data)),
+  )
+  .subscribe({
+    next: (ledgerState) => {
+      console.log("State updated:", ledgerState);
+    },
+    error: (err) => {
+      console.error("Subscription error:", err);
+    },
+  });
+
+// Clean up when done
+stateSubscription.unsubscribe();
+```
+
+### Transaction Finalization Watchers
+
+```typescript
+// Watch for a specific transaction to finalize
+providers.publicDataProvider
+  .watchForDeployTxData(contractAddress)
+  .subscribe({
+    next: (deployData) => {
+      console.log("Contract deployed:", deployData.contractAddress);
+    },
+  });
+```
+
+### Combining Observables for UI State
+
+```typescript
+import { combineLatest, map } from "rxjs";
+
+// Combine contract state with balance updates
+const appState$ = combineLatest([
+  providers.publicDataProvider
+    .contractStateObservable(contractAddress, { type: "latest" })
+    .pipe(map((s) => MyContract.ledger(s.data))),
+  balanceObservable$,
+]).pipe(
+  map(([ledger, balance]) => ({
+    contractValue: ledger.counter,
+    userBalance: balance,
+  })),
+);
+```
+
+## testkit-js
+
+The `@midnight-ntwrk/testkit-js` package provides utilities for integration testing without a live network:
+
+### Test Wallet Setup
+
+```typescript
+import { TestWallet } from "@midnight-ntwrk/testkit-js";
+
+// Create a test wallet with pre-funded balances
+const testWallet = await TestWallet.create({
+  networkId: "undeployed",
+  initialBalance: 1_000_000n,
+});
+
+const walletProvider = testWallet.walletProvider();
+const midnightProvider = testWallet.midnightProvider();
+```
+
+### Contract Testing Pattern
+
+```typescript
+import { TestEnvironment } from "@midnight-ntwrk/testkit-js";
+import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
+
+describe("MyContract", () => {
+  let env: TestEnvironment;
+
+  beforeAll(async () => {
+    env = await TestEnvironment.start();
+  });
+
+  afterAll(async () => {
+    await env.stop();
+  });
+
+  it("deploys and calls a circuit", async () => {
+    const providers = env.createProviders(witnesses);
+
+    const deployed = await deployContract(providers, {
+      compiledContract: myCompiledContract,
+      privateStateId: "testState",
+      initialPrivateState: { secretKey: testKey },
+    });
+
+    const result = await deployed.callTx.increment();
+    expect(result.public.txId).toBeDefined();
+
+    const state = await getPublicStates(deployed, providers);
+    expect(state.counter).toBe(1n);
+  });
+});
+```
+
+### Multi-Party Testing
+
+```typescript
+// Simulate two different users interacting with the same contract
+const alice = await TestWallet.create({ networkId: "undeployed", initialBalance: 1_000_000n });
+const bob = await TestWallet.create({ networkId: "undeployed", initialBalance: 1_000_000n });
+
+// Alice deploys
+const aliceProviders = env.createProvidersWithWallet(alice, witnesses);
+const deployed = await deployContract(aliceProviders, deployOptions);
+
+// Bob joins
+const bobProviders = env.createProvidersWithWallet(bob, witnesses);
+const found = await findDeployedContract(bobProviders, {
+  contractAddress: deployed.deployTxData.public.contractAddress,
+  compiledContract: myCompiledContract,
+  privateStateId: "bobState",
+  initialPrivateState: { secretKey: bobKey },
+});
+
+// Bob calls a circuit on Alice's contract
+const result = await found.callTx.transfer(aliceAddress, 100n);
+```
+
+## FinalizedTxData Types
+
+### FinalizedDeployTxData
+
+```typescript
+interface FinalizedDeployTxData<C> {
+  public: {
+    contractAddress: ContractAddress;
+    txId: TransactionId;
+    txHash: string;
+    blockHeight: bigint;
+  };
+  private: {
+    signingKey: Uint8Array;
+    initialPrivateState: PS;
+  };
+}
+```
+
+### FinalizedCallTxData
+
+```typescript
+interface FinalizedCallTxData<C, ICK> {
+  public: {
+    txId: TransactionId;
+    txHash: string;
+    blockHeight: bigint;
+  };
+}
+```
+
+Both types provide the on-chain confirmation data needed to verify that the operation succeeded.
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Importing `NodeZkConfigProvider` in browser code | Use `FetchZkConfigProvider` for browser environments |
+| Not calling `setNetworkId()` before creating providers | Call once at application startup, before any provider construction |
+| Forgetting to unsubscribe from observables | Store subscription references and call `unsubscribe()` in cleanup |
+| Using `callTx` when you only need to submit | Use `submitCallTxAsync` to avoid blocking on finalization |
+| Mixing circuit keys from different contracts | Each contract has its own `ImpureCircuitId` type; do not share providers across contracts with different circuit sets |
+
+## Reference Files
+
+| Topic | Reference File |
+|-------|---------------|
+| Detailed exports, constructor signatures, and configuration for all 10 SDK packages | `references/package-reference.md` |
+| Complete transaction lifecycle with low-level API, proving flow, balancing internals, and finalization | `references/transaction-lifecycle.md` |
