@@ -26,6 +26,7 @@ import type {
   MidnightProviders,
   WalletProvider,
   MidnightProvider,
+  PrivateStateProvider,
 } from "@midnight-ntwrk/midnight-js-types";
 import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
 
@@ -140,6 +141,7 @@ For persistent storage across browser sessions, use IndexedDB:
 
 ```typescript
 import { openDB } from "idb";
+import type { PrivateStateProvider } from "@midnight-ntwrk/midnight-js-types";
 
 async function indexedDBPrivateStateProvider<PSI extends string, PS>(
   dbName: string,
@@ -194,7 +196,7 @@ import { CompiledContract } from "@midnight-ntwrk/compact-js";
 import { MyContract } from "../managed/mycontract/contract/index.js";
 import { witnesses } from "../witnesses.js";
 import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
-import { createBrowserProviders } from "../providers.js";
+import { createBrowserProviders, inMemoryPrivateStateProvider } from "../providers.js";
 
 function useContractDeployment(api: ConnectedAPI) {
   const deploy = useCallback(async (initialSecret: Uint8Array) => {
