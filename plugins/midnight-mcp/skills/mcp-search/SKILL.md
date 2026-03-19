@@ -1,6 +1,7 @@
 ---
 name: mcp-search
-description: This skill should be used when the user asks about midnight search, searching Compact code, searching TypeScript SDK code, searching Midnight documentation, fetching docs, MCP search tools, semantic search over Midnight repos, midnight-search-compact, midnight-search-typescript, midnight-search-docs, midnight-fetch-docs, optimizing search queries for the Midnight MCP server, search techniques, query rewriting, multi-query search, search reranking, or improving search result quality.
+version: 1.0.0
+description: This skill should be used when the user asks about searching Midnight code, searching Compact examples, searching TypeScript SDK code, finding Midnight documentation, fetching docs pages, using MCP search tools (midnight-search-compact, midnight-search-typescript, midnight-search-docs, midnight-fetch-docs), the /midnight-mcp:search command, optimizing search queries, search techniques like query rewriting or multi-query generation, improving search result quality, or reranking search results.
 ---
 
 # Midnight MCP Search
