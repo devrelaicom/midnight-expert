@@ -16,10 +16,6 @@ Plans 1 and 2 can be executed in parallel (on separate branches from main). Plan
 
 ## Working Directory
 
-```
-/Users/aaronbassett/Projects/midnight/midnight-expert
-```
-
 All file paths in the plans are relative to `plugins/midnight-mcp/` unless stated otherwise.
 
 ## Spec Files (for reference, do not modify)
@@ -41,7 +37,7 @@ git pull origin main
 git checkout -b <branch-name>
 ```
 
-For Plan 3 only: branch from main AFTER Plan 2's PR has been merged.
+For Plan 3 only: branch from plan 2's feature branch rather than main
 
 ### 2. Read the plan file
 
@@ -78,11 +74,42 @@ EOF
 )"
 ```
 
-### 5. Verify task completion
+### 5. Review task with code reviewer
 
-After committing a task, before moving to the next:
-- Confirm the committed files exist: `git show --stat HEAD`
-- If the task created reference or example files, verify they follow the conventions described in the plan (headings, sections, anti-patterns, etc.)
+After committing a task, **before moving to the next task**, dispatch a `devs:code-reviewer` subagent to review the changes. Use the Agent tool with `subagent_type: "devs:code-reviewer"`.
+
+Provide the reviewer with:
+- The git diff of the task's commit: `git diff HEAD~1..HEAD`
+- The plan file path and task number being reviewed
+- The spec file path for context
+- Instruction to check: content accuracy, adherence to conventions (operational tone, no frontmatter on references/examples, anti-patterns present in example files, cross-references valid), and completeness against the plan's step descriptions
+
+Example prompt for the reviewer:
+```
+Review the changes in the latest commit for Task N of the mcp-search plan.
+
+Plan: docs/superpowers/plans/2026-03-19-mcp-search-technique-library.md
+Spec: docs/superpowers/specs/2026-03-19-mcp-search-technique-library-design.md
+Task: N — [task description]
+
+Check:
+1. All files listed in the task were created/modified
+2. Content follows conventions: operational tone, no YAML frontmatter on references/examples, real Midnight terminology
+3. Example files have 3-5 before/after pairs and 2-3 anti-patterns (where applicable)
+4. Reference files end technique sections with Examples: pointers (Plan 1 only)
+5. Cross-references use skill names not file paths
+6. No placeholders, TODOs, or incomplete sections
+
+Run: git diff HEAD~1..HEAD
+```
+
+**If the reviewer finds issues:**
+1. Fix each issue
+2. Amend the commit: `git add -A && git commit --amend --no-edit`
+3. Re-run the reviewer to confirm the fixes
+4. Only proceed to the next task once the reviewer approves
+
+**If the reviewer approves:** proceed to the next task.
 
 ### 6. Run the integration verification task
 
