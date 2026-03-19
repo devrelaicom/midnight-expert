@@ -193,6 +193,7 @@ description: This skill should be used when the user asks about simulating a Com
    | Debug a simulation failure | `references/error-recovery.md` |
    | Manage session lifecycle (expiry, cleanup) | `references/session-management.md` |
    | Test a specific contract pattern end-to-end | `references/testing-patterns.md` + relevant archetype example |
+   | Understand server-side limitations and future capabilities | `references/server-enhanced.md` |
 
 6. **Rate limits section:**
 
