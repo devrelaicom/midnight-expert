@@ -20,6 +20,10 @@ Testing the same code against multiple Compact compiler versions simultaneously.
 | `"detect"` | Resolves from `pragma language_version` constraints in the code |
 | Specific version string | Exact version, e.g., `"0.29.0"`, `"0.28.0"` |
 
+## Discovering Available Versions
+
+To find which compiler versions the hosted service supports, call `midnight-list-compiler-versions`. This returns the set of version strings you can pass in the `versions` array. Do not guess version numbers — always discover them first.
+
 ## Common Use Cases
 
 | Task | Versions to Test |

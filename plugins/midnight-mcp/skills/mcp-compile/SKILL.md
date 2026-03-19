@@ -1,6 +1,7 @@
 ---
 name: mcp-compile
-description: This skill should be used when the user asks about compiling Compact code via MCP, hosted compilation, midnight-compile-contract, midnight-compile-archive, MCP compile, snippet compilation, multi-version compilation, compile errors from MCP, code auto-wrapping, testing backwards compatibility across Compact versions, OpenZeppelin library linking in MCP compilation, or interpreting hosted compiler responses.
+version: 1.0.0
+description: This skill should be used when the user asks about compiling Compact code via MCP, hosted compilation, midnight-compile-contract, midnight-compile-archive, MCP compile, snippet compilation, multi-version compilation, compile errors from MCP, code auto-wrapping, testing backwards compatibility across Compact versions, OpenZeppelin library linking in MCP compilation, interpreting hosted compiler responses, quick validation, check if code compiles, full ZK compilation via MCP, circuit metrics, k-values, or TypeScript bindings from MCP.
 ---
 
 # MCP-Hosted Compact Compilation
@@ -25,7 +26,7 @@ If none of these apply, continue with MCP-hosted compilation below.
 
 | Tool | What It Does | When to Use |
 |------|-------------|-------------|
-| `midnight-compile-contract` | Compile single-file Compact code with hosted compiler | Quick validation, snippet testing, multi-version compat |
+| `midnight-compile-contract` | Compile single-file Compact code with hosted compiler (default: `skipZk=true`) | Quick validation, snippet testing, multi-version compat |
 | `midnight-compile-archive` | Compile multi-file projects via file map | Projects with imports between Compact files, OZ module usage |
 
 ## Workflow Routing
@@ -34,6 +35,7 @@ Load the reference matching your current task. If compilation fails, also load `
 
 | Workflow | Reference | When |
 |----------|-----------|------|
+| Correct code patterns to aim for | `examples/common-patterns.md` | Writing new code, need correct compilation targets |
 | Quick syntax/type check | `references/quick-validation.md` | LLM wrote or modified code, needs fast feedback |
 | Test across compiler versions | `references/multi-version.md` | Backwards/forwards compat without changing local toolchain |
 | Compile a code snippet | `references/snippet-compilation.md` | Incomplete code fragments, not full contracts |
