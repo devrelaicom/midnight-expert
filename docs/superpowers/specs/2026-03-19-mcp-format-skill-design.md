@@ -63,9 +63,10 @@ Source: `/Users/aaronbassett/Projects/midnight/midnight-mcp/src/tools/format/sch
 
 ### Response Structure
 
+**Successful format:**
 ```
 {
-  success: boolean,          // Whether formatting succeeded
+  success: true,
   formatted: string,         // The formatted source code
   changed: boolean,          // Whether the code was changed by formatting
   diff: string               // Line-by-line diff showing changes (only if changed)
@@ -73,6 +74,22 @@ Source: `/Users/aaronbassett/Projects/midnight/midnight-mcp/src/tools/format/sch
 ```
 
 When `changed: false`, the code was already correctly formatted. No `diff` is returned.
+
+**Failed format (parse error, version not found, etc.):**
+```
+{
+  success: false,
+  errors: [{ message: string, severity: "error" }]
+}
+```
+
+**Multi-version response:** Array of results, each with an additional `requestedVersion` field:
+```
+[
+  { success: true, formatted: "...", changed: true, diff: "...", requestedVersion: "0.29.0" },
+  { success: true, formatted: "...", changed: false, requestedVersion: "0.28.0" }
+]
+```
 
 ## SKILL.md Structure
 
