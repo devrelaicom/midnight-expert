@@ -87,8 +87,13 @@ Source: `/Users/aaronbassett/Projects/midnight/midnight-mcp/src/tools/analyze/sc
   success: boolean,
   output: string,                    // "Compilation successful" or error summary
   compilationMode: "syntax-only" | "full",
+  compilerVersion: string,           // Resolved compiler version used
   errors: CompilerError[],           // If failed
+  warnings: CompilerError[],         // If succeeded with warnings
   executionTime: number,             // Milliseconds
+  compiledAt: string,                // ISO 8601 timestamp
+  originalCode: string,              // Original code (if auto-wrapped)
+  wrappedCode: string,               // Code after wrapper additions (if auto-wrapped)
   // Additional fields when fullCompile or includeBindings:
   bindings: Record<string, string>,  // TypeScript artifacts
   insights: CompilerInsights         // Circuit metrics
@@ -99,7 +104,7 @@ Source: `/Users/aaronbassett/Projects/midnight/midnight-mcp/src/tools/analyze/sc
 ```
 {
   message: string,
-  severity: "error" | "warning",
+  severity: "error" | "warning" | "info",
   file: string,       // Optional
   line: number,        // Optional, 1-based
   column: number       // Optional, 1-based
@@ -124,7 +129,7 @@ The playground automatically wraps incomplete code snippets:
 - If code has no `import CompactStandardLibrary` → adds the import
 - Line offset: errors in wrapped code report line numbers offset by 2-4 lines depending on what was added
 
-Snippet types detected: `complete` (has pragma), `circuit` (starts with circuit/export circuit), `ledger` (starts with ledger/export ledger/struct/enum), `unknown`.
+Snippet types detected: `complete` (has pragma), `circuit` (starts with circuit/export circuit), `ledger` (starts with ledger/export ledger/struct/enum), `unknown` (everything else).
 
 ### Rate Limits
 
