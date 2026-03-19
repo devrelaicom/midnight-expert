@@ -1,18 +1,19 @@
 # MCP Skill Improvements — Implementation Handover
 
-You are implementing three plans that improve the `midnight-mcp` plugin's skills. There is **no human in the loop** — execute autonomously, make decisions yourself, and do not ask questions. If you encounter an ambiguity, make the reasonable choice and document it in the commit message.
+You are implementing four plans that improve the `midnight-mcp` plugin's skills. There is **no human in the loop** — execute autonomously, make decisions yourself, and do not ask questions. If you encounter an ambiguity, make the reasonable choice and document it in the commit message.
 
 ## Plans to Execute
 
-Execute these in order. Plans 1 and 2 are independent, but Plan 3 MUST run after Plan 2.
+Execute these in order. Plans 1, 2, and 4 are independent. Plan 3 MUST run after Plan 2.
 
 | Order | Plan File | Branch Name | Summary |
 |-------|-----------|-------------|---------|
 | 1 | `docs/superpowers/plans/2026-03-19-mcp-search-technique-library.md` | `feat/mcp-search-technique-library` | 11 tasks, 38 new files — search technique library with references and examples |
 | 2 | `docs/superpowers/plans/2026-03-19-mcp-compile-skill.md` | `feat/mcp-compile-skill` | 9 tasks, 12 new files + 1 modified — extract compile into own skill |
 | 3 | `docs/superpowers/plans/2026-03-19-mcp-format-skill.md` | `feat/mcp-format-skill` | 3 tasks, 1 new file + 1 modified — extract format into own skill |
+| 4 | `docs/superpowers/plans/2026-03-19-mcp-simulate-skill.md` | `feat/mcp-simulate-skill` | 14 tasks, 24 new files — rewrite simulate skill with OZ simulator integration |
 
-Plans 1 and 2 can be executed in parallel (on separate branches from main). Plan 3 must branch from the **merged** result of Plan 2, because it modifies `mcp-analyze/SKILL.md` which Plan 2 also modifies.
+Plans 1, 2, and 4 can be executed in parallel (on separate branches from main). Plan 3 cannot start until Plan 2 has been pushed. Plan 3 must branch from the feature branch of Plan 2, because it modifies `mcp-analyze/SKILL.md` which Plan 2 also modifies.
 
 ## Working Directory
 
@@ -23,6 +24,7 @@ All file paths in the plans are relative to `plugins/midnight-mcp/` unless state
 - `docs/superpowers/specs/2026-03-19-mcp-search-technique-library-design.md`
 - `docs/superpowers/specs/2026-03-19-mcp-compile-skill-design.md`
 - `docs/superpowers/specs/2026-03-19-mcp-format-skill-design.md`
+- `docs/superpowers/specs/2026-03-19-mcp-simulate-skill-design.md`
 
 ## Step-by-Step Workflow for Each Plan
 
@@ -37,7 +39,16 @@ git pull origin main
 git checkout -b <branch-name>
 ```
 
-For Plan 3 only: branch from plan 2's feature branch rather than main
+For Plan 3 only: branch from Plan 2's feature branch rather than main. All other plans branch from main.
+
+```bash
+
+# Ensure you're on Plan 2's feature branch and up to date
+git checkout <plan-2-branch-name>
+git pull origin <plan-2-branch-name>
+
+# Create the plan 3 feature branch
+git checkout -b <plan-3-branch-name>
 
 ### 2. Read the plan file
 
@@ -154,18 +165,20 @@ Use these PR titles:
 - Plan 1: `feat(mcp-search): add search technique library with references and examples`
 - Plan 2: `feat(mcp-compile): extract compile tools into dedicated skill`
 - Plan 3: `feat(mcp-format): extract format tool into dedicated skill`
+- Plan 4: `feat(mcp-simulate): rewrite simulate skill with OZ simulator integration`
 
 ### 8. Move to the next plan
 
 After the PR is created (you do NOT need to wait for it to be merged before starting the next independent plan):
-- Plans 1 and 2 are independent — after finishing one, start the other from `main`
-- Plan 3 depends on Plan 2 — you MUST wait for Plan 2's PR to be merged into main before starting Plan 3. If Plan 2's PR is not yet merged, work on Plan 1 first.
+- Plans 1, 2, and 4 are independent — after finishing one, start another from `main`
+- Plan 3 depends on Plan 2 — Plan 3 cannot start until Plan 2 has been pushed. Plan 3 must branch from the feature branch of Plan 2, you do not need to wait until it has been merged.
 
 **Recommended execution order:**
 1. Execute Plan 2 (mcp-compile) — smaller, 9 tasks
 2. Execute Plan 1 (mcp-search) — larger, 11 tasks
-3. Merge Plan 2's PR (or confirm it's merged)
-4. Execute Plan 3 (mcp-format) — smallest, 3 tasks, branches from updated main
+3. Execute Plan 4 (mcp-simulate) — 14 tasks
+4. Merge Plan 2's PR (or confirm it's merged)
+5. Execute Plan 3 (mcp-format) — smallest, 3 tasks, branches from Plan 2's branch
 
 ## Content Quality Standards
 
@@ -183,7 +196,7 @@ All files you create are **consumed by LLMs**, not humans. Write accordingly:
 You are writing about Midnight Network's Compact language and MCP tools:
 
 - **Compact** is a smart contract language for the Midnight blockchain
-- **MCP tools** are `midnight-search-compact`, `midnight-search-typescript`, `midnight-search-docs`, `midnight-fetch-docs`, `midnight-compile-contract`, `midnight-compile-archive`, `midnight-format-contract`, etc.
+- **MCP tools** are `midnight-search-compact`, `midnight-search-typescript`, `midnight-search-docs`, `midnight-fetch-docs`, `midnight-compile-contract`, `midnight-compile-archive`, `midnight-format-contract`, `midnight-simulate-deploy`, `midnight-simulate-call`, `midnight-simulate-state`, `midnight-simulate-delete`, etc.
 - **Common Compact types**: `Counter`, `MerkleTree`, `Map`, `Set`, `Bytes<N>`, `Uint<N>`, `Field`, `Boolean`, `Optional`, `Vector`
 - **Key Compact constructs**: `circuit`, `witness`, `ledger`, `export`, `disclose`, `pragma language_version`
 - **Trusted sources**: `midnightntwrk`, `OpenZeppelin`, `LFDT-Minokawa`
@@ -198,17 +211,19 @@ You are writing about Midnight Network's Compact language and MCP tools:
 - **Unclear content guidance**: Write the best version you can based on the spec and plan context. Err on the side of being more detailed rather than less.
 - **Rate limit on `gh` commands**: Wait 60 seconds and retry.
 
-## GitHub Issues (Plan 1 only)
+## GitHub Issues (Plans 1 and 4)
 
-Plan 1 Task 9 creates 7 GitHub issues on `devrelaicom/compact-playground`. The plan provides exact `gh issue create` commands. Run them as-is. If the repo requires authentication, use `gh auth status` to verify you're authenticated first.
+Plan 1 Task 9 creates 7 GitHub issues on `devrelaicom/compact-playground`. Plan 4 Task 12 creates 3 GitHub issues on `devrelaicom/compact-playground`. The plans provide exact `gh issue create` commands. Run them as-is. If the repo requires authentication, use `gh auth status` to verify you're authenticated first.
 
 ## Final Checklist Before You Stop
 
-After all three plans are executed and PRs are created:
+After all four plans are executed and PRs are created:
 
 - [ ] Plan 1 PR created on `feat/mcp-search-technique-library`
 - [ ] Plan 2 PR created on `feat/mcp-compile-skill`
 - [ ] Plan 3 PR created on `feat/mcp-format-skill`
+- [ ] Plan 4 PR created on `feat/mcp-simulate-skill`
 - [ ] All integration verification tasks passed
 - [ ] No uncommitted changes remain (`git status` is clean on each branch)
 - [ ] 7 GitHub issues created on `devrelaicom/compact-playground` (from Plan 1)
+- [ ] 3 GitHub issues created on `devrelaicom/compact-playground` (from Plan 4)
