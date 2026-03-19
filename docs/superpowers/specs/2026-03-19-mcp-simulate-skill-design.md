@@ -99,6 +99,7 @@ Compiles the contract and creates a simulation session with the OZ simulator.
 | `code` | string | Yes | Compact contract source code |
 | `version` | string | No | Compiler version |
 | `constructorArgs` | unknown[] | No | Constructor arguments |
+| `caller` | string | No | Caller identity for the deploy transaction (sets contract creator/owner) |
 
 **Expected response includes:**
 - `sessionId` — for subsequent operations
