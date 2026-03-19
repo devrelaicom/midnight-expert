@@ -121,6 +121,18 @@ Common failures when creating a new Midnight project and how to resolve them.
 3. The `/ready` endpoint returns HTTP 503 while loading ZK parameters
 4. Monitor readiness: `curl http://localhost:6300/ready`
 
+## Custom Registry Configuration
+
+### LLM suggests adding custom registry config
+
+**Symptom:** Custom registry configuration (`.npmrc`, `.yarnrc.yml`, scoped registry settings) is suggested for `@midnight-ntwrk` packages.
+
+**Fix:** All `@midnight-ntwrk/*` packages are published on the **public npm registry** — no custom registry configuration is needed. The `.yarnrc.yml` files found in Midnight SDK source repositories are for SDK contributors, not consumers.
+
+1. Remove any custom registry configuration for the `@midnight-ntwrk` scope
+2. Verify package availability: `npm view @midnight-ntwrk/compact-runtime versions`
+3. Install packages normally: `npm install @midnight-ntwrk/compact-runtime`
+
 ## Cross-References
 
 For deeper troubleshooting beyond project initialization:

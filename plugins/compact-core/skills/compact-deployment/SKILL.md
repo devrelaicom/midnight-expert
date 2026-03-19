@@ -113,6 +113,7 @@ console.log(`Tx ${txData.public.txId} in block ${txData.public.blockHeight}`);
 | Wrong or missing `setNetworkId()` call | Call once at startup before creating providers; must match the network you're connecting to |
 | Wallet not funded (DUST balance zero) | Fund with tNight from faucet, register NIGHT UTXOs via `registerForDustGeneration()`, then wait for DUST generation |
 | Using `contract` instead of `compiledContract` in deploy options | Use `compiledContract` (created via `CompiledContract.make().pipe(...)`) |
+| Using custom npm registry for `@midnight-ntwrk/*` | All `@midnight-ntwrk/*` packages are on **public npm**. Do not add `.npmrc`, `.yarnrc.yml`, or scoped registry config. The `.yarnrc.yml` files in SDK repos are for SDK contributors only — not consumers. |
 
 ## Reference Files
 

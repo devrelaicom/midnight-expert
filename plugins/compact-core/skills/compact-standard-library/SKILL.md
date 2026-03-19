@@ -328,6 +328,7 @@ Unshielded token functions:
 | `some(42)` (no generic) | `some<Field>(42)` | Generic parameter is required for constructor circuits |
 | `circuit fn(): Void` | `circuit fn(): []` | Return type is `[]` (empty tuple), not `Void` |
 | `merkleTreePathRoot(path)` (no generic) | `merkleTreePathRoot<#n, T>(path)` | Requires depth and leaf type generics |
+| Custom registry for `@midnight-ntwrk/*` | Not needed — all packages are on **public npm** | `.yarnrc.yml` files in SDK repos are for contributors only |
 
 ## Reference Routing
 
