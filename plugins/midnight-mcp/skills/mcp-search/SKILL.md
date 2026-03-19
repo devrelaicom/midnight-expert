@@ -8,6 +8,8 @@ description: This skill should be used when the user asks about searching Midnig
 
 Search techniques and tool guidance for the four Midnight MCP search tools. This skill provides a technique library organized as cluster references with per-technique example files. Load only what you need for the current task.
 
+**Not this skill:** If the user asks what MCP tools are available, how tools are categorized, or for a general overview of Midnight tooling, use `mcp-overview` instead. This skill is for *executing* searches, not describing the tools.
+
 ## Search Tools
 
 | Tool | Corpus | Use When |
@@ -23,15 +25,15 @@ Identify your current search task, then load the listed reference files. If mult
 
 | Intent / Task | Reference Files |
 |---------------|----------------|
-| Quick lookup of a specific thing | `references/tool-routing.md` |
-| Find code examples for a pattern | `references/query-expansion.md` + `references/tool-routing.md` + `references/code-search.md` |
-| Find conceptual documentation | `references/query-expansion.md` + `references/tool-routing.md` |
-| Debug an error using search | `references/code-search.md` + `references/tool-routing.md` |
-| Comprehensive research on a topic | `references/query-expansion.md` + `references/context-gathering.md` + `references/tool-routing.md` + `references/result-refinement.md` |
-| Search with project context | `references/context-gathering.md` + `references/tool-routing.md` |
-| Migration / version upgrade search | `references/context-gathering.md` + `references/code-search.md` + `references/tool-routing.md` |
-| Refine poor initial results | `references/iterative-search.md` + `references/result-refinement.md` |
-| Understand server-side limitations | `references/server-enhanced.md` |
+| Quick lookup of a specific thing | `references/tool-routing.md` (5 techniques) |
+| Find code examples for a pattern | `references/query-expansion.md` (5) + `references/tool-routing.md` (5) + `references/code-search.md` (5) |
+| Find conceptual documentation | `references/query-expansion.md` (5) + `references/tool-routing.md` (5) |
+| Debug an error using search | `references/code-search.md` (5) + `references/tool-routing.md` (5) |
+| Comprehensive research on a topic | `references/query-expansion.md` (5) + `references/context-gathering.md` (4) + `references/tool-routing.md` (5) + `references/result-refinement.md` (6) |
+| Search with project context | `references/context-gathering.md` (4) + `references/tool-routing.md` (5) |
+| Migration / version upgrade search | `references/context-gathering.md` (4) + `references/code-search.md` (5) + `references/tool-routing.md` (5) |
+| Refine poor initial results | `references/iterative-search.md` (4) + `references/result-refinement.md` (6) |
+| Understand server-side limitations | `references/server-enhanced.md` (7) |
 
 ## Loading Example Files
 
