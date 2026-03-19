@@ -94,8 +94,8 @@ Deciding which MCP tool(s) to call and with what parameters.
 |-----------|--------|-------------------|
 | Intent classification | Ready | Classify the search intent: code example, conceptual explanation, API reference, troubleshooting, migration guidance — maps to which tool and parameters |
 | Source routing | Ready | Select `midnight-search-compact` vs `midnight-search-typescript` vs `midnight-search-docs` vs `midnight-fetch-docs` based on intent and entity types |
-| Trusted-source filtering | Ready | Apply `filter.repository` to restrict to `midnightntwrk`/`OpenZeppelin`/`LFDT-Minokawa` when reliability matters |
-| Parameter optimization | Ready | Set `limit`, `category`, `includeExamples`, `includeTypes` based on the task — e.g., set `category: "api"` for API lookups, increase `limit` for broad exploration |
+| Trusted-source filtering | Ready | Apply `filter.repository` on `midnight-search-compact` to restrict to `midnightntwrk`/`OpenZeppelin`/`LFDT-Minokawa` when reliability matters. Note: `midnight-search-typescript` has no server-side filter — trusted-source filtering for TypeScript results must be done client-side via trust-aware reranking in the Result Refinement cluster |
+| Parameter optimization | Ready | Set tool-specific parameters based on the task: `category` (guides/api/concepts) on `midnight-search-docs`; `includeExamples`, `includeTypes` on `midnight-search-typescript`; `filter.repository`, `filter.isPublic` on `midnight-search-compact`; `limit` on all tools. Match parameters to the tool being called |
 | Cross-tool orchestration | Ready | Decide when to call multiple tools (compact + docs for comprehensive coverage) vs single tool (quick answer) |
 
 **Example files:** `examples/intent-classification.md`, `examples/source-routing.md`, `examples/trusted-source-filtering.md`, `examples/parameter-optimization.md`, `examples/cross-tool-orchestration.md`
@@ -234,7 +234,7 @@ Source flags are combinable: `--compact --docs` searches both.
 
 | Flag | Effect |
 |------|--------|
-| `--trusted-only` | Restricts code searches to `midnightntwrk`, `OpenZeppelin`, `LFDT-Minokawa` via `filter.repository`. No effect on docs searches. |
+| `--trusted-only` | Restricts Compact code searches to `midnightntwrk`, `OpenZeppelin`, `LFDT-Minokawa` via `filter.repository` on `midnight-search-compact`. For `midnight-search-typescript` (which has no server-side filter), applies client-side trust-aware reranking to deprioritize untrusted sources. No effect on docs searches. |
 
 ### Preset Flags
 
@@ -315,7 +315,9 @@ Requirements:
 
 ## File Inventory
 
-### New Files (34 total)
+### New Files (38 total)
+
+All paths are relative to `plugins/midnight-mcp/`.
 
 **SKILL.md** (1 file — rewrite of existing):
 - `skills/mcp-search/SKILL.md`
@@ -329,7 +331,7 @@ Requirements:
 - `skills/mcp-search/references/code-search.md`
 - `skills/mcp-search/references/server-enhanced.md`
 
-**Example files** (25):
+**Example files** (29):
 - `skills/mcp-search/examples/query-rewriting.md`
 - `skills/mcp-search/examples/multi-query.md`
 - `skills/mcp-search/examples/step-back-queries.md`
@@ -361,7 +363,7 @@ Requirements:
 - `skills/mcp-search/examples/diff-aware-search.md`
 
 **Command file** (1):
-- `commands/search.md`
+- `plugins/midnight-mcp/commands/search.md`
 
 ### Modified Files
 
