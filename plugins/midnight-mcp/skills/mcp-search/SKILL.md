@@ -51,59 +51,7 @@ Results from other sources may be valid but require independent verification bef
 
 ## `/midnight-mcp:search` Command
 
-Users can invoke `/midnight-mcp:search` to run searches with explicit technique control.
-
-### Modes
-
-| Mode | Invocation | Behavior |
-|------|-----------|----------|
-| Interactive | `/midnight-mcp:search` | Guided Q&A — asks what the user needs, constructs and executes the search |
-| Quick | `/midnight-mcp:search <query>` | Auto-routed with `--quick` defaults |
-| Explicit | `/midnight-mcp:search <query> --thorough --compact` | User-specified flags |
-
-### Source Flags
-
-| Flag | MCP Tool(s) |
-|------|-------------|
-| `--compact` | `midnight-search-compact` |
-| `--typescript` | `midnight-search-typescript` |
-| `--docs` | `midnight-search-docs` |
-| `--all` | All three search tools |
-
-Source flags are combinable. If none specified, auto-routes based on query.
-
-### Modifier Flags
-
-| Flag | Effect |
-|------|--------|
-| `--trusted-only` | Restricts Compact searches to trusted repos via `filter.repository`. For TypeScript searches (no server-side filter), applies client-side trust-aware reranking. No effect on docs. |
-
-### Presets
-
-| Preset | Activates | Use Case |
-|--------|-----------|----------|
-| `--quick` | Intent classification, source routing, single query | Fast lookup |
-| `--thorough` | Multi-query, step-back, cross-tool orchestration, reranking, coverage balancing, dedup | Comprehensive research |
-| `--debug` | Error-to-doc rewriting, symbol-aware search, environmental grounding | Debugging from an error |
-| `--examples` | Example mining, query rewriting, trusted-source filtering | Finding runnable code |
-| `--migration` | Version-aware, diff-aware, environmental grounding, freshness reranking | Upgrading versions |
-
-### Individual Technique Flags
-
-| Flag | Technique |
-|------|-----------|
-| `--rewrite` | Query rewriting |
-| `--multi-query` | Multi-query generation |
-| `--step-back` | Step-back queries |
-| `--hyde` | HyDE pseudo-answer generation |
-| `--decompose` | Decomposition |
-| `--rerank` | Relevance reranking |
-| `--dedupe` | Deduplication |
-| `--iterative` | Retrieve-read-retrieve |
-| `--version-aware` | Version-aware search |
-| `--env` | Environmental grounding |
-
-Preset + individual flags: preset techniques plus additional individual techniques. No flags with query: `--quick`. No flags, no query: interactive mode.
+Users can invoke `/midnight-mcp:search` for technique-aware search with preset modes (`--quick`, `--thorough`, `--debug`, `--examples`, `--migration`), source flags, and individual technique flags. See the command file for full flag reference and execution steps.
 
 ## Cross-References
 
