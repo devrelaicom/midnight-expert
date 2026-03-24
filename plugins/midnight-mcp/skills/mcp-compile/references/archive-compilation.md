@@ -41,9 +41,9 @@ Call: midnight-compile-archive({
 | Domain | Example Modules |
 |--------|----------------|
 | `access` | `Ownable`, `AccessControl` |
-| `security` | (security modules) |
+| `security` | `Initializable`, `Pausable` |
 | `token` | `FungibleToken`, `Transferable` |
-| `utils` | (utility modules) |
+| `utils` | `Utils` |
 
 Format: `"domain/ModuleName"`. Max 20 libraries per request. Transitive cross-domain dependencies are resolved automatically — if `Ownable` imports from `utils`, the `utils` domain is linked automatically.
 
