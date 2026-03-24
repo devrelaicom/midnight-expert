@@ -60,6 +60,7 @@ When hitting rate limits: fix all reported errors before recompiling rather than
 |-------|----------------|
 | Local CLI compilation, artifacts, ZKIR, keys | `compact-core:compact-compilation` |
 | Compact standard library reference | `compact-core:compact-standard-library` |
-| Analysis, visualization, formatting, diffing | `mcp-analyze` |
+| Analysis, visualization, diffing | `mcp-analyze` |
+| Compact code formatting via MCP | `mcp-format` |
 | Tool routing and category overview | `mcp-overview` |
 | Verification methodology using compilation | `compact-core:verify-correctness` |
