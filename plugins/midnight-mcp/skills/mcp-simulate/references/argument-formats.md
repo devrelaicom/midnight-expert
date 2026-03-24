@@ -4,7 +4,7 @@ Data structures and type mappings for `constructorArgs` and `arguments` paramete
 
 ## constructorArgs (midnight-simulate-deploy)
 
-A JSON array of positional values matching the contract constructor's parameter list in declaration order. Omit the field entirely if the contract has no constructor or the constructor takes no parameters.
+A JSON object keyed by constructor parameter name. The MCP server handles type coercion. Omit the field entirely if the contract has no constructor or the constructor takes no parameters.
 
 ```compact
 // Constructor with two parameters
@@ -16,16 +16,14 @@ constructor(initialCount: Uint<64>, admin: Bytes<32>) {
 
 ```json
 {
-  "source": "...",
-  "constructorArgs": [10, "0xabcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"]
+  "code": "...",
+  "constructorArgs": { "initialCount": 10, "admin": "0xabcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" }
 }
 ```
 
-Position 0 maps to `initialCount`, position 1 maps to `admin`.
-
 ## arguments (midnight-simulate-call)
 
-A JSON array of positional values matching the circuit's parameter list in declaration order. Omit the field entirely if the circuit takes no parameters.
+A JSON object keyed by circuit parameter name. The MCP server handles type coercion. Omit the field entirely if the circuit takes no parameters.
 
 ```compact
 export circuit transfer(recipient: Bytes<32>, amount: Uint<64>): [] { ... }
@@ -35,11 +33,9 @@ export circuit transfer(recipient: Bytes<32>, amount: Uint<64>): [] { ... }
 {
   "sessionId": "sim_abc123",
   "circuit": "transfer",
-  "arguments": ["0xabcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789", 100]
+  "arguments": { "recipient": "0xabcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789", "amount": 100 }
 }
 ```
-
-Position 0 maps to `recipient`, position 1 maps to `amount`.
 
 ## Compact Type to JSON Mapping
 
@@ -88,7 +84,7 @@ export circuit setOrigin(p: Point): [] { ... }
 {
   "sessionId": "sim_abc123",
   "circuit": "setOrigin",
-  "arguments": [{ "x": "0", "y": "0" }]
+  "arguments": { "p": { "x": "0", "y": "0" } }
 }
 ```
 
@@ -104,11 +100,11 @@ export circuit setCoords(coords: Vector<3, Uint<64>>): [] { ... }
 {
   "sessionId": "sim_abc123",
   "circuit": "setCoords",
-  "arguments": [[10, 20, 30]]
+  "arguments": { "coords": [10, 20, 30] }
 }
 ```
 
-Note the double nesting: the outer array is the positional `arguments` list; the inner array is the `Vector<3, Uint<64>>` value.
+The array value is the `Vector<3, Uint<64>>`; the key is the parameter name.
 
 ### Maybe (Optional)
 
@@ -121,13 +117,13 @@ export circuit setLabel(label: Maybe<Bytes<32>>): [] { ... }
 Providing a value:
 
 ```json
-{ "arguments": ["0xabcdef..."] }
+{ "arguments": { "label": "0xabcdef..." } }
 ```
 
 Providing no value:
 
 ```json
-{ "arguments": [null] }
+{ "arguments": { "label": null } }
 ```
 
 ### Enum Variants
@@ -141,7 +137,7 @@ export circuit setPhase(p: Phase): [] { ... }
 ```
 
 ```json
-{ "arguments": [{ "setup": {} }] }
+{ "arguments": { "p": { "setup": {} } } }
 ```
 
 For enum variants that carry data (if supported), the value is nested inside the variant key.
