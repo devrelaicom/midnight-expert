@@ -93,7 +93,9 @@ Different tool categories have different cost profiles. Follow these limits to a
 | Topic | Skill / Plugin |
 |-------|----------------|
 | Search tool details and query optimization | `mcp-search` |
-| Analysis and compilation tool details | `mcp-analyze` |
+| Analysis, visualization, diffing tool details | `mcp-analyze` |
+| MCP-hosted compilation workflows and error recovery | `mcp-compile` |
+| Compact code formatting via MCP | `mcp-format` |
 | Simulation lifecycle | `mcp-simulate` |
 | Repository and version tools | `mcp-repository` |
 | Health and diagnostics | `mcp-health` |
