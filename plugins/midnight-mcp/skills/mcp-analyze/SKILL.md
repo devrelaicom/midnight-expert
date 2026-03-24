@@ -1,13 +1,14 @@
 ---
 name: mcp-analyze
-description: This skill should be used when the user asks about analyzing a Compact contract, visualizing a contract, proving a contract, formatting a contract, MCP analyze, contract analysis pipelines, midnight-analyze-contract, midnight-visualize-contract, midnight-prove-contract, midnight-format-contract, midnight-diff-contracts, semantic contract diff, or circuit visualization.
+description: This skill should be used when the user asks about analyzing a Compact contract, visualizing a contract, proving a contract, MCP analyze, contract analysis pipelines, midnight-analyze-contract, midnight-visualize-contract, midnight-prove-contract, midnight-diff-contracts, semantic contract diff, or circuit visualization.
 ---
 
 # Midnight MCP Analysis Tools
 
-Five tools for analyzing, visualizing, formatting, proving, and diffing Compact contracts. All tools produce deterministic results — call each tool once per contract and reuse the result.
+Four tools for analyzing, visualizing, proving, and diffing Compact contracts. All tools produce deterministic results — call each tool once per contract and reuse the result.
 
 For compilation tools (`midnight-compile-contract`, `midnight-compile-archive`), see the `mcp-compile` skill.
+For formatting tools (`midnight-format-contract`), see the `mcp-format` skill.
 
 ## midnight-analyze-contract
 
@@ -77,23 +78,6 @@ Analyze privacy boundaries on a per-circuit basis. Shows what each circuit prove
 
 Use this tool when reviewing privacy properties of a contract, when auditing disclosure behavior, or when verifying that sensitive data stays within the ZK proof boundary.
 
-## midnight-format-contract
-
-Format Compact source code using the official formatter. Returns both the formatted code and a diff showing what changed.
-
-**Parameters:**
-
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `source` | Yes | Compact source code to format |
-
-**Output includes:**
-
-- Formatted source code
-- Diff showing changes from the original
-
-Use this tool to apply consistent formatting before sharing code, to clean up user-provided code before analysis, or to verify formatting compliance.
-
 ## midnight-diff-contracts
 
 Compute a semantic diff between two versions of a contract. Unlike a text diff, this understands Compact structure and reports changes in terms of circuits, ledger fields, witnesses, and exports.
@@ -124,7 +108,6 @@ All tools produce deterministic output for the same input. Call each tool once p
 | `midnight-analyze-contract` | 1 |
 | `midnight-visualize-contract` | 1 |
 | `midnight-prove-contract` | 1 |
-| `midnight-format-contract` | 1 |
 | `midnight-diff-contracts` | 1 per version pair |
 
 ## Cross-References
@@ -132,6 +115,7 @@ All tools produce deterministic output for the same input. Call each tool once p
 | Topic | Skill / Plugin |
 |-------|----------------|
 | MCP-hosted compilation workflows and error recovery | `mcp-compile` |
+| MCP-hosted formatting and code style | `mcp-format` |
 | Tool routing and category overview | `mcp-overview` |
 | Local compilation with Compact CLI | `compact-core:compact-compilation` |
 | Verification methodology using compilation | `compact-core:verify-correctness` |
