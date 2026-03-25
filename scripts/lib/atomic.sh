@@ -90,11 +90,9 @@ add_plugin_to_marketplace() {
     plugin_entry=$(jq -n \
         --arg name "$name" \
         --arg source "$source" \
-        --argjson tags "$keywords" \
         '{
             name: $name,
-            source: $source,
-            tags: $tags
+            source: $source
         }')
 
     # Add to marketplace
@@ -120,7 +118,15 @@ bump_marketplace_minor_version() {
     fi
 
     local temp_file="${marketplace}.tmp"
-    if jq '.version |= (split(".") | .[1] = (.[1] | tonumber + 1 | tostring) | .[2] = "0" | join("."))' "$marketplace" > "$temp_file"; then
+    # Support version in .metadata.version (new schema) or .version (legacy)
+    local bump_expr
+    if jq -e '.metadata.version' "$marketplace" >/dev/null 2>&1; then
+        bump_expr='.metadata.version |= (split(".") | .[1] = (.[1] | tonumber + 1 | tostring) | .[2] = "0" | join("."))'
+    else
+        bump_expr='.version |= (split(".") | .[1] = (.[1] | tonumber + 1 | tostring) | .[2] = "0" | join("."))'
+    fi
+
+    if jq "$bump_expr" "$marketplace" > "$temp_file"; then
         mv "$temp_file" "$marketplace"
         return 0
     else

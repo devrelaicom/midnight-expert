@@ -244,8 +244,8 @@ for plugin_name in "${!PLUGIN_PATHS[@]}"; do
 
     # Check if plugin is already inside pluginRoot
     if [[ "$plugin_path" == "$PLUGIN_ROOT_ABS/"* ]]; then
-        # Internal plugin - source is the directory name (resolved via pluginRoot)
-        source_name="$(basename "$plugin_path")"
+        # Internal plugin - convert absolute path to relative source
+        source_name="$(plugin_path_to_source "$plugin_path")"
         PLUGIN_SOURCES["$plugin_name"]="$source_name"
         [[ "$JSON_MODE" != "true" ]] && print_info "Internal plugin: $final_name -> $source_name"
     else
@@ -401,14 +401,14 @@ fi
 # Phase 6: Bump marketplace minor version
 [[ "$JSON_MODE" != "true" ]] && print_section "Bumping Marketplace Version"
 
-old_version=$(jq -r '.version' "$MARKETPLACE_JSON")
+old_version=$(jq -r '.metadata.version // .version // "0.0.0"' "$MARKETPLACE_JSON")
 if ! bump_marketplace_minor_version "$MARKETPLACE_JSON"; then
     print_error "Failed to bump marketplace version"
     restore_backup "$backup_path"
     remove_backup "$backup_path"
     exit 1
 fi
-new_version=$(jq -r '.version' "$MARKETPLACE_JSON")
+new_version=$(jq -r '.metadata.version // .version // "0.0.0"' "$MARKETPLACE_JSON")
 
 [[ "$JSON_MODE" != "true" ]] && print_success "Marketplace version: $old_version -> $new_version"
 [[ "$JSON_MODE" == "true" ]] && add_json_result "info" "Marketplace version bumped: $old_version -> $new_version" ""
