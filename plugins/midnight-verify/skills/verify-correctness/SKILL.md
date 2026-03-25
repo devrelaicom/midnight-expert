@@ -109,18 +109,18 @@ When confidence is below the threshold for the context, say so. "I believe X bas
 
 | What You Are Verifying | Recommended Methods | Minimum Confidence Target |
 |------------------------|---------------------|---------------------------|
-| Stdlib function exists | `compact-standard-library` skill → compile | 90 |
+| Stdlib function exists | `compact-core:compact-standard-library` skill → compile | 90 |
 | Compact syntax is valid | Compile with `skipZk=true` | 90 |
 | SDK API signature | MCP midnight-search-typescript → source | 90 |
 | Package version | `npm view` | 95 |
 | CLI flag/behavior | `compact --help` or run directly | 95 |
-| Privacy property holds | `compact-privacy-disclosure` skill → compile → source | 95 |
-| Pattern is correct | `compact-patterns` skill → compile | 90 |
+| Privacy property holds | `compact-core:compact-privacy-disclosure` skill → compile → source | 95 |
+| Pattern is correct | `compact-core:compact-patterns` skill → compile | 90 |
 | Version compatibility | Direct tooling checks | 95 |
 | Network endpoint/config | Direct tooling → docs | 95 |
 | Protocol/architecture claim | Skills → docs | 75 |
 | Security property | Skills → source → user discussion | 95 |
-| Disclosure behavior | `compact-privacy-disclosure` skill → compile | 90 |
+| Disclosure behavior | `compact-core:compact-privacy-disclosure` skill → compile | 90 |
 
 ## Cross-References
 
