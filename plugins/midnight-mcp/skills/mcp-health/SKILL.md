@@ -137,4 +137,4 @@ If `midnight-check-version` shows that the installed version is behind the lates
 | Tool routing and category overview | `mcp-overview` |
 | Local Compact CLI as fallback for compilation | `compact-core:compact-compilation` |
 | Compact standard library as fallback for library listing | `compact-core:compact-standard-library` |
-| Verification methodology | `compact-core:verify-correctness` |
+| Verification methodology | `midnight-verify:verify-correctness` |

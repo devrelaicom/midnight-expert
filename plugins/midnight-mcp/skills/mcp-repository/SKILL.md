@@ -198,5 +198,5 @@ Always prefer compound tools when they cover your needs. Use individual tools on
 |-------|----------------|
 | Tool routing and category overview | `mcp-overview` |
 | Compact compilation for verifying retrieved code | `compact-core:compact-compilation` |
-| Verification methodology using repository content | `compact-core:verify-correctness` |
+| Verification methodology using repository content | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |

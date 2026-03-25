@@ -123,5 +123,5 @@ Present a summary:
 
 If deployment failed and could not be recovered:
 1. Suggest running `mcp-compile` first to catch compilation errors
-2. Suggest checking the contract code with `compact-core:verify-correctness`
+2. Suggest checking the contract code with `midnight-verify:verify-correctness`
 3. Note that the code may have syntax that requires a specific compiler version — try with `--version`

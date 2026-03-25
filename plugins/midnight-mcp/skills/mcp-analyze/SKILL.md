@@ -118,5 +118,5 @@ All tools produce deterministic output for the same input. Call each tool once p
 | MCP-hosted formatting and code style | `mcp-format` |
 | Tool routing and category overview | `mcp-overview` |
 | Local compilation with Compact CLI | `compact-core:compact-compilation` |
-| Verification methodology using compilation | `compact-core:verify-correctness` |
+| Verification methodology using compilation | `midnight-verify:verify-correctness` |
 | Compact standard library for resolving compile errors | `compact-core:compact-standard-library` |

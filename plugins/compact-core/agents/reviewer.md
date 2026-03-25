@@ -1,6 +1,16 @@
 ---
 name: reviewer
-description: "Use this agent when you need a focused review of Compact smart contract code in a specific category. Dispatched by the review-compact command with a category assignment. Not intended for direct user invocation.\n\n<example>\nContext: Dispatched by review-compact command for privacy review\nassistant: \"Launching reviewer agent for Privacy & Disclosure category\"\n<commentary>\nThe review-compact command spawns this agent with a specific category and file list. The agent loads the compact-review skill reference for its category.\n</commentary>\n</example>\n\n<example>\nContext: Dispatched for security review of token contract\nassistant: \"Launching reviewer agent for Token & Economic Security category\"\n<commentary>\nSame agent, different category assignment. Loads token-security-review.md reference.\n</commentary>\n</example>"
+description: >-
+  Use this agent when you need a focused review of Compact smart contract code
+  in a specific category. Dispatched by the review-compact command with a
+  category assignment. Not intended for direct user invocation.
+
+  Example 1: Dispatched by review-compact command for privacy review — the
+  command spawns this agent with a specific category and file list. The agent
+  loads the compact-review skill reference for its category.
+
+  Example 2: Dispatched for security review of token contract — same agent,
+  different category assignment. Loads token-security-review.md reference.
 skills: compact-core:compact-structure, compact-core:compact-ledger, compact-core:compact-privacy-disclosure, compact-core:compact-tokens, compact-core:compact-language-ref, compact-core:compact-standard-library, compact-core:compact-witness-ts, compact-core:compact-review, devs:code-review, devs:typescript-core, devs:security-core
 model: sonnet
 color: blue

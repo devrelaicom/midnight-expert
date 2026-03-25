@@ -100,5 +100,5 @@ Different tool categories have different cost profiles. Follow these limits to a
 | Repository and version tools | `mcp-repository` |
 | Health and diagnostics | `mcp-health` |
 | Compact compilation with local CLI | `compact-core:compact-compilation` |
-| Verification methodology using MCP tools | `compact-core:verify-correctness` |
+| Verification methodology using MCP tools | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |

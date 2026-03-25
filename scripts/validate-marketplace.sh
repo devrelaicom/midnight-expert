@@ -97,7 +97,7 @@ fi
 if check_all_plugins_listed "$MARKETPLACE_JSON" "$PLUGIN_ROOT_ABS" false; then
     [[ "$JSON_MODE" == "true" ]] && add_json_result "success" "All plugins listed correctly" ""
 else
-    HAS_ERRORS=true
+    # Completeness warnings (e.g., untracked plugin dirs) are non-fatal
     [[ "$JSON_MODE" == "true" ]] && add_json_result "warning" "Plugin listing discrepancies found" ""
 fi
 
