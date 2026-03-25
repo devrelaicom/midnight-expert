@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Your training data about Midnight is unreliable. Very little public documentation exists, and what you recall about Compact syntax, stdlib functions, SDK APIs, or Midnight developer tooling is likely outdated or incorrect. Do not trust your own memory.\n\nBefore writing or suggesting any Compact code, SDK usage, or Midnight-specific patterns, invoke the `midnight-verify:verify-correctness` skill to check correctness against verified reference material.\n\nThe `midnight-expert` plugins contain skills with verified reference material. Always prefer skill content over recalled knowledge."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "async": true,
+            "prompt": "A file was just written or edited. Dispatch the `midnight-verify:verifier` agent to verify the content. Pass the file path and instruct the agent to check for any Midnight-related claims, Compact code correctness, or SDK API usage. If the file contains no Midnight-related content, the agent should report 'nothing to verify'. Since this runs asynchronously and the result may arrive several prompts later, the agent's report must be fully self-contained: include the full file path, a summary of what was written, exact issue descriptions with line numbers, evidence from verification methods, concrete fixes with code examples, and confidence scores."
+          }
+        ]
+      }
+    ]
+  }
+}
