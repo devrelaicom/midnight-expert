@@ -60,6 +60,6 @@ Users can invoke `/midnight-mcp:search` for technique-aware search with preset m
 | Topic | Skill / Plugin |
 |-------|----------------|
 | Tool routing and category overview | `mcp-overview` |
-| Verification methodology using search results | `compact-core:verify-correctness` |
+| Verification methodology using search results | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |
 | Compact compilation for verifying search results | `compact-core:compact-compilation` |

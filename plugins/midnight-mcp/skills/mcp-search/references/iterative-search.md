@@ -29,7 +29,7 @@ Assess the result set:
 - **Medium confidence**: some relevant results but gaps, or results from lower-trust sources. Note the gaps, consider a follow-up search.
 - **Low confidence**: few relevant results, conflicting information, or results that do not directly address the question. Do a follow-up search, try a different technique, or flag the uncertainty to the user.
 
-This is about search sufficiency, not result trustworthiness (which belongs to `compact-core:verify-correctness`).
+This is about search sufficiency, not result trustworthiness (which belongs to `midnight-verify:verify-correctness`).
 
 **Examples:** `examples/confidence-assessment.md`
 

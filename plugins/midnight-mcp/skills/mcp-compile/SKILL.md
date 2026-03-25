@@ -63,4 +63,4 @@ When hitting rate limits: fix all reported errors before recompiling rather than
 | Analysis, visualization, diffing | `mcp-analyze` |
 | Compact code formatting via MCP | `mcp-format` |
 | Tool routing and category overview | `mcp-overview` |
-| Verification methodology using compilation | `compact-core:verify-correctness` |
+| Verification methodology using compilation | `midnight-verify:verify-correctness` |
