@@ -1,7 +1,7 @@
 ---
 description: Comprehensive review of Compact smart contract code covering 11 categories including privacy, security, tokens, concurrency, performance, and more. Supports parallel execution via agent teams (when enabled) or concurrent subagents.
 allowed-tools: Bash, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, ToolSearch
-argument-hint: [path/to/contract.compact or directory]
+argument-hint: "[path/to/contract.compact or directory]"
 ---
 
 Review Compact smart contract code across 11 review categories using parallel reviewer agents. Privacy findings are always shown first.

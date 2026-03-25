@@ -1,7 +1,7 @@
 ---
 description: Systematic debugging for Compact smart contracts — analyzes errors, investigates root causes, and guides fixes
 allowed-tools: Bash, Read, Task, AskUserQuestion, Skill
-argument-hint: [<file.compact> | "<error message>" | --interactive]
+argument-hint: "[<file.compact> | <error message> | --interactive]"
 ---
 
 Systematic debugging for Compact smart contracts. Analyzes contract files, investigates root causes, and guides fixes using the compact-debugging methodology.

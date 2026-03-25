@@ -1,6 +1,21 @@
 ---
 name: verifier
-description: "Use this agent to verify Midnight-related claims, Compact code correctness, or SDK API usage. Dispatched by the /verify command, the async PostToolUse hook, or other skills/commands that need verification.\n\n<example>\nContext: User runs /verify with a claim\nassistant: \"Launching verifier agent to check the claim\"\n<commentary>\nThe /verify command dispatches this agent with the user's claim. The agent classifies the claim, loads appropriate domain skills, runs verification methods, and returns a confidence-scored verdict.\n</commentary>\n</example>\n\n<example>\nContext: PostToolUse hook fires after a file is written\nassistant: \"Launching verifier agent to check written file\"\n<commentary>\nThe async PostToolUse hook dispatches this agent with the file path. The agent reads the file, identifies any Midnight-related content, verifies it, and returns a self-contained report with enough context to act on even if several prompts have passed.\n</commentary>\n</example>\n\n<example>\nContext: Another skill needs to verify a claim as a subagent\nassistant: \"Launching verifier agent to confirm SDK API signature\"\n<commentary>\nOther skills and commands can dispatch this agent as a subagent when they need to verify a specific claim before proceeding.\n</commentary>\n</example>"
+description: >-
+  Use this agent to verify Midnight-related claims, Compact code correctness,
+  or SDK API usage. Dispatched by the /verify command, the async PostToolUse
+  hook, or other skills/commands that need verification.
+
+  Example 1: User runs /verify with a claim — the command dispatches this agent
+  with the user's claim. The agent classifies the claim, loads appropriate domain
+  skills, runs verification methods, and returns a confidence-scored verdict.
+
+  Example 2: PostToolUse hook fires after a file is written — the async hook
+  dispatches this agent with the file path. The agent reads the file, identifies
+  any Midnight-related content, verifies it, and returns a self-contained report.
+
+  Example 3: Another skill needs to verify a claim as a subagent — other skills
+  and commands can dispatch this agent when they need to verify a specific claim
+  before proceeding.
 skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk
 model: sonnet
 color: green

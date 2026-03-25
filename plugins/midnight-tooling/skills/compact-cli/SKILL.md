@@ -1,6 +1,14 @@
 ---
 name: compact-cli
-description: This skill should be used when the user asks about the Compact CLI tool for Midnight Network development, including installing or uninstalling compact, resolving "compact: command not found" errors, managing compiler versions with compact update/list/clean, formatting source files with compact format, checking for updates with compact check or compact self update, switching compiler versions, using --skip-zk for fast compilation, setting up per-project toolchain directories with COMPACT_DIRECTORY or direnv/mise, or understanding the difference between the Compact CLI and the Compact compiler
+description: >-
+  This skill should be used when the user asks about the Compact CLI tool for
+  Midnight Network development, including installing or uninstalling compact,
+  resolving "compact: command not found" errors, managing compiler versions with
+  compact update/list/clean, formatting source files with compact format, checking
+  for updates with compact check or compact self update, switching compiler versions,
+  using --skip-zk for fast compilation, setting up per-project toolchain directories
+  with COMPACT_DIRECTORY or direnv/mise, or understanding the difference between the
+  Compact CLI and the Compact compiler
 ---
 
 # Compact CLI Management

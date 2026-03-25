@@ -1,7 +1,7 @@
 ---
 description: Verify claims about Midnight, Compact code, or SDK APIs. Accepts a claim, file path, code snippet, SDK question, or no arguments to be prompted.
 allowed-tools: Agent, AskUserQuestion, Read, Glob, Grep
-argument-hint: [claim, file path, code snippet, or SDK question]
+argument-hint: "[claim, file path, code snippet, or SDK question]"
 ---
 
 Verify Midnight-related claims by dispatching the `midnight-verify:verifier` agent.

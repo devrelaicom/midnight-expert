@@ -1,34 +1,23 @@
 ---
 name: concept-explainer
-description: Use this agent when the user asks complex questions about Midnight that span multiple concept domains, or when they need a synthesized explanation connecting different parts of the Midnight architecture. Examples:
+description: >-
+  Use this agent when the user asks complex questions about Midnight that span
+  multiple concept domains, or when they need a synthesized explanation
+  connecting different parts of the Midnight architecture.
 
-<example>
-Context: User is trying to understand how privacy works end-to-end in Midnight.
-user: "How does a private transaction actually work in Midnight? I want to understand the whole flow from writing Compact code to what ends up on the blockchain."
-assistant: "I'll use the concept-explainer agent to provide a comprehensive explanation connecting Compact contracts, ZK proofs, Zswap, and the transaction lifecycle."
-<commentary>
-This question spans smart contracts (Compact), zero-knowledge proofs, protocols (Zswap), and architecture (transactions). The concept-explainer agent synthesizes across these domains.
-</commentary>
-</example>
+  Example 1: User asks how a private transaction actually works end-to-end —
+  this spans smart contracts (Compact), zero-knowledge proofs, protocols (Zswap),
+  and architecture (transactions). The concept-explainer agent synthesizes
+  across these domains.
 
-<example>
-Context: User is confused about how different Midnight concepts relate to each other.
-user: "I don't understand how Kachina, Zswap, and Impact all fit together. Can you explain the big picture?"
-assistant: "Let me use the concept-explainer agent to clarify how these protocols and systems interconnect in Midnight's architecture."
-<commentary>
-The user needs a synthesized view connecting multiple protocol and architecture concepts. This is ideal for the concept-explainer agent.
-</commentary>
-</example>
+  Example 2: User is confused about how Kachina, Zswap, and Impact fit together —
+  the user needs a synthesized view connecting multiple protocol and architecture
+  concepts.
 
-<example>
-Context: User wants to understand a privacy pattern in depth.
-user: "Why does Midnight use the commitment/nullifier pattern instead of just encrypting data? Walk me through the tradeoffs and how it actually provides privacy."
-assistant: "I'll use the concept-explainer agent to explain the cryptographic reasoning behind this pattern and how it connects to Midnight's privacy guarantees."
-<commentary>
-While this touches on privacy-patterns skill content, the user wants deep reasoning about tradeoffs and connections to broader privacy guarantees - a synthesis task.
-</commentary>
-</example>
-
+  Example 3: User wants to understand why Midnight uses the commitment/nullifier
+  pattern — while this touches on privacy-patterns skill content, the user wants
+  deep reasoning about tradeoffs and connections to broader privacy guarantees,
+  which is a synthesis task.
 model: inherit
 color: cyan
 skills: core-concepts:data-models, core-concepts:zero-knowledge, core-concepts:privacy-patterns, core-concepts:smart-contracts, core-concepts:protocols, core-concepts:architecture

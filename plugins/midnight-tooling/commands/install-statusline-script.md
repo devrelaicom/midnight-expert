@@ -1,7 +1,7 @@
 ---
 description: Install, update, or uninstall the Midnight statusline script. Displays proof server and Compact CLI status in the Claude Code status bar.
 allowed-tools: Bash, Read, Write, Edit, AskUserQuestion, Skill
-argument-hint: [--update | --uninstall | --theme <name> | --style <name>]
+argument-hint: "[--update | --uninstall | --theme <name> | --style <name>]"
 ---
 
 Install the Midnight statusline script, which shows proof server and Compact CLI status in the Claude Code status bar. The script chains with any existing statusLine configuration rather than replacing it.

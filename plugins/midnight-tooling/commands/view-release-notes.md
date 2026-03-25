@@ -1,7 +1,7 @@
 ---
 description: View Midnight component release notes from the official documentation
 allowed-tools: AskUserQuestion, mcp__plugin_midnight-tooling_octocode__githubViewRepoStructure, mcp__plugin_midnight-tooling_octocode__githubGetFileContent
-argument-hint: [<component> [--version <semver-range>]]
+argument-hint: "[<component> [--version <semver-range>]]"
 ---
 
 View release notes for Midnight Network components fetched from the [midnight-docs](https://github.com/midnightntwrk/midnight-docs) repository.

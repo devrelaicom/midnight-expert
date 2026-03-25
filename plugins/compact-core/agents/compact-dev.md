@@ -1,43 +1,26 @@
 ---
 name: compact-dev
-description: Use this agent when you need to write, generate, review, or fix Compact smart contract code for the Midnight blockchain. This includes creating new contracts, modifying existing ones, fixing compilation errors, implementing privacy patterns, or answering questions about Compact syntax and semantics. Examples:
+description: >-
+  Use this agent when you need to write, generate, review, or fix Compact smart
+  contract code for the Midnight blockchain. This includes creating new contracts,
+  modifying existing ones, fixing compilation errors, implementing privacy patterns,
+  or answering questions about Compact syntax and semantics.
 
-  <example>
-  Context: User needs a new smart contract written in Compact
-  user: "Write a Compact contract for a simple voting system where users can register and cast votes"
-  assistant: "I'll use the compact-dev agent to create a Compact voting contract with proper privacy patterns and disclosure handling."
-  <commentary>
-  User is requesting new Compact contract code. The compact-dev agent has deep knowledge of Compact syntax, privacy patterns, and can validate compilation.
-  </commentary>
-  </example>
+  Example 1: User needs a new smart contract — "Write a Compact contract for a
+  simple voting system." The compact-dev agent has deep knowledge of Compact
+  syntax, privacy patterns, and can validate compilation.
 
-  <example>
-  Context: User has a Compact contract that won't compile
-  user: "I'm getting an 'implicit disclosure of witness value' error in my contract. Can you fix it?"
-  assistant: "I'll use the compact-dev agent to diagnose and fix the disclosure error in your Compact contract."
-  <commentary>
-  Compact disclosure errors require understanding of the Witness Protection Program and disclose() placement rules. The compact-dev agent specializes in these patterns.
-  </commentary>
-  </example>
+  Example 2: User has a compilation error — "I'm getting an implicit disclosure
+  of witness value error." Compact disclosure errors require understanding of
+  disclose() placement rules. The compact-dev agent specializes in these patterns.
 
-  <example>
-  Context: User wants to implement a privacy pattern
-  user: "I need to add nullifier-based double-spend prevention to my token contract"
-  assistant: "I'll use the compact-dev agent to implement the nullifier pattern with proper commitment schemes and disclosure handling."
-  <commentary>
-  Privacy patterns like nullifiers, commitments, and Merkle proofs are core Compact competencies. The agent knows the correct patterns and common pitfalls.
-  </commentary>
-  </example>
+  Example 3: User wants a privacy pattern — "I need nullifier-based double-spend
+  prevention." Privacy patterns like nullifiers, commitments, and Merkle proofs
+  are core Compact competencies.
 
-  <example>
-  Context: User wants to add shielded token functionality
-  user: "How do I implement shielded transfers using zswap in my contract?"
-  assistant: "I'll use the compact-dev agent to implement shielded token transfers with the correct zswap stdlib functions and privacy considerations."
-  <commentary>
-  Shielded token operations require precise knowledge of the stdlib coin management functions, UTXO model, and nonce management. The compact-dev agent has this expertise.
-  </commentary>
-  </example>
-
+  Example 4: User wants shielded token functionality — "How do I implement
+  shielded transfers using zswap?" Shielded token operations require precise
+  knowledge of stdlib coin management functions, UTXO model, and nonce management.
 model: opus
 color: cyan
 ---
