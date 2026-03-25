@@ -1,0 +1,24 @@
+{
+  "name": "midnight-verify",
+  "version": "0.1.0",
+  "description": "Verification framework for Midnight claims — confidence-scored verification of Compact code, SDK APIs, protocol properties, and tooling behavior using layered skills, a versatile verification agent, and async post-write checking.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "compact",
+    "verification",
+    "correctness",
+    "confidence",
+    "sdk",
+    "typescript",
+    "zero-knowledge",
+    "fact-checking",
+    "code-review"
+  ]
+}
