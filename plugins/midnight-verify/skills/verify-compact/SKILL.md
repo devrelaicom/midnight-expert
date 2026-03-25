@@ -1,5 +1,5 @@
 ---
-name: verify-compact
+name: midnight-verify:verify-compact
 description: >-
   This skill should be used when verifying claims about the Compact programming language,
   including stdlib function existence, syntax validity, type compatibility, disclosure

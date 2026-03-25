@@ -1,5 +1,5 @@
 ---
-name: verify-correctness
+name: midnight-verify:verify-correctness
 description: >-
   This skill should be used when the user needs to verify Midnight-related claims,
   check if stdlib functions exist, validate Compact syntax, confirm SDK API signatures,

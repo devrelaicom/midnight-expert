@@ -1,5 +1,5 @@
 ---
-name: verify-sdk
+name: midnight-verify:verify-sdk
 description: >-
   This skill should be used when verifying claims about the Midnight TypeScript SDK,
   including API function signatures, type definitions, package existence and versions,
