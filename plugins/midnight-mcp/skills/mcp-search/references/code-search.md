@@ -24,7 +24,7 @@ Extract the distinctive parts of the error message — error codes, specific fun
 
 **When to apply:** When the user needs runnable, complete code examples rather than documentation or partial snippets.
 
-Bias search queries toward finding complete implementations. Add terms like `example`, `contract`, `circuit export` for Compact code. For TypeScript, add `example`, `implementation`, `deploy`. Prefer results that include full file content over single-function snippets. Check `source.repository` — official example repos (`midnightntwrk/examples`, `midnightntwrk/midnight-examples`) are the richest source. The MCP tool `midnight-list-examples` (from `mcp-overview`) can also list available example contracts with complexity ratings.
+Bias search queries toward finding complete implementations. Add terms like `example`, `contract`, `circuit export` for Compact code. For TypeScript, add `example`, `implementation`, `deploy`. Prefer results that include full file content over single-function snippets. Check `source.repository` — official example repos (`midnightntwrk/examples`, `midnightntwrk/midnight-examples`) are the richest source. The MCP tool `midnight-list-examples` (from `midnight-mcp:mcp-overview`) can also list available example contracts with complexity ratings.
 
 **Examples:** `examples/example-mining.md`
 

@@ -1,5 +1,5 @@
 ---
-name: mcp-compile
+name: midnight-mcp:mcp-compile
 version: 1.0.0
 description: This skill should be used when the user asks about compiling Compact code via MCP, hosted compilation, midnight-compile-contract, midnight-compile-archive, MCP compile, snippet compilation, multi-version compilation, compile errors from MCP, code auto-wrapping, testing backwards compatibility across Compact versions, OpenZeppelin library linking in MCP compilation, interpreting hosted compiler responses, quick validation, check if code compiles, full ZK compilation via MCP, circuit metrics, k-values, or TypeScript bindings from MCP.
 ---
@@ -60,7 +60,7 @@ When hitting rate limits: fix all reported errors before recompiling rather than
 |-------|----------------|
 | Local CLI compilation, artifacts, ZKIR, keys | `compact-core:compact-compilation` |
 | Compact standard library reference | `compact-core:compact-standard-library` |
-| Analysis, visualization, diffing | `mcp-analyze` |
-| Compact code formatting via MCP | `mcp-format` |
-| Tool routing and category overview | `mcp-overview` |
+| Analysis, visualization, diffing | `midnight-mcp:mcp-analyze` |
+| Compact code formatting via MCP | `midnight-mcp:mcp-format` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |
 | Verification methodology using compilation | `midnight-verify:verify-correctness` |

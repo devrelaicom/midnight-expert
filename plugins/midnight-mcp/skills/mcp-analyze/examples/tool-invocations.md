@@ -38,4 +38,4 @@
 }
 ```
 
-For compilation tool invocations (`midnight-compile-contract`, `midnight-compile-archive`), see the `mcp-compile` skill.
+For compilation tool invocations (`midnight-compile-contract`, `midnight-compile-archive`), see the `midnight-mcp:mcp-compile` skill.

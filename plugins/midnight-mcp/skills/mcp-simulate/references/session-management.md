@@ -51,4 +51,4 @@ Always call `midnight-simulate-delete` when done. Abandoned sessions consume res
 
 Deploy is the most expensive operation (compilation). Plan your testing so you deploy once and make multiple calls, rather than redeploying for each test case.
 
-If you need to test different code versions, use `mcp-compile` multi-version first to identify which version compiles, then deploy the working version for simulation.
+If you need to test different code versions, use `midnight-mcp:mcp-compile` multi-version first to identify which version compiles, then deploy the working version for simulation.

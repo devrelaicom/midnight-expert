@@ -1,5 +1,5 @@
 ---
-name: mcp-search
+name: midnight-mcp:mcp-search
 version: 1.0.0
 description: This skill should be used when the user asks about searching Midnight code, searching Compact examples, searching TypeScript SDK code, finding Midnight documentation, fetching docs pages, using MCP search tools (midnight-search-compact, midnight-search-typescript, midnight-search-docs, midnight-fetch-docs), the /midnight-mcp:search command, optimizing search queries, search techniques like query rewriting or multi-query generation, improving search result quality, or reranking search results.
 ---
@@ -8,7 +8,7 @@ description: This skill should be used when the user asks about searching Midnig
 
 Search techniques and tool guidance for the four Midnight MCP search tools. This skill provides a technique library organized as cluster references with per-technique example files. Load only what you need for the current task.
 
-**Not this skill:** If the user asks what MCP tools are available, how tools are categorized, or for a general overview of Midnight tooling, use `mcp-overview` instead. This skill is for *executing* searches, not describing the tools.
+**Not this skill:** If the user asks what MCP tools are available, how tools are categorized, or for a general overview of Midnight tooling, use `midnight-mcp:mcp-overview` instead. This skill is for *executing* searches, not describing the tools.
 
 ## Search Tools
 
@@ -59,7 +59,7 @@ Users can invoke `/midnight-mcp:search` for technique-aware search with preset m
 
 | Topic | Skill / Plugin |
 |-------|----------------|
-| Tool routing and category overview | `mcp-overview` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |
 | Verification methodology using search results | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |
 | Compact compilation for verifying search results | `compact-core:compact-compilation` |

@@ -1,4 +1,5 @@
 ---
+name: midnight-mcp:search
 description: Search Midnight code, documentation, and SDK patterns with technique-aware query optimization, preset modes, and interactive guided search
 allowed-tools: AskUserQuestion, Read, Glob, Grep, mcp__midnight__midnight-search-compact, mcp__midnight__midnight-search-typescript, mcp__midnight__midnight-search-docs, mcp__midnight__midnight-fetch-docs, mcp__midnight__midnight-list-examples
 argument-hint: "[<query>] [--compact | --typescript | --docs | --all] [--quick | --thorough | --debug | --examples | --migration] [--trusted-only] [--rewrite] [--multi-query] [--step-back] [--hyde] [--decompose] [--rerank] [--dedupe] [--iterative] [--version-aware] [--env]"

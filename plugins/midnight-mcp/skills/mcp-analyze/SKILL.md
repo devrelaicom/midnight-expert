@@ -1,5 +1,5 @@
 ---
-name: mcp-analyze
+name: midnight-mcp:mcp-analyze
 description: This skill should be used when the user asks about analyzing a Compact contract, visualizing a contract, proving a contract, MCP analyze, contract analysis pipelines, midnight-analyze-contract, midnight-visualize-contract, midnight-prove-contract, midnight-diff-contracts, semantic contract diff, or circuit visualization.
 ---
 
@@ -7,8 +7,8 @@ description: This skill should be used when the user asks about analyzing a Comp
 
 Four tools for analyzing, visualizing, proving, and diffing Compact contracts. All tools produce deterministic results — call each tool once per contract and reuse the result.
 
-For compilation tools (`midnight-compile-contract`, `midnight-compile-archive`), see the `mcp-compile` skill.
-For formatting tools (`midnight-format-contract`), see the `mcp-format` skill.
+For compilation tools (`midnight-compile-contract`, `midnight-compile-archive`), see the `midnight-mcp:mcp-compile` skill.
+For formatting tools (`midnight-format-contract`), see the `midnight-mcp:mcp-format` skill.
 
 ## midnight-analyze-contract
 
@@ -114,9 +114,9 @@ All tools produce deterministic output for the same input. Call each tool once p
 
 | Topic | Skill / Plugin |
 |-------|----------------|
-| MCP-hosted compilation workflows and error recovery | `mcp-compile` |
-| MCP-hosted formatting and code style | `mcp-format` |
-| Tool routing and category overview | `mcp-overview` |
+| MCP-hosted compilation workflows and error recovery | `midnight-mcp:mcp-compile` |
+| MCP-hosted formatting and code style | `midnight-mcp:mcp-format` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |
 | Local compilation with Compact CLI | `compact-core:compact-compilation` |
 | Verification methodology using compilation | `midnight-verify:verify-correctness` |
 | Compact standard library for resolving compile errors | `compact-core:compact-standard-library` |

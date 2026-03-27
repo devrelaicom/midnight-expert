@@ -3,7 +3,7 @@
     "command": "npx",
     "args": [
       "-y",
-      "midnight-mcp@latest"
+      "github:devrelaicom/midnight-mcp"
     ]
   }
 }

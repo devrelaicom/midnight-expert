@@ -1,5 +1,5 @@
 ---
-name: mcp-simulate
+name: midnight-mcp:mcp-simulate
 description: This skill should be used when the user asks about simulating a Compact contract, deploying a contract in simulation, calling a circuit in simulation, testing contract behavior, reading simulation state, managing simulation sessions, MCP simulation, midnight-simulate-deploy, midnight-simulate-call, midnight-simulate-state, midnight-simulate-delete, contract simulation lifecycle, testing contract assertions, witness mocking, multi-user contract testing, caller context simulation, interactive contract testing, or simulation error recovery.
 ---
 
@@ -14,7 +14,7 @@ Evaluate these conditions before continuing. If any match, stop loading this ski
 | Condition | Use Instead |
 |-----------|-------------|
 | CI/CD pipeline testing (headless, reproducible) | OZ simulator locally via `@openzeppelin/compact-simulator` |
-| Need ZK proof generation | `mcp-compile` (full compilation) |
+| Need ZK proof generation | `midnight-mcp:mcp-compile` (full compilation) |
 | Need to test against live on-chain state | Local devnet via `midnight-tooling:devnet` |
 | Bulk/automated test suites (hundreds of calls) | OZ simulator locally |
 
@@ -102,7 +102,7 @@ Users can invoke `/midnight-mcp:simulate` to run simulations with preset testing
 | `--cleanup` | Auto-delete session when done |
 | `--version <ver>` | Compiler version for deploy |
 | `--witness <name>=<value>` | Provide witness override (repeatable) |
-| `--compile-first` | Run through `mcp-compile` (skipZk) before deploying |
+| `--compile-first` | Run through `midnight-mcp:mcp-compile` (skipZk) before deploying |
 
 No flags with code/file: `--explore`. No flags, no code: interactive mode.
 
@@ -110,8 +110,8 @@ No flags with code/file: `--explore`. No flags, no code: interactive mode.
 
 | Topic | Skill / Plugin |
 |-------|---------------|
-| Tool routing and category overview | `mcp-overview` |
-| Compilation workflows and compiler errors | `mcp-compile` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |
+| Compilation workflows and compiler errors | `midnight-mcp:mcp-compile` |
 | Local CLI compilation and artifacts | `compact-core:compact-compilation` |
 | Verification methodology | `midnight-verify:verify-correctness` |
 | Compact standard library for understanding circuit behavior | `compact-core:compact-standard-library` |

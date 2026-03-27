@@ -2,7 +2,7 @@
 
 ## When This Error Occurs
 
-Contract code fails compilation during `midnight-simulate-deploy`. The simulator cannot create a session because the code doesn't compile. Deploy errors ARE compiler errors — the same error messages and fixes apply as in `mcp-compile`.
+Contract code fails compilation during `midnight-simulate-deploy`. The simulator cannot create a session because the code doesn't compile. Deploy errors ARE compiler errors — the same error messages and fixes apply as in `midnight-mcp:mcp-compile`.
 
 ## Examples
 
@@ -127,6 +127,6 @@ Modifying code in response to a deployment error without reading the compiler er
 
 Redeploying the same code hoping for a different result. Compilation is deterministic — the same code always produces the same errors.
 
-### Ignoring mcp-compile cross-references
+### Ignoring midnight-mcp:mcp-compile cross-references
 
-Not cross-referencing `mcp-compile` error examples when deploy fails. Deploy errors ARE compiler errors — `mcp-compile` has detailed guidance for every error category.
+Not cross-referencing `midnight-mcp:mcp-compile` error examples when deploy fails. Deploy errors ARE compiler errors — `midnight-mcp:mcp-compile` has detailed guidance for every error category.

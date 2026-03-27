@@ -33,4 +33,4 @@ Match the error pattern, then load the corresponding example file.
 
 ## Cross-Reference
 
-Deploy compilation errors use the same compiler as `mcp-compile`. For detailed compiler error guidance, see `mcp-compile` error recovery reference.
+Deploy compilation errors use the same compiler as `midnight-mcp:mcp-compile`. For detailed compiler error guidance, see `midnight-mcp:mcp-compile` error recovery reference.

@@ -6,7 +6,7 @@ Starting any simulation. This is always the first step — every session begins 
 
 ## The Deploy-Compile Pipeline
 
-Deploy compiles the contract before initializing the simulator. This takes ~1-5s (with skipZk). If compilation fails, the deploy fails with compiler errors — load `references/error-recovery.md` for diagnosis, and cross-reference `mcp-compile` error recovery for detailed compiler error guidance.
+Deploy compiles the contract before initializing the simulator. This takes ~1-5s (with skipZk). If compilation fails, the deploy fails with compiler errors — load `references/error-recovery.md` for diagnosis, and cross-reference `midnight-mcp:mcp-compile` error recovery for detailed compiler error guidance.
 
 ## Parameters
 
@@ -77,7 +77,7 @@ Action: Load references/error-recovery.md to diagnose. This is a compiler error 
 
 ## Version Selection
 
-Same version semantics as `mcp-compile`:
+Same version semantics as `midnight-mcp:mcp-compile`:
 - `"detect"` — resolves from `pragma language_version` in the source
 - Specific version string (e.g., `"0.14.0"`) — uses that version
 - Omit — uses the latest available version
