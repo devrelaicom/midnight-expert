@@ -6,19 +6,19 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Your training data about Midnight is unreliable. Very little public documentation exists, and what you recall about Compact syntax, stdlib functions, SDK APIs, or Midnight developer tooling is likely outdated or incorrect. Do not trust your own memory.\n\nBefore writing or suggesting any Compact code, SDK usage, or Midnight-specific patterns, invoke the `midnight-verify:verify-correctness` skill to check correctness against verified reference material.\n\nThe `midnight-expert` plugins contain skills with verified reference material. Always prefer skill content over recalled knowledge."
+            "prompt": "WARNING: Your training data about Midnight, Compact, and the Midnight SDK is UNRELIABLE. It contains known errors and is likely outdated.\n\nDo NOT trust your recalled knowledge about:\n- Compact syntax, types, or operators\n- Standard library functions (names, signatures, behavior)\n- SDK API signatures, package names, or import paths\n- Tooling behavior, CLI flags, or configuration\n- Privacy/disclosure rules\n- Transaction semantics or protocol behavior\n\nEverything you 'know' about Compact is suspect. Treat your training data as potentially wrong.\n\nBefore presenting ANY Compact code, SDK usage, or Midnight-specific claims to the user:\n1. Verify using /verify or by dispatching the midnight-verify:verifier agent\n2. Compilation alone does NOT prove correctness — code must be compiled AND executed\n3. Prefer skill content from midnight-expert plugins over recalled knowledge, but even skills are hints, not proof\n\nThe cost of checking is low. The cost of presenting wrong information is high. When in doubt, VERIFY."
           }
         ]
       }
     ],
-    "PostToolUse": [
+    "Stop": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "async": true,
-            "prompt": "A file was just written or edited. First, check the file path and content: does it contain Midnight-related content such as Compact code, @midnight-ntwrk imports, SDK API usage, or Midnight-specific claims? If the file is an HTML page, diagram, documentation about project status, configuration, or any other non-Midnight content, respond with ONLY the word 'pass' and nothing else — do not stop continuation.\n\nOnly if the file DOES contain Midnight-related content (Compact source code, SDK TypeScript using @midnight-ntwrk packages, or technical claims about Midnight/Compact behavior), dispatch the `midnight-verify:verifier` agent to verify it. Pass the file path and instruct the agent to check for Compact code correctness or SDK API usage. Since this runs asynchronously and the result may arrive several prompts later, the agent's report must be fully self-contained: include the full file path, a summary of what was written, exact issue descriptions with line numbers, evidence from verification methods, concrete fixes with code examples, and confidence scores."
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh",
+            "timeout": 10
           }
         ]
       }
