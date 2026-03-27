@@ -1,139 +1,97 @@
 ---
 name: midnight-verify:verify-correctness
 description: >-
-  This skill should be used when the user needs to verify Midnight-related claims,
-  check if stdlib functions exist, validate Compact syntax, confirm SDK API signatures,
-  verify package versions, check compiler behavior, validate protocol claims, verify
-  privacy properties, assess correctness confidence, or resolve conflicting information
-  from multiple sources. This is the hub skill — it provides generic verification
-  methodology and routes to domain-specific skills (verify-compact, verify-sdk) based
-  on the claim being verified. Referenced by the SessionStart hook as the standard
-  verification procedure.
-version: 0.1.0
+  Hub skill for the midnight-verify plugin. Classifies claims by domain,
+  routes to the appropriate domain skill (verify-compact or verify-sdk),
+  dispatches sub-agents (contract-writer and/or source-investigator) based
+  on the domain skill's routing, and synthesizes final verdicts. Always loaded
+  first by the verifier agent.
+version: 0.2.0
 ---
 
-# Verification Framework for Midnight Claims
+# Verification Hub
 
-This skill is the hub of the `midnight-verify` plugin. It provides domain-agnostic verification methodology and routes to specialized skills based on the type of claim being verified. It does not contain domain-specific methods — those live in the domain skills.
+You are the verification orchestrator. This skill tells you how to classify claims, route them, dispatch sub-agents, and synthesize verdicts.
 
-For Compact-specific verification (syntax, stdlib, compilation, privacy properties), see `midnight-verify:verify-compact`. For SDK/TypeScript-specific verification (API signatures, package versions, import paths), see `midnight-verify:verify-sdk`.
+## Process
 
-## Routing Logic
+### 1. Classify the Domain
 
-Load the appropriate domain skill based on what is being verified. This is the first step for any verification task.
+Determine what domain the claim belongs to:
 
-| Claim Type | Load Which Skill |
-|------------|-----------------|
-| Compact language: syntax, stdlib functions, types, disclosure rules, compiler behavior, patterns, privacy properties, circuit costs | `midnight-verify:verify-compact` |
-| SDK/TypeScript: API signatures, package versions, import paths, type definitions, providers, DApp connector | `midnight-verify:verify-sdk` |
-| Protocol/architecture claims | Both `midnight-verify:verify-compact` and `midnight-verify:verify-sdk` |
-| Configuration/operations: network endpoints, Docker images, component compatibility | Both `midnight-verify:verify-compact` and `midnight-verify:verify-sdk` |
-| Cross-component compatibility | Both `midnight-verify:verify-compact` and `midnight-verify:verify-sdk` |
-| Tooling behavior only: CLI flags, proof server, indexer | Hub skill is sufficient — use Direct Tooling Checks below |
+| Domain | Indicators | Route To |
+|---|---|---|
+| **Compact language** | Compact syntax, stdlib functions, types, disclosure, compiler behavior, patterns, privacy, circuit costs | Load `midnight-verify:verify-compact` |
+| **SDK/TypeScript** | API signatures, @midnight-ntwrk packages, import paths, type definitions, providers, DApp connector | Load `midnight-verify:verify-sdk` |
+| **Cross-domain** | Spans both Compact and SDK, or protocol/architecture | Load both domain skills |
 
-## Verification Methods (Generic)
+### 2. Load the Domain Skill
 
-These two methods apply across all domains. Domain-specific methods (compilation, MCP search) are documented in the domain skills.
+Load the appropriate domain skill(s) using the Skill tool. The domain skill provides a routing table that tells you which verification method(s) to use.
 
-### Direct Tooling Checks (Confidence: 90-100)
+### 3. Dispatch Sub-Agents
 
-For version and release information, NEVER rely on skills or docs alone — these go stale fastest. Use the tools directly:
+Based on the domain skill's routing:
 
-| Check | Command | What It Tells You |
-|-------|---------|-------------------|
-| Package versions | `npm view @midnight-ntwrk/<package> versions` | All published versions of a package |
-| CLI/compiler version | `compact check` / `compact self check` | Installed CLI and compiler versions |
-| Component releases | `gh release list` / GitHub tags | Release history for any component |
-| Service health | Read-only health/version endpoints | Running version of a deployed service |
+- **Execution needed** → dispatch `midnight-verify:contract-writer` agent with the claim
+- **Source inspection needed** → dispatch `midnight-verify:source-investigator` agent with the claim
+- **Both needed** → dispatch BOTH agents **concurrently** (they are independent and can run in parallel)
 
-See `midnight-tooling:compact-cli` for CLI command details.
+When dispatching, pass:
+- The claim verbatim
+- Any relevant context (file path, code snippet, what specifically to check)
+- For the contract-writer: what observable behavior would confirm/refute the claim
+- For the source-investigator: which repo/area to focus on (from the domain skill's routing)
 
-- Only hit read-only, idempotent endpoints. Local devnet is an exception where write operations are acceptable for testing
-- Direct tooling checks are authoritative for the specific version/instance being queried
-- If a direct check disagrees with documentation or skill content, the direct check wins
+### 4. Synthesize the Verdict
 
-### Checking the Source (Confidence: 90-100)
+Collect the sub-agent report(s) and produce the final verdict.
 
-The Compact compiler, SDKs, ledger, and other components are open source. Source code is the ultimate source of truth.
+**Verdict options:**
 
-- Use the `midnight-tooling` plugin's GitHub tools or MCP `midnight-search-compact`/`midnight-search-typescript` to navigate source repositories
-- This is time-consuming and costly — the compiler has dependencies across multiple repos, and understanding the full picture requires significant context
-- Use only when specifically requested by the user, when other methods have produced contradictory results that cannot be resolved, or when the claim being verified has high-stakes consequences (production deployment, security properties)
-- For Compact source repos, see `midnight-verify:verify-compact`. For SDK source repos, see `midnight-verify:verify-sdk`
+| Verdict | Qualifier | When to Use |
+|---|---|---|
+| **Confirmed** | (tested) | Contract-writer compiled and ran code; output matched the claim |
+| **Confirmed** | (source-verified) | Source-investigator found definitive source evidence confirming the claim |
+| **Confirmed** | (tested + source-verified) | Both methods used and both agree the claim is correct |
+| **Refuted** | (tested) | Contract-writer compiled and ran code; output contradicts the claim |
+| **Refuted** | (source-verified) | Source-investigator found definitive source evidence contradicting the claim |
+| **Refuted** | (tested + source-verified) | Both methods disagree with the claim |
+| **Refuted** | (tested, source disagrees) | Execution contradicts but source seems to support — execution wins, disagreement noted |
+| **Inconclusive** | — | Couldn't test via execution AND couldn't find definitive source evidence |
 
-## Confidence Combination and Disagreement
+**When sub-agents disagree:** Execution evidence wins. The code ran and produced a result — that's more authoritative than interpreting source. But you MUST note the disagreement in your report so the user is aware.
 
-### Corroborating Evidence
+**Inconclusive verdicts must explain:**
+- Why the claim couldn't be tested via execution
+- Why source inspection was insufficient
+- What the user could do to resolve it (e.g., "this requires runtime benchmarking on a live network")
 
-When multiple verification methods agree, confidence increases:
+### 5. Format the Final Report
 
-- Skills say X + compile confirms X → high confidence (85-95)
-- Skills say X + MCP search shows X in real code + compile confirms → very high confidence (90-95)
-- Direct tooling confirms X + source code confirms X → definitive (95-100)
+```markdown
+## Verdict: [Confirmed|Refuted|Inconclusive] ([qualifier])
 
-A single high-confidence method that directly tests the claim can be sufficient on its own (e.g., successful compilation for "does this syntax work?").
+**Claim:** [the claim as stated — verbatim]
 
-### Contradictory Evidence
+**Method:** [tested|source-verified|tested + source-verified]
 
-When methods disagree, do NOT pick the result that supports your assumption. Investigate the disagreement:
+**Evidence:**
+[Summarize what was done and what was observed. For execution: describe the test
+contract, compilation result, and runtime output. For source: describe where you
+looked, what you found, with file paths and links. Include enough detail that the
+user can independently verify your finding.]
 
-1. **Higher-confidence methods win when they directly test the claim.** "Compile fails" beats "docs say it works." `npm view` showing version 1.5.0 as latest beats a skill saying 1.3.0 is latest
-2. **Check for version skew.** The most common cause of disagreement is that one source refers to a different version than another
-3. **Check for scope mismatch.** A function may exist in the compiler but not be exported from the standard library, or exist in one package but not the one being discussed
-4. **Document the disagreement.** When reporting to the user, note which sources agree and which disagree, and what your resolution is
+**Conclusion:**
+[One or two sentences: why the evidence confirms, refutes, or is inconclusive.]
+```
 
-### When to Escalate to the User
+**For file verification** (when given a `.compact` file to verify):
 
-Escalate rather than guessing when:
+Extract individual claims from the file — assertions in comments, patterns used, stdlib functions called, type annotations, disclosure usage. Verify each claim separately. Group findings by line/section. Provide an overall summary at the end.
 
-- Methods disagree and you cannot resolve the contradiction through further investigation
-- The highest available confidence is below what the context requires (see soft guidelines below)
-- The claim involves security properties or production deployment and you have not reached 95+ confidence
-- You suspect version skew but cannot determine which version the user is targeting
-- The verification would require running commands against non-local infrastructure (other than read-only endpoints)
+## What This Skill Does NOT Do
 
-## Soft Confidence Guidelines
-
-These are guidance, not hard gates. Use judgment based on the consequences of being wrong:
-
-| Context | Acceptable Confidence | Rationale |
-|---------|----------------------|-----------|
-| Casual exploration / answering questions | 75+ | Low stakes but still verify |
-| Writing code for the user | 90+ | Code that does not work wastes time |
-| Production / deployment context | 95+ | Errors are expensive to fix |
-| Version / release information | 95-100 (direct tooling only) | Never rely on skills or docs alone for versions |
-
-When confidence is below the threshold for the context, say so. "I believe X based on [source], but I have not been able to verify this directly. To confirm, you could [suggested verification step]."
-
-## Quick Reference Decision Table
-
-| What You Are Verifying | Recommended Methods | Minimum Confidence Target |
-|------------------------|---------------------|---------------------------|
-| Stdlib function exists | `compact-core:compact-standard-library` skill → compile | 90 |
-| Compact syntax is valid | Compile with `skipZk=true` | 90 |
-| SDK API signature | MCP midnight-search-typescript → source | 90 |
-| Package version | `npm view` | 95 |
-| CLI flag/behavior | `compact --help` or run directly | 95 |
-| Privacy property holds | `compact-core:compact-privacy-disclosure` skill → compile → source | 95 |
-| Pattern is correct | `compact-core:compact-patterns` skill → compile | 90 |
-| Version compatibility | Direct tooling checks | 95 |
-| Network endpoint/config | Direct tooling → docs | 95 |
-| Protocol/architecture claim | Skills → docs | 75 |
-| Security property | Skills → source → user discussion | 95 |
-| Disclosure behavior | `compact-core:compact-privacy-disclosure` skill → compile | 90 |
-
-## Cross-References
-
-| Topic | Skill / Plugin |
-|-------|----------------|
-| Compact code verification methods | `midnight-verify:verify-compact` |
-| SDK/TypeScript verification methods | `midnight-verify:verify-sdk` |
-| Stdlib function verification protocol and export inventory | `compact-core:compact-standard-library` |
-| Compiler usage, version selection, compile flags | `compact-core:compact-compilation` |
-| Troubleshooting verification failures and compile errors | `compact-core:compact-debugging` |
-| MCP tool usage (midnight-search-compact, midnight-search-docs, midnight-compile-contract) | `midnight-mcp` plugin |
-| CLI commands and flags | `midnight-tooling:compact-cli` |
-| Privacy and disclosure verification | `compact-core:compact-privacy-disclosure` |
-| Security review methodology | `compact-core:compact-review` |
-| Circuit cost analysis | `compact-core:compact-circuit-costs` |
-| Deployment and version compatibility | `compact-core:compact-deployment` |
+- It does not contain domain-specific verification logic — that lives in `verify-compact` and `verify-sdk`
+- It does not contain method-specific instructions — those live in `verify-by-execution` and `verify-by-source`
+- It does not directly verify anything — it classifies, routes, dispatches, and synthesizes
