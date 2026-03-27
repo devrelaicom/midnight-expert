@@ -67,6 +67,31 @@ compact update
 
 This downloads the latest compiler version and sets it as the default.
 
+## What Gets Installed
+
+The installer places the `compact` binary in `~/.local/bin/` or `~/.compact/bin/`. When a compiler is downloaded via `compact update`, it creates:
+
+```
+~/.compact/
+├── bin/                    # Symlinks to the default compiler version
+│   ├── compactc            # Shell wrapper → compactc.bin
+│   ├── format-compact      # Formatter binary
+│   └── fixup-compact       # Fixup binary
+└── versions/
+    └── 0.30.0/
+        └── aarch64-darwin/
+            ├── compactc        # Shell wrapper
+            ├── compactc.bin    # Actual compiler binary
+            ├── format-compact
+            ├── fixup-compact
+            ├── zkir
+            ├── zkir-v3
+            ├── artifact.zip
+            └── toolchain-0.30.0.md  # Release notes
+```
+
+The `bin/` directory symlinks point to the current default version. Changing the default with `compact update <VERSION>` updates these symlinks.
+
 ## Verification
 
 Run these commands to confirm everything is working:
@@ -74,11 +99,11 @@ Run these commands to confirm everything is working:
 ```bash
 # Check CLI tool version
 compact --version
-# Example output: compact 0.2.0
+# Example output: compact 0.5.1
 
 # Check compiler version
 compact compile --version
-# Example output: 0.28.0
+# Example output: 0.30.0
 
 # Check installation path
 which compact
@@ -88,7 +113,7 @@ which compact
 compact list --installed
 # Example output:
 # compact: installed versions
-# → 0.28.0
+# → 0.30.0
 ```
 
 The arrow (`→`) next to a version indicates it is the current default.
@@ -101,3 +126,12 @@ The Compact CLI does not provide an uninstall command. To remove it:
 2. Delete the artifact directory: `rm -rf $HOME/.compact`
 3. Remove the PATH entry from the shell profile (`~/.zshrc` or `~/.bashrc`)
 4. Reload the shell: `source ~/.zshrc`
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `compact: command not found` | CLI not on PATH | Add `$HOME/.compact/bin` (or `$HOME/.local/bin`) to PATH, reload shell |
+| `compact: command not found` after install | Shell session not reloaded | Run `source ~/.zshrc` (or `~/.bashrc`), or open a new terminal |
+| `No default compiler set` after install | CLI installed but no compiler downloaded | Run `compact update` to download a compiler |
+| `which compact` shows wrong path | Multiple installations | Check for duplicates in PATH, remove the unwanted one |
