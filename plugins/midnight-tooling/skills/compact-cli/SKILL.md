@@ -1,19 +1,23 @@
 ---
 name: compact-cli
 description: >-
-  This skill should be used when the user asks about the Compact CLI tool for
-  Midnight Network development, including installing or uninstalling compact,
-  resolving "compact: command not found" errors, managing compiler versions with
-  compact update/list/clean, formatting source files with compact format, checking
-  for updates with compact check or compact self update, switching compiler versions,
-  using --skip-zk for fast compilation, setting up per-project toolchain directories
-  with COMPACT_DIRECTORY or direnv/mise, or understanding the difference between the
-  Compact CLI and the Compact compiler
+  This skill should be used when the user asks about the Compact CLI, Compact
+  Dev Tool, Compact Developer CLI, or compact devtools for Midnight Network
+  smart contract development, including setting up the Compact toolchain on a
+  new machine, resolving "compact: command not found" or "No default compiler
+  set" errors, validating that Compact source code compiles correctly, switching
+  between compiler versions, pinning a project to a specific compiler version,
+  understanding why compilation is slow or how to speed it up, figuring out
+  which version of the compiler or language they're running, setting up a
+  project-local toolchain directory, configuring import search paths for
+  multi-file contracts, understanding error messages or exit codes from the
+  compiler or formatter, or troubleshooting why format or fixup is reporting
+  failures
 ---
 
 # Compact CLI Management
 
-The Compact CLI (`compact`) is the command-line tool for managing the Midnight Network's smart contract development toolchain. It handles compiler version management, code formatting, and compiler invocation.
+The Compact CLI (`compact`) is the command-line tool for managing the Midnight Network's smart contract development toolchain. It handles compiler version management, code formatting, fixup transformations, and compiler invocation.
 
 ## **Terminology — Read This First**
 
@@ -21,7 +25,7 @@ The Compact CLI (`compact`) is the command-line tool for managing the Midnight N
 
 | Term | What It Is | Binary / Location | Version Command |
 |------|-----------|-------------------|-----------------|
-| **Compact CLI** | The command-line management tool | `compact` (typically `~/.local/bin/compact`) | `compact --version` |
+| **Compact CLI** | The command-line management tool (also called Compact Dev Tool, Compact Developer CLI, compact devtools) | `compact` (typically `~/.local/bin/compact`) | `compact --version` |
 | **Compact** (language) | The smart contract programming language | Source files: `*.compact` | N/A |
 | **Compact compiler** | The compiler that transforms Compact source into ZK circuits and TypeScript | `compactc.bin` (managed by CLI, stored in `$COMPACT_DIRECTORY`) | `compact compile --version` |
 
@@ -33,69 +37,83 @@ When users say "install Compact", they typically mean installing the Compact CLI
 
 These are independent operations. The CLI and compiler have separate version numbers.
 
+## Version Reporting
+
+The toolchain reports three independent version numbers. Confusing them is a common source of errors.
+
+| What | Commands | Example Output |
+|------|----------|----------------|
+| **CLI tool version** | `compact --version`, `compact self --version` | `compact 0.5.1` |
+| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.30.0` |
+| **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.22.0` |
+
+The compiler also reports two additional versions relevant to DApp developers:
+
+| What | Command | Example Output |
+|------|---------|----------------|
+| **Ledger version** | `compact compile -- --ledger-version` | `ledger-8.0.2` |
+| **Runtime JS package version** | `compact compile -- --runtime-version` | `0.15.0` |
+
+The CLI and compiler update independently:
+
+| What to Update | Command | Check First |
+|---------------|---------|-------------|
+| The compiler | `compact update` | `compact check` |
+| The CLI tool | `compact self update` | `compact self check` |
+
 ## Quick Command Reference
 
-| Command | Purpose |
-|---------|---------|
-| `compact --version` | Show CLI tool version |
-| `compact compile --version` | Show default compiler version |
-| `compact compile <source> <target-dir>` | Compile a Compact source file |
-| `compact compile +<VER> <source> <target-dir>` | Compile with a specific compiler version |
-| `compact format [FILES]` | Format Compact source files |
-| `compact format --check [FILES]` | Check formatting without changes |
-| `compact update` | Download latest compiler, set as default |
-| `compact update <VERSION>` | Install a specific compiler version |
-| `compact list` | List all available compiler versions (remote) |
-| `compact list --installed` | List locally installed compiler versions |
-| `compact check` | Check for compiler updates without downloading |
-| `compact clean` | Remove all installed compiler versions |
-| `compact clean --keep-current` | Remove all except current default version |
-| `compact self check` | Check for CLI tool updates |
-| `compact self update` | Update the CLI tool itself |
+| Command | Aliases | Purpose |
+|---------|---------|---------|
+| `compact compile <source> <target-dir>` | `c` | Compile a Compact source file |
+| `compact compile +<VER> <source> <target-dir>` | | Compile with a specific compiler version (full semver required) |
+| `compact format [FILES]` | `f`, `fmt` | Format Compact source files |
+| `compact format --check [FILES]` | | Check formatting without changes |
+| `compact fixup [FILES]` | `fx`, `fix` | Apply fixup transformations (e.g. rename deprecated identifiers) |
+| `compact fixup --check [FILES]` | | Check if fixups are needed without changes |
+| `compact update [VERSION]` | `u`, `up` | Download compiler version, set as default |
+| `compact list` | `l` | List all available compiler versions (remote) |
+| `compact list --installed` | | List locally installed compiler versions |
+| `compact check` | `ch` | Check for compiler updates without downloading |
+| `compact clean` | `cl` | Remove all installed compiler versions |
+| `compact clean --keep-current` | | Remove all except current default version |
+| `compact self check` | `s check` | Check for CLI tool updates |
+| `compact self update` | `s update` | Update the CLI tool itself |
 
-Every command accepts `--directory <DIR>` to use a custom artifact directory instead of the default `$HOME/.compact`. This can also be set via the `COMPACT_DIRECTORY` environment variable.
+## Global Flags
 
-## Formatting
+Every command accepts these flags:
 
-The `compact format` command formats `.compact` source files in place. When no files are specified, `compact format` recursively formats all `.compact` files in the current directory. Use `--check` for CI pipelines (exits non-zero if changes needed). See `references/compile-and-format.md` for full flag details, CI integration, and pre-commit hook examples.
+| Flag | Environment Variable | Purpose |
+|------|---------------------|---------|
+| `--directory <DIR>` | `COMPACT_DIRECTORY` | Use a custom artifact directory instead of `$HOME/.compact` |
+
+The `--directory` flag can appear before or after the subcommand — both positions are equivalent. When both the flag and environment variable are set, the flag takes precedence. The directory is created automatically if it does not exist.
 
 ## Compiling
 
-The CLI invokes the compiler via `compact compile <source> <target-dir>`. Prefix with `+VERSION` to use a specific compiler version. The `--directory` flag must appear before `compile`, not after. See `references/compile-and-format.md` for all compiler flags and compilation patterns.
+The CLI invokes the compiler via `compact compile <source> <target-dir>`. Use `--skip-zk` during development to skip proving key generation (significantly faster). Prefix with `+VERSION` (full semver, e.g. `+0.29.0`) to use a specific installed compiler version. See `references/compile-format-fixup.md` for all compiler flags, output structure, import paths, and compilation troubleshooting.
 
-## Custom Artifact Directories
+## Formatting and Fixup
 
-All commands accept `--directory <DIR>` to override the default artifact location (`$HOME/.compact`). Set the `COMPACT_DIRECTORY` environment variable to make this permanent. See `references/custom-directories.md` for configuring per-project directories using direnv, mise, dotenv-cli, or Claude Code settings.
+`compact format` formats `.compact` source files in place. When no files are specified, it recursively formats all `.compact` files in the current directory, respecting `.gitignore`. Use `--check` for CI pipelines (exits non-zero if changes needed).
 
-## Two Things to Update
+`compact fixup` applies source-level transformations such as renaming deprecated identifiers. It shares the same file-targeting and `--check` behavior as `format`. See `references/compile-format-fixup.md` for full details on both commands.
 
-A common source of confusion: the CLI tool and the compiler update independently.
+## Version Management
 
-| What to Update | Command | What Changes |
-|---------------|---------|-------------|
-| The compiler | `compact update` | Downloads a new compiler version, sets it as default |
-| The CLI tool | `compact self update` | Updates the `compact` binary itself |
+Install, list, switch, and remove compiler versions with `update`, `list`, `check`, and `clean`. The `update` command accepts partial versions (`0`, `0.29`, or `0.29.0`). See `references/version-management.md` for workflows and troubleshooting.
 
-Run `compact check` to see if a new compiler version is available. Run `compact self check` to see if a new CLI tool version is available.
+## CLI Self-Management
 
-## Common Issues
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `compact: command not found` | CLI not on PATH | Add `$HOME/.compact/bin` to PATH, reload shell |
-| `compact compile` fails silently | No compiler installed | Run `compact update` to download a compiler |
-| Wrong compiler version | Default not set | Run `compact update <VERSION>` to set default |
-| Stale compiler | Not updated | Run `compact check` then `compact update` |
-| Compilation very slow | ZK proof generation | Use `--skip-zk` during development |
+Update the CLI tool itself with `compact self update`. This is independent of compiler updates. See `references/self-management.md` for details.
 
 ## Reference Files
 
-Consult these for detailed procedures:
-
-| Reference | Content | When to Read |
-|-----------|---------|-------------|
-| **`references/installation.md`** | Installing the CLI, PATH configuration, shell reload, first-time verification | First-time setup or new machine |
-| **`references/compile-and-format.md`** | Full compile and format command details, flags, CI integration | Compiling contracts or formatting code |
-| **`references/check-and-self.md`** | CLI health checks, self-update, checking for updates | Verifying or updating the CLI tool itself |
-| **`references/update-list-clean.md`** | Compiler version management: install, list, switch, remove | Managing multiple compiler versions |
-| **`references/custom-directories.md`** | Per-project toolchain directories, `COMPACT_DIRECTORY`, direnv, mise, dotenv-cli, Claude Code settings | Project-local configuration |
+| Reference | When to Read |
+|-----------|-------------|
+| **`references/installation.md`** | First-time setup, PATH issues, new machine |
+| **`references/compile-format-fixup.md`** | Compiling contracts, formatting, fixup, compiler flags |
+| **`references/version-management.md`** | Installing, switching, listing, or removing compiler versions |
+| **`references/self-management.md`** | Updating the CLI tool, checking versions |
+| **`references/troubleshooting.md`** | Error messages, exit codes, common failures |
