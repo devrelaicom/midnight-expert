@@ -1,0 +1,27 @@
+{
+  "name": "midnight-wallet",
+  "version": "0.1.0",
+  "description": "Wallet management, token operations, and test wallet workflows for Midnight Network development — wraps the midnight-wallet-cli MCP server for balance checking, transfers, airdrop, dust registration, and multi-wallet test setups.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "wallet",
+    "night-tokens",
+    "dust-tokens",
+    "transfer",
+    "airdrop",
+    "balance",
+    "mcp",
+    "test-wallets",
+    "devnet",
+    "funding",
+    "bip39",
+    "mnemonic"
+  ]
+}
