@@ -1,5 +1,5 @@
 ---
-name: mcp-format
+name: midnight-mcp:mcp-format
 description: This skill should be used when the user asks about formatting Compact code, midnight-format-contract, Compact code style, code formatting via MCP, presenting Compact code, cleaning up Compact code, or formatting with a specific compiler version. This skill should also be used proactively whenever the LLM is about to present Compact code to the user.
 ---
 
@@ -100,7 +100,7 @@ Use `versions` array to format with multiple compiler versions. Compare the `for
 - If the code is from a known-good source (user file, search result) → try formatting
   - Success → present formatted
   - Parse error → present unformatted, note the syntax issues
-- If the code failed compilation → do not attempt formatting. Fix the code first via `mcp-compile`, then format.
+- If the code failed compilation → do not attempt formatting. Fix the code first via `midnight-mcp:mcp-compile`, then format.
 
 **Version not available:** The requested compiler version is not installed on the playground. Fall back to omitting the `version` parameter (uses default/latest version) or inform the user.
 
@@ -124,6 +124,6 @@ Use `versions` array to format with multiple compiler versions. Compare the `for
 | Topic | Skill / Plugin |
 |-------|----------------|
 | Local formatting (in-place, CI, pre-commit) | `midnight-tooling:compact-cli` |
-| MCP-hosted compilation | `mcp-compile` |
-| Analysis, visualization, diffing | `mcp-analyze` |
-| Tool routing and category overview | `mcp-overview` |
+| MCP-hosted compilation | `midnight-mcp:mcp-compile` |
+| Analysis, visualization, diffing | `midnight-mcp:mcp-analyze` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |

@@ -72,7 +72,7 @@ Keep regression sequences simple and focused on critical invariants.
 
 ## The Compile-Then-Simulate Pattern
 
-Before deploying, run the code through `mcp-compile` (skipZk) to catch compilation errors cheaply. Then deploy for simulation.
+Before deploying, run the code through `midnight-mcp:mcp-compile` (skipZk) to catch compilation errors cheaply. Then deploy for simulation.
 
 ```
 1. midnight-compile-contract({ code: "<contract>", skipZk: true })

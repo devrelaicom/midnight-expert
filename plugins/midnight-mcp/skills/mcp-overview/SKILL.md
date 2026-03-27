@@ -1,5 +1,5 @@
 ---
-name: mcp-overview
+name: midnight-mcp:mcp-overview
 description: Use when the user asks about listing available tools, what the MCP server can do, compound tools, saving tokens, call frequency, rate limiting, which MCP tool to use for a task, tool categories, tool routing, suggesting the right tool, MCP overview, midnight tool routing, available MCP capabilities, or how to choose between midnight MCP tools.
 ---
 
@@ -92,13 +92,13 @@ Different tool categories have different cost profiles. Follow these limits to a
 
 | Topic | Skill / Plugin |
 |-------|----------------|
-| Search tool details and query optimization | `mcp-search` |
-| Analysis, visualization, diffing tool details | `mcp-analyze` |
-| MCP-hosted compilation workflows and error recovery | `mcp-compile` |
-| Compact code formatting via MCP | `mcp-format` |
-| Simulation lifecycle | `mcp-simulate` |
-| Repository and version tools | `mcp-repository` |
-| Health and diagnostics | `mcp-health` |
+| Search tool details and query optimization | `midnight-mcp:mcp-search` |
+| Analysis, visualization, diffing tool details | `midnight-mcp:mcp-analyze` |
+| MCP-hosted compilation workflows and error recovery | `midnight-mcp:mcp-compile` |
+| Compact code formatting via MCP | `midnight-mcp:mcp-format` |
+| Simulation lifecycle | `midnight-mcp:mcp-simulate` |
+| Repository and version tools | `midnight-mcp:mcp-repository` |
+| Health and diagnostics | `midnight-mcp:mcp-health` |
 | Compact compilation with local CLI | `compact-core:compact-compilation` |
 | Verification methodology using MCP tools | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |

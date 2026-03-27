@@ -1,5 +1,5 @@
 ---
-name: mcp-repository
+name: midnight-mcp:mcp-repository
 description: Use when the user asks to show me what changed between versions, how do I upgrade from version X to Y, what example contracts are available, or asks about browsing repo content, listing examples, checking updates, breaking changes, comparing syntax, upgrade checks, midnight-get-file, midnight-list-examples, midnight-get-latest-updates, midnight-check-breaking-changes, midnight-get-file-at-version, midnight-compare-syntax, midnight-upgrade-check, or midnight-get-repo-context.
 ---
 
@@ -155,7 +155,7 @@ Combines version checking, breaking change detection, and migration guidance int
 
 1. `midnight-check-breaking-changes` — What breaks between the two versions
 2. Migration guidance — Step-by-step instructions for the upgrade
-3. Version context via `midnight-check-version` (from `mcp-health`) — What version is installed vs. what is available
+3. Version context via `midnight-check-version` (from `midnight-mcp:mcp-health`) — What version is installed vs. what is available
 
 ### midnight-get-repo-context
 
@@ -178,7 +178,7 @@ Combines version information, syntax reference, and example listings into a sing
 
 1. `midnight-compare-syntax` — Syntax reference for the target version
 2. `midnight-list-examples` — Relevant examples for the component
-3. Version context via `midnight-check-version` (from `mcp-health`) — Current version information
+3. Version context via `midnight-check-version` (from `midnight-mcp:mcp-health`) — Current version information
 
 ### When to Use Compound vs. Individual Tools
 
@@ -196,7 +196,7 @@ Always prefer compound tools when they cover your needs. Use individual tools on
 
 | Topic | Skill / Plugin |
 |-------|----------------|
-| Tool routing and category overview | `mcp-overview` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |
 | Compact compilation for verifying retrieved code | `compact-core:compact-compilation` |
 | Verification methodology using repository content | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |

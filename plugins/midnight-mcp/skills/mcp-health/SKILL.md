@@ -1,5 +1,5 @@
 ---
-name: mcp-health
+name: midnight-mcp:mcp-health
 description: Diagnose and manage the Midnight MCP server. Use when the user asks is the MCP server running, MCP server down, what compilers are available, OpenZeppelin libraries, update MCP, upgrade MCP server, or asks about health check, MCP status, MCP version, MCP troubleshooting, rate limiting, cache stats, midnight-health-check, midnight-get-status, midnight-check-version, midnight-get-update-instructions, midnight-list-compiler-versions, or midnight-list-libraries.
 ---
 
@@ -106,7 +106,7 @@ The MCP server enforces rate limits to prevent abuse. If you encounter rate limi
 
 1. Run `midnight-get-status` to check current rate limit status
 2. Wait for the reset window (shown in the status response)
-3. Reduce call frequency — follow the call frequency guidance in `mcp-overview`
+3. Reduce call frequency — follow the call frequency guidance in `midnight-mcp:mcp-overview`
 4. Use compound tools (`midnight-upgrade-check`, `midnight-get-repo-context`) to reduce the number of individual calls
 
 ### Graceful Degradation
@@ -134,7 +134,7 @@ If `midnight-check-version` shows that the installed version is behind the lates
 
 | Topic | Skill / Plugin |
 |-------|----------------|
-| Tool routing and category overview | `mcp-overview` |
+| Tool routing and category overview | `midnight-mcp:mcp-overview` |
 | Local Compact CLI as fallback for compilation | `compact-core:compact-compilation` |
 | Compact standard library as fallback for library listing | `compact-core:compact-standard-library` |
 | Verification methodology | `midnight-verify:verify-correctness` |

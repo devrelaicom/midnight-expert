@@ -1,4 +1,5 @@
 ---
+name: midnight-mcp:simulate
 description: Simulate Compact contracts interactively — deploy, call circuits, inspect state, and verify behavior with preset testing modes and witness/caller control
 allowed-tools: AskUserQuestion, Read, Glob, Grep, mcp__midnight__midnight-simulate-deploy, mcp__midnight__midnight-simulate-call, mcp__midnight__midnight-simulate-state, mcp__midnight__midnight-simulate-delete, mcp__midnight__midnight-compile-contract
 argument-hint: "[<code-or-file>] [--explore | --test-sequence | --regression | --assertions] [--caller <address>] [--cleanup] [--version <ver>] [--witness <name>=<value>] [--compile-first]"
