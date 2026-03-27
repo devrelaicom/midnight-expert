@@ -16,10 +16,10 @@ Determine what `$ARGUMENTS` contains and dispatch accordingly:
 If `$ARGUMENTS` is empty, use `AskUserQuestion` to ask:
 
 > What would you like to verify? You can provide:
-> - A claim (e.g., "Compact stdlib has a sha256 function")
+> - A claim (e.g., "Compact tuples are 0-indexed")
 > - A file path (e.g., `contracts/my-contract.compact`)
 > - A code snippet
-> - An SDK question (e.g., "midnight-js-contracts supports ERC-20 style tokens")
+> - An SDK question (e.g., "midnight-js-contracts exports deployContract")
 
 Do NOT attempt to infer what the user wants to verify. Ask them.
 
@@ -31,15 +31,15 @@ If `$ARGUMENTS` looks like a file path (ends in `.compact`, `.ts`, `.tsx`, or ex
 2. Dispatch `midnight-verify:verifier` agent with:
    - The file path
    - The file content
-   - Instruction: "Verify the correctness of this file. Check for any Midnight-related claims, Compact code correctness, or SDK API usage. Report findings with the structured verdict format."
+   - Instruction: "Verify the correctness of this file. Extract individual claims (stdlib functions used, syntax patterns, type annotations, disclosure usage) and verify each one. Report findings grouped by line/section with an overall summary."
 
 ### 3. Code snippet
 
-If `$ARGUMENTS` contains code syntax (keywords like `ledger`, `circuit`, `witness`, `export`, `import`, `contract`, `const`, `function`, curly braces, semicolons, type annotations):
+If `$ARGUMENTS` contains code syntax (keywords like `circuit`, `witness`, `export`, `import`, `const`, `function`, `pragma`, curly braces, semicolons, type annotations):
 
 1. Dispatch `midnight-verify:verifier` agent with:
    - The code snippet as inline content
-   - Instruction: "Verify the correctness of this code snippet. Determine if it is Compact or TypeScript and apply the appropriate verification methods. Report findings with the structured verdict format."
+   - Instruction: "Verify the correctness of this code snippet. Determine if it is Compact or TypeScript and verify the claims it makes (syntax, stdlib usage, types, patterns)."
 
 ### 4. Natural language claim or question
 
@@ -47,7 +47,7 @@ If `$ARGUMENTS` is natural language (a question or assertion):
 
 1. Dispatch `midnight-verify:verifier` agent with:
    - The claim verbatim
-   - Instruction: "Verify this claim about Midnight. Classify the domain, load appropriate skills, run verification methods, and report with the structured verdict format."
+   - Instruction: "Verify this claim about Midnight. Classify the domain, dispatch the appropriate sub-agent(s), and report with the structured verdict format."
 
 ### 5. Multiple files or directory
 
