@@ -1,13 +1,13 @@
 ---
 name: devnet
-description: This skill should be used when the user asks about the Midnight local development network, including "start the devnet", "stop the devnet", "restart the network", "local development network", "midnight node", "midnight indexer", "network status", "network health", "devnet config", "network endpoints", "port 9944", "port 8088", "port 6300", "Docker Compose", "devnet not starting", "local blockchain", "devnet logs", "network ID", "DUST token", "genesis wallet", "fund account", "get tDUST", "wallet balance", or "clean slate restart"
+description: This skill should be used when the user asks about the Midnight local development network, including "start the devnet", "stop the devnet", "restart the network", "local development network", "midnight node", "midnight indexer", "network status", "network health", "devnet config", "network endpoints", "port 9944", "port 8088", "port 6300", "Docker Compose", "devnet not starting", "local blockchain", "devnet logs", "network ID", "generate devnet", "devnet versions", "update devnet", "devnet stale"
 ---
 
 # Midnight Development Network (Devnet)
 
-The devnet is a local 3-service blockchain network for Midnight development. It runs via Docker Compose and is managed entirely through MCP tools -- not direct Docker commands.
+The devnet is a local 3-service blockchain network for Midnight development. It runs via Docker Compose and is managed through the `/devnet` command, which uses bash and Docker Compose commands directly.
 
-## **Terminology -- Read This First**
+## Terminology -- Read This First
 
 > **Four distinct components make up the local development environment. Always be precise about which is being referenced.**
 
@@ -28,23 +28,24 @@ Docker Desktop must be installed and running before the devnet can start. The th
 |-------|---------|----------|
 | Docker installed | `docker --version` | Version string |
 | Docker daemon running | `docker info` | System info (no connection errors) |
+| Docker Compose available | `docker compose version` | Version string |
 | Adequate resources | Docker Desktop settings | 4 GB+ RAM allocated to Docker |
 
 If Docker is not installed, see `references/docker-setup.md` for platform-specific installation instructions.
 
 ## Quick Command Reference
 
-All devnet operations are performed through MCP tools, not direct Docker or Docker Compose commands.
-
 | Command | Purpose |
 |---------|---------|
-| `/devnet start` | Pull images, start all 3 services, initialize genesis wallet, register DUST token |
-| `/devnet stop` | Close wallets and stop all containers |
-| `/devnet restart` | Stop and restart the network (with options for clean slate) |
+| `/devnet generate` | Create a `devnet.yml` from template with latest stable versions |
+| `/devnet update` | Update image versions in an existing `devnet.yml` |
+| `/devnet start` | Start all 3 services (generates compose file on first run) |
+| `/devnet stop` | Stop all containers |
+| `/devnet restart` | Stop and restart the network |
 | `/devnet status` | Check Docker container state for all services (fast) |
-| `/devnet health` | Hit HTTP endpoints on each service to verify responsiveness (thorough) |
+| `/devnet health` | Hit HTTP endpoints on each service to verify responsiveness (thorough, with timing) |
 | `/devnet logs` | View recent logs from the network services |
-| `/devnet config` | Show endpoint URLs, network ID, and Docker image versions |
+| `/devnet config` | Show endpoint URLs, network ID, image versions, and file info |
 
 ## Services
 
@@ -58,16 +59,34 @@ The indexer also exposes a WebSocket endpoint at `ws://127.0.0.1:8088/api/v3/gra
 
 The network ID for local devnet is `undeployed`.
 
+## Scripts
+
+The skill includes four helper scripts in `${CLAUDE_SKILL_DIR}/scripts/`:
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `resolve-versions.sh` | Query Docker Hub for latest stable image versions | Returns `key=value` pairs |
+| `generate-devnet.sh` | Create `devnet.yml` from template with version substitution | `--template <path> --node-version X --indexer-version X --proof-server-version X [--directory <path>]` |
+| `check-staleness.sh` | Check age of a `devnet.yml` file | Returns `age_days=N` and `stale=true/false` |
+| `find-devnet.sh` | Locate a `devnet.yml` in standard locations | `[--file <path>]` |
+
+The compose file template is at `${CLAUDE_SKILL_DIR}/templates/devnet.yml`.
+
 ## Common Issues
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
+| `docker: command not found` | Docker not installed | Install Docker Desktop — see `references/docker-setup.md` |
 | `Cannot connect to the Docker daemon` | Docker Desktop not running | Start Docker Desktop and wait for it to be ready |
-| Port 9944, 8088, or 6300 already in use | Another process occupying a required port | Stop the conflicting process; use `lsof -i :<port>` to identify it |
+| `docker compose: command not found` | Older Docker without Compose V2 | Update Docker Desktop or install docker-compose-plugin |
 | Services fail to start or exit immediately | Insufficient Docker resources | Allocate at least 4 GB RAM to Docker Desktop (see `references/docker-setup.md`) |
+| Port 9944, 8088, or 6300 already in use | Another process occupying a required port | Stop the conflicting process; use `lsof -i :<port>` to identify it |
 | Network starts but indexer not responding | Indexer still syncing with node | Wait 10-20 seconds after start; use `/devnet health` to check readiness |
 | Stale chain state causing errors | Corrupted or outdated volumes | Restart with `--remove-volumes` for a clean slate |
-| Container name conflicts | Previous containers not cleaned up | Stop the devnet first, then start again; the MCP tools handle container cleanup |
+| Container name conflicts | Previous containers not cleaned up | Stop the devnet first (`/devnet stop`), then start again |
+| `Failed to fetch tags` from Docker Hub | Docker Hub unreachable or rate-limited | Check internet connection; use `--node-version` etc. to specify versions manually |
+| Architecture mismatch on Apple Silicon | Image not available for arm64 | See Apple Silicon note in `references/docker-setup.md` |
+| Compose file stale warning | File older than 5 days | Run `/devnet update` to refresh image versions |
 
 ## Reference Files
 
@@ -75,5 +94,7 @@ Consult these for detailed procedures:
 
 | Reference | Content | When to Read |
 |-----------|---------|-------------|
-| **`references/network-lifecycle.md`** | Starting, stopping, restarting the network; status vs health checks; getting config; clean slate vs preserve state | Managing the devnet lifecycle |
+| **`references/network-lifecycle.md`** | Generate, update, start, stop, restart flows; staleness checking; compose file locations; project naming; typical workflows | Managing the devnet lifecycle |
 | **`references/docker-setup.md`** | Docker installation per platform, daemon troubleshooting, resource configuration, port conflicts | Docker installation issues or first-time setup |
+| **`references/compose-structure.md`** | Anatomy of `devnet.yml`: every service, env var, healthcheck, dependency, and port explained; guidance on bespoke modifications | Debugging compose file issues or making custom changes |
+| **`references/version-resolution.md`** | Docker Hub API, stable version filtering, compatibility matrix checking, graceful degradation | Version resolution problems or understanding the update process |
