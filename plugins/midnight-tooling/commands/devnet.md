@@ -1,17 +1,24 @@
 ---
-description: Manage a local Midnight devnet — start/stop the network, check status and health, view logs, manage wallets, and fund accounts
-allowed-tools: AskUserQuestion, mcp__plugin_midnight-tooling_midnight-devnet__start-network, mcp__plugin_midnight-tooling_midnight-devnet__stop-network, mcp__plugin_midnight-tooling_midnight-devnet__restart-network, mcp__plugin_midnight-tooling_midnight-devnet__network-status, mcp__plugin_midnight-tooling_midnight-devnet__health-check, mcp__plugin_midnight-tooling_midnight-devnet__network-logs, mcp__plugin_midnight-tooling_midnight-devnet__get-network-config, mcp__plugin_midnight-tooling_midnight-devnet__get-wallet-balances, mcp__plugin_midnight-tooling_midnight-devnet__fund-account, mcp__plugin_midnight-tooling_midnight-devnet__fund-account-from-mnemonic, mcp__plugin_midnight-tooling_midnight-devnet__fund-accounts-from-file, mcp__plugin_midnight-tooling_midnight-devnet__generate-test-account
-argument-hint: <start [--pull] | stop [--remove-volumes] | restart [--pull] [--remove-volumes] | status | health | logs [--service <name>] [--lines <n>] | config | wallet | fund <address> [--amount <n>] | fund-mnemonic <name> <mnemonic> | fund-file <path> | generate-account [--format <type>] [--count <n>] [--fund] [--register-dust] [--output <path>]>
+description: Manage a local Midnight devnet — generate compose files, start/stop the network, check status and health, view logs and configuration
+allowed-tools: Bash, Read, Write, Edit, AskUserQuestion, mcp__octocode-mcp__githubGetFileContent, mcp__octocode-mcp__githubViewRepoStructure
+argument-hint: <generate [--directory <path>] [--node-version <X.Y.Z>] [--indexer-version <X.Y.Z>] [--proof-server-version <X.Y.Z>] [--skip-compatibility-matrix] [--no-verify] | update [--file <path>] [--skip-compatibility-matrix] | start [--pull] [--file <path>] | stop [--remove-volumes] [--name <name>] | restart [--pull] [--remove-volumes] [--file <path>] [--name <name>] | status [--name <name>] | health [--name <name>] | logs [--service <name>] [--lines <n>] [--name <name>] | config [--file <path>]>
 ---
 
-Manage a local Midnight devnet. All operations delegate to MCP tools — do not use bash or Docker commands directly.
+Manage a local Midnight devnet via Docker Compose. Uses helper scripts for version resolution and compose file management.
+
+## Constants
+
+- Default project name: `midnight-devnet`
+- Default global directory: `~/.midnight-expert/devnet`
+- Template location: `${CLAUDE_SKILL_DIR}/templates/devnet.yml` (relative to the devnet skill)
+- Scripts location: `${CLAUDE_SKILL_DIR}/scripts/` (relative to the devnet skill)
 
 ## Error Handling
 
-If any MCP tool call fails, report the error clearly and suggest:
+If any command fails, report the error clearly and suggest:
 
-1. Check that Docker is running and the Docker daemon is accessible.
-2. Verify that the `@aaronbassett/midnight-local-devnet` npm package is installed and accessible.
+1. Check that Docker Desktop is running and the Docker daemon is accessible (`docker info`).
+2. Check that Docker Compose V2 is available (`docker compose version`).
 3. See the **troubleshooting** skill for further diagnosis, or run `/doctor` for automated diagnostics.
 
 ## Step 1: Parse Subcommand from Arguments
@@ -20,122 +27,191 @@ Analyze `$ARGUMENTS` to determine the subcommand and any flags:
 
 | Subcommand | Flags |
 |---|---|
-| `start` | `--pull` |
-| `stop` | `--remove-volumes` |
-| `restart` | `--pull`, `--remove-volumes` |
-| `status` | (none) |
-| `health` | (none) |
-| `logs` | `--service <name>`, `--lines <n>` |
-| `config` | (none) |
-| `wallet` | (none) |
-| `fund` | `<address>` (required positional), `--amount <n>` |
-| `fund-mnemonic` | `<name>` (required positional), `<mnemonic>` (required positional) |
-| `fund-file` | `<path>` (required positional) |
-| `generate-account` | `--format <type>`, `--count <n>`, `--fund`, `--register-dust`, `--output <path>` |
+| `generate` | `--directory <path>`, `--node-version <X.Y.Z>`, `--indexer-version <X.Y.Z>`, `--proof-server-version <X.Y.Z>`, `--skip-compatibility-matrix`, `--no-verify` |
+| `update` | `--file <path>`, `--skip-compatibility-matrix` |
+| `start` | `--pull`, `--file <path>` |
+| `stop` | `--remove-volumes`, `--name <name>` |
+| `restart` | `--pull`, `--remove-volumes`, `--file <path>`, `--name <name>` |
+| `status` | `--name <name>` |
+| `health` | `--name <name>` |
+| `logs` | `--service <name>`, `--lines <n>`, `--name <name>` |
+| `config` | `--file <path>` |
 
-If no subcommand is provided or the subcommand is not recognized, jump to **Step 8: Usage Summary**.
+If no subcommand is provided or the subcommand is not recognized, jump to **Step 10: Usage Summary**.
 
-## Step 2: Network Lifecycle — start
+## Step 2: Generate — Create Compose File from Template
+
+If the subcommand is `generate`:
+
+1. **Resolve versions:**
+   - If `--node-version`, `--indexer-version`, and `--proof-server-version` are ALL provided, use those values.
+   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided.
+
+2. **Verify user-specified versions (if any explicit versions were provided and `--no-verify` is NOT set):**
+   - For each user-specified version, check that the Docker Hub tag exists:
+     ```bash
+     curl -sf "https://hub.docker.com/v2/repositories/midnightntwrk/<image>/tags/<version>/" > /dev/null
+     ```
+   - If a tag does not exist, warn the user with the specific image and version. Ask whether to continue or abort.
+
+3. **Check compatibility matrix (unless `--skip-compatibility-matrix`):**
+   - Try to fetch the support matrix from `midnightntwrk/midnight-docs` using `mcp__octocode-mcp__githubGetFileContent` for `docs/relnotes/support-matrix.mdx`.
+   - If octocode MCP is unavailable, inform the user and skip (behave as if `--skip-compatibility-matrix`).
+   - If the resolved versions don't match a known-compatible combination, warn the user with details. Ask whether to continue or abort. This is **advisory, not blocking**.
+
+4. **Generate the file:**
+   - Determine the destination directory: use `--directory` if provided, otherwise `~/.midnight-expert/devnet`.
+   - Run:
+     ```bash
+     bash "${CLAUDE_SKILL_DIR}/scripts/generate-devnet.sh" \
+       --template "${CLAUDE_SKILL_DIR}/templates/devnet.yml" \
+       --node-version <resolved> \
+       --indexer-version <resolved> \
+       --proof-server-version <resolved> \
+       --directory <destination>
+     ```
+
+5. **Report:** Tell the user the file location, the versions used, and how to start the network.
+
+## Step 3: Update — Refresh Versions in Existing File
+
+If the subcommand is `update`:
+
+1. **Find the compose file:**
+   - If `--file` is specified: use that path directly. If it doesn't exist, fail with an error.
+   - Otherwise: run `${CLAUDE_SKILL_DIR}/scripts/find-devnet.sh` to locate the file.
+
+2. **Resolve latest stable versions:**
+   - Run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh`.
+
+3. **Check compatibility matrix** (same flow as generate step 3, unless `--skip-compatibility-matrix`).
+
+4. **Read and edit the file:**
+   - Use the Read tool to read the current compose file.
+   - Note the current image versions for each service.
+   - Use the Edit tool to update each `image:` line with the new versions.
+   - Update or add the `# Generated:` timestamp comment with the current UTC time.
+
+5. **Report:** Show old version -> new version for each changed service. If no versions changed, say so.
+
+## Step 4: Start — Start the Network
 
 If the subcommand is `start`:
 
-- Call `mcp__plugin_midnight-tooling_midnight-devnet__start-network`.
-- If `--pull` is present, pass `pull: true` to pull the latest Docker images before starting.
-- Report the result to the user.
+1. **Find the compose file:**
+   - If `--file` is specified: use that path directly. If it doesn't exist, fail with an error.
+   - Otherwise: run `${CLAUDE_SKILL_DIR}/scripts/find-devnet.sh`.
+   - If no file found anywhere: inform the user and run the **generate** flow (Step 2) first, then continue with the generated file.
 
-## Step 3: Network Lifecycle — stop
+2. **Handle `--pull`:**
+   - If `--pull` is present: run the **update** flow (Step 3) first to resolve and apply latest versions, then run:
+     ```bash
+     docker compose -f <path> pull
+     ```
+
+3. **Check staleness (if no `--pull`):**
+   - Run `${CLAUDE_SKILL_DIR}/scripts/check-staleness.sh <path>`.
+   - If `stale=true`: inform the user that the compose file is N days old and offer to update. If they accept, run the update flow. If they decline, continue.
+
+4. **Start the network:**
+   ```bash
+   docker compose -f <path> up -d
+   ```
+
+5. **Report status:**
+   ```bash
+   docker compose -f <path> ps
+   ```
+
+## Step 5: Stop — Stop the Network
 
 If the subcommand is `stop`:
 
-- If `--remove-volumes` is present, use `AskUserQuestion` to confirm with the user first:
-  > "Removing volumes will permanently delete all chain state and wallet data. Are you sure you want to stop the network and remove all volumes? (yes/no)"
-  - If the user confirms, call `mcp__plugin_midnight-tooling_midnight-devnet__stop-network` with `removeVolumes: true`.
-  - If the user declines, call `mcp__plugin_midnight-tooling_midnight-devnet__stop-network` without `removeVolumes`.
-- Otherwise, call `mcp__plugin_midnight-tooling_midnight-devnet__stop-network` without any extra parameters.
-- Report the result to the user.
+- Parse `--name` (default: `midnight-devnet`).
+- If `--remove-volumes` is present, use `AskUserQuestion` to confirm:
+  > "Removing volumes will permanently delete all chain state, indexer data, and wallet data. Are you sure you want to stop the network and remove all volumes? (yes/no)"
+  - If the user declines, stop without `-v`.
+- Run:
+  ```bash
+  docker compose -p <name> down       # without --remove-volumes
+  docker compose -p <name> down -v    # with --remove-volumes (after confirmation)
+  ```
+- Report the result.
 
-## Step 4: Network Lifecycle — restart
+## Step 6: Restart — Stop and Start
 
 If the subcommand is `restart`:
 
-- If `--remove-volumes` is present, use `AskUserQuestion` to confirm with the user first:
-  > "Removing volumes will permanently delete all chain state and wallet data. Are you sure you want to restart the network and remove all volumes? (yes/no)"
-  - If the user declines, proceed without `removeVolumes`.
-- Call `mcp__plugin_midnight-tooling_midnight-devnet__restart-network`, passing:
-  - `pull: true` if `--pull` is present.
-  - `removeVolumes: true` if `--remove-volumes` is present and the user confirmed.
-- Report the result to the user.
+- Run the **stop** flow (Step 5) with `--remove-volumes` and `--name` if specified.
+- Run the **start** flow (Step 4) with `--pull` and `--file` if specified.
 
-## Step 5: Network Observability — status, health, logs, config
+## Step 7: Status — Container State
 
-**status**: Call `mcp__plugin_midnight-tooling_midnight-devnet__network-status`. Display the per-service status of all devnet services.
+If the subcommand is `status`:
 
-**health**: Call `mcp__plugin_midnight-tooling_midnight-devnet__health-check`. Display the health status of all services.
+- Parse `--name` (default: `midnight-devnet`).
+- Run:
+  ```bash
+  docker compose -p <name> ps
+  ```
+- Display the per-service container state.
 
-**logs**: Call `mcp__plugin_midnight-tooling_midnight-devnet__network-logs`, passing:
-- `service` if `--service <name>` is provided.
-- `lines` if `--lines <n>` is provided.
+## Step 8: Health — Service Responsiveness
 
+If the subcommand is `health`:
+
+- Parse `--name` (default: `midnight-devnet`).
+- Curl each service endpoint with timing:
+
+  ```bash
+  curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:9944/health
+  curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:8088/api/v3/graphql
+  curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:6300/health
+  ```
+
+- Report per-service: name, pass/fail, HTTP status code, response time.
+
+## Step 9: Logs and Config
+
+**logs**: Parse `--service`, `--lines`, `--name` (default: `midnight-devnet`).
+```bash
+docker compose -p <name> logs [<service>] [--tail <lines>]
+```
 Display the returned logs.
 
-**config**: Call `mcp__plugin_midnight-tooling_midnight-devnet__get-network-config`. Display the endpoint URLs, network ID, and image versions.
+**config**: Find the compose file (using `--file` or `find-devnet.sh`). Read it and display:
+- File location and age (from `# Generated:` timestamp)
+- Image versions for each service
+- Endpoint URLs and ports
+- Network ID (`undeployed`)
 
-## Step 6: Wallet and Balances
+## Step 10: Usage Summary
 
-**wallet**: Call `mcp__plugin_midnight-tooling_midnight-devnet__get-wallet-balances`. Display the genesis wallet NIGHT and DUST balances.
-
-## Step 7: Account Funding and Generation
-
-**fund**: Requires a positional `<address>` argument. If not provided, report an error and show usage: `/devnet fund <address> [--amount <n>]`.
-- Call `mcp__plugin_midnight-tooling_midnight-devnet__fund-account`, passing:
-  - `address` (required).
-  - `amount` if `--amount <n>` is provided.
-- Report the result to the user.
-
-**fund-mnemonic**: Requires two positional arguments: `<name>` and `<mnemonic>`. If either is missing, report an error and show usage: `/devnet fund-mnemonic <name> <mnemonic>`.
-- Call `mcp__plugin_midnight-tooling_midnight-devnet__fund-account-from-mnemonic`, passing:
-  - `name` (required).
-  - `mnemonic` (required).
-- Report the result to the user.
-
-**fund-file**: Requires a positional `<path>` argument. If not provided, report an error and show usage: `/devnet fund-file <path>`.
-- Call `mcp__plugin_midnight-tooling_midnight-devnet__fund-accounts-from-file`, passing:
-  - `filePath` (required).
-- Report the result to the user.
-
-**generate-account**: Call `mcp__plugin_midnight-tooling_midnight-devnet__generate-test-account`, passing:
-- `format` — use the value from `--format <type>` if provided, otherwise default to `mnemonic`.
-- `count` if `--count <n>` is provided.
-- `fund: true` if `--fund` is present.
-- `registerDust: true` if `--register-dust` is present.
-- `outputFile` if `--output <path>` is provided.
-
-Report the generated account details to the user.
-
-## Step 8: Usage Summary
-
-If no subcommand was provided or the subcommand is not recognized, display a usage summary:
+If no subcommand was provided or the subcommand is not recognized, display:
 
 ```
 /devnet — Manage a local Midnight devnet
 
+Compose file management:
+  generate [--directory <path>]           Create a devnet.yml with latest stable versions
+    [--node-version <X.Y.Z>]               Specify exact node image version
+    [--indexer-version <X.Y.Z>]             Specify exact indexer image version
+    [--proof-server-version <X.Y.Z>]        Specify exact proof server image version
+    [--skip-compatibility-matrix]            Skip version compatibility check
+    [--no-verify]                            Skip Docker Hub tag verification
+  update [--file <path>]                  Update image versions in an existing devnet.yml
+    [--skip-compatibility-matrix]            Skip version compatibility check
+
 Network lifecycle:
-  start [--pull]                        Start the devnet (pull latest images with --pull)
-  stop [--remove-volumes]               Stop the devnet (remove chain data with --remove-volumes)
-  restart [--pull] [--remove-volumes]   Restart the devnet
+  start [--pull] [--file <path>]          Start the devnet (update + pull latest with --pull)
+  stop [--remove-volumes] [--name <name>] Stop the devnet (remove chain data with --remove-volumes)
+  restart [--pull] [--remove-volumes]     Restart the devnet
+    [--file <path>] [--name <name>]
 
 Observability:
-  status                                Show per-service status
-  health                                Run health checks on all services
-  logs [--service <name>] [--lines <n>] View service logs
-  config                                Show endpoint URLs, network ID, and image versions
-
-Wallet & accounts:
-  wallet                                Show genesis wallet NIGHT and DUST balances
-  fund <address> [--amount <n>]         Fund an address with NIGHT tokens
-  fund-mnemonic <name> <mnemonic>       Derive address from mnemonic, then fund
-  fund-file <path>                      Fund multiple accounts from a JSON file
-  generate-account [--format <type>]    Generate test account(s)
-    [--count <n>] [--fund]
-    [--register-dust] [--output <path>]
+  status [--name <name>]                  Show per-service container state
+  health [--name <name>]                  Run health checks with response times
+  logs [--service <name>] [--lines <n>]   View service logs
+    [--name <name>]
+  config [--file <path>]                  Show endpoint URLs, versions, and file info
 ```

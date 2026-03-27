@@ -12,7 +12,7 @@ Download Docker Desktop for the appropriate platform:
 
 Docker Desktop for Mac is available for both Intel and Apple Silicon. After installation, Docker Desktop appears in the Applications folder. Launch it and wait for the whale icon in the menu bar to show "Docker Desktop is running."
 
-**Apple Silicon note:** Docker Desktop handles multi-architecture images automatically. If you encounter architecture-related issues with any of the devnet container images, you may need to force the platform explicitly when pulling images. The devnet MCP tools handle this automatically, but if running containers manually, add `--platform linux/amd64` to your `docker run` command.
+**Apple Silicon note:** Docker Desktop handles multi-architecture images automatically. If you encounter architecture-related issues with any of the devnet container images, you may need to force the platform explicitly when pulling images. The devnet Docker Compose file handles multi-architecture images automatically. If you encounter issues with a specific image, add `platform: linux/amd64` to the service definition in your `devnet.yml`.
 
 Verify installation:
 
@@ -123,7 +123,7 @@ The devnet uses three ports. If any are already occupied by another process, the
 | 8088 | Indexer | `lsof -i :8088` |
 | 6300 | Proof server | `lsof -i :6300` |
 
-To resolve a port conflict, stop the conflicting process before starting the devnet. The devnet MCP tools manage container port mappings automatically; do not attempt to remap ports manually, as the services are configured to communicate with each other on their default ports.
+To resolve a port conflict, stop the conflicting process before starting the devnet. The default port mappings are configured in `devnet.yml`. While you can change the host-side port (e.g., `'9945:9944'`), the services communicate internally via Docker DNS on their default ports, so only the host port should be changed.
 
 If you are running the proof server standalone (outside the devnet), and port 6300 is in use, you can map to a different host port:
 
