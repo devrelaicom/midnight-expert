@@ -1,7 +1,7 @@
 {
   "name": "midnight-verify",
-  "version": "0.1.0",
-  "description": "Verification framework for Midnight claims — confidence-scored verification of Compact code, SDK APIs, protocol properties, and tooling behavior using layered skills, a versatile verification agent, and async post-write checking.",
+  "version": "0.2.0",
+  "description": "Verification framework for Midnight claims — verifies Compact code by compiling and executing test contracts, or by inspecting compiler and ledger source code. Multi-agent pipeline with explicit /verify command.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"
@@ -14,11 +14,11 @@
     "compact",
     "verification",
     "correctness",
-    "confidence",
-    "sdk",
-    "typescript",
+    "compile",
+    "execute",
+    "source-code",
     "zero-knowledge",
     "fact-checking",
-    "code-review"
+    "testing"
   ]
 }
