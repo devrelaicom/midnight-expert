@@ -1,6 +1,6 @@
 # Devnet Issues
 
-Diagnose and resolve common issues with the Midnight local devnet, including network startup, wallet initialization, funding, indexer sync, and MCP server connectivity.
+Diagnose and resolve common issues with the Midnight local devnet, including network startup, indexer sync, and MCP server connectivity. For wallet initialization and funding issues, use the `midnight-wallet` plugin.
 
 ## Network Fails to Start
 
@@ -45,29 +45,9 @@ Diagnose and resolve common issues with the Midnight local devnet, including net
    ```
 4. A service may fail to start if its dependencies are not yet ready. The indexer depends on the node being available. If the node starts slowly, the indexer may fail on its initial connection attempt. Restarting the network with `/devnet stop` then `/devnet start` often resolves transient startup ordering issues.
 
-## Wallet Initialization Fails
+## Wallet Initialization and Funding
 
-**Symptoms:** `/devnet wallet-init` fails or returns errors about connectivity or unhealthy services.
-
-**Cause:** Wallet initialization requires the network to be fully healthy. The node and indexer must both be running and synced before the wallet can be created.
-
-**Fix:**
-
-1. Check network health: `/devnet health`
-2. Ensure all services report healthy status before attempting wallet initialization.
-3. If services are starting up, wait for them to become healthy and retry.
-4. If services are unhealthy, diagnose using per-service logs (see Partial Startup above).
-
-## Funding Failures
-
-**Symptoms:** `/devnet fund` fails or returns errors.
-
-**Common causes and fixes:**
-
-1. **Devnet not running:** Funding requires a running devnet. Verify with `/devnet status`.
-2. **Master wallet not initialized:** The master wallet must be initialized before funding. Run `/devnet wallet-init` first if it has not been done since the network started.
-3. **Insufficient balance:** The master wallet has a finite balance. If many accounts have been funded, the master wallet may be depleted. Use `/devnet balances` to check the master wallet balance.
-4. **Invalid address:** Funding requires a valid Bech32-encoded Midnight address. Double-check the address format. A valid address starts with the appropriate prefix for the network.
+Wallet initialization, account funding, balance checking, transfers, and dust registration are handled by the `midnight-wallet` plugin. If you are experiencing issues with any of these operations, install and use `midnight-wallet`.
 
 ## Indexer Sync Issues
 
@@ -99,7 +79,7 @@ Diagnose and resolve common issues with the Midnight local devnet, including net
    /devnet start
    ```
 
-This removes all chain data, indexer state, and proof server caches. You will need to re-initialize the wallet and re-fund any accounts after a clean start.
+This removes all chain data, indexer state, and proof server caches. After a clean start, any wallet operations (initialization, funding) must be re-run via the `midnight-wallet` plugin.
 
 ## MCP Server Connectivity
 
