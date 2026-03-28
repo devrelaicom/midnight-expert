@@ -6,7 +6,7 @@ description: >-
   dispatches sub-agents (contract-writer and/or source-investigator) based
   on the domain skill's routing, and synthesizes final verdicts. Always loaded
   first by the verifier agent.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Verification Hub
@@ -33,15 +33,20 @@ Load the appropriate domain skill(s) using the Skill tool. The domain skill prov
 
 Based on the domain skill's routing:
 
-- **Execution needed** → dispatch `midnight-verify:contract-writer` agent with the claim
+- **Compact execution needed** → dispatch `midnight-verify:contract-writer` agent with the claim
 - **Source inspection needed** → dispatch `midnight-verify:source-investigator` agent with the claim
-- **Both needed** → dispatch BOTH agents **concurrently** (they are independent and can run in parallel)
+- **Type-checking needed** → dispatch `midnight-verify:type-checker` agent with the claim and what type assertion to make
+- **Devnet E2E needed** → dispatch `midnight-verify:sdk-tester` agent with the claim and what behavior to observe
+- **Package/version check needed** → dispatch `devs:deps-maintenance` agent with the package name and version claim. If deps-maintenance is not available (plugin not installed), run `npm view` directly as a fallback.
+- **Multiple methods needed** → dispatch applicable agents **concurrently** (they are independent and can run in parallel)
 
 When dispatching, pass:
 - The claim verbatim
 - Any relevant context (file path, code snippet, what specifically to check)
 - For the contract-writer: what observable behavior would confirm/refute the claim
 - For the source-investigator: which repo/area to focus on (from the domain skill's routing)
+- For the type-checker: what type assertion to write, or the file path to check
+- For the sdk-tester: what runtime behavior to observe
 
 ### 4. Synthesize the Verdict
 
@@ -59,6 +64,13 @@ Collect the sub-agent report(s) and produce the final verdict.
 | **Refuted** | (tested + source-verified) | Both methods disagree with the claim |
 | **Refuted** | (tested, source disagrees) | Execution contradicts but source seems to support — execution wins, disagreement noted |
 | **Inconclusive** | — | Couldn't test via execution AND couldn't find definitive source evidence |
+| **Confirmed** | (type-checked) | Type-checker ran tsc --noEmit; types match the claim |
+| **Confirmed** | (type-checked + tested) | Both tsc and devnet E2E agree |
+| **Confirmed** | (package-verified) | npm view / deps-maintenance confirms package/version |
+| **Refuted** | (type-checked) | tsc produced type errors contradicting the claim |
+| **Refuted** | (package-verified) | Package doesn't exist or version doesn't match |
+| **Inconclusive** | (devnet unavailable) | Claim needs E2E testing but devnet is not running |
+| **Inconclusive** | (type-check insufficient) | Types match but claim is about runtime behavior — can't verify without devnet |
 
 **When sub-agents disagree:** Execution evidence wins. The code ran and produced a result — that's more authoritative than interpreting source. But you MUST note the disagreement in your report so the user is aware.
 
@@ -66,6 +78,8 @@ Collect the sub-agent report(s) and produce the final verdict.
 - Why the claim couldn't be tested via execution
 - Why source inspection was insufficient
 - What the user could do to resolve it (e.g., "this requires runtime benchmarking on a live network")
+
+**Critical rule for SDK claims:** A clean `tsc` run does NOT confirm behavioral claims. If the claim is about what happens at runtime (deploy, call, state changes), type-checking can confirm the type/signature part but must note that runtime verification requires devnet. When a claim has both type and behavioral components, dispatch type-checker and sdk-tester concurrently.
 
 ### 5. Format the Final Report
 
@@ -93,5 +107,5 @@ Extract individual claims from the file — assertions in comments, patterns use
 ## What This Skill Does NOT Do
 
 - It does not contain domain-specific verification logic — that lives in `verify-compact` and `verify-sdk`
-- It does not contain method-specific instructions — those live in `verify-by-execution` and `verify-by-source`
+- It does not contain method-specific instructions — those live in `verify-by-execution`, `verify-by-source`, `verify-by-type-check`, and `verify-by-devnet`
 - It does not directly verify anything — it classifies, routes, dispatches, and synthesizes
