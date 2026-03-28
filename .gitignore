@@ -226,3 +226,4 @@ reviews/
 .compact/
 docs/plans/
 docs/findings/
+.worktrees/

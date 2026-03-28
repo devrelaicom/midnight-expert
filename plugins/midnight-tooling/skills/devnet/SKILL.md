@@ -88,6 +88,10 @@ The compose file template is at `${CLAUDE_SKILL_DIR}/templates/devnet.yml`.
 | Architecture mismatch on Apple Silicon | Image not available for arm64 | See Apple Silicon note in `references/docker-setup.md` |
 | Compose file stale warning | File older than 5 days | Run `/devnet update` to refresh image versions |
 
+## Wallet Operations
+
+For wallet management, funding, balance checking, transfers, and dust registration, use the `midnight-wallet` plugin. The wallet plugin's MCP tools work with any running devnet — it auto-detects the services by Docker image name.
+
 ## Reference Files
 
 Consult these for detailed procedures:

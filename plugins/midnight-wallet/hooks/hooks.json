@@ -1,0 +1,72 @@
+{
+  "description": "Midnight Wallet plugin hooks: devnet check, nickname resolution, airdrop guard, transfer self-check, transfer failure guidance, session health",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start-health.sh",
+            "timeout": 60,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__midnight-wallet__midnight_.*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A Midnight wallet MCP tool is about to be called. Check $TOOL_INPUT for a 'network' field or infer the active network from context. If the target network is 'undeployed' (the local devnet), verify that Docker containers with midnight-related images are running by mentally checking whether the devnet appears active. If there is no evidence the devnet is running (e.g., no prior successful tool calls to midnight tools, or previous errors about connection refused), warn the user: 'The local devnet does not appear to be running. Use /devnet start from the midnight-tooling plugin to start it before using wallet tools on the undeployed network.' This is advisory only — do not block the tool call.",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__midnight-wallet__midnight_transfer|mcp__midnight-wallet__midnight_balance",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A midnight_transfer or midnight_balance tool is about to be called. Inspect $TOOL_INPUT for any address arguments. If an address argument does NOT start with 'mn_addr_', it is likely a wallet nickname (e.g., 'alice', '#bob'). For each such nickname, resolve it by running: bash ${CLAUDE_PLUGIN_ROOT}/skills/setup-test-wallets/scripts/wallet-aliases.sh get <nickname> --network <active-network>. Strip any leading '#' from the nickname before passing it. If the alias resolves successfully (exit code 0), substitute the resolved address into the tool arguments before the call proceeds. If the alias is not found (exit code 1), warn: 'Nickname \"<nickname>\" was not found in the wallet alias files. Use /setup-test-wallets to create and register test wallets, or provide a full mn_addr_... address.' This is advisory — do not block the call if you cannot resolve the nickname.",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__midnight-wallet__midnight_airdrop",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "An airdrop tool call is about to be made. Check $TOOL_INPUT for the 'network' field, or infer the active network from recent context. If the network is NOT 'undeployed', this call will fail because airdrop only works on the local devnet. In that case, you MUST set permissionDecision to 'deny' and respond with: 'Airdrop is only available on the local devnet (undeployed network). It cannot be used on preprod or preview. For testnet tokens, use the public faucets instead: preprod: https://faucet.preprod.midnight.network/ — preview: https://faucet.preview.midnight.network/' Do not allow the tool call to proceed if the network is not undeployed.",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__midnight-wallet__midnight_transfer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A midnight_transfer tool call is about to be made. Inspect $TOOL_INPUT for the recipient address. Compare it to the active wallet's address (which you may know from recent midnight_wallet_info or midnight_info tool results in context). If the recipient address matches the active wallet's own address, warn the user: 'The recipient address matches the currently active wallet. This transfer would send tokens to yourself — is this intentional?' This is advisory only — do not block the transfer.",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__midnight-wallet__midnight_transfer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A midnight_transfer tool just completed. Inspect $TOOL_RESULT to determine if it succeeded or failed. If the transfer succeeded, do nothing. If it failed, examine the error message or error code: 1. If the error contains 'dust', 'DUST_REQUIRED', or error code 'DUST_REQUIRED': respond with 'Transfer failed because dust tokens are required for transaction fees. Run midnight_dust_register to register UTXOs for dust generation, then retry the transfer.' 2. If the error contains 'stale utxo', 'STALE_UTXO', or code 115: respond with 'Transfer failed due to a stale UTXO — another transaction likely consumed this UTXO concurrently. Wait a few seconds and retry the transfer.' 3. For any other error: pass the error through without modification. This is advisory — do not retry automatically.",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

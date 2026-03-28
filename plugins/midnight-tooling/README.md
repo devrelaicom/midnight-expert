@@ -2,13 +2,12 @@
 
 Installation, configuration, and management of Midnight Network development tools.
 
-A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) that provides skills, commands, and a status bar integration for working with the Compact CLI, local devnet (node, indexer, proof server), account funding, compiler versions, and release notes.
+A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) that provides skills, commands, and a status bar integration for working with the Compact CLI, local devnet (node, indexer, proof server), compiler versions, and release notes. For wallet management and account funding, see the `midnight-wallet` plugin.
 
 ## Features
 
 - Install and manage the Compact CLI and compiler versions
 - Start, stop, and monitor the local devnet (node, indexer, proof server)
-- Fund accounts and generate test wallets on the local network
 - Run diagnostics on your entire Midnight toolchain
 - View release notes for any Midnight component
 - Troubleshoot common development environment issues
@@ -54,7 +53,7 @@ Install, update, or configure the Compact CLI tool. Supports global installation
 
 ### `/midnight-tooling:devnet`
 
-Manage the local Midnight development network (node, indexer, proof server) and fund accounts. Delegates to the `@aaronbassett/midnight-local-devnet` MCP server.
+Manage the local Midnight development network (node, indexer, proof server). Delegates to the `@aaronbassett/midnight-local-devnet` MCP server. For wallet management and account funding, use the `midnight-wallet` plugin.
 
 ```
 /midnight-tooling:devnet start
@@ -63,9 +62,6 @@ Manage the local Midnight development network (node, indexer, proof server) and 
 /midnight-tooling:devnet health
 /midnight-tooling:devnet logs --service node
 /midnight-tooling:devnet config
-/midnight-tooling:devnet wallet
-/midnight-tooling:devnet fund <address>
-/midnight-tooling:devnet generate-account --count 3 --fund
 ```
 
 ### `/midnight-tooling:view-release-notes`
@@ -102,12 +98,6 @@ Manages the Compact CLI tool for Midnight Network development. Covers installati
 Covers the local development network lifecycle — starting, stopping, restarting, checking status and health, viewing logs, and getting endpoint configuration for all 3 services (node, indexer, proof server).
 
 **Triggers on**: starting/stopping the devnet, local network, node/indexer/proof server containers, port 9944/8088/6300 issues, network health
-
-### funding
-
-Covers wallet and account operations on the local devnet — checking genesis wallet balances, funding accounts by address or mnemonic, batch funding from files, and generating test accounts.
-
-**Triggers on**: fund account, NIGHT/DUST tokens, test accounts, genesis wallet, mnemonic, Bech32 address, accounts.json
 
 ### proof-server
 
