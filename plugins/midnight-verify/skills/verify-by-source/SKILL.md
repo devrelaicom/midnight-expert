@@ -7,7 +7,7 @@ description: >-
   via compilation. Uses octocode-mcp for quick lookups, falls back to
   local cloning for deep investigation. Loaded by the source-investigator
   agent.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Verify by Source Code Inspection
@@ -23,6 +23,9 @@ This method is for claims that **cannot be meaningfully tested by compiling and 
 - Architectural rationale ("Compact chose Field as the base type because...")
 - Cross-component contracts ("Compiled output follows format X")
 - Protocol-level behavior that isn't observable from a single contract execution
+- SDK export counts ("midnight-js-contracts exports 91 symbols")
+- SDK implementation details ("proof provider retries 3 times with backoff")
+- SDK provider internals ("LevelDB provider uses AES-256-GCM encryption")
 
 If the claim CAN be tested by writing and running a contract, the contract-writer agent handles it instead. You only run when execution isn't viable.
 
@@ -42,6 +45,7 @@ You may consult compact-core skills to get a starting point for where to look. T
 | ZK proof system, circuit compilation | `midnightntwrk/midnight-zk` | Rust source — proof generation, ZKIR, circuit constraints |
 | Node runtime, on-chain execution | `midnightntwrk/midnight-node` | Rust source — how transactions execute on-chain |
 | Compact CLI releases, changelog | `midnightntwrk/compact` | Release notes — distinct from LFDT-Minokawa/compact compiler source |
+| SDK API, TypeScript packages, provider implementations | `midnightntwrk/midnight-js` | `packages/*/src/` — monorepo with 13 packages. `llms.txt` in repo root is a 10KB API overview useful as a starting point. |
 
 If the claim doesn't clearly map to one repo, start with `LFDT-Minokawa/compact` for language/compiler claims or `midnightntwrk/midnight-ledger` for protocol/transaction claims.
 
