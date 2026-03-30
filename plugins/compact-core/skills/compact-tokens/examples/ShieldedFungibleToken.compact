@@ -1,6 +1,23 @@
+// *** NON-COMPILABLE EXAMPLE — ILLUSTRATIVE REFERENCE ONLY ***
+//
+// This file CANNOT be compiled standalone. It requires external dependencies
+// from the OpenZeppelin midnight-apps project that are not vendored here.
+//
+// Missing dependencies:
+//   ./Utils  — address validation utilities (isKeyOrAddressZero)
+//
+// Note: The ./openzeppelin/ShieldedERC20 import on line 59 references the OZ
+// project structure, but the ShieldedERC20 module is defined inline later in
+// this file. That import is redundant in this concatenated version.
+//
+// To compile this contract, clone the full OpenZeppelin project:
+//   Repository: https://github.com/OpenZeppelin/midnight-apps
+//   Version:    v0.0.1-alpha.0
+//   Status:     *** ARCHIVED — DO NOT USE IN PRODUCTION ***
+//
+// Or see the compact-examples openzeppelin skill for installation instructions.
+//
 // OpenZeppelin ShieldedFungibleToken for Midnight Compact
-// Source: OpenZeppelin/midnight-apps v0.0.1-alpha.0
-// Status: *** ARCHIVED — DO NOT USE IN PRODUCTION ***
 //
 // This contract is ARCHIVED in the OpenZeppelin midnight-apps repository.
 // It is included here as a reference for shielded token patterns only.
@@ -29,11 +46,6 @@
 // The facade re-exports standard library types so that downstream consumers only
 // need to import this contract, not the individual library modules.
 // ============================================================================
-
-// NOTE: This is an excerpt from the OpenZeppelin midnight-apps project (cited above).
-// The ./openzeppelin/ShieldedERC20 import references the full OZ project structure,
-// but ShieldedERC20 is actually defined inline later in this file (the import is redundant).
-// This file cannot be compiled standalone — see the compact-examples openzeppelin skill.
 
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/ShieldedFungibleToken.compact)

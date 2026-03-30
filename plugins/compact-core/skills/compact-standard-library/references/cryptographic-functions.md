@@ -2,12 +2,12 @@
 
 ## Elliptic Curve Functions
 
-These functions operate on the proof system's embedded elliptic curve. All inputs and outputs use the `NativePoint` type, which represents a point on the curve. Elliptic curve operations are the foundation for Pedersen commitments, public key derivation, and value blinding in the Zswap protocol.
+These functions operate on the proof system's embedded elliptic curve (Jubjub). All inputs and outputs use the `JubjubPoint` type, which represents a point on the curve. Elliptic curve operations are the foundation for Pedersen commitments, public key derivation, and value blinding in the Zswap protocol.
 
 ### ecAdd
 
 ```compact
-circuit ecAdd(a: NativePoint, b: NativePoint): NativePoint;
+circuit ecAdd(a: JubjubPoint, b: JubjubPoint): JubjubPoint;
 ```
 
 Adds two elliptic curve points (described in multiplicative notation in the official docs). Used for combining Pedersen commitment components and aggregating public keys.
@@ -22,7 +22,7 @@ const pedersenCommit = ecAdd(blindingCommit, valueCommit);
 ### ecMul
 
 ```compact
-circuit ecMul(a: NativePoint, b: Field): NativePoint;
+circuit ecMul(a: JubjubPoint, b: Field): JubjubPoint;
 ```
 
 Multiplies an elliptic curve point by a scalar. The point is the first argument, the scalar (`Field`) is the second. Used for scaling independent generators in Pedersen commitments and key derivation.
@@ -36,7 +36,7 @@ const valueCommit = ecMul(colorBase, coin.value);
 ### ecMulGenerator
 
 ```compact
-circuit ecMulGenerator(b: Field): NativePoint;
+circuit ecMulGenerator(b: Field): JubjubPoint;
 ```
 
 Multiplies the primary group generator of the embedded curve by a scalar. Equivalent to `ecMul(G, b)` where `G` is the generator, but more efficient because the generator is a known constant. Used for blinding factors and public key generation.
@@ -49,7 +49,7 @@ const blinding = ecMulGenerator(randomness);
 ### hashToCurve
 
 ```compact
-circuit hashToCurve<T>(value: T): NativePoint;
+circuit hashToCurve<T>(value: T): JubjubPoint;
 ```
 
 Maps an arbitrary Compact value to a curve point. Outputs are guaranteed to have unknown discrete logarithm with respect to the group generator and any other `hashToCurve` output. This property is essential for Pedersen commitments because it ensures the value generator is independent of the blinding generator. Inputs of different types `T` may produce the same output if they share the same field-aligned binary representation.
@@ -62,27 +62,27 @@ const colorBase = hashToCurve<Bytes<32>>(color);
 const compositeBase = hashToCurve<[Bytes<32>, Uint<16>]>([color, segment]);
 ```
 
-### NativePoint Accessors
+### JubjubPoint Accessors
 
 ```compact
-circuit nativePointX(p: NativePoint): Field;
-circuit nativePointY(p: NativePoint): Field;
-circuit constructNativePoint(x: Field, y: Field): NativePoint;
+circuit jubjubPointX(p: JubjubPoint): Field;
+circuit jubjubPointY(p: JubjubPoint): Field;
+circuit constructJubjubPoint(x: Field, y: Field): JubjubPoint;
 ```
 
-These functions extract or construct `NativePoint` coordinates. While direct field access (`.x`, `.y`) works, prefer `nativePointX` and `nativePointY` for long-term compatibility, as `NativePoint` may become opaque in a future compiler version.
+These functions extract or construct `JubjubPoint` coordinates. While direct field access (`.x`, `.y`) works, prefer `jubjubPointX` and `jubjubPointY` for long-term compatibility, as `JubjubPoint` may become opaque in a future compiler version.
 
-`constructNativePoint` builds a `NativePoint` from raw coordinates. Use with caution: the function does not validate that the point lies on the curve. Passing invalid coordinates can produce undefined circuit behavior.
+`constructJubjubPoint` builds a `JubjubPoint` from raw coordinates. Use with caution: the function does not validate that the point lies on the curve. Passing invalid coordinates can produce undefined circuit behavior.
 
 Note: these functions are present in the compiler and confirmed working in test examples, but are not listed in the official `CompactStandardLibrary` exports documentation page. They are part of the standard library import.
 
 ```compact
 // Extract coordinates from a point
-const x = nativePointX(point);
-const y = nativePointY(point);
+const x = jubjubPointX(point);
+const y = jubjubPointY(point);
 
 // Construct a point from known coordinates (no on-curve check)
-const point = constructNativePoint(xCoord, yCoord);
+const point = constructJubjubPoint(xCoord, yCoord);
 ```
 
 ## Practical Pattern: Pedersen Commitments
@@ -92,7 +92,7 @@ A Pedersen commitment `C = g^r * h^v` hides a value `v` behind a random blinding
 ```compact
 witness get_randomness(): Field;
 
-circuit pedersenCommit(color: Bytes<32>, value: Field): NativePoint {
+circuit pedersenCommit(color: Bytes<32>, value: Field): JubjubPoint {
   const r = get_randomness();
   const blinding = ecMulGenerator(r);
   const colorBase = hashToCurve<Bytes<32>>(color);

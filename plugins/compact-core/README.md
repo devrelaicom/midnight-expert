@@ -15,7 +15,7 @@ A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) t
 - Understand circuit costs, compiler output, and optimization strategies
 - Deploy contracts to Midnight networks with provider and wallet setup
 - Write unit tests with Vitest and the Simulator pattern
-- Review contracts across 11 security and correctness categories
+- Review contracts across 10 security and correctness categories
 - Initialize new projects with `create-mn-app`
 
 ## Prerequisites
@@ -37,7 +37,7 @@ Or add the plugin manually by cloning it into your Claude Code plugins directory
 
 ### `/compact-core:review-compact`
 
-Comprehensive review of Compact smart contract code covering 11 categories including privacy, security, tokens, concurrency, performance, and more. Supports parallel execution via reviewer agents.
+Comprehensive review of Compact smart contract code covering 10 categories including privacy, security, tokens, concurrency, performance, and more. Supports parallel execution via reviewer agents.
 
 ```
 /compact-core:review-compact path/to/contract.compact
@@ -150,7 +150,7 @@ Project scaffolding with `create-mn-app` — templates, project structure, and f
 
 ### compact-review
 
-Review checklists for 11 categories of Compact contract review — privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, witness-contract consistency, architecture, code quality, and testing.
+Review checklists for 10 categories of Compact contract review — privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, architecture, code quality, testing, and documentation.
 
 **Triggers on**: code review, security review, privacy review
 

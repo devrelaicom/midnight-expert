@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Compact Code Review Checklists
 
-This skill contains review checklists for 11 categories of Compact smart contract review. Each reference file provides a focused checklist for one review category.
+This skill contains review checklists for 10 categories of Compact smart contract review. Each reference file provides a focused checklist for one review category.
 
 ## How to Use
 

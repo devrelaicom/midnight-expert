@@ -1,6 +1,20 @@
+// *** NON-COMPILABLE EXAMPLE — ILLUSTRATIVE REFERENCE ONLY ***
+//
+// This file CANNOT be compiled standalone. It requires external dependencies
+// from the OpenZeppelin compact-contracts project that are not vendored here.
+//
+// Missing dependencies:
+//   ../security/Initializable  — one-time initialization guard module
+//   ../utils/Utils              — address validation utilities
+//
+// To compile this contract, clone the full OpenZeppelin project:
+//   Repository: https://github.com/OpenZeppelin/compact-contracts
+//   Version:    v0.0.1-alpha.1
+//   Status:     ALPHA — NOT AUDITED, NOT PRODUCTION-READY
+//
+// Or see the compact-examples openzeppelin skill for installation instructions.
+//
 // OpenZeppelin FungibleToken for Midnight Compact
-// Source: OpenZeppelin/compact-contracts v0.0.1-alpha.1
-// Status: ALPHA -- NOT AUDITED, NOT PRODUCTION-READY
 //
 // An unshielded fungible token library, inspired by ERC20 but with significant
 // differences due to Compact/Midnight constraints. See "Limitations" below.
@@ -17,11 +31,6 @@
 // - Safe/unsafe circuit pairs
 // - _update as core accounting mechanism
 // - Either<ZswapCoinPublicKey, ContractAddress> as universal account type
-
-// NOTE: This is an excerpt from the OpenZeppelin compact-contracts project (cited above).
-// Import paths (e.g. ../security/Initializable) reference modules within the full OZ project.
-// This file cannot be compiled standalone — it requires the full project setup.
-// See the compact-examples openzeppelin skill for installation instructions.
 
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Compact Contracts v0.0.1-alpha.1 (token/FungibleToken.compact)

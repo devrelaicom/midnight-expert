@@ -1,6 +1,6 @@
 ---
 name: compact-standard-library
-description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, NativePoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), deprecated stdlib names (CurvePoint, CoinInfo), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library, prevent hallucination of non-existent stdlib functions, or search the Midnight MCP for stdlib source code.
+description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, JubjubPoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), deprecated stdlib names (CurvePoint, NativePoint, CoinInfo), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve, jubjubPointX, jubjubPointY, constructJubjubPoint), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library, prevent hallucination of non-existent stdlib functions, or search the Midnight MCP for stdlib source code.
 version: 0.1.0
 ---
 
@@ -39,7 +39,7 @@ Every export from `import CompactStandardLibrary;`, organized by category. Use t
 |------|------|-------------------|--------------------|
 | `Maybe<T>` | type | Optional value container | `references/types-and-constructors.md` |
 | `Either<A, B>` | type | Disjoint union (sum type) | `references/types-and-constructors.md` |
-| `NativePoint` | type | Elliptic curve point | `references/types-and-constructors.md` |
+| `JubjubPoint` | type | Elliptic curve point | `references/types-and-constructors.md` |
 | `MerkleTreeDigest` | type | Merkle root hash wrapper | `references/types-and-constructors.md` |
 | `MerkleTreePathEntry` | type | Sibling + direction in path | `references/types-and-constructors.md` |
 | `MerkleTreePath<#n, T>` | type | Path from leaf to root | `references/types-and-constructors.md` |
@@ -74,13 +74,13 @@ Every export from `import CompactStandardLibrary;`, organized by category. Use t
 
 | Name | Kind | Brief Description | Reference Location |
 |------|------|-------------------|--------------------|
-| `ecAdd` | circuit | Add two NativePoints | `references/cryptographic-functions.md` |
-| `ecMul` | circuit | Scalar multiply NativePoint | `references/cryptographic-functions.md` |
+| `ecAdd` | circuit | Add two JubjubPoints | `references/cryptographic-functions.md` |
+| `ecMul` | circuit | Scalar multiply JubjubPoint | `references/cryptographic-functions.md` |
 | `ecMulGenerator` | circuit | Scalar multiply generator | `references/cryptographic-functions.md` |
-| `hashToCurve<T>` | circuit | Map value to NativePoint | `references/cryptographic-functions.md` |
-| `nativePointX` | circuit | Get X coordinate of NativePoint | `references/cryptographic-functions.md` |
-| `nativePointY` | circuit | Get Y coordinate of NativePoint | `references/cryptographic-functions.md` |
-| `constructNativePoint` | circuit | Construct NativePoint from X, Y | `references/cryptographic-functions.md` |
+| `hashToCurve<T>` | circuit | Map value to JubjubPoint | `references/cryptographic-functions.md` |
+| `jubjubPointX` | circuit | Get X coordinate of JubjubPoint | `references/cryptographic-functions.md` |
+| `jubjubPointY` | circuit | Get Y coordinate of JubjubPoint | `references/cryptographic-functions.md` |
+| `constructJubjubPoint` | circuit | Construct JubjubPoint from X, Y | `references/cryptographic-functions.md` |
 
 ### Merkle Tree Path Circuits
 
@@ -113,7 +113,7 @@ Every export from `import CompactStandardLibrary;`, organized by category. Use t
 |------|------|-------------------|--------------------|
 | `tokenType` | circuit | Compute token color from domain sep + contract | `compact-tokens/references/token-operations.md` |
 | `nativeToken` | circuit | Native token color (zero) | `compact-tokens/references/token-operations.md` |
-| `ownPublicKey` | circuit | Current user's coin public key | `compact-tokens/references/token-operations.md` |
+| `ownPublicKey` | witness | Current user's coin public key | `compact-tokens/references/token-operations.md` |
 | `mintShieldedToken` | circuit | Mint new shielded coin | `compact-tokens/references/token-operations.md` |
 | `receiveShielded` | circuit | Accept shielded coin | `compact-tokens/references/token-operations.md` |
 | `sendShielded` | circuit | Send from existing coin | `compact-tokens/references/token-operations.md` |
@@ -152,7 +152,7 @@ Types provided by the standard library. All are available after `import CompactS
 |------|--------------------|----------------|---------------|
 | `Maybe<T>` | `T` -- any type | `is_some: Boolean`, `value: T` | `{ is_some: false, value: default<T> }` |
 | `Either<A, B>` | `A`, `B` -- any types | `is_left: Boolean`, `left: A`, `right: B` | `{ is_left: false, left: default<A>, right: default<B> }` (right variant, based on struct defaults) |
-| `NativePoint` | none | `x: Field`, `y: Field` | `{ x: 0, y: 0 }` |
+| `JubjubPoint` | none | `x: Field`, `y: Field` | `{ x: 0, y: 0 }` |
 | `MerkleTreeDigest` | none | `field: Field` | `{ field: 0 }` |
 | `MerkleTreePathEntry` | none | `sibling: MerkleTreeDigest`, `goesLeft: Boolean` | `{ sibling: { field: 0 }, goesLeft: false }` |
 | `MerkleTreePath<#N, T>` | `#N` -- depth, `T` -- leaf type | `leaf: T`, `path: Vector<#N, MerkleTreePathEntry>` | Default leaf + default path |
@@ -208,21 +208,21 @@ For full documentation with examples, disclosure rules, and persistent vs. trans
 
 ## Elliptic Curve Functions
 
-All EC operations use `NativePoint`, not the deprecated `CurvePoint`.
+All EC operations use `JubjubPoint`, not the deprecated `NativePoint` or `CurvePoint`.
 
 | Function | Signature | Purpose |
 |----------|-----------|---------|
-| `ecAdd` | `(a: NativePoint, b: NativePoint): NativePoint` | Add two curve points |
-| `ecMul` | `(a: NativePoint, b: Field): NativePoint` | Scalar multiplication |
-| `ecMulGenerator` | `(b: Field): NativePoint` | Multiply generator by scalar |
-| `hashToCurve<T>` | `(value: T): NativePoint` | Map arbitrary value to curve point |
-| `nativePointX` | `(p: NativePoint): Field` | Get X coordinate |
-| `nativePointY` | `(p: NativePoint): Field` | Get Y coordinate |
-| `constructNativePoint` | `(x: Field, y: Field): NativePoint` | Construct point from coordinates |
+| `ecAdd` | `(a: JubjubPoint, b: JubjubPoint): JubjubPoint` | Add two curve points |
+| `ecMul` | `(a: JubjubPoint, b: Field): JubjubPoint` | Scalar multiplication |
+| `ecMulGenerator` | `(b: Field): JubjubPoint` | Multiply generator by scalar |
+| `hashToCurve<T>` | `(value: T): JubjubPoint` | Map arbitrary value to curve point |
+| `jubjubPointX` | `(p: JubjubPoint): Field` | Get X coordinate |
+| `jubjubPointY` | `(p: JubjubPoint): Field` | Get Y coordinate |
+| `constructJubjubPoint` | `(x: Field, y: Field): JubjubPoint` | Construct point from coordinates |
 
 Use cases: Pedersen commitments, key derivation building blocks, custom signature schemes. For example, Pedersen blinding: `ecAdd(ecMulGenerator(rc), ecMul(colorBase, value))`.
 
-> **Verification:** EC functions operate on `NativePoint`, not the deprecated `CurvePoint`. The type was renamed from CurvePoint in release 0.20.28.0. Always verify with `midnight-compile-contract` when using EC operations, as these are newer additions. See `references/cryptographic-functions.md` for full documentation and examples.
+> **Verification:** EC functions operate on `JubjubPoint`, not the deprecated `NativePoint` or `CurvePoint`. The type was renamed from `CurvePoint` → `NativePoint` → `JubjubPoint`. Always verify with `midnight-compile-contract` when using EC operations. See `references/cryptographic-functions.md` for full documentation and examples.
 
 ## Merkle Tree Path Functions
 
@@ -267,7 +267,7 @@ Shielded token functions:
 |----------|-------------|
 | `tokenType` | Compute token color from domain separator + contract address |
 | `nativeToken` | Native token color (zero value) |
-| `ownPublicKey` | Current user's coin public key |
+| `ownPublicKey` | Current user's coin public key (witness, not a circuit) |
 | `mintShieldedToken` | Mint a new shielded coin with domain, amount, nonce, recipient |
 | `receiveShielded` | Accept a shielded coin into the transaction |
 | `sendShielded` | Send value from an existing (qualified) shielded coin |
@@ -321,7 +321,7 @@ Unshielded token functions:
 | `map.has(key)` | `map.member(key)` | `.has()` does not exist on Map |
 | `map.set(key, value)` | `map.insert(key, value)` | `.set()` does not exist on Map |
 | `map.delete(key)` | `map.remove(key)` | `.delete()` does not exist on Map |
-| `CurvePoint` | `NativePoint` | `CurvePoint` was renamed to `NativePoint` in release 0.20.28.0 (part of broader release with unshielded token support) |
+| `NativePoint` | `JubjubPoint` | `NativePoint` was renamed to `JubjubPoint`; `CurvePoint` is the oldest name for this type |
 | `CoinInfo` | `ShieldedCoinInfo` | `CoinInfo` was renamed to `ShieldedCoinInfo` |
 | `SendResult` | `ShieldedSendResult` | `SendResult` was renamed to `ShieldedSendResult` |
 | `persistentHash(value)` (no generic) | `persistentHash<T>(value)` | Generic parameter is required |
@@ -336,7 +336,7 @@ Unshielded token functions:
 
 | Topic | Reference File |
 |-------|---------------|
-| Stdlib types (Maybe, Either, NativePoint, MerkleTree types, address types), constructors (some, none, left, right), re-exports | `references/types-and-constructors.md` |
+| Stdlib types (Maybe, Either, JubjubPoint, MerkleTree types, address types), constructors (some, none, left, right), re-exports | `references/types-and-constructors.md` |
 | Elliptic curve functions, Merkle tree path functions, hashing/commitment summary | `references/cryptographic-functions.md` |
 | Alphabetical index of every stdlib export with authoritative documentation location | `references/cross-reference-index.md` |
 

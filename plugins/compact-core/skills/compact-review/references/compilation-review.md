@@ -453,20 +453,23 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   const pk = persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk]);
   ```
 
-- [ ] **`CurvePoint` instead of `NativePoint`.** The correct type name for elliptic curve points in Compact is `NativePoint`, not `CurvePoint`. `CurvePoint` was the old type name (now rejected by the compiler) and persists only as the TypeScript runtime interface name. LLMs hallucinate `CurvePoint` or `EllipticCurvePoint` because they appear in older documentation or are invented from convention.
+- [ ] **`CurvePoint` or `NativePoint` instead of `JubjubPoint`.** The correct type name for elliptic curve points in Compact is `JubjubPoint`. `CurvePoint` was the oldest name and `NativePoint` was the intermediate name — both are now rejected by the compiler. LLMs hallucinate `CurvePoint`, `NativePoint`, or `EllipticCurvePoint` because they appear in older documentation or are invented from convention.
 
   ```compact
-  // BAD — CurvePoint is not a valid Compact type (old name, rejected by compiler)
+  // BAD — CurvePoint is not a valid Compact type (oldest name, rejected by compiler)
   const point: CurvePoint = computePoint(scalar);
+
+  // BAD — NativePoint is not a valid Compact type (old name, rejected by compiler)
+  const point: NativePoint = computePoint(scalar);
 
   // BAD — EllipticCurvePoint does not exist in Compact
   const point: EllipticCurvePoint = computePoint(scalar);
 
-  // GOOD — NativePoint is the correct current type name
-  const point: NativePoint = computePoint(scalar);
+  // GOOD — JubjubPoint is the correct current type name
+  const point: JubjubPoint = computePoint(scalar);
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show an unknown type error for `CurvePoint`. `midnight-get-latest-syntax` confirms `NativePoint` as the current type name.
+  > **Tool:** `midnight-compile-contract` output will show an unknown type error for `CurvePoint` or `NativePoint`. `midnight-get-latest-syntax` confirms `JubjubPoint` as the current type name.
 
 - [ ] **`CoinInfo` instead of `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`.** The correct type names for coin information in Compact are `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`, not `CoinInfo`. LLMs simplify the type name because `CoinInfo` is shorter.
 

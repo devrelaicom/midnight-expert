@@ -137,7 +137,7 @@ On testnet, these are called **tNIGHT** and **tDUST**. Contracts cannot mint, se
 
 | Example | File |
 |---------|------|
-| ERC-20 style fungible token (contract-state, account model) | `examples/FungibleToken.compact` |
-| Non-fungible token with ownership tracking | `examples/NonFungibleToken.compact` |
-| Multi-token collection with mint/burn per ID | `examples/MultiToken.compact` |
-| Shielded fungible token using zswap coin infrastructure | `examples/ShieldedFungibleToken.compact` |
+| ERC-20 style fungible token (non-compilable — requires OpenZeppelin compact-contracts) | `examples/FungibleToken.compact` |
+| Non-fungible token with ownership tracking (non-compilable — requires OpenZeppelin compact-contracts) | `examples/NonFungibleToken.compact` |
+| Multi-token collection with mint/burn per ID (non-compilable — requires OpenZeppelin compact-contracts) | `examples/MultiToken.compact` |
+| Shielded fungible token using zswap coin infrastructure (non-compilable — requires OpenZeppelin midnight-apps) | `examples/ShieldedFungibleToken.compact` |

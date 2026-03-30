@@ -10,7 +10,7 @@ Complete reference for all types and their constructor functions provided by `im
 |------|------|---------|
 | `Maybe<T>` | Generic struct | Optional value (present or absent) |
 | `Either<A, B>` | Generic struct | Disjoint union (one of two variants) |
-| `NativePoint` | Struct | Elliptic curve point on the embedded curve |
+| `JubjubPoint` | Struct | Elliptic curve point on the embedded curve |
 | `MerkleTreeDigest` | Struct | Merkle tree root hash wrapper |
 | `MerkleTreePathEntry` | Struct | Single step in a Merkle proof path |
 | `MerkleTreePath<#n, T>` | Generic struct | Complete Merkle inclusion proof |
@@ -140,14 +140,14 @@ if (recipient.is_left) {
 { is_left: boolean, left: A, right: B }
 ```
 
-## NativePoint
+## JubjubPoint
 
-A point on the proof system's embedded elliptic curve, in affine coordinates. Only outputs of elliptic curve operations (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`) are guaranteed to actually lie on the curve.
+A point on the proof system's embedded elliptic curve (Jubjub), in affine coordinates. Only outputs of elliptic curve operations (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`) are guaranteed to actually lie on the curve.
 
 ### Definition
 
 ```compact
-struct NativePoint {
+struct JubjubPoint {
   x: Field;
   y: Field;
 }
@@ -159,24 +159,24 @@ While direct field access (`.x`, `.y`) currently works, the preferred approach i
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `nativePointX(p)` | `circuit nativePointX(p: NativePoint): Field;` | Get the X coordinate |
-| `nativePointY(p)` | `circuit nativePointY(p: NativePoint): Field;` | Get the Y coordinate |
+| `jubjubPointX(p)` | `circuit jubjubPointX(p: JubjubPoint): Field;` | Get the X coordinate |
+| `jubjubPointY(p)` | `circuit jubjubPointY(p: JubjubPoint): Field;` | Get the Y coordinate |
 
 ### Constructor
 
 ```compact
-circuit constructNativePoint(x: Field, y: Field): NativePoint;
+circuit constructJubjubPoint(x: Field, y: Field): JubjubPoint;
 ```
 
-Note: This creates a `NativePoint` from raw field values. The resulting point is not checked to lie on the curve.
+Note: This creates a `JubjubPoint` from raw field values. The resulting point is not checked to lie on the curve.
 
 ### Default Value
 
-`default<NativePoint>` is `{ x: 0, y: 0 }` (Compact struct default — not the curve identity element; do not use as a curve point).
+`default<JubjubPoint>` is `{ x: 0, y: 0 }` (Compact struct default — not the curve identity element; do not use as a curve point).
 
-### Deprecation Note
+### Migration Note
 
-`CurvePoint` is the old name for this type. It is deprecated. Use `NativePoint` in all new code. The elliptic curve functions (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`) now take and return `NativePoint`.
+This type was previously named `CurvePoint` (oldest) and then `NativePoint`. Both old names are deprecated. Use `JubjubPoint` in all new code. The elliptic curve functions (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`) now take and return `JubjubPoint`. The accessor functions were correspondingly renamed from `nativePointX`/`nativePointY`/`constructNativePoint` to `jubjubPointX`/`jubjubPointY`/`constructJubjubPoint`.
 
 ### Code Example
 
@@ -184,9 +184,9 @@ Note: This creates a `NativePoint` from raw field values. The resulting point is
 const g = ecMulGenerator(1);                          // generator point
 const pk = ecMul(g, secretKey);                        // public key derivation
 const combined = ecAdd(pk, hashToCurve<Bytes<32>>(data));
-const x = nativePointX(combined);                      // get X coordinate
-const y = nativePointY(combined);                      // get Y coordinate
-const manual = constructNativePoint(x, y);             // reconstruct from coordinates
+const x = jubjubPointX(combined);                      // get X coordinate
+const y = jubjubPointY(combined);                      // get Y coordinate
+const manual = constructJubjubPoint(x, y);             // reconstruct from coordinates
 ```
 
 ### TypeScript Representation

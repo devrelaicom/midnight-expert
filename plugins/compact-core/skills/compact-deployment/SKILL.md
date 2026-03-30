@@ -28,23 +28,25 @@ compact compile  setNetworkId()   deployContract()   callTx.<name>()
 
 | Purpose | Package | Version |
 |---------|---------|---------|
-| **Contract SDK** | `@midnight-ntwrk/midnight-js-contracts` | 3.0.0 |
-| | `@midnight-ntwrk/midnight-js-types` | 3.0.0 |
-| | `@midnight-ntwrk/compact-runtime` | 0.14.0 |
-| | `@midnight-ntwrk/compact-js` | (match SDK) |
-| **Providers** | `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 3.0.0 |
-| | `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 3.0.0 |
-| | `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 3.0.0 |
-| | `@midnight-ntwrk/midnight-js-level-private-state-provider` | 3.0.0 |
-| | `@midnight-ntwrk/midnight-js-network-id` | 3.0.0 |
-| **Wallet SDK** | `@midnight-ntwrk/wallet-sdk-facade` | 1.0.0 |
-| | `@midnight-ntwrk/wallet-sdk-hd` | 3.0.0 |
-| | `@midnight-ntwrk/wallet-sdk-shielded` | 1.0.0 |
-| | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 1.0.0 |
-| | `@midnight-ntwrk/wallet-sdk-dust-wallet` | 1.0.0 |
-| | `@midnight-ntwrk/wallet-sdk-address-format` | 3.0.0 |
+| **Contract SDK** | `@midnight-ntwrk/midnight-js-contracts` | 4.0.2 |
+| | `@midnight-ntwrk/midnight-js-types` | 4.0.2 |
+| | `@midnight-ntwrk/compact-runtime` | 0.15.0 |
+| | `@midnight-ntwrk/compact-js` | 2.5.0 |
+| **Providers** | `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.0.2 |
+| | `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 4.0.2 |
+| | `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.2 |
+| | `@midnight-ntwrk/midnight-js-level-private-state-provider` | 4.0.2 |
+| | `@midnight-ntwrk/midnight-js-network-id` | 4.0.2 |
+| **Wallet SDK** | `@midnight-ntwrk/wallet-sdk-facade` | 3.0.0 |
+| | `@midnight-ntwrk/wallet-sdk-hd` | 3.0.1 |
+| | `@midnight-ntwrk/wallet-sdk-shielded` | 2.1.0 |
+| | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 2.1.0 |
+| | `@midnight-ntwrk/wallet-sdk-dust-wallet` | 3.0.0 |
+| | `@midnight-ntwrk/wallet-sdk-address-format` | 3.1.0 |
 | **Ledger** | `@midnight-ntwrk/ledger` | ^4.0.0 |
 | **Utilities** | `ws` | ^8.19.0 |
+
+> Versions verified on 2026-03-30 via npm registry. Use `npm view <package> version` to check for newer releases.
 
 ## Network Endpoints Quick Reference
 
