@@ -19,6 +19,28 @@ Analyze `$ARGUMENTS` to determine invocation mode:
 
 If no arguments provided and not `--interactive`, jump to Step 4. If a file path is provided, verify it exists before proceeding to Step 2. If not found, use AskUserQuestion to clarify the path.
 
+## Step 1.5 — Mechanical Verification Baseline
+
+Before any analysis, run `/verify` on the contract to establish a mechanical baseline:
+
+```bash
+/verify <file.compact>
+```
+
+If the error involves witnesses or a `.ts` file was mentioned, include it:
+
+```bash
+/verify <contract.compact> <witnesses.ts>
+```
+
+The verification result tells you immediately:
+- Does the contract compile? (compilation errors)
+- Do the types match? (type mismatches between contract and witness)
+- Does the contract execute correctly? (runtime errors)
+- Are structural patterns correct? (witness name matching, return tuple shape, etc.)
+
+Pass the verification result as context to the subsequent analysis steps. If `/verify` identifies the issue directly, present the finding to the user — no further investigation may be needed.
+
 ## Step 2 — Concurrent Analysis
 
 Only when file path is provided. Dispatch two Task agents in parallel in a single message:

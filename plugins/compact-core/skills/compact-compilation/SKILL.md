@@ -147,3 +147,21 @@ With `--skip-zk`, all outputs are produced **except** the `keys/` directory. Typ
 | ZKIR format, prover/verifier keys, circuit metrics, --skip-zk | `references/zkir-and-keys.md` |
 | Generated TypeScript types, Contract class, type mapping | `references/typescript-bindings.md` |
 | Compiler error categories, interpretation, debugging strategy | `references/compiler-errors.md` |
+
+## Verification
+
+Compiled output can be verified through the full PLONK proof pipeline using `/verify`. This runs the contract through the real PLONK verifier — the same verification path the Midnight network uses — confirming that constraints are satisfied, transcript encoding is correct, and proofs are valid.
+
+To verify a compiled contract:
+
+```bash
+/verify <contract.compact>
+```
+
+To verify ZK proof validity specifically:
+
+```bash
+/verify "this contract passes PLONK proof verification"
+```
+
+Strongly recommend running `/verify` after any compilation, especially after changes to circuit logic or ledger interactions. The build artifacts (`.zkir`, `.bzkir`, prover/verifier keys) are used by the verification pipeline to run the real PLONK checker.
