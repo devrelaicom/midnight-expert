@@ -13,7 +13,7 @@ After running `npx create-mn-app <name> --template hello-world`:
 │   ├── cli.ts                        # Interactive CLI for testing deployed contract
 │   └── check-balance.ts              # Check wallet tNight/DUST balance
 ├── docker-compose.yml                # Proof server Docker config (port 6300)
-├── package.json                      # Node 22+, type: module, SDK 3.0 dependencies
+├── package.json                      # Node 22+, type: module, SDK 4.x dependencies
 ├── tsconfig.json                     # ES2022 target, NodeNext modules
 └── README.md
 ```
@@ -88,37 +88,39 @@ The counter uses npm workspaces — both `contract` and `counter-cli` are worksp
 
 ## SDK Package Versions
 
-These are the versions used by `create-mn-app` v0.3.19 hello-world template (as of February 2026). Versions may have been updated since — use the `midnight-get-version-info` MCP tool to check current versions:
+These are the versions used by `create-mn-app` v0.3.26 hello-world template (verified on 2026-03-30). Versions may have been updated since — use the `midnight-get-version-info` MCP tool or `npm view <package> version` to check current versions:
 
 | Package | Version |
 |---------|---------|
-| `@midnight-ntwrk/compact-runtime` | 0.14.0 |
-| `@midnight-ntwrk/compact-js` | 2.4.0 |
-| `@midnight-ntwrk/ledger-v7` | 7.0.0 |
-| `@midnight-ntwrk/midnight-js-contracts` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-level-private-state-provider` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-network-id` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-types` | 3.0.0 |
-| `@midnight-ntwrk/midnight-js-utils` | 3.0.0 |
-| `@midnight-ntwrk/wallet-sdk-facade` | 1.0.0 |
-| `@midnight-ntwrk/wallet-sdk-hd` | 3.0.0 |
-| `@midnight-ntwrk/wallet-sdk-shielded` | 1.0.0 |
-| `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 1.0.0 |
-| `@midnight-ntwrk/wallet-sdk-dust-wallet` | 1.0.0 |
+| `@midnight-ntwrk/compact-runtime` | 0.15.0 |
+| `@midnight-ntwrk/compact-js` | 2.5.0 |
+| `@midnight-ntwrk/ledger-v7` | 7.0.3 |
+| `@midnight-ntwrk/midnight-js-contracts` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-level-private-state-provider` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-network-id` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-types` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-utils` | 4.0.2 |
+| `@midnight-ntwrk/wallet-sdk-facade` | 3.0.0 |
+| `@midnight-ntwrk/wallet-sdk-hd` | 3.0.1 |
+| `@midnight-ntwrk/wallet-sdk-shielded` | 2.1.0 |
+| `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 2.1.0 |
+| `@midnight-ntwrk/wallet-sdk-dust-wallet` | 3.0.0 |
 
 Dev dependencies: `typescript ^5.9.3`, `tsx ^4.21.0`, `@types/node ^22.0.0`
 
-Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.29.0).
+Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.30.0).
 
 ## Toolchain Versions
 
+Verified on 2026-03-30. Use `compact --version` and `npm view create-mn-app version` to check for newer releases.
+
 | Component | Version | Install/Update |
 |-----------|---------|----------------|
-| Compact compiler | compactc-v0.29.0 | `compact update` |
-| create-mn-app | 0.3.19 | `npx create-mn-app@latest` |
+| Compact compiler | compactc-v0.30.0 | `compact update` |
+| create-mn-app | 0.3.26 | `npx create-mn-app@latest` |
 | Proof server Docker image | midnightntwrk/proof-server:7.0.0 | Via Docker |
 | Node.js | 22+ required | https://nodejs.org/ |
 
