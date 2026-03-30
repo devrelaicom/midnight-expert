@@ -141,8 +141,8 @@ See `references/ci-workflows.md` for the full YAML for both workflows.
 
 | Topic | Reference |
 |-------|-----------|
-| Annotated `biome.json` template with all rule settings | `references/biome-config.md` |
-| `.editorconfig` template and cross-editor notes | `references/editorconfig.md` |
-| Husky setup, hook scripts, and `lint-staged` integration | `references/husky-hooks.md` |
-| Full CI workflow YAML for `checks.yml` and `test.yml` | `references/ci-workflows.md` |
-| ESLint/Prettier migration walkthrough and known gaps | `references/migration-guide.md` |
+| Annotated `biome.json` template with all rule settings, `.editorconfig`, migration procedure | `references/biome-config.md` |
+| Vitest config, `globalSetup` for Compact compilation, simulator dependency setup | `references/vitest-config.md` |
+| Playwright config (always headless), browser setup, timeouts for blockchain ops | `references/playwright-config.md` |
+| Husky setup, pre-commit and pre-push hook scripts | `references/husky-hooks.md` |
+| Full CI workflow YAML for `checks.yml` and `test.yml`, path filtering | `references/ci-workflows.md` |

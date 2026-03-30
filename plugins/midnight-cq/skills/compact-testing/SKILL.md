@@ -271,7 +271,7 @@ contract uses, then assert the circuit output matches.
 
 | Topic | Reference |
 |-------|-----------|
-| Full annotated test examples (Ownable, FungibleToken, ZOwnablePK) | `references/test-examples.md` |
-| `createSimulator()` config, simulator class anatomy, witness factory | `references/simulator-setup.md` |
-| Mock contract structure, `isInit` param, re-exported types | `references/mock-contracts.md` |
-| ZK commitment verification, `persistentHash`, local recomputation | `references/zk-commitments.md` |
+| Full annotated test examples (Ownable, FungibleToken, ZOwnablePK) — good vs bad pairs | `references/test-examples.md` |
+| `createSimulator()` config, circuit proxies, caller simulation, state access | `references/simulator-api.md` |
+| Mock contract structure, `isInit` pattern, re-exported types and ledger fields | `references/mock-patterns.md` |
+| Witness file structure, `WitnessContext`, overrides, private state injection | `references/witness-testing.md` |
