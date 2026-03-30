@@ -27,7 +27,11 @@ description: >-
 
   Example 5: A claim needs multiple methods — the orchestrator dispatches
   agents concurrently, cross-references findings, synthesizes a combined verdict.
-skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk
+
+  Example 6: User runs /verify "constrain_bits enforces 8-bit range" — the
+  orchestrator classifies this as a ZKIR opcode claim, dispatches the
+  zkir-checker agent to compile a test contract and verify through the PLONK checker.
+skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir
 model: sonnet
 color: green
 ---
@@ -54,6 +58,11 @@ You are the Midnight verification orchestrator.
 - Devnet E2E → dispatch `midnight-verify:sdk-tester`
 - Source inspection → dispatch `midnight-verify:source-investigator`
 - Package checks → dispatch `devs:deps-maintenance` (fallback: run `npm view` directly)
+
+**ZKIR verification:**
+- Checker verification → dispatch `midnight-verify:zkir-checker`
+- Circuit inspection → dispatch `midnight-verify:zkir-checker`
+- Regression sweep → dispatch `midnight-verify:zkir-checker` with instruction to load `midnight-verify:zkir-regression`
 
 **When multiple methods are needed, dispatch agents concurrently.** They are independent and can run in parallel.
 

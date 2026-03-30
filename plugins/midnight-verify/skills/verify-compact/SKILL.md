@@ -6,7 +6,7 @@ description: >-
   execution (compile+run), source inspection, or both. Loaded by the verifier
   agent alongside the hub skill. Provides the claim type → method routing table
   and guidance on negative testing.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Compact Claim Classification
@@ -31,6 +31,9 @@ When you receive a Compact-related claim, classify it using this table to determ
 | Architecture/design rationale | "Compact uses Field as the base numeric type because..." | **source-investigator** |
 | Cross-component behavior | "Compiled output is compatible with compact-runtime v0.X" | **Both (concurrent)** |
 | Performance claims | "MerkleTree operations cost more gates than Map" | **contract-writer** (can measure circuit metrics at compile time) |
+| Circuit constraint structure | "this contract produces N constraints" | **zkir-checker** (inspection) |
+| Compiled ZKIR properties | "disclosure compiles to declare_pub_input" | **zkir-checker** (inspection) |
+| Constraint correctness | "guard circuit correctly constrains authority hash" | **zkir-checker** (checker) + **contract-writer** (concurrent) |
 
 **When in doubt:** If the claim involves observable runtime behavior, prefer **contract-writer**. If it's about what exists in the codebase or how something is implemented internally, prefer **source-investigator**. If it could benefit from both, dispatch both concurrently.
 

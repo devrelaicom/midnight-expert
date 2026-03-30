@@ -135,6 +135,18 @@ compact compile .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<cla
 
 Capture the full compiler output (stdout and stderr) regardless of success or failure.
 
+## Step 4.5: Extract ZKIR (Optional)
+
+If the verifier requested ZKIR-level evidence alongside execution results, locate the `.zkir` JSON in the compilation output. It is typically found at:
+
+```
+<contract-name>/build/zkir/<circuit-name>.zkir
+```
+
+If found, note the path in your report so the verifier can dispatch the `zkir-checker` agent if needed. Do NOT run the checker yourself — your job is compilation and JS runtime execution.
+
+If no `.zkir` output is found (some compilation modes may not produce it), note this in your report.
+
 ## Step 5: Write and Run the Runner Script
 
 **Create the runner script in the job directory:**
