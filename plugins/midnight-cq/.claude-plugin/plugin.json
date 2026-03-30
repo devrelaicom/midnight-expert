@@ -1,0 +1,26 @@
+{
+  "name": "midnight-cq",
+  "version": "0.1.0",
+  "description": "Code quality tooling for Midnight Network projects — linting, formatting, type checking, testing, Git hooks, and CI workflows.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "compact",
+    "biome",
+    "vitest",
+    "playwright",
+    "testing",
+    "linting",
+    "formatting",
+    "ci",
+    "github-actions",
+    "husky",
+    "code-quality"
+  ]
+}
