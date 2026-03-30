@@ -394,18 +394,19 @@ Verify that every standard library call in the contract actually exists in `Comp
   const coin: ShieldedCoinInfo = getCoinDetails();
   ```
 
-- [ ] **`CurvePoint` or `EllipticCurvePoint` do not exist.** The correct type name is `NativePoint`. Older documentation referenced `CurvePoint` or `EllipticCurvePoint`, but these have been superseded.
+- [ ] **`CurvePoint`, `NativePoint`, or `EllipticCurvePoint` do not exist.** The correct type name is `JubjubPoint`. Older documentation referenced `CurvePoint`, then `NativePoint`, but both have been superseded.
 
   ```compact
-  // BAD — CurvePoint and EllipticCurvePoint are not valid types
+  // BAD — CurvePoint, NativePoint, and EllipticCurvePoint are not valid types
   const point: CurvePoint = getPoint();
+  const point: NativePoint = getPoint();
   const point: EllipticCurvePoint = getPoint();
 
   // GOOD — use the current type name
-  const point: NativePoint = getPoint();
+  const point: JubjubPoint = getPoint();
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show an unknown type error. `midnight-get-latest-syntax` confirms `NativePoint` as the current type name.
+  > **Tool:** `midnight-compile-contract` output will show an unknown type error. `midnight-get-latest-syntax` confirms `JubjubPoint` as the current type name.
 
 ## Compact Idioms Checklist
 
