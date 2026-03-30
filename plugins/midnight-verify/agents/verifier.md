@@ -31,7 +31,12 @@ description: >-
   Example 6: User runs /verify "constrain_bits enforces 8-bit range" — the
   orchestrator classifies this as a ZKIR opcode claim, dispatches the
   zkir-checker agent to compile a test contract and verify through the PLONK checker.
-skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir
+
+  Example 7: User runs /verify contracts/counter.compact src/witnesses.ts —
+  the orchestrator classifies this as a witness verification, dispatches the
+  witness-verifier agent to compile, type-check, run structural analysis, and
+  execute the contract with the witness.
+skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness
 model: sonnet
 color: green
 ---
@@ -44,7 +49,9 @@ You are the Midnight verification orchestrator.
 2. Based on the claim domain:
    - Compact claims → load `midnight-verify:verify-compact`
    - SDK/TypeScript claims → load `midnight-verify:verify-sdk`
-   - Cross-domain → load both
+   - ZKIR claims → load `midnight-verify:verify-zkir`
+   - Witness claims → load `midnight-verify:verify-witness`
+   - Cross-domain → load applicable domain skills
 3. Follow the hub skill's process exactly.
 
 ## Dispatching Sub-Agents
@@ -63,6 +70,10 @@ You are the Midnight verification orchestrator.
 - Checker verification → dispatch `midnight-verify:zkir-checker`
 - Circuit inspection → dispatch `midnight-verify:zkir-checker`
 - Regression sweep → dispatch `midnight-verify:zkir-checker` with instruction to load `midnight-verify:zkir-regression`
+
+**Witness verification:**
+- Witness verification → dispatch `midnight-verify:witness-verifier`
+- Witness + ZKIR → dispatch `midnight-verify:witness-verifier` first, then pass build output path to `midnight-verify:zkir-checker` (sequential)
 
 **When multiple methods are needed, dispatch agents concurrently.** They are independent and can run in parallel.
 
