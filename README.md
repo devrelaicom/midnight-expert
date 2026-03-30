@@ -20,7 +20,7 @@ The primary plugin. Provides 18 skills, 2 agents, and a review command covering 
 - **Optimize** — circuit costs, gate counts, gas model, proving time tradeoffs
 - **Compile and deploy** — compiler pipeline, artifacts, provider config, wallet setup, network connections
 - **Test** — Vitest with the Simulator pattern, createCircuitContext, multi-user test scenarios
-- **Review** — 11-category code review across privacy, security, tokens, concurrency, performance, and more
+- **Review** — 10-category code review across privacy, security, tokens, concurrency, performance, and more
 
 ```
 /install-plugin compact-core
