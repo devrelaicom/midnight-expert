@@ -6,7 +6,7 @@ description: >-
   dispatches sub-agents (contract-writer and/or source-investigator) based
   on the domain skill's routing, and synthesizes final verdicts. Always loaded
   first by the verifier agent.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Verification Hub
@@ -23,7 +23,8 @@ Determine what domain the claim belongs to:
 |---|---|---|
 | **Compact language** | Compact syntax, stdlib functions, types, disclosure, compiler behavior, patterns, privacy, circuit costs | Load `midnight-verify:verify-compact` |
 | **SDK/TypeScript** | API signatures, @midnight-ntwrk packages, import paths, type definitions, providers, DApp connector | Load `midnight-verify:verify-sdk` |
-| **Cross-domain** | Spans both Compact and SDK, or protocol/architecture | Load both domain skills |
+| **ZKIR** | ZKIR opcodes, circuit constraints, field elements, proof data, `.zkir` files, transcript protocol, checker behavior, circuit structure | Load `midnight-verify:verify-zkir` |
+| **Cross-domain** | Spans Compact and SDK, Compact and ZKIR, or protocol/architecture | Load applicable domain skills |
 
 ### 2. Load the Domain Skill
 
@@ -38,6 +39,8 @@ Based on the domain skill's routing:
 - **Type-checking needed** → dispatch `midnight-verify:type-checker` agent with the claim and what type assertion to make
 - **Devnet E2E needed** → dispatch `midnight-verify:sdk-tester` agent with the claim and what behavior to observe
 - **Package/version check needed** → dispatch `devs:deps-maintenance` agent with the package name and version claim. If deps-maintenance is not available (plugin not installed), run `npm view` directly as a fallback.
+- **ZKIR checker verification needed** → dispatch `midnight-verify:zkir-checker` agent with the claim and whether to use the checker method, inspection method, or both
+- **ZKIR regression sweep needed** → dispatch `midnight-verify:zkir-checker` agent and instruct it to load the `midnight-verify:zkir-regression` skill
 - **Multiple methods needed** → dispatch applicable agents **concurrently** (they are independent and can run in parallel)
 
 When dispatching, pass:
@@ -71,8 +74,17 @@ Collect the sub-agent report(s) and produce the final verdict.
 | **Refuted** | (package-verified) | Package doesn't exist or version doesn't match |
 | **Inconclusive** | (devnet unavailable) | Claim needs E2E testing but devnet is not running |
 | **Inconclusive** | (type-check insufficient) | Types match but claim is about runtime behavior — can't verify without devnet |
+| **Confirmed** | (zkir-checked) | WASM checker accepted the circuit with expected inputs |
+| **Confirmed** | (zkir-checked + tested) | Both WASM checker and Compact JS runtime agree |
+| **Confirmed** | (zkir-inspected) | Circuit structure analysis confirms the claim |
+| **Confirmed** | (zkir-checked + source-verified) | Checker result corroborated by source inspection |
+| **Refuted** | (zkir-checked) | WASM checker produced unexpected accept/reject for the claim |
+| **Refuted** | (zkir-inspected) | Circuit structure contradicts the claim |
+| **Inconclusive** | (zkir-checker unavailable) | `@midnight-ntwrk/zkir-v2` could not be installed or loaded |
 
 **When sub-agents disagree:** Execution evidence wins. The code ran and produced a result — that's more authoritative than interpreting source. But you MUST note the disagreement in your report so the user is aware.
+
+**When WASM checker and Compact JS runtime disagree:** The checker is more authoritative for constraint behavior (it operates at the proof system level). The JS runtime is more authoritative for output values (it runs the actual contract logic). Flag the disagreement in your report.
 
 **Inconclusive verdicts must explain:**
 - Why the claim couldn't be tested via execution
