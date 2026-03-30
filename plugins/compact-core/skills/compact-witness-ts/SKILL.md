@@ -158,3 +158,18 @@ For Contract class details, circuits vs impureCircuits, and the ledger function,
 | Complete type mapping table, CompactType\<T\>, runtime validation, casting rules | `references/type-mappings.md` |
 | WitnessContext API, return tuples, common patterns, state transitions | `references/witness-implementation.md` |
 | Contract class, circuits vs impureCircuits, pureCircuits, ledger() | `references/contract-runtime.md` |
+
+## Verification
+
+Witness implementations can be mechanically verified against their contract declarations:
+
+```bash
+/verify <contract.compact> <witnesses.ts>
+```
+
+This verifies:
+- **Type correctness** — the witness TypeScript type-checks against the compiled contract's generated `Witnesses` type
+- **Structural patterns** — name matching (exact casing), return tuple shape (`[PrivateState, ReturnValue]`), WitnessContext first parameter, private state immutability, no side effects
+- **Behavioral correctness** — the contract executes successfully with the witness implementation
+
+Strongly recommend running `/verify` after writing or modifying any witness implementation. Do not consider a witness implementation complete until verification passes.

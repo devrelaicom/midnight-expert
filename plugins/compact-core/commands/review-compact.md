@@ -1,10 +1,10 @@
 ---
-description: Comprehensive review of Compact smart contract code covering 11 categories including privacy, security, tokens, concurrency, performance, and more. Supports parallel execution via agent teams (when enabled) or concurrent subagents.
+description: Comprehensive review of Compact smart contract code covering 10 categories including privacy, security, tokens, concurrency, performance, and more, plus mechanical verification via /verify. Supports parallel execution via agent teams (when enabled) or concurrent subagents.
 allowed-tools: Bash, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, ToolSearch
 argument-hint: "[path/to/contract.compact or directory]"
 ---
 
-Review Compact smart contract code across 11 review categories using parallel reviewer agents. Privacy findings are always shown first.
+Review Compact smart contract code across 10 review categories using parallel reviewer agents. Privacy findings are always shown first.
 
 ## Review Categories
 
@@ -14,11 +14,10 @@ Review Compact smart contract code across 11 review categories using parallel re
 4. Concurrency & Contention
 5. Compilation & Type Safety
 6. Performance & Circuit Efficiency
-7. Witness-Contract Consistency
-8. Architecture, State Design & Composability
-9. Code Quality & Best Practices
-10. Testing Adequacy
-11. Documentation
+7. Architecture, State Design & Composability
+8. Code Quality & Best Practices
+9. Testing Adequacy
+10. Documentation
 
 ## Step 1: Identify Files to Review
 
@@ -35,7 +34,7 @@ Collect the file list and present it to the user for confirmation.
 
 ## Step 1.5: Run Shared MCP Tools
 
-After identifying the files, run these 4 MCP tools against the primary `.compact` contract file. These outputs will be passed to all 11 reviewer agents as shared evidence.
+After identifying the files, run these 4 MCP tools against the primary `.compact` contract file. These outputs will be passed to all 10 reviewer agents as shared evidence.
 
 Use the ToolSearch tool to load the Midnight MCP tools, then call each one:
 
@@ -53,6 +52,8 @@ Use the ToolSearch tool to load the Midnight MCP tools, then call each one:
 
 If any tool call fails (e.g., MCP server unavailable), note the failure and proceed — the review can still run with partial or no tool evidence. Do not block the review on tool failures.
 
+5. **Note witness files**: If any `.ts` files matching witness patterns were found in Step 1, record their paths for the verification step.
+
 Store all four outputs for injection into reviewer prompts in the next steps.
 
 ## Step 2: Check for Agent Teams
@@ -69,7 +70,7 @@ If `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set (not "not_set"):
 
 Create an agent team to perform the review. Tell Claude:
 
-> Create an agent team to review Compact code across 11 categories. Spawn 11 reviewer teammates, one per category. Each teammate should:
+> Create an agent team to review Compact code across 10 categories. Spawn 10 reviewer teammates, one per category. Each teammate should:
 >
 > 1. Invoke the `compact-core:compact-review` skill
 > 2. Read their assigned reference file from the Category Reference Map
@@ -85,11 +86,10 @@ Create an agent team to perform the review. Tell Claude:
 > - Teammate 4 — "Concurrency & Contention" → read `concurrency-review` reference
 > - Teammate 5 — "Compilation & Type Safety" → read `compilation-review` reference
 > - Teammate 6 — "Performance & Circuit Efficiency" → read `performance-review` reference
-> - Teammate 7 — "Witness-Contract Consistency" → read `witness-consistency-review` reference
-> - Teammate 8 — "Architecture, State Design & Composability" → read `architecture-review` reference
-> - Teammate 9 — "Code Quality & Best Practices" → read `code-quality-review` reference
-> - Teammate 10 — "Testing Adequacy" → read `testing-review` reference
-> - Teammate 11 — "Documentation" → read `documentation-review` reference
+> - Teammate 7 — "Architecture, State Design & Composability" → read `architecture-review` reference
+> - Teammate 8 — "Code Quality & Best Practices" → read `code-quality-review` reference
+> - Teammate 9 — "Testing Adequacy" → read `testing-review` reference
+> - Teammate 10 — "Documentation" → read `documentation-review` reference
 >
 >
 > **Shared MCP Tool Evidence:**
@@ -107,7 +107,7 @@ Proceed to Step 4 when all teammates finish.
 
 If agent teams are NOT available:
 
-You MUST launch ALL 11 reviewer agents in a **SINGLE message** using 11 Agent tool calls. This ensures they run concurrently. Do NOT call them sequentially — that defeats the purpose of parallelization.
+You MUST launch ALL 10 reviewer agents in a **SINGLE message** using 10 Agent tool calls. This ensures they run concurrently. Do NOT call them sequentially — that defeats the purpose of parallelization.
 
 In ONE message, make ALL of these Agent tool calls simultaneously:
 
@@ -204,21 +204,6 @@ Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evalua
 **Agent call 7:**
 ```
 subagent_type: "compact-core:reviewer"
-description: "Review witness consistency"
-prompt: "You are reviewing category: Witness-Contract Consistency.
-Files to review: [INSERT FILE LIST].
-Invoke the compact-core:compact-review skill. Read the witness-consistency-review reference from the Category Reference Map. Apply every checklist item systematically. Report findings using the structured output format with severity levels (Critical, High, Medium, Low, Suggestions). End with Positive Highlights.
-
-Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evaluating checklist items):
-- Compilation result: [INSERT COMPILE_RESULT]
-- Structural analysis: [INSERT STRUCTURE_RESULT]
-- Contract analysis: [INSERT ANALYSIS_RESULT]
-- Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
-```
-
-**Agent call 8:**
-```
-subagent_type: "compact-core:reviewer"
 description: "Review architecture & state"
 prompt: "You are reviewing category: Architecture, State Design & Composability.
 Files to review: [INSERT FILE LIST].
@@ -231,7 +216,7 @@ Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evalua
 - Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
-**Agent call 9:**
+**Agent call 8:**
 ```
 subagent_type: "compact-core:reviewer"
 description: "Review code quality"
@@ -246,7 +231,7 @@ Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evalua
 - Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
-**Agent call 10:**
+**Agent call 9:**
 ```
 subagent_type: "compact-core:reviewer"
 description: "Review testing adequacy"
@@ -261,7 +246,7 @@ Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evalua
 - Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
-**Agent call 11:**
+**Agent call 10:**
 ```
 subagent_type: "compact-core:reviewer"
 description: "Review documentation"
@@ -276,7 +261,23 @@ Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evalua
 - Latest syntax reference: [INSERT SYNTAX_REFERENCE]"
 ```
 
-**CRITICAL: All 11 Agent tool calls MUST be in a single message to ensure concurrent execution.**
+**CRITICAL: All 10 Agent tool calls MUST be in a single message to ensure concurrent execution.**
+
+## Step 3.5: Mechanical Verification
+
+After all reviewer agents complete, run `/verify` on the contract for mechanical verification:
+
+```bash
+/verify <contract.compact>
+```
+
+If witness `.ts` files were identified in Step 1, include them:
+
+```bash
+/verify <contract.compact> <witnesses.ts>
+```
+
+This provides authoritative verification of compilation, type correctness, witness consistency, and behavioral correctness. Include the verification results in the consolidated report.
 
 ## Step 4: Consolidated Report
 
@@ -321,6 +322,14 @@ After ALL reviewers complete, produce the consolidated report.
 ---
 
 [... remaining categories ...]
+
+---
+
+## Mechanical Verification
+
+**Contract:** [file path]
+**Witness:** [file path, if applicable]
+**Result:** [/verify output — verdict and evidence summary]
 
 ---
 

@@ -43,6 +43,29 @@ First determine: **"Is this a code bug or a compatibility issue?"**
 
 **If code bug:** proceed to triage table.
 
+## Step 0 — Mechanical Verification Baseline
+
+Before any investigation, run `/verify` on the contract:
+
+```bash
+/verify <file.compact>
+```
+
+If the issue involves witnesses:
+
+```bash
+/verify <contract.compact> <witnesses.ts>
+```
+
+The verification result immediately narrows the problem space:
+- **Compilation failure** → the issue is in the Compact source (proceed to triage table with compiler error)
+- **Type check failure** → the witness types don't match the contract (check type mappings)
+- **Structural check failure** → witness patterns are wrong (name mismatch, missing tuple wrapper, etc.)
+- **Execution failure** → the contract logic fails at runtime (proceed to hypothesis phase)
+- **All pass** → the contract is mechanically correct; the issue may be environmental or integration-related
+
+If `/verify` identifies the issue directly, present the finding — no further investigation may be needed.
+
 ## Symptom-Driven Triage Table
 
 | Symptom | Route To Skill | Investigation Phase |

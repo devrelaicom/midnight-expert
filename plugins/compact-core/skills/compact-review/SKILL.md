@@ -1,6 +1,6 @@
 ---
 name: compact-review
-description: This skill should be used when reviewing Compact smart contract code, TypeScript witness implementations, or test files for a Midnight project. Applies when a user asks to "review my Compact contract", "audit this smart contract", "check my Midnight code", or "run a code review checklist". Provides category-specific checklists covering privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, witness-contract consistency, architecture, code quality, testing, and documentation.
+description: This skill should be used when reviewing Compact smart contract code, TypeScript witness implementations, or test files for a Midnight project. Applies when a user asks to "review my Compact contract", "audit this smart contract", "check my Midnight code", or "run a code review checklist". Provides category-specific checklists covering privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, architecture, code quality, testing, and documentation, plus mechanical verification via /verify.
 version: 0.1.0
 ---
 
@@ -22,11 +22,26 @@ The assigned review category determines which reference file to load. Load the r
 | Concurrency & Contention | `references/concurrency-review.md` | Read-then-write patterns, Counter ops, transaction conflicts |
 | Compilation & Type Safety | `references/compilation-review.md` | Deprecated syntax, return types, disclosure errors, casts, generics |
 | Performance & Circuit Efficiency | `references/performance-review.md` | Proof cost, ledger reads, MerkleTree depth, redundant computation, loops |
-| Witness-Contract Consistency | `references/witness-consistency-review.md` | Name matching, type mappings, private state patterns, WitnessContext |
 | Architecture, State Design & Composability | `references/architecture-review.md` | ADT selection, depth planning, visibility, modules, decomposition |
 | Code Quality & Best Practices | `references/code-quality-review.md` | Naming, complexity, dead code, stdlib hallucinations, idioms |
 | Testing Adequacy | `references/testing-review.md` | Edge cases, negative tests, private state testing, witness mocks |
 | Documentation | `references/documentation-review.md` | Circuit docs, witness contracts, ledger semantics |
+
+## Verification
+
+Every review MUST include running `/verify` on the contract:
+
+```bash
+/verify <contract.compact>
+```
+
+For contracts with TypeScript witness implementations:
+
+```bash
+/verify <contract.compact> <witnesses.ts>
+```
+
+Verification results are authoritative for compilation correctness, type safety, witness consistency, and behavioral correctness. Include verification results alongside checklist findings in the review report.
 
 ## Severity Classification
 

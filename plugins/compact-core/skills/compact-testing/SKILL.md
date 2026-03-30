@@ -120,3 +120,19 @@ See `references/simulator-pattern.md` for the full pattern with multi-user suppo
 | Token contract tests (advanced) | `examples/TokenSimulator.test.ts` | Token transfers, balance checks, error testing |
 | Pure circuit tests | `examples/PureCircuits.test.ts` | Pure circuits, no state, deterministic outputs |
 | Vitest configuration | `examples/vitest.config.ts` | CommonJS interop, test runner setup |
+
+## Verification
+
+Testing MUST include running `/verify` on the contract under test:
+
+```bash
+/verify <contract.compact>
+```
+
+For contracts with witnesses:
+
+```bash
+/verify <contract.compact> <witnesses.ts>
+```
+
+This validates the full compilation, execution, and proof pipeline. Unit tests verify specific behaviors; `/verify` confirms the entire contract is structurally sound and produces valid proofs. Both are required — unit tests alone are not sufficient.
