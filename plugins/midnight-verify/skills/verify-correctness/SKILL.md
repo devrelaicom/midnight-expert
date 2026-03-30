@@ -6,7 +6,7 @@ description: >-
   dispatches sub-agents (contract-writer and/or source-investigator) based
   on the domain skill's routing, and synthesizes final verdicts. Always loaded
   first by the verifier agent.
-version: 0.4.0
+version: 0.5.0
 ---
 
 # Verification Hub
@@ -24,7 +24,8 @@ Determine what domain the claim belongs to:
 | **Compact language** | Compact syntax, stdlib functions, types, disclosure, compiler behavior, patterns, privacy, circuit costs | Load `midnight-verify:verify-compact` |
 | **SDK/TypeScript** | API signatures, @midnight-ntwrk packages, import paths, type definitions, providers, DApp connector | Load `midnight-verify:verify-sdk` |
 | **ZKIR** | ZKIR opcodes, circuit constraints, field elements, proof data, `.zkir` files, transcript protocol, checker behavior, circuit structure | Load `midnight-verify:verify-zkir` |
-| **Cross-domain** | Spans Compact and SDK, Compact and ZKIR, or protocol/architecture | Load applicable domain skills |
+| **Witness** | Witness implementation, WitnessContext, private state, `[PrivateState, T]` return tuple, `.compact` + `.ts` file pair, witness declarations, type mappings | Load `midnight-verify:verify-witness` |
+| **Cross-domain** | Spans Compact and SDK, Compact and ZKIR, Witness and ZKIR, or protocol/architecture | Load applicable domain skills |
 
 ### 2. Load the Domain Skill
 
@@ -41,6 +42,8 @@ Based on the domain skill's routing:
 - **Package/version check needed** → dispatch `devs:deps-maintenance` agent with the package name and version claim. If deps-maintenance is not available (plugin not installed), run `npm view` directly as a fallback.
 - **ZKIR checker verification needed** → dispatch `midnight-verify:zkir-checker` agent with the claim and whether to use the checker method, inspection method, or both
 - **ZKIR regression sweep needed** → dispatch `midnight-verify:zkir-checker` agent and instruct it to load the `midnight-verify:zkir-regression` skill
+- **Witness verification needed** → dispatch `midnight-verify:witness-verifier` agent with the claim and both file paths (if provided)
+- **Witness + ZKIR verification needed** → dispatch `midnight-verify:witness-verifier` first (it compiles and verifies), then pass the build output path to `midnight-verify:zkir-checker` for PLONK verification. These are sequential, not concurrent.
 - **Multiple methods needed** → dispatch applicable agents **concurrently** (they are independent and can run in parallel)
 
 When dispatching, pass:
@@ -81,6 +84,11 @@ Collect the sub-agent report(s) and produce the final verdict.
 | **Refuted** | (zkir-checked) | WASM checker produced unexpected accept/reject for the claim |
 | **Refuted** | (zkir-inspected) | Circuit structure contradicts the claim |
 | **Inconclusive** | (zkir-checker unavailable) | `@midnight-ntwrk/zkir-v2` could not be installed or loaded |
+| **Confirmed** | (witness-verified) | Type check + structural checklist + execution all pass |
+| **Confirmed** | (witness-verified + tested) | Local verification + devnet E2E both pass |
+| **Confirmed** | (witness-verified + zkir-checked) | Witness verification + PLONK proof valid |
+| **Refuted** | (witness-verified) | Type check, structural check, or execution failed |
+| **Inconclusive** | (devnet unavailable) | Local witness verification passed but devnet E2E needed and unavailable |
 
 **When sub-agents disagree:** Execution evidence wins. The code ran and produced a result — that's more authoritative than interpreting source. But you MUST note the disagreement in your report so the user is aware.
 

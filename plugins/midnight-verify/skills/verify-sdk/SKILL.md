@@ -7,7 +7,7 @@ description: >-
   package checks. Handles both claims about the SDK API itself and
   verification of user code that uses the SDK. Loaded by the verifier
   agent alongside the hub skill.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # SDK Claim Classification
@@ -40,7 +40,7 @@ When you receive an SDK-related claim, classify it using this table to determine
 | Claim Type | Example | Dispatch |
 |---|---|---|
 | DApp code type-correctness | "This provider setup code is valid" | **type-checker** |
-| Witness implementation | "This witness correctly implements the contract interface" | **type-checker** (+ **contract-writer** for the Compact side) |
+| Witness implementation | "This witness correctly implements the contract interface" | **witness-verifier** |
 | Provider configuration | "This provider config connects to devnet correctly" | **type-checker** + **sdk-tester** |
 | Import usage patterns | "This file's SDK imports are correct" | **type-checker** |
 | Transaction handling code | "This error handling catches CallTxFailedError" | **type-checker** |
