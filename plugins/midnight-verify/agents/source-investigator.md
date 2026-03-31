@@ -23,6 +23,11 @@ description: >-
   Example 5: Claim "CoinCommitment = Hash<(CoinInfo, CoinPublicKey)>" — searches
   midnightntwrk/midnight-ledger coin-structure crate for the CoinCommitment
   type definition. Uses verify-by-ledger-source for Rust crate-level routing.
+
+  Example 6: Claim "The Compact compiler is written in Scheme" — searches
+  LFDT-Minokawa/compact for the compiler source code, examines file
+  extensions and directory structure. Uses the general verify-by-source
+  skill (tooling source claims route to existing repos).
 skills: midnight-verify:verify-by-source, midnight-verify:verify-by-wallet-source, midnight-verify:verify-by-ledger-source
 model: sonnet
 color: blue
