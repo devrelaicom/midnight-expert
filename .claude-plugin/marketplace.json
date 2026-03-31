@@ -40,6 +40,10 @@
     {
       "name": "midnight-wallet",
       "source": "./plugins/midnight-wallet"
+    },
+    {
+      "name": "midnight-fact-check",
+      "source": "./plugins/midnight-fact-check"
     }
   ]
 }
