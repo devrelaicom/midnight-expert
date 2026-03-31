@@ -191,41 +191,59 @@ If zero claims were extracted, tell the user and stop:
 
 ## Step 6: Verify Claims (Stage 3)
 
-**Architecture note:** You dispatch midnight-verify agents directly — do NOT dispatch `midnight-fact-check:claim-verifier`. The check command is the sole orchestrator. midnight-verify's SubagentStop hooks enforce verification quality on all agents you dispatch.
+### Critical Rules
+
+- You dispatch midnight-verify agents directly — do NOT dispatch `midnight-fact-check:claim-verifier`
+- midnight-verify's SubagentStop hooks enforce verification quality on all agents you dispatch
+- **Each agent already has skills that define its verification method.** Do NOT include verification methodology in the dispatch prompt. The agents know how to verify — you only tell them WHAT claim to verify.
+- **NEVER tell agents to cross-reference skills, read local documentation, or compare files in this repository.** That is not verification — it is checking documentation against documentation. Verification means: compiling code, running code, type-checking with tsc, inspecting actual source repositories on GitHub, or running CLI commands.
+
+### Process
 
 1. Read `classified-claims.json`.
 2. Separate claims into two groups:
    - **Verifiable**: claims with `classification.primary_domain` set
    - **Already resolved**: claims marked inconclusive from Step 5 — skip these
-3. For each verifiable claim, determine which midnight-verify agent(s) to dispatch:
+3. For each verifiable claim, use the routing table to select the correct agent. **Route each claim individually** — do not batch all claims from one file to the same agent.
 
-   | Domain | Claim About | Dispatch |
-   |--------|------------|----------|
-   | compact | Observable behavior: syntax, types, stdlib, disclosure, compiler errors, performance | `midnight-verify:contract-writer` |
-   | compact | Internal implementation, architecture, feature counts | `midnight-verify:source-investigator` |
-   | compact | Circuit structure, ZKIR opcodes, compiled properties | `midnight-verify:zkir-checker` |
-   | compact | Cross-component (runtime + internals) | Both `contract-writer` + `source-investigator` concurrently |
-   | sdk | API signatures, types, imports, interfaces, error hierarchies | `midnight-verify:type-checker` |
-   | sdk | Runtime behavior: deploy, call, state, transactions | `midnight-verify:sdk-tester` |
-   | sdk | Internal implementation, package internals | `midnight-verify:source-investigator` |
-   | sdk | Package version or existence | Run `npm view` directly — no agent needed |
-   | sdk | Both types and runtime behavior | Both `type-checker` + `sdk-tester` concurrently |
-   | zkir | Constraint behavior, proof verification, circuit properties | `midnight-verify:zkir-checker` |
-   | witness | Witness correctness, type mappings, structural checks | `midnight-verify:witness-verifier` |
-   | wallet-sdk | Any wallet SDK claim | `midnight-verify:source-investigator` (primary); `midnight-verify:type-checker` as pre-flight only |
-   | ledger | Transaction structure, token mechanics, protocol behavior | `midnight-verify:source-investigator` |
-   | tooling | CLI commands, flags, output behavior | `midnight-verify:cli-tester` |
-   | tooling | Internal implementation, compiler internals | `midnight-verify:source-investigator` |
+   | Domain | Claim About | Agent | What the Agent Does |
+   |--------|------------|-------|---------------------|
+   | compact | Observable behavior: syntax, types, stdlib, disclosure, compiler errors, performance | `midnight-verify:contract-writer` | Writes a Compact test contract, compiles it, executes it |
+   | compact | Internal implementation, architecture, feature counts | `midnight-verify:source-investigator` | Searches actual source code on GitHub (LFDT-Minokawa/compact) |
+   | compact | Circuit structure, ZKIR opcodes, compiled properties | `midnight-verify:zkir-checker` | Compiles to ZKIR, inspects circuit structure or runs PLONK checker |
+   | compact | Cross-component (runtime + internals) | Both `contract-writer` + `source-investigator` concurrently | |
+   | sdk | API signatures, types, imports, interfaces, error hierarchies | `midnight-verify:type-checker` | Writes TypeScript assertions, runs tsc --noEmit |
+   | sdk | Runtime behavior: deploy, call, state, transactions | `midnight-verify:sdk-tester` | Runs E2E scripts against devnet |
+   | sdk | Internal implementation, package internals | `midnight-verify:source-investigator` | Searches actual SDK source on GitHub |
+   | sdk | Package version or existence | Run `npm view` directly — no agent needed | |
+   | sdk | Both types and runtime behavior | Both `type-checker` + `sdk-tester` concurrently | |
+   | zkir | Constraint behavior, proof verification, circuit properties | `midnight-verify:zkir-checker` | Compiles, runs WASM checker or inspects circuit |
+   | witness | Witness correctness, type mappings, structural checks | `midnight-verify:witness-verifier` | Compiles contract, type-checks witness, runs structural analysis |
+   | wallet-sdk | Any wallet SDK claim | `midnight-verify:source-investigator` (primary); `midnight-verify:type-checker` (pre-flight only) | Searches wallet SDK source on GitHub |
+   | ledger | Transaction structure, token mechanics, protocol behavior | `midnight-verify:source-investigator` | Searches ledger Rust source on GitHub |
+   | tooling | CLI commands, flags, output behavior | `midnight-verify:cli-tester` | Runs CLI commands, checks output |
+   | tooling | Internal implementation, compiler internals | `midnight-verify:source-investigator` | Searches compiler source on GitHub |
 
-4. Dispatch verification agents in rounds of up to 5 concurrent agents:
-   - Use the Agent tool to dispatch midnight-verify agents directly
-   - For each dispatch, pass:
-     - The claim text verbatim
-     - Source file path and line range (from extraction metadata)
-     - The claim's domain
-     - What observable result would confirm vs refute the claim
-   - Use multiple Agent tool calls in a single message for concurrent dispatch within a round
-   - Wait for all agents in a round to return before starting the next round
+   Most compact-domain claims about syntax, types, functions, or behavior should go to `contract-writer` — compilation and execution is the strongest evidence. Only route to `source-investigator` for claims about things that cannot be tested by writing code (e.g., "the compiler is written in Scheme").
+
+4. Dispatch verification agents in rounds of up to 5 concurrent agents.
+
+   **Dispatch prompt format — include ONLY these fields:**
+   ```
+   Verify this claim:
+
+   Claim: "[exact claim text]"
+   Domain: [compact|sdk|zkir|witness|wallet-sdk|ledger|tooling]
+   Source: [file path where the claim was found, line range if available]
+   ```
+
+   Do NOT add:
+   - Verification instructions (the agent's skills handle this)
+   - File paths to cross-reference against
+   - Suggestions for how to verify
+   - Lists of other skills or documentation to read
+
+   Use multiple Agent tool calls in a single message for concurrent dispatch within a round. Wait for all agents in a round to return before starting the next round.
 
 5. As results return, extract the verdict from each agent's response and update the claim:
    ```json
