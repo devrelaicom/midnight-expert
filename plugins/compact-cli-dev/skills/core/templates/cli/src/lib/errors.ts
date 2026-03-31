@@ -1,0 +1,73 @@
+export enum ErrorCode {
+	DUST_REQUIRED = "DUST_REQUIRED",
+	SERVICE_DOWN = "SERVICE_DOWN",
+	CONTRACT_NOT_FOUND = "CONTRACT_NOT_FOUND",
+	WALLET_NOT_FOUND = "WALLET_NOT_FOUND",
+	STALE_UTXO = "STALE_UTXO",
+	SYNC_TIMEOUT = "SYNC_TIMEOUT",
+	INVALID_SEED = "INVALID_SEED",
+	UNKNOWN = "UNKNOWN",
+}
+
+interface ClassifiedError {
+	code: ErrorCode;
+	message: string;
+	action: string;
+}
+
+const CLI_NAME = "{{CLI_PACKAGE_NAME}}";
+
+export function classifyError(err: unknown): ClassifiedError {
+	const message = err instanceof Error ? err.message : String(err);
+	const lower = message.toLowerCase();
+
+	if (lower.includes("dust") || lower.includes("no dust") || lower.includes("insufficient fee")) {
+		return {
+			code: ErrorCode.DUST_REQUIRED,
+			message,
+			action: `Run \`${CLI_NAME} dust:register <wallet>\` to generate DUST tokens.`,
+		};
+	}
+
+	if (lower.includes("econnrefused") && lower.includes("6300")) {
+		return {
+			code: ErrorCode.SERVICE_DOWN,
+			message: "Proof server is not reachable at localhost:6300.",
+			action: `Run \`${CLI_NAME} devnet:start\` to start all services.`,
+		};
+	}
+
+	if (lower.includes("econnrefused") && (lower.includes("8088") || lower.includes("9944"))) {
+		return {
+			code: ErrorCode.SERVICE_DOWN,
+			message: "Devnet services are not reachable.",
+			action: `Run \`${CLI_NAME} devnet:status\` to check which services are down.`,
+		};
+	}
+
+	if (lower.includes("contract") && lower.includes("not found")) {
+		return {
+			code: ErrorCode.CONTRACT_NOT_FOUND,
+			message,
+			action: "Verify the contract address and that the devnet is running.",
+		};
+	}
+
+	if (lower.includes("timeout") || lower.includes("timed out")) {
+		return {
+			code: ErrorCode.SYNC_TIMEOUT,
+			message,
+			action: "The devnet may still be starting. Wait a moment and retry.",
+		};
+	}
+
+	return {
+		code: ErrorCode.UNKNOWN,
+		message,
+		action: "Check the devnet logs for more details.",
+	};
+}
+
+export function formatError(classified: ClassifiedError): string {
+	return `Error [${classified.code}]: ${classified.message}\n  → ${classified.action}`;
+}

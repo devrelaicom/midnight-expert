@@ -1,0 +1,67 @@
+{
+	"name": "{{CLI_PACKAGE_NAME}}",
+	"version": "0.1.0",
+	"description": "CLI for interacting with the {{CONTRACT_NAME}} contract on Midnight devnet",
+	"type": "module",
+	"license": "MIT",
+	"oclif": {
+		"bin": "{{CLI_PACKAGE_NAME}}",
+		"dirname": "{{CLI_PACKAGE_NAME}}",
+		"commands": {
+			"strategy": "pattern",
+			"target": "./dist/commands"
+		},
+		"topicSeparator": ":"
+	},
+	"bin": {
+		"{{CLI_PACKAGE_NAME}}": "./bin/run.ts"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "tsc --noEmit",
+		"dev": "tsx ./bin/dev.ts",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"prepare": "husky"
+	},
+	"dependencies": {
+		"{{CONTRACT_PACKAGE}}": "*",
+		"@midnight-ntwrk/compact-runtime": "0.15.0",
+		"@midnight-ntwrk/compact-js": "^4.0.0",
+		"@midnight-ntwrk/ledger-v8": "^8.0.0",
+		"@midnight-ntwrk/midnight-js-contracts": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-level-private-state-provider": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-network-id": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-node-zk-config-provider": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-types": "^4.0.0",
+		"@midnight-ntwrk/midnight-js-utils": "^4.0.0",
+		"@midnight-ntwrk/wallet-sdk-address-format": "^3.0.0",
+		"@midnight-ntwrk/wallet-sdk-dust-wallet": "^3.0.0",
+		"@midnight-ntwrk/wallet-sdk-facade": "^3.0.0",
+		"@midnight-ntwrk/wallet-sdk-hd": "^3.0.0",
+		"@midnight-ntwrk/wallet-sdk-shielded": "^2.0.0",
+		"@midnight-ntwrk/wallet-sdk-unshielded-wallet": "^2.0.0",
+		"@oclif/core": "^4.0.0",
+		"cli-progress": "^3.12.0",
+		"ora": "^8.0.0",
+		"rxjs": "^7.8.0",
+		"ws": "^8.19.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@oclif/test": "^4.0.0",
+		"@types/cli-progress": "^3.11.6",
+		"@types/node": "^20.17.0",
+		"@types/ws": "^8.18.1",
+		"husky": "^9.0.0",
+		"tsx": "^4.21.0",
+		"typescript": "^5.7.0",
+		"vitest": "^3.0.0"
+	},
+	"generated": "{{GENERATED_AT}}"
+}
