@@ -27,7 +27,7 @@ A Compact contract consists of four elements:
 Each field is declared individually with `export ledger`:
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 export ledger counter: Counter;
@@ -222,7 +222,7 @@ The contract address is deterministically derived from the deployment data. The 
 The simplest contract uses the `Counter` ADT for thread-safe counting:
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 export ledger count: Counter;
@@ -311,7 +311,7 @@ See `examples/private-vault.compact` for a complete private vault example.
 
 ## Important Syntax Notes
 
-- Every `.compact` file needs: `pragma language_version 0.21;`
+- Every `.compact` file needs: `pragma language_version 0.22;`
 - Import: `import CompactStandardLibrary;` (not `import { fn } from "path"`)
 - Assert: `assert(condition, "message")` -- parentheses required
 - If: `if (condition) { }` -- parentheses required

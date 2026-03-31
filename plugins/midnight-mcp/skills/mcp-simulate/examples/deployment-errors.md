@@ -35,22 +35,22 @@ Cross-reference: mcp-compile examples/parse-errors.md for comprehensive parse er
 ```
 Before:
   midnight-simulate-deploy({
-    code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit add(n: Field): [] { count.increment(n); }"
+    code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit add(n: Field): [] { count.increment(n); }"
   })
 
 Error:
   { success: false, errors: [{ message: "no matching overload for Counter.increment with argument type Field", severity: "error", line: 4 }] }
 
 Diagnosis:
-  Counter.increment expects Uint<64>, but a Field was passed. Common type mismatches:
+  Counter.increment expects Uint<16>, but a Field was passed. Common type mismatches:
   - Mixing Field and Uint<N> — these are different types
   - Arithmetic result expansion — Uint<32> + Uint<32> may produce Uint<33>
   - Direct Uint to Bytes cast — use pad/truncate operations
 
 Fix:
-  Change parameter type from Field to Uint<64>:
+  Change parameter type from Field to Uint<16> and add disclosure:
   midnight-simulate-deploy({
-    code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit add(n: Uint<64>): [] { count.increment(n); }"
+    code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit add(n: Uint<16>): [] { count.increment(disclose(n)); }"
   })
   → success: true
 
@@ -62,7 +62,7 @@ Cross-reference: mcp-compile examples/type-errors.md for detailed type error gui
 ```
 Before:
   midnight-simulate-deploy({
-    code: "pragma language_version >= 0.14;\nexport ledger count: Counter;\nexport circuit inc(): [] { count.increment(1); }"
+    code: "pragma language_version >= 0.22;\nexport ledger count: Counter;\nexport circuit inc(): [] { count.increment(disclose(1)); }"
   })
 
 Error:
@@ -73,7 +73,7 @@ Diagnosis:
 
 Fix:
   midnight-simulate-deploy({
-    code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit inc(): [] { count.increment(1); }"
+    code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit inc(): [] { count.increment(disclose(1)); }"
   })
   → success: true
 ```
@@ -83,7 +83,7 @@ Fix:
 ```
 Before:
   midnight-simulate-deploy({
-    code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nwitness getSecret(): Field;\nexport ledger stored: Field;\nexport circuit save(): [] { stored = getSecret(); }"
+    code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nwitness getSecret(): Field;\nexport ledger stored: Field;\nexport circuit save(): [] { stored = getSecret(); }"
   })
 
 Error:
@@ -94,7 +94,7 @@ Diagnosis:
 
 Fix:
   midnight-simulate-deploy({
-    code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nwitness getSecret(): Field;\nexport ledger stored: Field;\nexport circuit save(): [] { stored = disclose(getSecret()); }"
+    code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nwitness getSecret(): Field;\nexport ledger stored: Field;\nexport circuit save(): [] { stored = disclose(getSecret()); }"
   })
   → success: true
 

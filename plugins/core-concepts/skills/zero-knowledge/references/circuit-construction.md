@@ -48,7 +48,7 @@ Proving/Verification Keys
 ### Example
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 export ledger hash: Bytes<32>;

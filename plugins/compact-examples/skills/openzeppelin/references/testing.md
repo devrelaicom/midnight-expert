@@ -61,7 +61,7 @@ Mock contracts are minimal Compact contracts that expose all module circuits for
 ### Example: MockFungibleToken.compact
 
 ```compact
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
 import "../../FungibleToken" prefix FungibleToken_;

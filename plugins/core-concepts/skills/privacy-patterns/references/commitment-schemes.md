@@ -77,7 +77,7 @@ transientHash<T>(value: T): Field
 The standard commit-reveal pattern uses two phases: a commit phase where the value is hidden behind a commitment, and a reveal phase where the value and randomness are disclosed so observers can verify the commitment was honest.
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 export enum Phase { commit, reveal, finalized }

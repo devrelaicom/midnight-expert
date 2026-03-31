@@ -10,7 +10,7 @@ When the user's project targets a specific Compact language version or SDK versi
 
 **Before:**
 ```
-Project has: pragma language_version 0.2.0;
+Project has: pragma language_version 0.22;
 User asks: "how to declare a witness"
 Search: "witness declaration Compact"
 → Returns results from multiple language versions, some with outdated syntax
@@ -18,9 +18,9 @@ Search: "witness declaration Compact"
 
 **After:**
 ```
-Search: "witness declaration Compact language_version 0.2.0"
-→ Bias toward results matching 0.2.0 syntax
-After retrieval: deprioritize results showing pre-0.2.0 witness syntax
+Search: "witness declaration Compact language_version 0.22"
+→ Bias toward results matching 0.22 syntax
+After retrieval: deprioritize results showing pre-0.22 witness syntax
 ```
 
 **Why:** Witness declaration syntax may have changed between language versions. Including the version in the query and filtering results by version prevents the user from seeing outdated syntax.
@@ -58,7 +58,7 @@ Search: "generics Compact type parameters"
 ```
 Search: "generics Compact type parameters language_version"
 After retrieval: check version context of each result
-→ Note to user: "Generic support depends on the Compact language version. Results show generics in language_version 0.2.0+. Check your pragma language_version to confirm availability."
+→ Note to user: "Generic support depends on the Compact language version. Results show generics in language_version 0.22+. Check your pragma language_version to confirm availability."
 ```
 
 **Why:** Feature availability is version-dependent. Without version context, the user might try to use a feature not available in their project's language version.
@@ -88,7 +88,7 @@ Project uses Compact 0.28.0
 
 **Problem:** Minor version differences rarely change core patterns. A Counter usage pattern from 0.27.0 is almost certainly valid in 0.28.0. Being too strict eliminates useful results.
 
-**Instead:** Be strict about major version differences (v1 vs v2 SDK, 0.1.x vs 0.2.x language). Be lenient about patch versions within the same minor version.
+**Instead:** Be strict about major version differences (v1 vs v2 SDK, 0.21.x vs 0.22.x language). Be lenient about patch versions within the same minor version.
 
 ### Not Checking Environmental Context
 

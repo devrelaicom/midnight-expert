@@ -7,7 +7,7 @@ The most common form of access control: a single owner account that can perform 
 ### Usage
 
 ```compact
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
 import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"
@@ -116,7 +116,7 @@ For maximum privacy, use a dedicated key exclusively for contract ownership:
 ### Usage
 
 ```compact
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
 import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/ZOwnablePK"

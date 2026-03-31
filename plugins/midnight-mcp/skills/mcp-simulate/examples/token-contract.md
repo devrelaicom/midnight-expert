@@ -3,7 +3,7 @@
 ## Contract Code
 
 ```compact
-pragma language_version >= 0.14;
+pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
 
@@ -24,7 +24,7 @@ export circuit transfer(amount: Uint<64>, to: Bytes<32>): [] {
   balances.insert(to, receiverBalance + amount);
 }
 
-export pure circuit getBalance(user: Bytes<32>): Uint<64> {
+export circuit getBalance(user: Bytes<32>): Uint<64> {
   return balances.lookup(user).with_default(0);
 }
 ```
@@ -41,7 +41,7 @@ midnight-simulate-deploy({ code: "<token contract source>", caller: "alice" })
     circuits: [
       { name: "mint", isPublic: true, isPure: false, parameters: [{ name: "amount", type: "Uint<64>" }], readsLedger: ["balances", "owner"], writesLedger: ["balances"] },
       { name: "transfer", isPublic: true, isPure: false, parameters: [{ name: "amount", type: "Uint<64>" }, { name: "to", type: "Bytes<32>" }], readsLedger: ["balances"], writesLedger: ["balances"] },
-      { name: "getBalance", isPublic: true, isPure: true, parameters: [{ name: "user", type: "Bytes<32>" }], readsLedger: ["balances"], writesLedger: [] }
+      { name: "getBalance", isPublic: true, isPure: false, parameters: [{ name: "user", type: "Bytes<32>" }], readsLedger: ["balances"], writesLedger: [] }
     ],
     ledgerState: {
       balances: { type: "Map<Bytes<32>, Uint<64>>", value: {} },

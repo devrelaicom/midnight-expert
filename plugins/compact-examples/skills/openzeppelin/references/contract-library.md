@@ -2,8 +2,8 @@
 
 > Source: [OpenZeppelin/compact-contracts](https://github.com/OpenZeppelin/compact-contracts)
 > Version: v0.0.1-alpha.1
-> Language version: `pragma language_version >= 0.21.0`
-> Compiler compatibility tested: compactc 0.26.0 (lang 0.18.0), 0.28.0 (lang 0.20.0), 0.29.0 (lang 0.21.0)
+> Language version: `pragma language_version >= 0.22.0`
+> Compiler compatibility tested: compactc 0.26.0 (lang 0.18.0), 0.28.0 (lang 0.20.0), 0.29.0 (lang 0.21.0), 0.30.0 (lang 0.22.0)
 
 ## Quick File Lookup
 
@@ -208,13 +208,14 @@ Complete ERC-20 style token combining ownership, pausing, and minting.
 
 ## Language Version Compatibility
 
-All contracts and modules specify `pragma language_version >= 0.21.0`. Syntax verified against:
+All contracts and modules specify `pragma language_version >= 0.22.0`. Syntax verified against:
 
 | Language Version | Compiler Version | Status |
 |---|---|---|
 | 0.18.0 | compactc 0.26.0 | Syntax valid |
 | 0.20.0 | compactc 0.28.0 | Syntax valid |
 | 0.21.0 | compactc 0.29.0 | Syntax valid |
+| 0.22.0 | compactc 0.30.0 | Syntax valid |
 
 ### Breaking Change: `from` keyword (compactc 0.28.0+)
 

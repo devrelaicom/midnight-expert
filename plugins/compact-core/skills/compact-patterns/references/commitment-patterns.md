@@ -19,7 +19,7 @@ Patterns for hiding values on-chain and revealing them later with proof.
 Single-participant commit-reveal:
 
 ```compact
-pragma language_version >= 0.21;
+pragma language_version >= 0.22;
 import CompactStandardLibrary;
 
 export ledger commitment: Bytes<32>;
@@ -151,7 +151,7 @@ export circuit revealValue(): Field {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.21;
+pragma language_version >= 0.22;
 import CompactStandardLibrary;
 
 export enum AuctionPhase { bidding, revealing, finalized }

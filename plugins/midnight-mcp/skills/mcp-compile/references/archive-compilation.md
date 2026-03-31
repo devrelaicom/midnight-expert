@@ -13,8 +13,8 @@ A Record mapping relative file paths to source code. The directory structure in 
 ```
 Call: midnight-compile-archive({
   files: {
-    "src/main.compact": "pragma language_version >= 0.16;\nimport \"./lib/token.compact\";\n...",
-    "src/lib/token.compact": "pragma language_version >= 0.16;\nimport CompactStandardLibrary;\n..."
+    "src/main.compact": "pragma language_version >= 0.22;\nimport \"./lib/token.compact\";\n...",
+    "src/lib/token.compact": "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\n..."
   },
   options: { skipZk: true }
 })
@@ -27,7 +27,7 @@ To use OZ Compact modules, pass them via `options.libraries`:
 ```
 Call: midnight-compile-archive({
   files: {
-    "src/main.compact": "pragma language_version >= 0.16;\nimport \"access/Ownable\";\n..."
+    "src/main.compact": "pragma language_version >= 0.22;\nimport \"access/Ownable\";\n..."
   },
   options: {
     skipZk: true,
