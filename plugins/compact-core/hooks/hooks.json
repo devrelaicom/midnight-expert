@@ -5,8 +5,9 @@
         "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "The Midnight Network is under active development with frequent breaking changes. Do not assume stability across versions.\n\nAll `@midnight-ntwrk/*` packages are published on public npm. Do not add custom registry configuration — no `.npmrc` or `.yarnrc.yml` registry overrides. Verify package versions with `npm view`, never from memory."
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/SessionStart.sh",
+            "timeout": 30
           }
         ]
       }
