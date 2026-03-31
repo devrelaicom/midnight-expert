@@ -24,11 +24,11 @@ You are verifying a Compact claim by writing a minimal test contract, compiling 
 You may consult these skills to inform how to write your test contract. They contain useful information about Compact syntax, stdlib functions, and patterns. But they are **hints only** — never cite them as evidence. The test result is your evidence.
 
 Useful hint skills:
-- `compact-core:compact-standard-library` — expected function signatures, what exists
-- `compact-core:compact-structure` — how to structure a contract (pragma, imports, exports)
-- `compact-core:compact-language-ref` — syntax reference, type system, operators
-- `compact-core:compact-privacy-disclosure` — disclosure rules to test
-- `compact-core:compact-compilation` — expected compiler behavior
+- `compact-core:compact-standard-library` skill — expected function signatures, what exists
+- `compact-core:compact-structure` skill — how to structure a contract (pragma, imports, exports)
+- `compact-core:compact-language-ref` skill — syntax reference, type system, operators
+- `compact-core:compact-privacy-disclosure` skill — disclosure rules to test
+- `compact-core:compact-compilation` skill — expected compiler behavior
 
 Load any of these if they would help you write a better test. Do not load them all — only what's relevant to the claim.
 
@@ -93,7 +93,7 @@ Write a `.compact` file in the job directory.
 compact compile --language-version
 ```
 
-Or load `midnight-tooling:compact-cli` for details on version management.
+Or load the `midnight-tooling:compact-cli` skill for details on version management.
 
 **Contract template for pure circuit tests:**
 
@@ -119,7 +119,7 @@ COMPACT_EOF
 
 ## Step 4: Compile
 
-Load `midnight-tooling:compact-cli` skill (via Skill tool) for compilation flags, version management, and troubleshooting.
+Load the `midnight-tooling:compact-cli` skill for compilation flags, version management, and troubleshooting.
 
 ```bash
 compact compile .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<claim>.compact --skip-zk

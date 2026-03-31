@@ -5,7 +5,7 @@ description: >-
   Writes SDK test scripts (raw or using testkit-js) that exercise the
   full transaction pipeline: deploy, call circuits, observe state. Checks
   devnet health before proceeding. Loaded by the sdk-tester agent.
-  References midnight-tooling:devnet for infrastructure management.
+  Loads the `midnight-tooling:devnet` skill for infrastructure management.
 version: 0.3.0
 ---
 
@@ -19,7 +19,7 @@ You are verifying an SDK behavioral claim by running a test script against a liv
 
 ## Step 1: Check Devnet Health
 
-Load `midnight-tooling:devnet` skill for endpoint URLs and health check patterns. Check that all three services are reachable:
+Load the `midnight-tooling:devnet` skill for endpoint URLs and health check patterns. Check that all three services are reachable:
 
 1. **Node** — health endpoint
 2. **Indexer** — health endpoint
@@ -27,7 +27,7 @@ Load `midnight-tooling:devnet` skill for endpoint URLs and health check patterns
 
 If ANY service is unreachable:
 - Report **Inconclusive (devnet unavailable)**
-- Message: "Devnet not available. Start it with `midnight-tooling:devnet` and retry."
+- Message: "Devnet not available. Load the `midnight-tooling:devnet` skill for instructions on starting the devnet, then retry."
 - Stop. Do not proceed to Step 2.
 
 ## Step 2: Set Up the Workspace
@@ -73,7 +73,7 @@ import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-pri
 // 1. Configure network
 setNetworkId('devnet');
 
-// 2. Set up providers (reference midnight-tooling:devnet for URLs)
+// 2. Set up providers (load the `midnight-tooling:devnet` skill for URLs)
 const providers = {
   privateStateProvider: levelPrivateStateProvider({ ... }),
   publicDataProvider: indexerPublicDataProvider({ ... }),
@@ -129,7 +129,7 @@ const env = await createTestEnvironment('undeployed');
 Most E2E tests need a compiled Compact contract. Options:
 
 1. **Check for pre-compiled test contracts** in the workspace (e.g., a counter contract)
-2. **Write and compile a minimal contract** using `compact compile --skip-zk` — load `midnight-tooling:compact-cli` for compilation details
+2. **Write and compile a minimal contract** using `compact compile --skip-zk` — load the `midnight-tooling:compact-cli` skill for compilation details
 3. **Use a stock counter contract** — this is the simplest possible Midnight contract:
 
 ```compact

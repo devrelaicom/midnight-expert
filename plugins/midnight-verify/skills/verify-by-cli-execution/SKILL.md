@@ -19,7 +19,7 @@ You are verifying a Compact CLI claim by running the actual command and observin
 
 ## Using midnight-tooling Skills as Hints
 
-You may consult `midnight-tooling:compact-cli` to understand what flags exist and how the CLI works. This is a **hint only** — the CLI output is your evidence, not the skill content.
+You may load the `midnight-tooling:compact-cli` skill to understand what flags exist and how the CLI works. This is a **hint only** — the CLI output is your evidence, not the skill content.
 
 ## Step 1: Check CLI Availability
 
@@ -32,7 +32,7 @@ If **both** commands fail (command not found), report **Inconclusive (cli unavai
 
 ```
 The Compact CLI is not installed or not on PATH. Install it via
-midnight-tooling:install-cli and retry.
+Load the `midnight-tooling:install-cli` skill for installation instructions and retry.
 ```
 
 If only one is available, note which one and proceed — some claims are about `compact` specifically vs `compactc`.
