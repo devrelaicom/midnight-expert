@@ -56,7 +56,15 @@ description: >-
   orchestrator classifies this as a ledger TypeScript API claim, dispatches
   the type-checker (pre-flight) and source-investigator (primary), and
   optionally runs ledger-v8 execution to call the function and observe output.
-skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness, midnight-verify:verify-wallet-sdk, midnight-verify:verify-ledger
+
+  Example 12: User runs /verify "--skip-zk skips PLONK key generation" — the
+  orchestrator classifies this as a tooling claim, dispatches the cli-tester
+  agent to compile with and without --skip-zk and compare output directories.
+
+  Example 13: User runs /verify "The Compact compiler is written in Scheme" —
+  the orchestrator classifies this as an internal tooling claim, dispatches
+  the source-investigator to search the LFDT-Minokawa/compact repository.
+skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness, midnight-verify:verify-wallet-sdk, midnight-verify:verify-ledger, midnight-verify:verify-tooling
 model: sonnet
 color: green
 ---
@@ -74,6 +82,7 @@ You are the Midnight verification orchestrator.
    - Cross-domain → load applicable domain skills
    - Wallet SDK claims → load `midnight-verify:verify-wallet-sdk`
    - Ledger/Protocol claims → load `midnight-verify:verify-ledger`
+   - Tooling claims → load `midnight-verify:verify-tooling`
 3. Follow the hub skill's process exactly.
 
 ## Dispatching Sub-Agents
@@ -112,6 +121,12 @@ You are the Midnight verification orchestrator.
 - Ledger-v8 execution (secondary) → dispatch `midnight-verify:type-checker` in ledger execution mode to call ledger-v8 functions and observe output
 
 **For ledger claims, source investigation always runs.** Secondary methods provide corroborating evidence. Dispatch source-investigator first; dispatch secondary agents concurrently if the claim is testable.
+
+**Tooling verification:**
+- CLI execution (primary) → dispatch `midnight-verify:cli-tester` for behavioral claims (flags, output, errors, versions)
+- Source investigation (secondary) → dispatch `midnight-verify:source-investigator` for internal/architectural claims about the compiler or CLI wrapper
+
+**For tooling claims, prefer CLI execution whenever possible.** The CLI is on the machine — running the command is more authoritative than reading source code. Use source investigation only for claims about internals that can't be observed via CLI output.
 
 **When multiple methods are needed, dispatch agents concurrently.** They are independent and can run in parallel.
 

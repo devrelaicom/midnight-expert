@@ -28,6 +28,7 @@ Determine what domain the claim belongs to:
 | **Cross-domain** | Spans Compact and SDK, Compact and ZKIR, Witness and ZKIR, or protocol/architecture | Load applicable domain skills |
 | **Wallet SDK** | @midnight-ntwrk/wallet-sdk-* packages, WalletFacade, WalletBuilder, WalletRuntime, RuntimeVariant, DApp Connector API (ConnectedAPI, InitialAPI, window.midnight), HD derivation, Bech32m addresses, branded types (ProtocolVersion, WalletSeed), three-wallet architecture, capabilities (Balancer, ProvingService, SubmissionService) | Load `midnight-verify:verify-wallet-sdk` |
 | **Ledger/Protocol** | Transaction structure (intents, segments, offers, binding), token mechanics (Night UTXO, Zswap commitment/nullifier, Dust generation), cost model (SyntheticCost, fee pricing, block limits), on-chain VM (opcodes, StateValue, stack machine), contract execution (deployment, calls, effects, transcripts), cryptographic primitives (Pedersen, Fiat-Shamir, signatures, Merkle trees), @midnight-ntwrk/ledger-v8 API, well-formedness rules, FAB encoding, formal security properties | Load `midnight-verify:verify-ledger` |
+| **Tooling** | Compact CLI commands (compact compile, compactc), CLI flags (--skip-zk, --language-version, --help), compiler output structure, compiler error messages, exit codes, CLI version/installation, CLI wrapper vs compactc distinction | Load `midnight-verify:verify-tooling` |
 
 ### 2. Load the Domain Skill
 
@@ -62,6 +63,12 @@ Based on the domain skill's routing:
 - Ledger-v8 execution (secondary) → dispatch `midnight-verify:type-checker` agent in ledger execution mode
 
 **For ledger claims, source investigation always runs.** Secondary methods provide corroborating evidence and are dispatched concurrently when the claim is testable.
+
+**Tooling verification:**
+- CLI execution (primary) → dispatch `midnight-verify:cli-tester` agent for behavioral claims
+- Source investigation (secondary) → dispatch `midnight-verify:source-investigator` agent for internal/architectural claims
+
+**For tooling claims, prefer CLI execution.** Running the command is more authoritative than reading source.
 
 - **Multiple methods needed** → dispatch applicable agents **concurrently** (they are independent and can run in parallel)
 
@@ -119,6 +126,12 @@ Collect the sub-agent report(s) and produce the final verdict.
 | **Refuted** | (source-verified) | Rust source contradicts the ledger/protocol claim |
 | **Refuted** | (tested) | Compilation/execution contradicts the claim (ledger domain) |
 | **Inconclusive** | — | Source investigation insufficient, no execution path available (ledger domain) |
+| **Confirmed** | (cli-tested) | Ran the CLI command, output matches the claim (tooling domain) |
+| **Confirmed** | (cli-tested + source-verified) | CLI output and source code both confirm (tooling domain) |
+| **Confirmed** | (source-verified) | Internal claim verified via source, not testable via CLI (tooling domain) |
+| **Refuted** | (cli-tested) | Ran the CLI command, output contradicts the claim (tooling domain) |
+| **Refuted** | (source-verified) | Source contradicts the internal claim (tooling domain) |
+| **Inconclusive** | (cli unavailable) | Compact CLI not installed or not on PATH (tooling domain) |
 
 **Critical rule for wallet SDK claims:** Type-checking is a fast pre-flight only. It NEVER produces a standalone verdict for wallet SDK claims. Every wallet SDK verdict must come from source investigation (or devnet E2E as a fallback). There is no `Confirmed (type-checked)` for wallet SDK claims.
 
