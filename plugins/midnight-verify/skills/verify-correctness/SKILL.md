@@ -26,6 +26,7 @@ Determine what domain the claim belongs to:
 | **ZKIR** | ZKIR opcodes, circuit constraints, field elements, proof data, `.zkir` files, transcript protocol, checker behavior, circuit structure | Load `midnight-verify:verify-zkir` |
 | **Witness** | Witness implementation, WitnessContext, private state, `[PrivateState, T]` return tuple, `.compact` + `.ts` file pair, witness declarations, type mappings | Load `midnight-verify:verify-witness` |
 | **Cross-domain** | Spans Compact and SDK, Compact and ZKIR, Witness and ZKIR, or protocol/architecture | Load applicable domain skills |
+| **Wallet SDK** | @midnight-ntwrk/wallet-sdk-* packages, WalletFacade, WalletBuilder, WalletRuntime, RuntimeVariant, DApp Connector API (ConnectedAPI, InitialAPI, window.midnight), HD derivation, Bech32m addresses, branded types (ProtocolVersion, WalletSeed), three-wallet architecture, capabilities (Balancer, ProvingService, SubmissionService) | Load `midnight-verify:verify-wallet-sdk` |
 
 ### 2. Load the Domain Skill
 
@@ -44,6 +45,14 @@ Based on the domain skill's routing:
 - **ZKIR regression sweep needed** → dispatch `midnight-verify:zkir-checker` agent and instruct it to load the `midnight-verify:zkir-regression` skill
 - **Witness verification needed** → dispatch `midnight-verify:witness-verifier` agent with the claim and both file paths (if provided)
 - **Witness + ZKIR verification needed** → dispatch `midnight-verify:witness-verifier` first (it compiles and verifies), then pass the build output path to `midnight-verify:zkir-checker` for PLONK verification. These are sequential, not concurrent.
+
+**Wallet SDK verification:**
+- Pre-flight type-check → dispatch `midnight-verify:type-checker` agent with `domain: 'wallet-sdk'` context
+- Source investigation (primary, always runs) → dispatch `midnight-verify:source-investigator` agent with instruction to load `midnight-verify:verify-by-wallet-source`
+- Devnet E2E (fallback, only if source is Inconclusive) → dispatch `midnight-verify:sdk-tester` agent with `domain: 'wallet-sdk'` context
+
+**For wallet SDK claims, dispatch type-checker and source-investigator concurrently.** Wait for source-investigator. Only dispatch sdk-tester if source returned Inconclusive.
+
 - **Multiple methods needed** → dispatch applicable agents **concurrently** (they are independent and can run in parallel)
 
 When dispatching, pass:
@@ -89,6 +98,13 @@ Collect the sub-agent report(s) and produce the final verdict.
 | **Confirmed** | (witness-verified + zkir-checked) | Witness verification + PLONK proof valid |
 | **Refuted** | (witness-verified) | Type check, structural check, or execution failed |
 | **Inconclusive** | (devnet unavailable) | Local witness verification passed but devnet E2E needed and unavailable |
+| **Confirmed** | (source-verified) | Source investigation found definitive wallet SDK source evidence (wallet SDK domain) |
+| **Confirmed** | (source-verified + tested) | Source confirmed and devnet E2E also passed (wallet SDK domain) |
+| **Refuted** | (source-verified) | Source contradicts the wallet SDK claim |
+| **Refuted** | (type-checked + source-verified) | Type-check failed and source confirms it's wrong (wallet SDK domain) |
+| **Inconclusive** | (source insufficient, devnet unavailable) | Couldn't confirm via source, devnet not running (wallet SDK domain) |
+
+**Critical rule for wallet SDK claims:** Type-checking is a fast pre-flight only. It NEVER produces a standalone verdict for wallet SDK claims. Every wallet SDK verdict must come from source investigation (or devnet E2E as a fallback). There is no `Confirmed (type-checked)` for wallet SDK claims.
 
 **When sub-agents disagree:** Execution evidence wins. The code ran and produced a result — that's more authoritative than interpreting source. But you MUST note the disagreement in your report so the user is aware.
 
