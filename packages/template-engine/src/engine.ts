@@ -16,8 +16,7 @@ export interface TemplateResult {
 function substitute(content: string, context: Record<string, string>): string {
 	let result = content;
 	for (const [key, value] of Object.entries(context)) {
-		const pattern = new RegExp(`\\{\\{${key}\\}\\}`, "g");
-		result = result.replace(pattern, value);
+		result = result.replaceAll(`{{${key}}}`, value);
 	}
 	return result;
 }
