@@ -21,6 +21,13 @@
     "ci",
     "github-actions",
     "husky",
-    "code-quality"
+    "code-quality",
+    "wallet-sdk",
+    "wallet-testing",
+    "dapp-connector",
+    "effect",
+    "observable",
+    "WalletBuilder",
+    "WalletFacade"
   ]
 }
