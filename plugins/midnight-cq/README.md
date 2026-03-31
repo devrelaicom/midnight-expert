@@ -63,6 +63,18 @@ Write DApp E2E and integration tests for Midnight DApps using Playwright. Covers
 
 **Triggers on**: test my dapp, write e2e tests, test wallet connection, playwright midnight, test transaction UI, integration test frontend, end-to-end test, browser test, mock ContractProvider, test wallet disconnect
 
+### wallet-testing
+
+Write tests for custom wallet implementations and extensions built on the Midnight Wallet SDK packages (`@midnight-ntwrk/wallet-sdk-*`). Covers Effect/Either unwrapping at the SDK boundary, Observable state assertions, branded type fixture construction, WalletBuilder test setup, and test double patterns for capabilities and services.
+
+**Triggers on**: write wallet tests, test my wallet variant, test my capability, test my wallet service, test WalletBuilder, write wallet SDK tests, test Effect code, test Observable state, mock wallet services, test wallet state management
+
+### dapp-connector-testing
+
+Write tests for DApp Connector API integration — the `window.midnight` injection, `InitialAPI.connect()`, and `ConnectedAPI` methods. Covers configurable wallet stubs implementing the full ConnectedAPI, error code handling (Rejected vs PermissionRejected), progressive enhancement testing, and XSS prevention.
+
+**Triggers on**: test DApp Connector API, test wallet connection, test makeTransfer, test balanceTransaction, mock ConnectedAPI, stub wallet for tests, test wallet errors, test PermissionRejected, test progressive enhancement
+
 ### quality-check
 
 Run and interpret all quality checks for a Midnight project. Covers Biome lint and format output, TypeScript `tsc --noEmit` errors (including stale `managed/` artifacts), Compact compiler errors and disclosure violations, Vitest failures with simulator stack trace interpretation, and Playwright timeout and element-not-found failures.

@@ -14,7 +14,12 @@ description: >-
 
   Example 3: Claim "MerkleTree is defined in the ledger crate" — searches
   midnightntwrk/midnight-ledger for the MerkleTree type definition.
-skills: midnight-verify:verify-by-source
+
+  Example 4: Claim "ProtocolVersion is a branded bigint" — searches
+  midnightntwrk/midnight-wallet for the ProtocolVersion type definition
+  in packages/abstractions/src/. Uses verify-by-wallet-source for
+  wallet-specific repo routing and evidence rules.
+skills: midnight-verify:verify-by-source, midnight-verify:verify-by-wallet-source
 model: sonnet
 color: blue
 ---
@@ -28,5 +33,7 @@ Load the `midnight-verify:verify-by-source` skill and follow it step by step. It
 3. Clone locally if octocode-mcp results are insufficient
 4. Read and interpret the source code
 5. Report your findings with file paths, line numbers, and GitHub links
+
+**When the claim domain is wallet SDK**, load `midnight-verify:verify-by-wallet-source` instead of `midnight-verify:verify-by-source`. The wallet source skill provides wallet-specific repo routing, package hierarchy context, and strict evidence rules. The general verify-by-source skill is for Compact compiler, ledger, and DApp SDK source — not wallet SDK.
 
 Follow the skill precisely. The source code is your evidence. Comments are supporting context, not primary evidence. Generated docs in `LFDT-Minokawa/compact/docs/` are good but not as authoritative as the code itself — note the distinction in your report.

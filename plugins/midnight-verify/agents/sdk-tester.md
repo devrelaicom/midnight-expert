@@ -17,6 +17,11 @@ description: >-
   Example 3: Claim "findDeployedContract reconnects to an existing contract" —
   uses testkit-js for the multi-step flow: deploy, disconnect, reconnect via
   address, verify state is accessible.
+
+  Example 4: Wallet SDK behavioral claim "WalletFacade.init syncs all three
+  wallets" — only reached as a fallback when source investigation was
+  Inconclusive. Checks Docker container health (midnight-node, midnight-indexer,
+  proof-server), then writes a test script using the wallet SDK packages.
 skills: midnight-verify:verify-by-devnet
 model: sonnet
 color: magenta

@@ -17,6 +17,11 @@ description: >-
 
   Example 4: Claim "import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id'"
   works — writes a file with that import, runs tsc, confirms it resolves.
+
+  Example 5: Wallet SDK claim "WalletFacade exports balanceFinalizedTransaction"
+  — writes a .ts file importing from @midnight-ntwrk/wallet-sdk-facade, runs tsc,
+  confirms the export exists. Uses the wallet-sdk-workspace (separate from the
+  DApp SDK workspace).
 skills: midnight-verify:verify-by-type-check
 model: sonnet
 color: yellow
