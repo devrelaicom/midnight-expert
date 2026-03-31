@@ -1,0 +1,52 @@
+{
+	"name": "@aaronbassett/template-engine",
+	"version": "0.1.0",
+	"description": "Generic template directory copier with placeholder substitution. Reads JSON from stdin, copies a template directory, replaces {{KEY}} placeholders, writes result to stdout.",
+	"type": "module",
+	"license": "MIT",
+	"author": {
+		"name": "Aaron Bassett",
+		"email": "aaron@devrel-ai.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/devrelaicom/midnight-expert.git",
+		"directory": "packages/template-engine"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"bin": {
+		"template-engine": "./dist/index.js"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./engine": {
+			"types": "./dist/engine.d.ts",
+			"import": "./dist/engine.js"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc",
+		"check": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "biome check .",
+		"format:check": "biome format ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^20.17.0",
+		"typescript": "^5.7.0",
+		"vitest": "^3.0.0"
+	}
+}
