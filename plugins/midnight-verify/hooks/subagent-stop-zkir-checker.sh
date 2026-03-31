@@ -5,6 +5,10 @@ set -euo pipefail
 # Verifies the agent compiled a contract AND set up the ZKIR checker
 
 INPUT=$(cat)
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
+if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
+  exit 0
+fi
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.agent_transcript_path // empty')
 
 if [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ]; then
