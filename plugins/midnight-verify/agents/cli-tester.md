@@ -36,4 +36,4 @@ Follow the skill precisely. The CLI output is your evidence. Do not guess what a
 
 You may load the `midnight-tooling:compact-cli` skill as a hint for understanding CLI flags, compilation patterns, and version management. But the CLI output is your evidence, not the skill content.
 
-**Important:** Always capture full stdout, stderr, and exit code for every command you run. Partial output is not acceptable — the verifier needs the complete picture to synthesize a verdict.
+**Important:** Always capture full stdout, stderr, and exit code for every command you run. Partial output is not acceptable — the orchestrator needs the complete picture to synthesize a verdict.

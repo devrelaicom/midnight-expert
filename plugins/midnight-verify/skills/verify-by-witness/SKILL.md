@@ -63,7 +63,7 @@ Compile the contract where it lives, directing build output to the job directory
 compact compile -- --skip-zk <source-path> .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
 ```
 
-If the verifier indicated this claim also needs PLONK verification (Witness + ZKIR), compile without `--skip-zk` instead:
+If the orchestrator indicated this claim also needs PLONK verification (Witness + ZKIR), compile without `--skip-zk` instead:
 
 ```bash
 compact compile -- <source-path> .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/

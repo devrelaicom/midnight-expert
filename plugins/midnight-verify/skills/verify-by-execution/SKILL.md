@@ -137,13 +137,13 @@ Capture the full compiler output (stdout and stderr) regardless of success or fa
 
 ## Step 4.5: Extract ZKIR (Optional)
 
-If the verifier requested ZKIR-level evidence alongside execution results, locate the `.zkir` JSON in the compilation output. It is typically found at:
+If the orchestrator requested ZKIR-level evidence alongside execution results, locate the `.zkir` JSON in the compilation output. It is typically found at:
 
 ```
 <contract-name>/build/zkir/<circuit-name>.zkir
 ```
 
-If found, note the path in your report so the verifier can dispatch the `zkir-checker` agent if needed. Do NOT run the checker yourself — your job is compilation and JS runtime execution.
+If found, note the path in your report so the orchestrator can dispatch @"midnight-verify:zkir-checker (agent)" if needed. Do NOT run the checker yourself — your job is compilation and JS runtime execution.
 
 If no `.zkir` output is found (some compilation modes may not produce it), note this in your report.
 
@@ -228,7 +228,7 @@ Do NOT remove the base workspace — it's shared across jobs.
 
 When dispatched for a ledger/protocol claim, you compile and execute a Compact contract as usual, but after execution you extract **ledger-level evidence** — cost data, transaction properties, well-formedness results — in addition to the normal runtime output.
 
-**When to use this mode:** The verifier dispatches you with a ledger claim that is testable via compilation. Examples:
+**When to use this mode:** The orchestrator dispatches you with a ledger claim that is testable via compilation. Examples:
 - "Fee calculation uses max(read, compute, block) + write + churn" → compile a contract, compute its cost
 - "Well-formedness rejects overlapping inputs" → build a transaction with overlapping inputs, check wellFormed() rejects
 - "Counter increment costs N bytes of block usage" → compile counter, measure SyntheticCost.block_usage
@@ -267,4 +267,4 @@ console.log(JSON.stringify({
 }));
 ```
 
-**Include the ledger-level evidence in your report** alongside the normal execution report. The verifier orchestrator uses both to synthesize the verdict.
+**Include the ledger-level evidence in your report** alongside the normal execution report. The orchestrator uses both to synthesize the verdict.

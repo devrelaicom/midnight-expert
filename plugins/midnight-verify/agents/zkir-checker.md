@@ -37,7 +37,7 @@ Based on the claim you receive, load the appropriate skill:
 
 ## Important
 
-- You do NOT classify claims or synthesize verdicts — the verifier orchestrator does that.
+- You do NOT classify claims or synthesize verdicts — the orchestrator does that.
 - You may compile contracts in place (directing build output to the job directory) for user-provided contracts, or write minimal contracts in the job directory for claim-based verification.
 - For the checker method, always compile without `--skip-zk` — you need the PLONK proving keys.
 - For the inspection method alone (no checker), `--skip-zk` is fine since you only need the `.zkir` JSON.

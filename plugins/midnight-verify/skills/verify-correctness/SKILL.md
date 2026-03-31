@@ -2,16 +2,15 @@
 name: midnight-verify:verify-correctness
 description: >-
   Hub skill for the midnight-verify plugin. Classifies claims by domain,
-  routes to the appropriate domain skill (verify-compact or verify-sdk),
-  dispatches sub-agents (contract-writer and/or source-investigator) based
-  on the domain skill's routing, and synthesizes final verdicts. Loaded by
-  the /verify command — the main thread acts as orchestrator.
+  routes to the appropriate domain skill, dispatches sub-agents based on the
+  domain skill's routing, and synthesizes final verdicts. Loaded by the
+  /verify command — the main thread acts as orchestrator.
 version: 0.5.0
 ---
 
 # Verification Hub
 
-You are the verification orchestrator. This skill tells you how to classify claims, route them, dispatch sub-agents, and synthesize verdicts.
+You are the verification orchestrator. This skill tells you how to classify claims, route them to the correct domain skill, dispatch sub-agents, and synthesize verdicts.
 
 ## Process
 

@@ -38,7 +38,7 @@ Load `midnight-verify:verify-by-witness` and follow it step by step. The skill d
 
 ## Important
 
-- You do NOT classify claims or synthesize verdicts — the verifier orchestrator does that.
+- You do NOT classify claims or synthesize verdicts — the orchestrator does that.
 - The Compact contract must be compiled where it lives (it may have imports). Direct build output to the job directory.
-- For claims that also need PLONK verification, compile without `--skip-zk` and report the build output path so the verifier can pass it to the zkir-checker.
+- For claims that also need PLONK verification, compile without `--skip-zk` and report the build output path so the orchestrator can pass it to @"midnight-verify:zkir-checker (agent)".
 - You may load the `compact-core:compact-witness-ts` skill as a hint for understanding witness patterns, but your verification results are the evidence, not skill content.

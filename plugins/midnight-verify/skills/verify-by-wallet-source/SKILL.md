@@ -148,4 +148,4 @@ rm -rf "$CLONE_DIR"
 
 If inconclusive, explain:
 - What you searched and why it wasn't definitive
-- Whether devnet E2E testing might resolve it (the verifier orchestrator decides whether to dispatch)
+- Whether devnet E2E testing might resolve it (the orchestrator decides whether to dispatch)
