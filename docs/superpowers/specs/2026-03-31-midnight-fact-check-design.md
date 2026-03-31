@@ -88,7 +88,7 @@ A single npm package with three subcommands, called via `npx`:
 |------------|---------|---------|
 | `discover` | Glob-based file discovery with .gitignore support | `npx @aaronbassett/midnight-fact-checker-utils discover "**/*.md"` |
 | `extract-url` | Fetch URL(s), extract readable content, output Markdown | `npx @aaronbassett/midnight-fact-checker-utils extract-url https://example.com` |
-| `merge` | Merge agent JSON copies with validation | `npx @aaronbassett/midnight-fact-checker-utils merge original.json copy1.json copy2.json -o merged.json` |
+| `merge` | Merge agent JSON copies with validation | `npx @aaronbassett/midnight-fact-checker-utils merge --mode update --original original.json -o merged.json copy1.json copy2.json` |
 
 ### discover
 
