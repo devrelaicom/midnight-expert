@@ -36,7 +36,16 @@ description: >-
   the orchestrator classifies this as a witness verification, dispatches the
   witness-verifier agent to compile, type-check, run structural analysis, and
   execute the contract with the witness.
-skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness
+
+  Example 8: User runs /verify "WalletFacade exports balanceFinalizedTransaction"
+  — the orchestrator classifies this as a wallet SDK API claim, dispatches
+  the type-checker (pre-flight) and source-investigator (primary) concurrently,
+  and reports the verdict based on source evidence.
+
+  Example 9: User runs /verify "Dust balance is time-dependent" — the
+  orchestrator classifies this as a wallet SDK architecture claim, dispatches
+  the source-investigator only (no pre-flight needed), and reports.
+skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness, midnight-verify:verify-wallet-sdk
 model: sonnet
 color: green
 ---
@@ -52,6 +61,7 @@ You are the Midnight verification orchestrator.
    - ZKIR claims → load `midnight-verify:verify-zkir`
    - Witness claims → load `midnight-verify:verify-witness`
    - Cross-domain → load applicable domain skills
+   - Wallet SDK claims → load `midnight-verify:verify-wallet-sdk`
 3. Follow the hub skill's process exactly.
 
 ## Dispatching Sub-Agents
@@ -74,6 +84,13 @@ You are the Midnight verification orchestrator.
 **Witness verification:**
 - Witness verification → dispatch `midnight-verify:witness-verifier`
 - Witness + ZKIR → dispatch `midnight-verify:witness-verifier` first, then pass build output path to `midnight-verify:zkir-checker` (sequential)
+
+**Wallet SDK verification:**
+- Pre-flight type-check → dispatch `midnight-verify:type-checker` with `domain: 'wallet-sdk'` context
+- Source investigation (primary) → dispatch `midnight-verify:source-investigator` with instruction to load `midnight-verify:verify-by-wallet-source`
+- Devnet E2E (fallback) → dispatch `midnight-verify:sdk-tester` with `domain: 'wallet-sdk'` context, ONLY if source investigation returns Inconclusive
+
+**For wallet SDK claims, dispatch type-checker and source-investigator concurrently** (they are independent). Wait for source-investigator's verdict. Only dispatch sdk-tester if source-investigator returned Inconclusive.
 
 **When multiple methods are needed, dispatch agents concurrently.** They are independent and can run in parallel.
 
