@@ -118,6 +118,16 @@ A single npm package with three subcommands, called via `npx`:
 
 User grants permission once for `npx @aaronbassett/midnight-fact-checker-utils*` and all subcommands work.
 
+### Package Location & Publishing
+
+- Source lives at `./packages/midnight-fact-checker-utils/` in the project root (alongside `./plugins/` and `./docs/`)
+- A dedicated GitHub Actions workflow (`.github/workflows/publish-fact-checker-utils.yml`) automates publishing to npm
+- The workflow triggers on pushes to `main` that change files in `packages/midnight-fact-checker-utils/`
+- It compares the `version` field in `package.json` against the latest published version on npm
+- If the version has changed: run tests, build, and publish to npm with the `@aaronbassett` scope
+- If the version has not changed: skip publishing
+- Requires an `NPM_TOKEN` repository secret for authentication
+
 ## Command Flow: check.md
 
 ### Step 1: Preflight
