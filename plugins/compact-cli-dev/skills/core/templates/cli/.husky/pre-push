@@ -1,0 +1,3 @@
+npx biome check .
+npx tsc --noEmit
+npx vitest run
