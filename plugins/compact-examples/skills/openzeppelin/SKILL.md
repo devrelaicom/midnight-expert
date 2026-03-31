@@ -10,7 +10,7 @@ A library for secure smart contract development written in Compact for Midnight.
 
 > **Warning**: This library contains highly experimental code. Expect rapid iteration.
 >
-> **Compatibility**: Library v0.0.1-alpha.1 | Compiler: compactc 0.26.0–0.29.0 | Language: `pragma language_version >= 0.21.0`
+> **Compatibility**: Library v0.0.1-alpha.1 | Compiler: compactc 0.26.0–0.30.0 | Language: `pragma language_version >= 0.22.0`
 
 ## Installation
 
@@ -134,7 +134,7 @@ Contract-to-contract calls are **not yet supported** in Compact. This affects al
 
 ## Known Pitfalls
 
-- **`from` is a reserved keyword** in compactc 0.28.0+ (language version 0.20.0+). Use `fromAddress` as the parameter name in `transferFrom` circuits. Code using `from` as an identifier will fail to parse.
+- **`from` is a reserved keyword** in compactc 0.28.0+ (language version 0.22.0+). Use `fromAddress` as the parameter name in `transferFrom` circuits. Code using `from` as an identifier will fail to parse.
 
 ## Troubleshooting
 
@@ -207,7 +207,7 @@ import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/sec
 ## Common Contract Pattern
 
 ```compact
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
 import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"

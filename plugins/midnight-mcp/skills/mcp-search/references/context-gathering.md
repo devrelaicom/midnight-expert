@@ -32,7 +32,7 @@ Scan the user's query for Midnight-specific entities:
 - Package names: `@midnight-ntwrk/compact`, `@midnight-ntwrk/midnight-js-contracts`, etc.
 - Type names: `Counter`, `MerkleTree`, `Map`, `Set`, `Bytes`, `Uint`, `Field`
 - Construct names: `circuit`, `witness`, `ledger`, `export`, `import`, `disclose`
-- Version strings: `0.28.0`, `v2`, `language_version 0.2.0`
+- Version strings: `0.28.0`, `v2`, `language_version 0.22`
 - Tool/component names: proof server, indexer, node, Compact CLI, Lace wallet
 
 Normalize detected entities: fix casing (`merkletree` to `MerkleTree`), resolve abbreviations only where written both ways, keep standard forms as-is.

@@ -3,7 +3,7 @@
 ## Contract Code
 
 ```compact
-pragma language_version >= 0.14;
+pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
 
@@ -20,11 +20,11 @@ export circuit restricted(): [] {
   data.increment(1);
 }
 
-export pure circuit getData(): Uint<64> {
+export circuit getData(): Uint<64> {
   return data;
 }
 
-export pure circuit getOwner(): Bytes<32> {
+export circuit getOwner(): Bytes<32> {
   return owner;
 }
 ```
@@ -41,8 +41,8 @@ midnight-simulate-deploy({ code: "<access control contract source>", caller: "al
     circuits: [
       { name: "transferOwnership", isPublic: true, isPure: false, parameters: [{ name: "newOwner", type: "Bytes<32>" }], readsLedger: ["owner"], writesLedger: ["owner"] },
       { name: "restricted", isPublic: true, isPure: false, parameters: [], readsLedger: ["owner", "data"], writesLedger: ["data"] },
-      { name: "getData", isPublic: true, isPure: true, parameters: [], readsLedger: ["data"], writesLedger: [] },
-      { name: "getOwner", isPublic: true, isPure: true, parameters: [], readsLedger: ["owner"], writesLedger: [] }
+      { name: "getData", isPublic: true, isPure: false, parameters: [], readsLedger: ["data"], writesLedger: [] },
+      { name: "getOwner", isPublic: true, isPure: false, parameters: [], readsLedger: ["owner"], writesLedger: [] }
     ],
     ledgerState: {
       owner: { type: "Bytes<32>", value: "alice" },

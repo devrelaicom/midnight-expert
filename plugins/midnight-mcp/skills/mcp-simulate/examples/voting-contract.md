@@ -3,7 +3,7 @@
 ## Contract Code
 
 ```compact
-pragma language_version >= 0.14;
+pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
 
@@ -36,7 +36,7 @@ export circuit closeVoting(): [] {
   votingOpen = false;
 }
 
-export pure circuit tally(): [Uint<64>, Uint<64>] {
+export circuit tally(): [Uint<64>, Uint<64>] {
   return [votesA, votesB];
 }
 ```

@@ -19,7 +19,7 @@
 //
 // The counter.compact contract under test:
 //
-//   pragma language_version >= 0.20;
+//   pragma language_version >= 0.22;
 //   import CompactStandardLibrary;
 //   export ledger round: Counter;
 //   export circuit increment(): [] {

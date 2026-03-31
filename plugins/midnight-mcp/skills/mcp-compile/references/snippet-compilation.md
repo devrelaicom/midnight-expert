@@ -20,7 +20,7 @@ The compiler detects whether the submitted code is a complete contract or a snip
 For code missing both pragma and stdlib import (most common case for snippets):
 
 ```compact
-pragma language_version >= 0.14;
+pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
 
@@ -49,7 +49,7 @@ If the response includes `originalCode` and `wrappedCode` fields, wrapping occur
 Code submitted: "export circuit add(a: Uint<64>, b: Uint<64>): Uint<64> { return a + b; }"
 
 Wrapped code (by compiler):
-  Line 1: pragma language_version >= 0.14;
+  Line 1: pragma language_version >= 0.22;
   Line 2: (blank)
   Line 3: import CompactStandardLibrary;
   Line 4: (blank)

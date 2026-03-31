@@ -27,15 +27,15 @@ Search: "ledger declaration Compact language_version 0.28"
 
 **Before:**
 ```
-*.compact file contains: pragma language_version 0.2.0;
+*.compact file contains: pragma language_version 0.22;
 User query: "how to use disclose"
 Search: "disclose Compact"
 ```
 
 **After:**
 ```
-Search: "disclose Compact language_version 0.2.0"
-→ Deprioritize results showing pre-0.2.0 disclose syntax
+Search: "disclose Compact language_version 0.22"
+→ Deprioritize results showing pre-0.22 disclose syntax
 ```
 
 **Why:** The `pragma language_version` declaration is the most reliable version signal. The `disclose` construct behavior may differ between language versions.

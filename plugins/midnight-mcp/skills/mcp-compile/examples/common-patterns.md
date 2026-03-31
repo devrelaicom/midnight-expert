@@ -10,74 +10,72 @@ When writing or reviewing Compact code before sending it to the hosted compiler.
 
 **Code:**
 ```compact
-pragma language_version >= 0.14.0;
+pragma language_version >= 0.22;
 
-ledger {
-  count: Counter;
-}
+import CompactStandardLibrary;
 
-export circuit increment(amount: Uint<64>): [] {
-  count.increment(amount);
+export ledger count: Counter;
+
+export circuit increment(): [] {
+  count.increment(1);
 }
 
 export circuit get_count(): Uint<64> {
-  return count.value();
+  return count.read();
 }
 ```
 
-**Why this compiles:** Uses `[]` for void return, `Counter` from ledger ADTs, `Uint<64>` for numeric parameters. No imports needed — `Counter` and `Uint` are built-in.
+**Why this compiles:** Uses `[]` for void return, `Counter` from `CompactStandardLibrary`, individual `export ledger` declarations. `Counter.increment` takes `Uint<16>`, and `Counter.read()` returns `Uint<64>`.
 
 ### Contract with Map state and witness
 
 **Code:**
 ```compact
-pragma language_version >= 0.14.0;
+pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
 
-ledger {
-  balances: Map<Bytes<32>, Uint<64>>;
-}
+export ledger balances: Map<Bytes<32>, Uint<64>>;
 
-witness owner_key: Bytes<32>;
+witness owner_key(): Bytes<32>;
 
 export circuit set_balance(key: Bytes<32>, amount: Uint<64>): [] {
-  assert key == owner_key "only owner can set balances";
-  balances.insert(key, amount);
+  assert(disclose(key == owner_key()), "only owner can set balances");
+  balances.insert(disclose(key), disclose(amount));
 }
 
 export circuit get_balance(key: Bytes<32>): Uint<64> {
-  return balances.lookup(key).value;
+  return balances.lookup(disclose(key));
 }
 ```
 
-**Why this compiles:** Imports `CompactStandardLibrary` for `Map` operations. Uses `Bytes<32>` for keys, `assert` with string message, and `Map.lookup().value` to retrieve entries.
+**Why this compiles:** Imports `CompactStandardLibrary` for `Map` operations. Uses `Bytes<32>` for keys, `assert(condition, "message")` syntax, `disclose()` for witness-derived values flowing to ledger, and `Map.lookup()` to retrieve entries.
 
 ### Export with disclosure
 
 **Code:**
 ```compact
-pragma language_version >= 0.14.0;
+pragma language_version >= 0.22;
 
-ledger {
-  total: Counter;
-}
+import CompactStandardLibrary;
 
-witness secret_value: Field;
+export ledger total: Counter;
 
-export circuit add_with_disclosure(amount: Uint<64>): [] {
-  disclose(secret_value);
-  total.increment(amount);
+witness secret_value(): Field;
+
+export circuit add_with_disclosure(): [] {
+  disclose(secret_value());
+  total.increment(1);
 }
 ```
 
-**Why this compiles:** The `disclose(secret_value)` call explicitly declares that the witness value will be revealed on-chain. Without this, the compiler would reject the circuit with a disclosure error because `secret_value` is used in a context that requires disclosure.
+**Why this compiles:** The `disclose(secret_value())` call explicitly declares that the witness value will be revealed on-chain. Without this, the compiler would reject the circuit with a disclosure error because `secret_value()` is used in a context that requires disclosure.
 
 ### Enum and struct definitions
 
 **Code:**
 ```compact
-pragma language_version >= 0.14.0;
+pragma language_version >= 0.22;
 
 enum Status {
   active,
@@ -91,16 +89,14 @@ struct Proposal {
   votes: Uint<64>
 }
 
-ledger {
-  current: Proposal;
-}
+export ledger current: Proposal;
 
 export circuit get_status(): Status {
   return current.status;
 }
 ```
 
-**Why this compiles:** Enums use comma-separated variants (no values). Structs use field-name-colon-type syntax. Enum and struct definitions must appear before their use in ledger or circuit declarations.
+**Why this compiles:** Enums use comma-separated variants (no values). Structs use field-name-colon-type syntax. Enum and struct definitions must appear before their use in ledger or circuit declarations. Uses individual `export ledger` declarations.
 
 ## Anti-Patterns
 
@@ -136,10 +132,10 @@ if (status == Status.active) { ... }
 
 **Wrong:**
 ```compact
-ledger { count: Counter; }
+export ledger count: Counter;
 export circuit inc(): [] { count.increment(1); }
 ```
 
 **Problem:** The compiler requires a pragma declaration. Without it, compilation fails with a pragma-related error.
 
-**Instead:** Always include `pragma language_version >= 0.14.0;` (or the appropriate version) as the first line.
+**Instead:** Always include `pragma language_version >= 0.22;` (or the appropriate version) as the first line.

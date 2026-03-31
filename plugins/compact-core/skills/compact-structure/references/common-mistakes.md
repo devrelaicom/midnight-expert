@@ -36,10 +36,10 @@ export circuit doSomething(): [] {
 
 ```compact
 // Wrong - missing && between conditions
-pragma language_version >= 0.20 < 0.22;
+pragma language_version >= 0.22 < 0.23;
 
 // Correct - use && to combine conditions
-pragma language_version >= 0.20 && <= 0.22;
+pragma language_version >= 0.22 && <= 0.23;
 ```
 
 > **Tip:** Run `compact compile --language-version` to check your compiler's supported version.

@@ -25,7 +25,7 @@
 //
 // The hypothetical token.compact contract under test:
 //
-//   pragma language_version >= 0.20;
+//   pragma language_version >= 0.22;
 //   import CompactStandardLibrary;
 //   export ledger tokenColor: Bytes<32>;
 //   export ledger totalMinted: Counter;

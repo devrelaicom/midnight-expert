@@ -3,17 +3,17 @@
 ## Contract Code
 
 ```compact
-pragma language_version >= 0.14;
+pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
 
 export ledger count: Counter;
 
-export circuit inc(n: Uint<64>): [] {
-  count.increment(n);
+export circuit inc(n: Uint<16>): [] {
+  count.increment(disclose(n));
 }
 
-export pure circuit get(): Uint<64> {
+export circuit get(): Uint<64> {
   return count;
 }
 ```
@@ -24,14 +24,14 @@ export pure circuit get(): Uint<64> {
 
 ```
 midnight-simulate-deploy({
-  code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit inc(n: Uint<64>): [] { count.increment(n); }\nexport pure circuit get(): Uint<64> { return count; }"
+  code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit inc(n: Uint<16>): [] { count.increment(disclose(n)); }\nexport circuit get(): Uint<64> { return count; }"
 })
 → {
     success: true,
     sessionId: "counter-session-1",
     circuits: [
-      { name: "inc", isPublic: true, isPure: false, parameters: [{ name: "n", type: "Uint<64>" }], returnType: "[]", readsLedger: ["count"], writesLedger: ["count"] },
-      { name: "get", isPublic: true, isPure: true, parameters: [], returnType: "Uint<64>", readsLedger: ["count"], writesLedger: [] }
+      { name: "inc", isPublic: true, isPure: false, parameters: [{ name: "n", type: "Uint<16>" }], returnType: "[]", readsLedger: ["count"], writesLedger: ["count"] },
+      { name: "get", isPublic: true, isPure: false, parameters: [], returnType: "Uint<64>", readsLedger: ["count"], writesLedger: [] }
     ],
     ledgerState: { count: { type: "Counter", value: "0" } }
   }
@@ -85,7 +85,7 @@ midnight-simulate-state({ sessionId: "counter-session-1" })
 ✓ Counter = 5 + 3 = 8
 ```
 
-### Step 7: Read via pure circuit
+### Step 7: Read counter value
 
 ```
 midnight-simulate-call({ sessionId: "counter-session-1", circuit: "get" })
@@ -96,7 +96,7 @@ midnight-simulate-call({ sessionId: "counter-session-1", circuit: "get" })
     updatedLedger: { count: { type: "Counter", value: "8" } }
   }
 ✓ Return value (8) matches ledger state
-✓ No state changes (pure circuit)
+✓ No state changes (read-only circuit)
 ```
 
 ### Step 8: Cleanup
@@ -109,7 +109,7 @@ midnight-simulate-delete({ sessionId: "counter-session-1" })
 ## What This Tests
 
 - **Basic state mutation** — Counter increments correctly with different values
-- **Pure vs impure circuits** — `inc` modifies state, `get` reads without modifying
+- **State-modifying vs read-only circuits** — `inc` modifies state, `get` reads without modifying
 - **Return values** — `get` returns the current counter value
 - **State accumulation** — Multiple increments accumulate correctly (0 → 5 → 8)
 - **stateChanges tracking** — Each call reports what changed and the before/after values

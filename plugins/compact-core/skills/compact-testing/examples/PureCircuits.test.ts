@@ -58,7 +58,7 @@
 // that defines pure helper circuits alongside its impure state-changing ones.
 // A typical Compact source might look like:
 //
-//   pragma language_version >= 0.20;
+//   pragma language_version >= 0.22;
 //   import CompactStandardLibrary;
 //
 //   export ledger poster: Bytes<32>;

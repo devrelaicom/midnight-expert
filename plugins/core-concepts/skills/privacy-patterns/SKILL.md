@@ -40,7 +40,7 @@ A commitment hides a value behind cryptographic randomness while binding the com
 **Column note**: "Clears Witness Taint" means the compiler no longer requires `disclose()` for values that flowed through the function's input. The commitment cryptographically hides the input, so the compiler considers it safe. Hash functions do not provide this guarantee because hash outputs could theoretically be brute-forced.
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 // Witnesses are declaration-only; logic is implemented in TypeScript
@@ -174,7 +174,7 @@ Use `HistoricMerkleTree<N, T>` instead of `MerkleTree<N, T>` when members are ad
 ### Full Flow: Anonymous Authentication with Nullifier
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 export ledger members: HistoricMerkleTree<16, Bytes<32>>;
@@ -290,7 +290,7 @@ Selective disclosure proves a property about private data without revealing the 
 Prove a witness-held value exceeds a threshold without revealing the value. Note: comparison operators (`>=`, `<=`, `>`, `<`) only work on `Uint<N>`, not `Field`.
 
 ```compact
-pragma language_version 0.21;
+pragma language_version 0.22;
 import CompactStandardLibrary;
 
 // Witnesses return Uint<64> because comparison operators

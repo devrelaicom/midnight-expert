@@ -10,7 +10,7 @@ When testing a multi-step workflow where each circuit call builds on the previou
 
 ```
 1. Deploy:
-   midnight-simulate-deploy({ code: "pragma language_version >= 0.14;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit inc(n: Uint<64>): [] { count.increment(n); }\nexport pure circuit get(): Uint<64> { return count; }" })
+   midnight-simulate-deploy({ code: "pragma language_version >= 0.22;\nimport CompactStandardLibrary;\nexport ledger count: Counter;\nexport circuit inc(n: Uint<16>): [] { count.increment(disclose(n)); }\nexport circuit get(): Uint<64> { return count; }" })
    → sessionId: "abc-123-def"
    → ledgerState: { count: { type: "Counter", value: "0" } }
 
@@ -31,7 +31,7 @@ When testing a multi-step workflow where each circuit call builds on the previou
    → ledgerState: { count: { type: "Counter", value: "8" } }
    ✓ Counter = 8 (expected: 5 + 3)
 
-6. Call get() (pure):
+6. Call get():
    midnight-simulate-call({ sessionId: "abc-123-def", circuit: "get" })
    → success: true, result: "8", stateChanges: []
    ✓ Return value matches ledger state
