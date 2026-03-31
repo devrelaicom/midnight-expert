@@ -4,8 +4,8 @@ description: >-
   Hub skill for the midnight-verify plugin. Classifies claims by domain,
   routes to the appropriate domain skill (verify-compact or verify-sdk),
   dispatches sub-agents (contract-writer and/or source-investigator) based
-  on the domain skill's routing, and synthesizes final verdicts. Always loaded
-  first by the verifier agent.
+  on the domain skill's routing, and synthesizes final verdicts. Loaded by
+  the /verify command — the main thread acts as orchestrator.
 version: 0.5.0
 ---
 
@@ -38,35 +38,35 @@ Load the appropriate domain skill(s) using the Skill tool. The domain skill prov
 
 Based on the domain skill's routing:
 
-- **Compact execution needed** → dispatch `midnight-verify:contract-writer` agent with the claim
-- **Source inspection needed** → dispatch `midnight-verify:source-investigator` agent with the claim
-- **Type-checking needed** → dispatch `midnight-verify:type-checker` agent with the claim and what type assertion to make
-- **Devnet E2E needed** → dispatch `midnight-verify:sdk-tester` agent with the claim and what behavior to observe
-- **Package/version check needed** → dispatch `devs:deps-maintenance` agent with the package name and version claim. If deps-maintenance is not available (plugin not installed), run `npm view` directly as a fallback.
-- **ZKIR checker verification needed** → dispatch `midnight-verify:zkir-checker` agent with the claim and whether to use the checker method, inspection method, or both
-- **ZKIR regression sweep needed** → dispatch `midnight-verify:zkir-checker` agent and instruct it to load the `midnight-verify:zkir-regression` skill
-- **Witness verification needed** → dispatch `midnight-verify:witness-verifier` agent with the claim and both file paths (if provided)
-- **Witness + ZKIR verification needed** → dispatch `midnight-verify:witness-verifier` first (it compiles and verifies), then pass the build output path to `midnight-verify:zkir-checker` for PLONK verification. These are sequential, not concurrent.
+- **Compact execution needed** → dispatch @"midnight-verify:contract-writer (agent)" with the claim
+- **Source inspection needed** → dispatch @"midnight-verify:source-investigator (agent)" with the claim
+- **Type-checking needed** → dispatch @"midnight-verify:type-checker (agent)" with the claim and what type assertion to make
+- **Devnet E2E needed** → dispatch @"midnight-verify:sdk-tester (agent)" with the claim and what behavior to observe
+- **Package/version check needed** → dispatch @"devs:deps-maintenance (agent)" with the package name and version claim. If deps-maintenance is not available (plugin not installed), run `npm view` directly as a fallback.
+- **ZKIR checker verification needed** → dispatch @"midnight-verify:zkir-checker (agent)" with the claim and whether to use the checker method, inspection method, or both
+- **ZKIR regression sweep needed** → dispatch @"midnight-verify:zkir-checker (agent)" and instruct it to load the `midnight-verify:zkir-regression` skill for the regression claim list and expected verdicts
+- **Witness verification needed** → dispatch @"midnight-verify:witness-verifier (agent)" with the claim and both file paths (if provided)
+- **Witness + ZKIR verification needed** → dispatch @"midnight-verify:witness-verifier (agent)" first (it compiles and verifies), then pass the build output path to @"midnight-verify:zkir-checker (agent)" for PLONK verification. These are sequential, not concurrent.
 
 **Wallet SDK verification:**
-- Pre-flight type-check → dispatch `midnight-verify:type-checker` agent with `domain: 'wallet-sdk'` context
-- Source investigation (primary, always runs) → dispatch `midnight-verify:source-investigator` agent with instruction to load `midnight-verify:verify-by-wallet-source`
-- Devnet E2E (fallback, only if source is Inconclusive) → dispatch `midnight-verify:sdk-tester` agent with `domain: 'wallet-sdk'` context
+- Pre-flight type-check → dispatch @"midnight-verify:type-checker (agent)" with `domain: 'wallet-sdk'` context
+- Source investigation (primary, always runs) → dispatch @"midnight-verify:source-investigator (agent)" with instruction to load the `midnight-verify:verify-by-wallet-source` skill for wallet-specific repo routing
+- Devnet E2E (fallback, only if source is Inconclusive) → dispatch @"midnight-verify:sdk-tester (agent)" with `domain: 'wallet-sdk'` context
 
-**For wallet SDK claims, dispatch type-checker and source-investigator concurrently.** Wait for source-investigator. Only dispatch sdk-tester if source returned Inconclusive.
+**For wallet SDK claims, dispatch @"midnight-verify:type-checker (agent)" and @"midnight-verify:source-investigator (agent)" concurrently.** Wait for source-investigator. Only dispatch sdk-tester if source returned Inconclusive.
 
 **Ledger/Protocol verification:**
-- Source investigation (primary, always runs) → dispatch `midnight-verify:source-investigator` agent with instruction to load `midnight-verify:verify-by-ledger-source`
-- Type-check (pre-flight, TS API claims only) → dispatch `midnight-verify:type-checker` agent (uses existing sdk-workspace)
-- Compilation/execution (secondary) → dispatch `midnight-verify:contract-writer` agent with instruction to extract ledger-level evidence
-- ZKIR inspection (secondary) → dispatch `midnight-verify:zkir-checker` agent for VM/opcode claims
-- Ledger-v8 execution (secondary) → dispatch `midnight-verify:type-checker` agent in ledger execution mode
+- Source investigation (primary, always runs) → dispatch @"midnight-verify:source-investigator (agent)" with instruction to load the `midnight-verify:verify-by-ledger-source` skill for Rust crate-level routing
+- Type-check (pre-flight, TS API claims only) → dispatch @"midnight-verify:type-checker (agent)" (uses existing sdk-workspace)
+- Compilation/execution (secondary) → dispatch @"midnight-verify:contract-writer (agent)" with instruction to extract ledger-level evidence
+- ZKIR inspection (secondary) → dispatch @"midnight-verify:zkir-checker (agent)" for VM/opcode claims
+- Ledger-v8 execution (secondary) → dispatch @"midnight-verify:type-checker (agent)" in ledger execution mode
 
 **For ledger claims, source investigation always runs.** Secondary methods provide corroborating evidence and are dispatched concurrently when the claim is testable.
 
 **Tooling verification:**
-- CLI execution (primary) → dispatch `midnight-verify:cli-tester` agent for behavioral claims
-- Source investigation (secondary) → dispatch `midnight-verify:source-investigator` agent for internal/architectural claims
+- CLI execution (primary) → dispatch @"midnight-verify:cli-tester (agent)" for behavioral claims
+- Source investigation (secondary) → dispatch @"midnight-verify:source-investigator (agent)" for internal/architectural claims
 
 **For tooling claims, prefer CLI execution.** Running the command is more authoritative than reading source.
 
@@ -75,10 +75,10 @@ Based on the domain skill's routing:
 When dispatching, pass:
 - The claim verbatim
 - Any relevant context (file path, code snippet, what specifically to check)
-- For the contract-writer: what observable behavior would confirm/refute the claim
-- For the source-investigator: which repo/area to focus on (from the domain skill's routing)
-- For the type-checker: what type assertion to write, or the file path to check
-- For the sdk-tester: what runtime behavior to observe
+- For @"midnight-verify:contract-writer (agent)": what observable behavior would confirm/refute the claim
+- For @"midnight-verify:source-investigator (agent)": which repo/area to focus on (from the domain skill's routing)
+- For @"midnight-verify:type-checker (agent)": what type assertion to write, or the file path to check
+- For @"midnight-verify:sdk-tester (agent)": what runtime behavior to observe
 
 ### 4. Synthesize the Verdict
 
@@ -171,6 +171,6 @@ Extract individual claims from the file — assertions in comments, patterns use
 
 ## What This Skill Does NOT Do
 
-- It does not contain domain-specific verification logic — that lives in `verify-compact` and `verify-sdk`
-- It does not contain method-specific instructions — those live in `verify-by-execution`, `verify-by-source`, `verify-by-type-check`, and `verify-by-devnet`
+- It does not contain domain-specific verification logic — that lives in domain skills like the `midnight-verify:verify-compact` skill and the `midnight-verify:verify-sdk` skill
+- It does not contain method-specific instructions — those live in method skills like the `midnight-verify:verify-by-execution` skill, the `midnight-verify:verify-by-source` skill, the `midnight-verify:verify-by-type-check` skill, and the `midnight-verify:verify-by-devnet` skill
 - It does not directly verify anything — it classifies, routes, dispatches, and synthesizes
