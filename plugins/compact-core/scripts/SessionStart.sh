@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 # SessionStart hook for the compact-core plugin.
 # Checks compact CLI availability, compiler version, and language version.
 # Outputs JSON to stdout for the hook system.
+#
+# IMPORTANT: This script must NEVER exit with a non-zero code or fail to
+# produce valid JSON on stdout — doing so could block the session from
+# starting. All commands are guarded and the script falls back to static
+# context if anything goes wrong.
 
 COMMON_CONTEXT='The Midnight Network is under active development with frequent breaking changes. Do not assume stability across versions.
 
@@ -17,21 +21,40 @@ compact self check # check for new compact developer tools versions (cached with
 npm view <package-name> version # check for latest version of <package-name>
 ```'
 
+# --- Helper: emit the hook JSON ---
+# Uses jq if available, otherwise falls back to manual JSON construction.
+emit_json() {
+  local ctx="$1"
+
+  if command -v jq >/dev/null 2>&1; then
+    jq -n \
+      --arg ctx "$ctx" \
+      '{
+        "continue": true,
+        "hookSpecificOutput": {
+          "hookEventName": "SessionStart",
+          "additionalContext": $ctx
+        }
+      }'
+  else
+    # Fallback: escape the context for JSON manually.
+    # Replace \ with \\, " with \", newlines with \n, tabs with \t.
+    local escaped
+    escaped="$(printf '%s' "$ctx" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')"
+    printf '{"continue":true,"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$escaped"
+  fi
+}
+
+# --- Catch-all: if anything unexpected happens, emit static context ---
+trap 'emit_json "$COMMON_CONTEXT"; exit 0' ERR
+
 # --- Check 1: Is the compact CLI installed? ---
 if ! command -v compact >/dev/null 2>&1; then
   msg="Could not find the compact developer tools. Use the \`/midnight-tooling:install-cli\` command to install them.
 
 ${COMMON_CONTEXT}"
 
-  jq -n \
-    --arg ctx "$msg" \
-    '{
-      "continue": true,
-      "hookSpecificOutput": {
-        "hookEventName": "SessionStart",
-        "additionalContext": $ctx
-      }
-    }'
+  emit_json "$msg"
   exit 0
 fi
 
@@ -56,12 +79,5 @@ else
 ${COMMON_CONTEXT}"
 fi
 
-jq -n \
-  --arg ctx "$msg" \
-  '{
-    "continue": true,
-    "hookSpecificOutput": {
-      "hookEventName": "SessionStart",
-      "additionalContext": $ctx
-    }
-  }'
+emit_json "$msg"
+exit 0
