@@ -39,6 +39,7 @@ Before scanning anything, load the three preloaded skills so you have authoritat
 - `midnight-cq:dapp-testing` — defines the correct Playwright config, ContractProvider mocking, and E2E patterns
 - `midnight-cq:wallet-testing` — defines correct Effect boundary patterns, WalletBuilder setup, Observable testing for wallet SDK projects
 - `midnight-cq:dapp-connector-testing` — defines correct ConnectedAPI stub patterns, error handling, progressive enhancement for DApp Connector projects
+- `midnight-cq:ledger-testing` — defines correct proof staging patterns, state immutability, time-dependent Dust testing, cost model assertions, and crypto fixture generation for ledger projects
 
 ### Step 2 — Scan Tooling Presence
 
@@ -65,6 +66,9 @@ Use Glob, Grep, and Bash to detect what CQ tooling is present and what is missin
 | DApp Connector deps | `Grep @midnight-ntwrk/dapp-connector-api in package.json` | Determines if DApp Connector project |
 | Wallet test doubles | `Glob **/test/**/wallet-stub*.ts` | If wallet SDK or connector project |
 | Effect test patterns | `Grep Effect.runPromise in **/*.test.ts` | If wallet SDK project |
+| Ledger deps | `Grep @midnight-ntwrk/ledger-v8 in package.json` | Determines if Ledger project |
+| Onchain runtime deps | `Grep @midnight-ntwrk/onchain-runtime in package.json` | Determines if Onchain Runtime project |
+| Ledger sample fixtures | `Grep sampleCoinPublicKey in **/*.test.ts` | If ledger project — using proper fixtures |
 
 Record all presence/absence findings. Do not stop early — complete the full inventory.
 
@@ -191,6 +195,18 @@ Read the test files and check for these patterns and anti-patterns:
 | Progressive enhancement tested | Tests with PermissionRejected for optional methods | No degradation tests | Suggestion |
 | Wallet name/icon sanitized | XSS prevention tests for name and icon | No sanitization tests | Warning |
 | apiVersion validated | Semver check before connect | No version validation | Warning |
+
+**Ledger test quality checks (if ledger project):**
+
+| Check | Good Pattern | Bad Pattern | Severity |
+|-------|-------------|------------|---------|
+| sample* functions used for fixtures | `sampleCoinPublicKey()`, `sampleContractAddress()` | Arbitrary hex strings like `'0xdeadbeef'` | Warning |
+| Proof staging transitions tested | `prove()` → `bind()` → `eraseProofs()` in sequence | Skipping stages or only testing final state | Warning |
+| State immutability respected | Assertions on returned state, not original | Asserting on original after mutation | Critical |
+| Time controlled in Dust tests | Fixed `Date` passed to `walletBalance()` | `Date.now()` or no time parameter | Critical |
+| Cost model checks specific dimensions | `expect(cost.block_usage).toBe(...)` | `expect(cost).toBeDefined()` | Warning |
+| Well-formedness negative tests | Building invalid tx, asserting rejection | Only testing valid transactions | Suggestion |
+| Serialization round-trips tested | `serialize()` → `deserialize()` → assert equality | No persistence tests | Suggestion |
 
 ### Step 6 — Produce Report
 
