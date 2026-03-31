@@ -194,3 +194,30 @@ node test-claim.mjs
 ```bash
 rm -rf .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
 ```
+
+## Wallet SDK Devnet Mode
+
+This mode is used ONLY as a fallback for wallet SDK claims when source investigation returned Inconclusive. You will only reach this section if the verifier orchestrator explicitly dispatches you with `domain: 'wallet-sdk'`.
+
+### Health Check Differences
+
+The wallet SDK requires Docker containers instead of a standalone devnet:
+
+1. **midnight-node** — check with `docker ps | grep midnight-node` or query the substrate RPC endpoint
+2. **midnight-indexer** — check GraphQL health endpoint (typically `http://localhost:6300/api/v3/graphql`)
+3. **proof-server** — check health endpoint (typically `http://localhost:6301/health`)
+
+If ANY container is unreachable:
+- Report **Inconclusive (source insufficient, devnet unavailable)**
+- Message: "Source investigation was inconclusive and wallet devnet infrastructure is not available. Start the required Docker containers and retry."
+- Stop. Do not proceed.
+
+### Workspace
+
+Reuse the wallet-sdk-workspace at `.midnight-expert/verify/wallet-sdk-workspace/`. It already has all wallet SDK packages installed.
+
+### Script Approach
+
+Write test scripts using the wallet SDK packages directly. The `packages/docs-snippets/` in the wallet repo provide reference patterns for common operations (initialization, transfers, swaps, balancing). Use these as hints for script structure but verify behavior through execution.
+
+The rest of the devnet verification flow (choose approach, write script, run, interpret, report, clean up) follows the same pattern as the standard SDK devnet mode.
