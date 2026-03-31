@@ -1,0 +1,25 @@
+{
+  "name": "midnight-dapp-dev",
+  "version": "0.1.0",
+  "description": "Scaffold and build Midnight DApp frontends — Vite + React 19 + shadcn + Tailwind v4 templates, wallet integration, provider architecture, and a development agent for ongoing UI work.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "dapp",
+    "react",
+    "vite",
+    "shadcn",
+    "tailwind",
+    "wallet",
+    "lace",
+    "scaffold",
+    "template",
+    "frontend"
+  ]
+}
