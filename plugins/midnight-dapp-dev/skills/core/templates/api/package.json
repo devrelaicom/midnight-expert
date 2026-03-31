@@ -1,0 +1,29 @@
+{
+  "name": "{{API_PACKAGE_NAME}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/midnight-js-contracts": "^3.0.0",
+    "@midnight-ntwrk/midnight-js-types": "^3.0.0",
+    "@midnight-ntwrk/midnight-js-network-id": "^3.0.0",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^3.0.0",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^3.0.0",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^3.0.0",
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.0",
+    "rxjs": "^7.8.1"
+  },
+  "peerDependencies": {
+    "{{CONTRACT_PACKAGE}}": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
