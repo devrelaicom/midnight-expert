@@ -27,6 +27,7 @@ Determine what domain the claim belongs to:
 | **Witness** | Witness implementation, WitnessContext, private state, `[PrivateState, T]` return tuple, `.compact` + `.ts` file pair, witness declarations, type mappings | Load `midnight-verify:verify-witness` |
 | **Cross-domain** | Spans Compact and SDK, Compact and ZKIR, Witness and ZKIR, or protocol/architecture | Load applicable domain skills |
 | **Wallet SDK** | @midnight-ntwrk/wallet-sdk-* packages, WalletFacade, WalletBuilder, WalletRuntime, RuntimeVariant, DApp Connector API (ConnectedAPI, InitialAPI, window.midnight), HD derivation, Bech32m addresses, branded types (ProtocolVersion, WalletSeed), three-wallet architecture, capabilities (Balancer, ProvingService, SubmissionService) | Load `midnight-verify:verify-wallet-sdk` |
+| **Ledger/Protocol** | Transaction structure (intents, segments, offers, binding), token mechanics (Night UTXO, Zswap commitment/nullifier, Dust generation), cost model (SyntheticCost, fee pricing, block limits), on-chain VM (opcodes, StateValue, stack machine), contract execution (deployment, calls, effects, transcripts), cryptographic primitives (Pedersen, Fiat-Shamir, signatures, Merkle trees), @midnight-ntwrk/ledger-v8 API, well-formedness rules, FAB encoding, formal security properties | Load `midnight-verify:verify-ledger` |
 
 ### 2. Load the Domain Skill
 
@@ -52,6 +53,15 @@ Based on the domain skill's routing:
 - Devnet E2E (fallback, only if source is Inconclusive) → dispatch `midnight-verify:sdk-tester` agent with `domain: 'wallet-sdk'` context
 
 **For wallet SDK claims, dispatch type-checker and source-investigator concurrently.** Wait for source-investigator. Only dispatch sdk-tester if source returned Inconclusive.
+
+**Ledger/Protocol verification:**
+- Source investigation (primary, always runs) → dispatch `midnight-verify:source-investigator` agent with instruction to load `midnight-verify:verify-by-ledger-source`
+- Type-check (pre-flight, TS API claims only) → dispatch `midnight-verify:type-checker` agent (uses existing sdk-workspace)
+- Compilation/execution (secondary) → dispatch `midnight-verify:contract-writer` agent with instruction to extract ledger-level evidence
+- ZKIR inspection (secondary) → dispatch `midnight-verify:zkir-checker` agent for VM/opcode claims
+- Ledger-v8 execution (secondary) → dispatch `midnight-verify:type-checker` agent in ledger execution mode
+
+**For ledger claims, source investigation always runs.** Secondary methods provide corroborating evidence and are dispatched concurrently when the claim is testable.
 
 - **Multiple methods needed** → dispatch applicable agents **concurrently** (they are independent and can run in parallel)
 
@@ -103,6 +113,12 @@ Collect the sub-agent report(s) and produce the final verdict.
 | **Refuted** | (source-verified) | Source contradicts the wallet SDK claim |
 | **Refuted** | (type-checked + source-verified) | Type-check failed and source confirms it's wrong (wallet SDK domain) |
 | **Inconclusive** | (source insufficient, devnet unavailable) | Couldn't confirm via source, devnet not running (wallet SDK domain) |
+| **Confirmed** | (source-verified) | Rust source confirms the ledger/protocol claim |
+| **Confirmed** | (source-verified + tested) | Rust source confirmed, compilation/execution also confirms (ledger domain) |
+| **Confirmed** | (tested) | Compilation/execution directly confirms (e.g., cost model output, well-formedness check) (ledger domain) |
+| **Refuted** | (source-verified) | Rust source contradicts the ledger/protocol claim |
+| **Refuted** | (tested) | Compilation/execution contradicts the claim (ledger domain) |
+| **Inconclusive** | — | Source investigation insufficient, no execution path available (ledger domain) |
 
 **Critical rule for wallet SDK claims:** Type-checking is a fast pre-flight only. It NEVER produces a standalone verdict for wallet SDK claims. Every wallet SDK verdict must come from source investigation (or devnet E2E as a fallback). There is no `Confirmed (type-checked)` for wallet SDK claims.
 
