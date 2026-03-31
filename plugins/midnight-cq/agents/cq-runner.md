@@ -45,6 +45,7 @@ Use Glob and Bash to detect:
 | No test runner found | Tests not configured — report as finding |
 | `@midnight-ntwrk/wallet-sdk-*` in `package.json` deps | Wallet SDK project — check for Effect/Either test patterns |
 | `@midnight-ntwrk/dapp-connector-api` in `package.json` deps | DApp Connector integration — check for connector stub tests |
+| `@midnight-ntwrk/ledger-v8` or `@midnight-ntwrk/onchain-runtime` in `package.json` deps | Ledger project — check for proof staging, state management, and crypto fixture patterns |
 
 Record all findings before proceeding to Step 2.
 

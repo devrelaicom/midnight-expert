@@ -1,6 +1,6 @@
 {
   "name": "midnight-cq",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Code quality tooling for Midnight Network projects — linting, formatting, type checking, testing, Git hooks, and CI workflows.",
   "author": {
     "name": "Aaron Bassett",
@@ -28,6 +28,13 @@
     "effect",
     "observable",
     "WalletBuilder",
-    "WalletFacade"
+    "WalletFacade",
+    "ledger",
+    "ledger-v8",
+    "transaction",
+    "zswap",
+    "onchain-runtime",
+    "proof-staging",
+    "cost-model"
   ]
 }

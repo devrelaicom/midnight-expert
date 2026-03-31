@@ -149,6 +149,49 @@ If `npm ls` reports errors, run `npm install` to repair.
 - `domain: 'wallet-sdk'` → use `.midnight-expert/verify/wallet-sdk-workspace/`
 - Otherwise → use `.midnight-expert/verify/sdk-workspace/` (existing behavior)
 
+## Ledger API Execution Mode
+
+When the verifier passes `domain: 'ledger'` context and the claim is about behavioral output of a `@midnight-ntwrk/ledger-v8` function (not just its type signature), go beyond type-checking — write a script that calls the function and observes the output.
+
+**This uses the existing sdk-workspace** (ledger-v8 is already installed there). No separate workspace needed.
+
+**When to use this mode:**
+- Claim is about what a ledger-v8 function *returns* (not just its signature)
+- Examples: "nativeToken() returns [0,0,...,0]", "coinCommitment produces a 64-char hex string", "CostModel.initialCostModel() has specific default values"
+
+**Script pattern:**
+
+```bash
+cat > .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/ledger-exec.mjs << 'EXEC_EOF'
+// Import the specific function being tested
+import { nativeToken, coinCommitment, CostModel } from '@midnight-ntwrk/ledger';
+
+// Call the function and capture output
+const result = nativeToken();
+
+// Output structured JSON for interpretation
+console.log(JSON.stringify({
+  result: typeof result === 'bigint' ? result.toString() : result,
+  type: typeof result
+}));
+EXEC_EOF
+```
+
+Run it:
+
+```bash
+cd .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+node ledger-exec.mjs
+```
+
+**Report this as "ledger-v8 execution" evidence**, not as type-checking evidence. Include the script source, output, and interpretation in your report.
+
+**Mode selection summary:**
+- `domain: 'wallet-sdk'` → use `.midnight-expert/verify/wallet-sdk-workspace/`
+- `domain: 'ledger'` + behavioral claim → use sdk-workspace + ledger execution script
+- `domain: 'ledger'` + type claim → use sdk-workspace + normal tsc type assertions
+- Otherwise → use `.midnight-expert/verify/sdk-workspace/` (existing behavior)
+
 ## Step 2: Determine the Mode
 
 **Claim mode** — you received a natural language claim about the SDK (e.g., "deployContract returns DeployedContract"). Go to Step 3A.

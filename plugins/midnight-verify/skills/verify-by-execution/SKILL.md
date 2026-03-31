@@ -223,3 +223,48 @@ rm -rf .midnight-expert/verify/compact-workspace/jobs/$JOB_ID
 ```
 
 Do NOT remove the base workspace — it's shared across jobs.
+
+## Ledger Execution Mode
+
+When dispatched for a ledger/protocol claim, you compile and execute a Compact contract as usual, but after execution you extract **ledger-level evidence** — cost data, transaction properties, well-formedness results — in addition to the normal runtime output.
+
+**When to use this mode:** The verifier dispatches you with a ledger claim that is testable via compilation. Examples:
+- "Fee calculation uses max(read, compute, block) + write + churn" → compile a contract, compute its cost
+- "Well-formedness rejects overlapping inputs" → build a transaction with overlapping inputs, check wellFormed() rejects
+- "Counter increment costs N bytes of block usage" → compile counter, measure SyntheticCost.block_usage
+
+**What to extract after compilation and execution:**
+
+| Claim type | What to extract | How |
+|---|---|---|
+| Cost model claims | SyntheticCost breakdown | Import CostModel from ledger-v8, call `cost()` on the compiled transaction |
+| Well-formedness claims | Acceptance/rejection | Call `wellFormed()` on the transaction, capture result |
+| Balance claims | Per-segment per-token balance | Inspect transaction structure after construction |
+| Transaction structure | Intent/offer properties | Read compiled transaction fields |
+| Proof staging | Stage transitions | Construct UnprovenTransaction, call `prove()`, observe state change |
+
+**Extended runner script pattern:**
+
+After the normal circuit execution (Step 5), add ledger-level evidence extraction:
+
+```javascript
+import { CostModel, WellFormedStrictness } from '@midnight-ntwrk/ledger';
+
+// ... normal circuit execution from Step 5 ...
+
+// Extract cost data
+const cost = transaction.cost();
+console.log(JSON.stringify({
+  circuitResult: result,
+  cost: {
+    read_time: cost.read_time?.toString(),
+    compute_time: cost.compute_time?.toString(),
+    block_usage: cost.block_usage?.toString(),
+    bytes_written: cost.bytes_written?.toString(),
+    bytes_churned: cost.bytes_churned?.toString(),
+  },
+  wellFormed: transaction.wellFormed(WellFormedStrictness.default()),
+}));
+```
+
+**Include the ledger-level evidence in your report** alongside the normal execution report. The verifier orchestrator uses both to synthesize the verdict.
