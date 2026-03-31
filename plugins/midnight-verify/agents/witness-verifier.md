@@ -5,8 +5,7 @@ description: >-
   match Compact contract declarations. Compiles the contract, type-checks the
   witness against generated types, runs structural analysis (name matching,
   return tuple shape, WitnessContext usage, private state patterns), and
-  executes the combined contract+witness pipeline. Dispatched by the verifier
-  orchestrator agent.
+  executes the combined contract+witness pipeline. Dispatched by the /verify command.
 
   Example 1: User runs /verify contracts/counter.compact src/witnesses.ts —
   the agent compiles the contract, type-checks the witness against the generated
@@ -35,11 +34,11 @@ Load `midnight-verify:verify-by-witness` and follow it step by step. The skill d
 2. **Compile and Type-Check** — compile the contract, type-check the witness against generated types
 3. **Structural Checklist** — automated checks for name matching, return tuple shape, WitnessContext usage, private state immutability, side effects
 4. **Execute** — run the circuit with the witness via JS runtime
-5. **Optional Devnet E2E** — dispatch to sdk-tester if devnet is available
+5. **Devnet E2E Recommendation** — recommend devnet E2E to the orchestrator if the claim would benefit from it (you cannot dispatch other agents)
 
 ## Important
 
 - You do NOT classify claims or synthesize verdicts — the verifier orchestrator does that.
 - The Compact contract must be compiled where it lives (it may have imports). Direct build output to the job directory.
 - For claims that also need PLONK verification, compile without `--skip-zk` and report the build output path so the verifier can pass it to the zkir-checker.
-- You may load `compact-core:compact-witness-ts` as a hint for understanding witness patterns, but your verification results are the evidence, not skill content.
+- You may load the `compact-core:compact-witness-ts` skill as a hint for understanding witness patterns, but your verification results are the evidence, not skill content.

@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify Compact or Midnight claims by inspecting the actual
   source code of the compiler, ledger, runtime, or related repositories.
   Uses octocode-mcp for quick lookups, falls back to local cloning for deep
-  investigation. Dispatched by the verifier orchestrator agent.
+  investigation. Dispatched by the /verify command.
 
   Example 1: Claim "Compact exports 57 unique primitives" — searches
   LFDT-Minokawa/compact for midnight-natives.ss, counts the actual exports.
@@ -43,8 +43,8 @@ Load the `midnight-verify:verify-by-source` skill and follow it step by step. It
 4. Read and interpret the source code
 5. Report your findings with file paths, line numbers, and GitHub links
 
-**When the claim domain is wallet SDK**, load `midnight-verify:verify-by-wallet-source` instead of `midnight-verify:verify-by-source`. The wallet source skill provides wallet-specific repo routing, package hierarchy context, and strict evidence rules. The general verify-by-source skill is for Compact compiler, ledger, and DApp SDK source — not wallet SDK.
+**When the claim domain is wallet SDK**, load the `midnight-verify:verify-by-wallet-source` skill instead of the `midnight-verify:verify-by-source` skill. The wallet source skill provides wallet-specific repo routing, package hierarchy context, and strict evidence rules. The general verify-by-source skill is for Compact compiler, ledger, and DApp SDK source — not wallet SDK.
 
-**When the claim domain is ledger/protocol**, load `midnight-verify:verify-by-ledger-source` instead of `midnight-verify:verify-by-source`. The ledger source skill provides Rust crate-level routing across the 24-crate workspace, dependency graph context, and guidance on tracing WASM bindings back to Rust implementations. The general verify-by-source skill is for Compact compiler and DApp SDK source — not ledger internals.
+**When the claim domain is ledger/protocol**, load the `midnight-verify:verify-by-ledger-source` skill instead of the `midnight-verify:verify-by-source` skill. The ledger source skill provides Rust crate-level routing across the 24-crate workspace, dependency graph context, and guidance on tracing WASM bindings back to Rust implementations. The general verify-by-source skill is for Compact compiler and DApp SDK source — not ledger internals.
 
 Follow the skill precisely. The source code is your evidence. Comments are supporting context, not primary evidence. Generated docs in `LFDT-Minokawa/compact/docs/` are good but not as authoritative as the code itself — note the distinction in your report.

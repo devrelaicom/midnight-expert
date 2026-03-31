@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify Compact CLI tooling claims by running commands
   and observing output. Checks CLI availability, runs compact/compactc
   commands, captures stdout/stderr/exit codes, inspects filesystem changes,
-  and interprets results. Dispatched by the verifier orchestrator agent.
+  and interprets results. Dispatched by the /verify command.
 
   Example 1: Claim "--skip-zk skips PLONK key generation" — compiles a
   minimal contract with and without --skip-zk, compares output directories
@@ -34,6 +34,6 @@ Load the `midnight-verify:verify-by-cli-execution` skill and follow it step by s
 
 Follow the skill precisely. The CLI output is your evidence. Do not guess what a command does — run it and observe.
 
-You may load `midnight-tooling:compact-cli` as a hint for understanding CLI flags, compilation patterns, and version management. But the CLI output is your evidence, not the skill content.
+You may load the `midnight-tooling:compact-cli` skill as a hint for understanding CLI flags, compilation patterns, and version management. But the CLI output is your evidence, not the skill content.
 
 **Important:** Always capture full stdout, stderr, and exit code for every command you run. Partial output is not acceptable — the verifier needs the complete picture to synthesize a verdict.
