@@ -21,32 +21,32 @@ compact self check # check for new compact developer tools versions (cached with
 npm view <package-name> version # check for latest version of <package-name>
 ```'
 
-# --- Helper: emit the hook JSON ---
-# Uses jq if available, otherwise falls back to manual JSON construction.
+# Pre-built fallback JSON containing only the static context.
+# Used whenever jq is missing or anything else goes wrong — no escaping needed
+# because this is a known-safe literal string.
+FALLBACK_JSON='{"continue":true,"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"The Midnight Network is under active development with frequent breaking changes. Do not assume stability across versions.\n\nAll `@midnight-ntwrk/*` packages are published on public npm. Do not add custom registry configuration — no `.npmrc` or `.yarnrc.yml` registry overrides. Verify package versions with `npm view`, never from memory.\n\nYou should check for new compact developer tools, compact compiler, and Midnight SDK versions regularly.\n\n```\ncompact check # check for new compact compiler versions (cached with 15m TTL)\ncompact self check # check for new compact developer tools versions (cached with 15m TTL)\nnpm view <package-name> version # check for latest version of <package-name>\n```"}}'
+
+# --- Catch-all: if anything unexpected happens, emit fallback and exit clean ---
+trap 'printf "%s\n" "$FALLBACK_JSON"; exit 0' ERR
+
+# --- Gate: jq is required for dynamic messages. Without it, emit fallback. ---
+if ! command -v jq >/dev/null 2>&1; then
+  printf '%s\n' "$FALLBACK_JSON"
+  exit 0
+fi
+
+# --- Helper: emit the hook JSON via jq ---
 emit_json() {
-  local ctx="$1"
-
-  if command -v jq >/dev/null 2>&1; then
-    jq -n \
-      --arg ctx "$ctx" \
-      '{
-        "continue": true,
-        "hookSpecificOutput": {
-          "hookEventName": "SessionStart",
-          "additionalContext": $ctx
-        }
-      }'
-  else
-    # Fallback: escape the context for JSON manually.
-    # Replace \ with \\, " with \", newlines with \n, tabs with \t.
-    local escaped
-    escaped="$(printf '%s' "$ctx" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')"
-    printf '{"continue":true,"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$escaped"
-  fi
+  jq -n \
+    --arg ctx "$1" \
+    '{
+      "continue": true,
+      "hookSpecificOutput": {
+        "hookEventName": "SessionStart",
+        "additionalContext": $ctx
+      }
+    }'
 }
-
-# --- Catch-all: if anything unexpected happens, emit static context ---
-trap 'emit_json "$COMMON_CONTEXT"; exit 0' ERR
 
 # --- Check 1: Is the compact CLI installed? ---
 if ! command -v compact >/dev/null 2>&1; then
