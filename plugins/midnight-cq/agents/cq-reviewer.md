@@ -37,6 +37,8 @@ Before scanning anything, load the three preloaded skills so you have authoritat
 - `midnight-cq:quality-init` — defines the correct Biome config, Husky hooks, CI workflows, and project structure
 - `midnight-cq:compact-testing` — defines the correct 4-layer test structure, simulator patterns, and test quality standards
 - `midnight-cq:dapp-testing` — defines the correct Playwright config, ContractProvider mocking, and E2E patterns
+- `midnight-cq:wallet-testing` — defines correct Effect boundary patterns, WalletBuilder setup, Observable testing for wallet SDK projects
+- `midnight-cq:dapp-connector-testing` — defines correct ConnectedAPI stub patterns, error handling, progressive enhancement for DApp Connector projects
 
 ### Step 2 — Scan Tooling Presence
 
@@ -59,6 +61,10 @@ Use Glob, Grep, and Bash to detect what CQ tooling is present and what is missin
 | Mock contracts | `Glob **/test/mocks/*.compact` | One per `.compact` source |
 | Simulators | `Glob **/test/simulators/*.ts` | One per `.compact` source |
 | Test files | `Glob **/*.test.ts` | One per `.compact` source |
+| Wallet SDK deps | `Grep @midnight-ntwrk/wallet-sdk in package.json` | Determines if Wallet SDK project |
+| DApp Connector deps | `Grep @midnight-ntwrk/dapp-connector-api in package.json` | Determines if DApp Connector project |
+| Wallet test doubles | `Glob **/test/**/wallet-stub*.ts` | If wallet SDK or connector project |
+| Effect test patterns | `Grep Effect.runPromise in **/*.test.ts` | If wallet SDK project |
 
 Record all presence/absence findings. Do not stop early — complete the full inventory.
 
@@ -167,6 +173,24 @@ Read the test files and check for these patterns and anti-patterns:
 | Async assertions use `waitFor` | `await expect(locator).toBeVisible({ timeout: 30_000 })` | Synchronous `expect` on async state | Critical |
 | ContractProvider mocked in integration tests | `createMockContractProvider()` wrapping simulator | Direct network calls or no mock | Warning |
 | Wallet stub injected for CI | `page.addInitScript()` providing `window.midnight.wallet` | No wallet stub, relying on real extension | Warning |
+
+**Wallet SDK test quality checks (if wallet SDK project):**
+
+| Check | Good Pattern | Bad Pattern | Severity |
+|-------|-------------|------------|---------|
+| Effect results unwrapped correctly | `Effect.runPromise()` / `Effect.runPromiseExit()` | `try/catch` around Effect | Warning |
+| Observable subscriptions cleaned up | `afterEach` with unsubscribe or `firstValueFrom` used | Subscriptions never cleaned up | Critical |
+| Branded types constructed correctly | SDK constructors like `ProtocolVersion(8n)` | Raw casts like `8n as ProtocolVersion` | Warning |
+| Fresh wallet per test | `beforeEach` creates new wallet, `afterEach` closes | Shared wallet instance across tests | Critical |
+
+**DApp Connector test quality checks (if DApp Connector project):**
+
+| Check | Good Pattern | Bad Pattern | Severity |
+|-------|-------------|------------|---------|
+| All 5 error codes tested | Separate tests for Rejected and PermissionRejected | Only happy-path tests | Warning |
+| Progressive enhancement tested | Tests with PermissionRejected for optional methods | No degradation tests | Suggestion |
+| Wallet name/icon sanitized | XSS prevention tests for name and icon | No sanitization tests | Warning |
+| apiVersion validated | Semver check before connect | No version validation | Warning |
 
 ### Step 6 — Produce Report
 
