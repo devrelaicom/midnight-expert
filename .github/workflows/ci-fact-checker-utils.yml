@@ -1,0 +1,101 @@
+name: CI - Fact Checker Utils
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'packages/midnight-fact-checker-utils/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/midnight-fact-checker-utils/**'
+
+defaults:
+  run:
+    working-directory: packages/midnight-fact-checker-utils
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Biome check
+        run: npx biome check .
+        working-directory: .
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Biome format check
+        run: npx biome format .
+        working-directory: .
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: npx tsc --noEmit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: npx tsc
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: npx vitest run

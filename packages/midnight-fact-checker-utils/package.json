@@ -1,0 +1,57 @@
+{
+	"name": "@aaronbassett/midnight-fact-checker-utils",
+	"version": "0.1.0",
+	"description": "CLI utilities for midnight fact-checking workflows: file discovery, URL extraction, and JSON claim merging",
+	"type": "module",
+	"license": "MIT",
+	"author": {
+		"name": "Aaron Bassett",
+		"email": "aaron@devrel-ai.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/devrelaicom/midnight-expert.git",
+		"directory": "packages/midnight-fact-checker-utils"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"bin": {
+		"midnight-fact-checker-utils": "./dist/cli.js"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc",
+		"check": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "biome check .",
+		"format:check": "biome format ."
+	},
+	"dependencies": {
+		"@mozilla/readability": "^0.5.0",
+		"commander": "^13.1.0",
+		"globby": "^14.1.0",
+		"jsdom": "^26.0.0",
+		"turndown": "^7.2.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/jsdom": "^21.1.7",
+		"@types/node": "^20.17.0",
+		"@types/turndown": "^5.0.5",
+		"typescript": "^5.7.0",
+		"vitest": "^3.0.0"
+	}
+}

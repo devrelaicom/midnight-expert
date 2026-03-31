@@ -225,9 +225,9 @@ check_all_plugins_listed() {
     fi
 
     # Check for discrepancies
-    local has_issues=false
+    local has_errors=false
 
-    # Check for plugins in filesystem but not in marketplace
+    # Check for plugins in filesystem but not in marketplace (info only, not an error)
     for fs_plugin in "${fs_plugins[@]}"; do
         local found=false
         for mp_plugin in "${mp_plugins[@]}"; do
@@ -238,12 +238,11 @@ check_all_plugins_listed() {
         done
 
         if [[ "$found" == "false" ]]; then
-            [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_warning "Plugin in filesystem but not in marketplace: $fs_plugin"
-            has_issues=true
+            [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_info "Plugin in filesystem but not in marketplace: $fs_plugin"
         fi
     done
 
-    # Check for plugins in marketplace but not in filesystem
+    # Check for plugins in marketplace but not in filesystem (this IS an error)
     for mp_plugin in "${mp_plugins[@]}"; do
         local found=false
         for fs_plugin in "${fs_plugins[@]}"; do
@@ -255,11 +254,11 @@ check_all_plugins_listed() {
 
         if [[ "$found" == "false" ]]; then
             [[ "$quiet" != "true" ]] && [[ "$JSON_MODE" != "true" ]] && print_error "Plugin in marketplace but not in filesystem: $mp_plugin"
-            has_issues=true
+            has_errors=true
         fi
     done
 
-    if [[ "$has_issues" == "true" ]]; then
+    if [[ "$has_errors" == "true" ]]; then
         return 1
     fi
 

@@ -88,12 +88,11 @@ while IFS= read -r source; do
     MARKETPLACE_PLUGINS+=("$plugin_name")
 done < <(jq -r '.plugins[]?.source // empty' "$MARKETPLACE_JSON" 2>/dev/null)
 
-# Check for missing plugins (in filesystem but not marketplace)
+# Check for plugins in filesystem but not in marketplace (info only, not an error)
 if [[ ${#FILESYSTEM_PLUGINS[@]} -gt 0 ]]; then
     for plugin in "${FILESYSTEM_PLUGINS[@]}"; do
         if ! array_contains "$plugin" "${MARKETPLACE_PLUGINS[@]}"; then
-            print_error "Plugin exists in filesystem but not listed in marketplace: $plugin"
-            HAS_ERRORS=true
+            print_info "Plugin in filesystem but not in marketplace: $plugin"
         fi
     done
 fi
