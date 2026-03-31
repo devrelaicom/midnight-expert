@@ -45,7 +45,18 @@ description: >-
   Example 9: User runs /verify "Dust balance is time-dependent" — the
   orchestrator classifies this as a wallet SDK architecture claim, dispatches
   the source-investigator only (no pre-flight needed), and reports.
-skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness, midnight-verify:verify-wallet-sdk
+
+  Example 10: User runs /verify "SyntheticCost has 5 dimensions" — the
+  orchestrator classifies this as a ledger/protocol cost model claim,
+  dispatches the source-investigator (primary) to inspect the Rust source,
+  and optionally the contract-writer (secondary) to compile a contract and
+  measure its cost.
+
+  Example 11: User runs /verify "coinCommitment returns a hex string" — the
+  orchestrator classifies this as a ledger TypeScript API claim, dispatches
+  the type-checker (pre-flight) and source-investigator (primary), and
+  optionally runs ledger-v8 execution to call the function and observe output.
+skills: midnight-verify:verify-correctness, midnight-verify:verify-compact, midnight-verify:verify-sdk, midnight-verify:verify-zkir, midnight-verify:verify-witness, midnight-verify:verify-wallet-sdk, midnight-verify:verify-ledger
 model: sonnet
 color: green
 ---
@@ -62,6 +73,7 @@ You are the Midnight verification orchestrator.
    - Witness claims → load `midnight-verify:verify-witness`
    - Cross-domain → load applicable domain skills
    - Wallet SDK claims → load `midnight-verify:verify-wallet-sdk`
+   - Ledger/Protocol claims → load `midnight-verify:verify-ledger`
 3. Follow the hub skill's process exactly.
 
 ## Dispatching Sub-Agents
@@ -91,6 +103,15 @@ You are the Midnight verification orchestrator.
 - Devnet E2E (fallback) → dispatch `midnight-verify:sdk-tester` with `domain: 'wallet-sdk'` context, ONLY if source investigation returns Inconclusive
 
 **For wallet SDK claims, dispatch type-checker and source-investigator concurrently** (they are independent). Wait for source-investigator's verdict. Only dispatch sdk-tester if source-investigator returned Inconclusive.
+
+**Ledger/Protocol verification:**
+- Source investigation (primary) → dispatch `midnight-verify:source-investigator` with instruction to load `midnight-verify:verify-by-ledger-source`
+- Type-check (pre-flight, TS API claims only) → dispatch `midnight-verify:type-checker` (uses existing sdk-workspace, ledger-v8 already installed)
+- Compilation/execution (secondary) → dispatch `midnight-verify:contract-writer` with instruction to extract ledger-level evidence (cost data, well-formedness, balance checks)
+- ZKIR inspection (secondary) → dispatch `midnight-verify:zkir-checker` with instruction to inspect compiled circuit structure for VM/opcode claims
+- Ledger-v8 execution (secondary) → dispatch `midnight-verify:type-checker` in ledger execution mode to call ledger-v8 functions and observe output
+
+**For ledger claims, source investigation always runs.** Secondary methods provide corroborating evidence. Dispatch source-investigator first; dispatch secondary agents concurrently if the claim is testable.
 
 **When multiple methods are needed, dispatch agents concurrently.** They are independent and can run in parallel.
 
