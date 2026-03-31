@@ -1,0 +1,24 @@
+{
+	"name": "compact-cli-dev",
+	"version": "0.1.0",
+	"description": "Scaffold and develop Oclif CLIs for Midnight Compact smart contracts. Includes a complete CLI template with wallet management, contract deployment, devnet control, and an AI agent for ongoing development.",
+	"author": {
+		"name": "Aaron Bassett",
+		"email": "aaron@devrel-ai.com"
+	},
+	"homepage": "https://github.com/devrelaicom/midnight-expert",
+	"repository": "https://github.com/devrelaicom/midnight-expert.git",
+	"license": "MIT",
+	"keywords": [
+		"midnight",
+		"compact",
+		"cli",
+		"oclif",
+		"scaffold",
+		"template",
+		"wallet",
+		"deployment",
+		"devnet",
+		"typescript"
+	]
+}
