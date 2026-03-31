@@ -97,8 +97,9 @@ fi
 if check_all_plugins_listed "$MARKETPLACE_JSON" "$PLUGIN_ROOT_ABS" false; then
     [[ "$JSON_MODE" == "true" ]] && add_json_result "success" "All plugins listed correctly" ""
 else
-    # Completeness warnings (e.g., untracked plugin dirs) are non-fatal
-    [[ "$JSON_MODE" == "true" ]] && add_json_result "warning" "Plugin listing discrepancies found" ""
+    # check_all_plugins_listed only fails when a marketplace entry is missing from filesystem
+    HAS_ERRORS=true
+    [[ "$JSON_MODE" == "true" ]] && add_json_result "error" "Marketplace references plugins not found in filesystem" ""
 fi
 
 # Step 3: Validate individual plugins (unless skipped)
