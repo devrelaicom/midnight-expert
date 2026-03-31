@@ -26,7 +26,7 @@ Fact-checking pipeline for Midnight content. Extracts testable claims from any s
 2. **Input Resolution** — Resolves targets to readable content
 3. **Extraction** — Parallel agents extract testable claims
 4. **Classification** — Domain-specialist agents tag claims (compact, sdk, zkir, witness)
-5. **Verification** — Batched parallel agents verify claims via `/verify`
+5. **Verification** — Dispatches midnight-verify agents directly to verify each claim
 6. **Report** — Markdown report + terminal summary
 7. **GitHub Issues** — Optional issue creation for refuted claims (GitHub sources only)
 

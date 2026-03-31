@@ -1,7 +1,7 @@
 ---
 name: midnight-fact-check:check
 description: Fact-check content against the Midnight ecosystem. Extracts claims, classifies by domain, verifies each via midnight-verify, and produces a report.
-allowed-tools: Agent, AskUserQuestion, Read, Write, Glob, Grep, Bash
+allowed-tools: Agent, AskUserQuestion, Read, Write, Glob, Grep, Bash, Skill
 argument-hint: "<file, directory, URL, GitHub URL, or glob pattern>"
 ---
 
@@ -191,32 +191,63 @@ If zero claims were extracted, tell the user and stop:
 
 ## Step 6: Verify Claims (Stage 3)
 
-1. Read `classified-claims.json`. Group classified claims by `classification.primary_domain`.
-2. Determine batches using these rules:
-   - Target ~10-15 claims per batch
-   - Domain with ≤15 claims → 1 batch
-   - Domain with 16-30 claims → 2 batches (split roughly evenly)
-   - Domain with 30+ claims → split into batches of ~10
-   - Cross-domain claims (those with multiple domains): batch separately
-   - Skip unclassified claims (already marked inconclusive)
-3. Create one copy of `classified-claims.json` per batch:
-   ```bash
-   cp "$RUN_DIR/classified-claims.json" "$RUN_DIR/classified-claims.compact-verifier-1.json"
-   cp "$RUN_DIR/classified-claims.json" "$RUN_DIR/classified-claims.sdk-verifier-1.json"
-   # ... one per batch
+**Architecture note:** You dispatch midnight-verify agents directly — do NOT dispatch `midnight-fact-check:claim-verifier`. The check command is the sole orchestrator. midnight-verify's SubagentStop hooks enforce verification quality on all agents you dispatch.
+
+1. Read `classified-claims.json`.
+2. Separate claims into two groups:
+   - **Verifiable**: claims with `classification.primary_domain` set
+   - **Already resolved**: claims marked inconclusive from Step 5 — skip these
+3. For each verifiable claim, determine which midnight-verify agent(s) to dispatch:
+
+   | Domain | Claim About | Dispatch |
+   |--------|------------|----------|
+   | compact | Observable behavior: syntax, types, stdlib, disclosure, compiler errors, performance | `midnight-verify:contract-writer` |
+   | compact | Internal implementation, architecture, feature counts | `midnight-verify:source-investigator` |
+   | compact | Circuit structure, ZKIR opcodes, compiled properties | `midnight-verify:zkir-checker` |
+   | compact | Cross-component (runtime + internals) | Both `contract-writer` + `source-investigator` concurrently |
+   | sdk | API signatures, types, imports, interfaces, error hierarchies | `midnight-verify:type-checker` |
+   | sdk | Runtime behavior: deploy, call, state, transactions | `midnight-verify:sdk-tester` |
+   | sdk | Internal implementation, package internals | `midnight-verify:source-investigator` |
+   | sdk | Package version or existence | Run `npm view` directly — no agent needed |
+   | sdk | Both types and runtime behavior | Both `type-checker` + `sdk-tester` concurrently |
+   | zkir | Constraint behavior, proof verification, circuit properties | `midnight-verify:zkir-checker` |
+   | witness | Witness correctness, type mappings, structural checks | `midnight-verify:witness-verifier` |
+   | wallet-sdk | Any wallet SDK claim | `midnight-verify:source-investigator` (primary); `midnight-verify:type-checker` as pre-flight only |
+   | ledger | Transaction structure, token mechanics, protocol behavior | `midnight-verify:source-investigator` |
+   | tooling | CLI commands, flags, output behavior | `midnight-verify:cli-tester` |
+   | tooling | Internal implementation, compiler internals | `midnight-verify:source-investigator` |
+
+4. Dispatch verification agents in rounds of up to 5 concurrent agents:
+   - Use the Agent tool to dispatch midnight-verify agents directly
+   - For each dispatch, pass:
+     - The claim text verbatim
+     - Source file path and line range (from extraction metadata)
+     - The claim's domain
+     - What observable result would confirm vs refute the claim
+   - Use multiple Agent tool calls in a single message for concurrent dispatch within a round
+   - Wait for all agents in a round to return before starting the next round
+
+5. As results return, extract the verdict from each agent's response and update the claim:
+   ```json
+   {
+     "verification": {
+       "verdict": "confirmed|refuted|inconclusive",
+       "qualifier": "tested|source-verified|type-checked|zkir-checked|cli-tested|witness-verified",
+       "evidence_summary": "What the agent did and observed",
+       "verified_at": "ISO 8601 timestamp"
+     }
+   }
    ```
-4. Dispatch one `midnight-fact-check:claim-verifier` agent per batch, in parallel. Each agent's prompt should include:
-   - The domain for this batch
-   - The specific claim IDs in its batch (list them explicitly)
-   - The path to its copy of the claims file
-   - Instruction to verify each claim using the midnight-verify framework
-5. Wait for all verifiers to complete.
-6. Merge all copies:
-   ```bash
-   npx @aaronbassett/midnight-fact-checker-utils merge --mode update -o "$RUN_DIR/verification-results.json" "$RUN_DIR/classified-claims.json" "$RUN_DIR/classified-claims.compact-verifier-1.json" ...
-   ```
-7. If the merge fails, report and preserve copies (same as Step 5).
-8. Tell the user: `"Verified N claims — confirmed: X, refuted: Y, inconclusive: Z"`
+
+   When multiple agents verified the same claim:
+   - Both agree → combine qualifiers (e.g., `"tested + source-verified"`)
+   - They disagree → execution/testing evidence wins over source inspection; note the disagreement in `evidence_summary`
+   - One failed → use the successful agent's verdict; note the failure
+
+   If an agent dispatch fails entirely, set verdict to `"inconclusive"` with qualifier `"error"`.
+
+6. Write `verification-results.json` to the run directory.
+7. Tell the user: `"Verified N claims — confirmed: X, refuted: Y, inconclusive: Z"`
 
 ## Step 7: Generate Report (Stage 4)
 
