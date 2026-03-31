@@ -75,6 +75,12 @@ Write tests for DApp Connector API integration — the `window.midnight` injecti
 
 **Triggers on**: test DApp Connector API, test wallet connection, test makeTransfer, test balanceTransaction, mock ConnectedAPI, stub wallet for tests, test wallet errors, test PermissionRejected, test progressive enhancement
 
+### ledger-testing
+
+Write tests for code that uses `@midnight-ntwrk/ledger-v8` and `@midnight-ntwrk/onchain-runtime` directly. Covers proof staging lifecycle (UnprovenTransaction → proved → erased), ZswapLocalState and DustLocalState management, time-dependent Dust balance assertions, CostModel fee calculations, cryptographic fixture generation via `sample*` functions, and serialization round-trip testing.
+
+**Triggers on**: write ledger tests, test transaction construction, test proof staging, test ZswapLocalState, test DustLocalState, test cost model, test coinCommitment, test ledger-v8, test onchain-runtime, test well-formedness
+
 ### quality-check
 
 Run and interpret all quality checks for a Midnight project. Covers Biome lint and format output, TypeScript `tsc --noEmit` errors (including stale `managed/` artifacts), Compact compiler errors and disclosure violations, Vitest failures with simulator stack trace interpretation, and Playwright timeout and element-not-found failures.

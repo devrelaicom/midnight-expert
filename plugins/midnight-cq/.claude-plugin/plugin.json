@@ -28,6 +28,13 @@
     "effect",
     "observable",
     "WalletBuilder",
-    "WalletFacade"
+    "WalletFacade",
+    "ledger",
+    "ledger-v8",
+    "transaction",
+    "zswap",
+    "onchain-runtime",
+    "proof-staging",
+    "cost-model"
   ]
 }
