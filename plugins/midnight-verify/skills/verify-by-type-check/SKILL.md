@@ -85,6 +85,70 @@ JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
 mkdir -p .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
 ```
 
+## Wallet SDK Workspace Mode
+
+When the verifier passes `domain: 'wallet-sdk'` context, use a separate workspace at `.midnight-expert/verify/wallet-sdk-workspace/` instead of the SDK workspace. This workspace has different packages installed.
+
+**First time (workspace does not exist):**
+
+```bash
+mkdir -p .midnight-expert/verify/wallet-sdk-workspace
+cd .midnight-expert/verify/wallet-sdk-workspace
+
+# Initialize Node project
+npm init -y
+
+# Install all Wallet SDK packages + DApp Connector API + TypeScript
+npm install \
+  @midnight-ntwrk/wallet-sdk-facade \
+  @midnight-ntwrk/wallet-sdk-shielded \
+  @midnight-ntwrk/wallet-sdk-unshielded-wallet \
+  @midnight-ntwrk/wallet-sdk-dust-wallet \
+  @midnight-ntwrk/wallet-sdk-runtime \
+  @midnight-ntwrk/wallet-sdk-abstractions \
+  @midnight-ntwrk/wallet-sdk-capabilities \
+  @midnight-ntwrk/wallet-sdk-hd \
+  @midnight-ntwrk/wallet-sdk-address-format \
+  @midnight-ntwrk/wallet-sdk-utilities \
+  @midnight-ntwrk/wallet-sdk-indexer-client \
+  @midnight-ntwrk/wallet-sdk-node-client \
+  @midnight-ntwrk/wallet-sdk-prover-client \
+  @midnight-ntwrk/dapp-connector-api \
+  typescript
+
+# Create tsconfig.json for type-checking
+cat > tsconfig.json << 'TSCONFIG_EOF'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["jobs/**/*.ts"]
+}
+TSCONFIG_EOF
+```
+
+**Subsequent times (workspace exists):**
+
+```bash
+cd .midnight-expert/verify/wallet-sdk-workspace
+npm ls typescript
+```
+
+If `npm ls` reports errors, run `npm install` to repair.
+
+**Job directory, type assertion writing, tsc execution, interpretation, and cleanup follow the same steps as the standard SDK workspace.** The only difference is the workspace path and the installed packages.
+
+**Mode selection:** When you receive a claim from the verifier, check the domain context:
+- `domain: 'wallet-sdk'` → use `.midnight-expert/verify/wallet-sdk-workspace/`
+- Otherwise → use `.midnight-expert/verify/sdk-workspace/` (existing behavior)
+
 ## Step 2: Determine the Mode
 
 **Claim mode** — you received a natural language claim about the SDK (e.g., "deployContract returns DeployedContract"). Go to Step 3A.
