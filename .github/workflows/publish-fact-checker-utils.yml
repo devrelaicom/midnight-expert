@@ -1,0 +1,66 @@
+name: Publish - Fact Checker Utils
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/midnight-fact-checker-utils/**'
+
+defaults:
+  run:
+    working-directory: packages/midnight-fact-checker-utils
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+
+      - name: Check if version changed
+        id: version-check
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}" version 2>/dev/null || echo "0.0.0")
+
+          echo "local=${LOCAL_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "published=${PUBLISHED_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${LOCAL_VERSION}" != "${PUBLISHED_VERSION}" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version changed: ${PUBLISHED_VERSION} -> ${LOCAL_VERSION}"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Version unchanged: ${LOCAL_VERSION}"
+          fi
+
+      - name: Install dependencies
+        if: steps.version-check.outputs.changed == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        if: steps.version-check.outputs.changed == 'true'
+        run: npx vitest run
+
+      - name: Build
+        if: steps.version-check.outputs.changed == 'true'
+        run: npx tsc
+
+      - name: Publish to npm
+        if: steps.version-check.outputs.changed == 'true'
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
