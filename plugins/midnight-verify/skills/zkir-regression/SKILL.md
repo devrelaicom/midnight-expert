@@ -3,10 +3,10 @@ name: midnight-verify:zkir-regression
 description: >-
   Run a curated set of verification claims against the current toolchain to
   detect behavioral changes. Each claim is verified through the normal
-  verification pipeline (verifier → agents → checker/execution). Supports
+  verification pipeline (classify → dispatch agent → verify). Supports
   full sweep (all categories) and targeted sweep (single category). Invocable
-  as /midnight-verify:zkir-regression or loadable by agents as a sense-check
-  when they suspect toolchain issues.
+  as /midnight-verify:zkir-regression or loadable as a sense-check when
+  toolchain issues are suspected.
 version: 0.4.1
 argument-hint: "[category: arithmetic|types|state|privacy|zk-proof|transcript]"
 ---
@@ -39,11 +39,14 @@ Record both for the report header.
 
 ## Step 3: Run Claims
 
-For each claim in the list below (filtered by category if targeted), dispatch the `midnight-verify:verifier` agent with:
-- The claim text
-- Instruction to verify using the appropriate method
+For each claim in the list below (filtered by category if targeted):
 
-Collect the verdict for each claim. Do NOT stop on first failure — run all claims and collect all results.
+1. Load the `midnight-verify:verify-correctness` skill to classify the claim domain
+2. Load the appropriate domain skill
+3. Dispatch the sub-agent(s) indicated by the domain skill's routing table
+4. Collect the verdict
+
+This follows the same flow as the `/verify` command — you are the orchestrator for each claim.
 
 ## Claim List
 
