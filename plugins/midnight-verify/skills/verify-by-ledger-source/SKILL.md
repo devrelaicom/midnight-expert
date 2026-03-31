@@ -152,4 +152,4 @@ rm -rf "$CLONE_DIR"
 
 If inconclusive, explain:
 - What you searched and why it wasn't definitive
-- Whether compilation/execution might resolve it (the verifier orchestrator decides whether to dispatch contract-writer or zkir-checker)
+- Whether compilation/execution might resolve it (the orchestrator decides whether to dispatch @"midnight-verify:contract-writer (agent)" or @"midnight-verify:zkir-checker (agent)")

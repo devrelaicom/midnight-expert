@@ -24,11 +24,11 @@ You are verifying a Compact claim by writing a minimal test contract, compiling 
 You may consult these skills to inform how to write your test contract. They contain useful information about Compact syntax, stdlib functions, and patterns. But they are **hints only** — never cite them as evidence. The test result is your evidence.
 
 Useful hint skills:
-- `compact-core:compact-standard-library` — expected function signatures, what exists
-- `compact-core:compact-structure` — how to structure a contract (pragma, imports, exports)
-- `compact-core:compact-language-ref` — syntax reference, type system, operators
-- `compact-core:compact-privacy-disclosure` — disclosure rules to test
-- `compact-core:compact-compilation` — expected compiler behavior
+- `compact-core:compact-standard-library` skill — expected function signatures, what exists
+- `compact-core:compact-structure` skill — how to structure a contract (pragma, imports, exports)
+- `compact-core:compact-language-ref` skill — syntax reference, type system, operators
+- `compact-core:compact-privacy-disclosure` skill — disclosure rules to test
+- `compact-core:compact-compilation` skill — expected compiler behavior
 
 Load any of these if they would help you write a better test. Do not load them all — only what's relevant to the claim.
 
@@ -93,7 +93,7 @@ Write a `.compact` file in the job directory.
 compact compile --language-version
 ```
 
-Or load `midnight-tooling:compact-cli` for details on version management.
+Or load the `midnight-tooling:compact-cli` skill for details on version management.
 
 **Contract template for pure circuit tests:**
 
@@ -119,7 +119,7 @@ COMPACT_EOF
 
 ## Step 4: Compile
 
-Load `midnight-tooling:compact-cli` skill (via Skill tool) for compilation flags, version management, and troubleshooting.
+Load the `midnight-tooling:compact-cli` skill for compilation flags, version management, and troubleshooting.
 
 ```bash
 compact compile .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<claim>.compact --skip-zk
@@ -137,13 +137,13 @@ Capture the full compiler output (stdout and stderr) regardless of success or fa
 
 ## Step 4.5: Extract ZKIR (Optional)
 
-If the verifier requested ZKIR-level evidence alongside execution results, locate the `.zkir` JSON in the compilation output. It is typically found at:
+If the orchestrator requested ZKIR-level evidence alongside execution results, locate the `.zkir` JSON in the compilation output. It is typically found at:
 
 ```
 <contract-name>/build/zkir/<circuit-name>.zkir
 ```
 
-If found, note the path in your report so the verifier can dispatch the `zkir-checker` agent if needed. Do NOT run the checker yourself — your job is compilation and JS runtime execution.
+If found, note the path in your report so the orchestrator can dispatch @"midnight-verify:zkir-checker (agent)" if needed. Do NOT run the checker yourself — your job is compilation and JS runtime execution.
 
 If no `.zkir` output is found (some compilation modes may not produce it), note this in your report.
 
@@ -228,7 +228,7 @@ Do NOT remove the base workspace — it's shared across jobs.
 
 When dispatched for a ledger/protocol claim, you compile and execute a Compact contract as usual, but after execution you extract **ledger-level evidence** — cost data, transaction properties, well-formedness results — in addition to the normal runtime output.
 
-**When to use this mode:** The verifier dispatches you with a ledger claim that is testable via compilation. Examples:
+**When to use this mode:** The orchestrator dispatches you with a ledger claim that is testable via compilation. Examples:
 - "Fee calculation uses max(read, compute, block) + write + churn" → compile a contract, compute its cost
 - "Well-formedness rejects overlapping inputs" → build a transaction with overlapping inputs, check wellFormed() rejects
 - "Counter increment costs N bytes of block usage" → compile counter, measure SyntheticCost.block_usage
@@ -267,4 +267,4 @@ console.log(JSON.stringify({
 }));
 ```
 
-**Include the ledger-level evidence in your report** alongside the normal execution report. The verifier orchestrator uses both to synthesize the verdict.
+**Include the ledger-level evidence in your report** alongside the normal execution report. The orchestrator uses both to synthesize the verdict.

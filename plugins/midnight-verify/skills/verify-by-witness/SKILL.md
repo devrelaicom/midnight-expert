@@ -5,8 +5,9 @@ description: >-
   type-checks the TypeScript witness against the compiled contract's generated
   Witnesses type, runs structural checklist analysis (name matching, return
   tuple shape, WitnessContext usage, private state immutability, side effects),
-  executes the circuit with the witness via JS runtime, and optionally
-  dispatches to sdk-tester for devnet E2E. Loaded by the witness-verifier agent.
+  executes the circuit with the witness via JS runtime, and recommends
+  devnet E2E to the orchestrator if needed. Loaded by
+  @"midnight-verify:witness-verifier (agent)".
 version: 0.5.0
 ---
 
@@ -62,7 +63,7 @@ Compile the contract where it lives, directing build output to the job directory
 compact compile -- --skip-zk <source-path> .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
 ```
 
-If the verifier indicated this claim also needs PLONK verification (Witness + ZKIR), compile without `--skip-zk` instead:
+If the orchestrator indicated this claim also needs PLONK verification (Witness + ZKIR), compile without `--skip-zk` instead:
 
 ```bash
 compact compile -- <source-path> .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
@@ -200,11 +201,15 @@ Check `build/compiler/contract-info.json` — circuits with a non-empty `witness
 - `"Contract constructor: expected 1 argument"` — witnesses object not passed
 - Type errors at runtime — witness returns wrong types
 
-## Phase 5: Optional Devnet E2E
+## Phase 5: Devnet E2E Recommendation
 
-Check devnet health (load `midnight-tooling:devnet` skill for endpoints). If all services are reachable, dispatch to `midnight-verify:sdk-tester` for the full deploy+call lifecycle with the witness.
+**You cannot dispatch other agents.** Phase 5 is a recommendation to the orchestrator (the /verify command), not something you execute.
 
-If devnet is unavailable, note in the report: "Behavioral verification passed locally. Full deploy+call lifecycle verification requires a running devnet."
+In your report, include a recommendation:
+- If the claim would benefit from a full deploy+call lifecycle test, state: "**Recommend devnet E2E:** The orchestrator should dispatch @"midnight-verify:sdk-tester (agent)" with the compiled contract and witness for full lifecycle verification."
+- If local verification (phases 1-4) is sufficient for the claim, state: "**Devnet E2E not required** for this claim."
+
+The orchestrator will decide whether to dispatch @"midnight-verify:sdk-tester (agent)" based on your recommendation and devnet availability.
 
 ## Report
 
@@ -227,12 +232,12 @@ If devnet is unavailable, note in the report: "Behavioral verification passed lo
 **Execution:** PASS / FAIL
 [execution output or error]
 
-**Devnet E2E:** PASS / FAIL / SKIPPED (devnet unavailable)
+**Devnet E2E Recommendation:** Recommended / Not required
 
 **Interpretation:** [Confirmed / Refuted / Inconclusive] — [summary]
 ```
 
-If the verifier indicated PLONK verification is needed, include the build output path in the report so the verifier can pass it to the zkir-checker:
+If the orchestrator indicated PLONK verification is needed, include the build output path in the report so the orchestrator can pass it to @"midnight-verify:zkir-checker (agent)":
 
 ```
 **Build output:** .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
@@ -244,4 +249,4 @@ If the verifier indicated PLONK verification is needed, include the build output
 rm -rf .midnight-expert/verify/witness-workspace/jobs/$JOB_ID
 ```
 
-Do NOT remove the base workspace — it's shared across jobs. If the verifier needs the build output for zkir-checker, do NOT clean up until the verifier confirms the zkir-checker is done.
+Do NOT remove the base workspace — it's shared across jobs. If the orchestrator needs the build output for @"midnight-verify:zkir-checker (agent)", do NOT clean up until the orchestrator confirms the zkir-checker is done.

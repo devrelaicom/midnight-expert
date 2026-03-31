@@ -87,7 +87,7 @@ mkdir -p .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
 
 ## Wallet SDK Workspace Mode
 
-When the verifier passes `domain: 'wallet-sdk'` context, use a separate workspace at `.midnight-expert/verify/wallet-sdk-workspace/` instead of the SDK workspace. This workspace has different packages installed.
+When the orchestrator passes `domain: 'wallet-sdk'` context, use a separate workspace at `.midnight-expert/verify/wallet-sdk-workspace/` instead of the SDK workspace. This workspace has different packages installed.
 
 **First time (workspace does not exist):**
 
@@ -145,13 +145,13 @@ If `npm ls` reports errors, run `npm install` to repair.
 
 **Job directory, type assertion writing, tsc execution, interpretation, and cleanup follow the same steps as the standard SDK workspace.** The only difference is the workspace path and the installed packages.
 
-**Mode selection:** When you receive a claim from the verifier, check the domain context:
+**Mode selection:** When you receive a claim from the orchestrator, check the domain context:
 - `domain: 'wallet-sdk'` → use `.midnight-expert/verify/wallet-sdk-workspace/`
 - Otherwise → use `.midnight-expert/verify/sdk-workspace/` (existing behavior)
 
 ## Ledger API Execution Mode
 
-When the verifier passes `domain: 'ledger'` context and the claim is about behavioral output of a `@midnight-ntwrk/ledger-v8` function (not just its type signature), go beyond type-checking — write a script that calls the function and observes the output.
+When the orchestrator passes `domain: 'ledger'` context and the claim is about behavioral output of a `@midnight-ntwrk/ledger-v8` function (not just its type signature), go beyond type-checking — write a script that calls the function and observes the output.
 
 **This uses the existing sdk-workspace** (ledger-v8 is already installed there). No separate workspace needed.
 
