@@ -26,7 +26,7 @@ export circuit doSomethingBeforeInitialized(): [] {
 
 export circuit setFieldAfterDeployment(f: Field): [] {
   Initializable_initialize();
-  _fieldAfterDeployment = f;
+  _fieldAfterDeployment = disclose(f);
 }
 
 export circuit checkFieldAfterDeployment(): Field {

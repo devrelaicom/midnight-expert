@@ -9,11 +9,11 @@
 pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
-import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"
+import "./modules/access/Ownable"
   prefix Ownable_;
-import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
+import "./modules/security/Pausable"
   prefix Pausable_;
-import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/token/FungibleToken"
+import "./modules/token/FungibleToken"
   prefix FungibleToken_;
 
 constructor(
