@@ -217,9 +217,9 @@ Aborts the transaction (fails the circuit proof) if the condition evaluates to f
 
 ```compact
 export circuit withdraw(amount: Uint<64>): [] {
-  assert(amount > 0, "Amount must be positive");
-  assert(disclose(caller == owner), "Not authorized");
-  balance = (balance - amount) as Uint<64>;
+  const d_amount = disclose(amount);
+  assert(d_amount > 0, "Amount must be positive");
+  balance = (balance - d_amount) as Uint<64>;
 }
 ```
 

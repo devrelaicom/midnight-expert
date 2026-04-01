@@ -258,8 +258,8 @@ Curly braces create nested scopes. Constants declared inside a block are not vis
 circuit blockExample(): Field {
   const x = 1;
   {
-    const y = x + 10;  // y is only visible in this block
     const x = 99;      // shadows outer x inside this block
+    const y = x + 10;  // y is only visible in this block; uses shadowed x (99)
   }
   // y is not accessible here
   return x;  // returns 1, not 99
