@@ -10,6 +10,10 @@
   },
   "plugins": [
     {
+      "name": "expert",
+      "source": "./plugins/expert"
+    },
+    {
       "name": "compact-core",
       "source": "./plugins/compact-core"
     },
