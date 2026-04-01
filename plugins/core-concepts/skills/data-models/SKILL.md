@@ -29,7 +29,7 @@ UTXO = Unspent Transaction Output. Each token is a discrete digital coin that mu
 Creation -> Existence -> Consumption -> Prevention of Reuse
 ```
 
-1. **Creation**: UTXO born with value, type, and cryptographic commitment: `CoinCommitment = Hash<(CoinInfo, ZswapCoinPublicKey)>`
+1. **Creation**: UTXO born with a cryptographic commitment that hides the coin's value, type, and owner
 2. **Existence**: Queryable in the commitment tree
 3. **Consumption**: Entire UTXO spent in transaction (change returned as new UTXO)
 4. **Prevention**: Nullifier added to global set, prevents double-spend
@@ -38,11 +38,7 @@ Creation -> Existence -> Consumption -> Prevention of Reuse
 
 Unlike Bitcoin, which references prior outputs directly by txid+index (revealing which coin was spent), Midnight uses nullifiers:
 
-```text
-CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>
-```
-
-Where `CoinInfo = { value, type, nonce }`.
+Each coin carries a value, token type, and unique nonce. The nullifier is a hash derived from the coin data and the spending key.
 
 **Privacy benefit**: The nullifier is computed from the raw coin data and the spending key, not from the commitment. This means the nullifier reveals nothing about which coin commitment was spent.
 
@@ -51,14 +47,6 @@ Where `CoinInfo = { value, type, nonce }`.
 Each UTXO independently chooses privacy level:
 - **Shielded**: Commitment hidden, value/owner private
 - **Unshielded**: Value visible for regulatory compliance
-
-```compact
-// Receiving a shielded coin (CoinInfo provided by witness)
-receiveShielded(coin);
-
-// Sending shielded tokens — returns ShieldedSendResult with change info
-sendShielded(input, recipient, value);
-```
 
 ## Account Model (Contract Tokens)
 
@@ -85,10 +73,10 @@ Maintain address-to-balance mappings within Compact contracts, following pattern
 Midnight's ledger has two components:
 
 ### 1. Zswap State
-- Commitment tree: `MerkleTree<CoinCommitment>`
-- First free index: `u32`
-- Nullifier set: `Set<CoinNullifier>`
-- Historic roots: `TimeFilterMap<MerkleTreeRoot>` (time-based expiry)
+- **Commitment tree** — a Merkle tree of all coin commitments ever created
+- **First free index** — pointer to the next available leaf position (append-only)
+- **Nullifier set** — all spent-coin nullifiers, checked before accepting new spends
+- **Historic roots** — recent Merkle roots kept for a time window so proofs can reference slightly older tree states
 
 ### 2. Contract Map
 - Associates contract addresses with states
@@ -97,24 +85,11 @@ Midnight's ledger has two components:
 ## Token Types
 
 Token types are 256-bit collision-resistant hashes:
-- **Native token**: The type identifier is the 256-bit zero value (retrieved via `nativeToken(): Bytes<32>`)
-- **Custom tokens**: `Hash(contract_address, domain_separator)`
-
-```compact
-// Get the native token type identifier (256-bit zero)
-const native = nativeToken();
-
-// Custom token type = Hash(contractAddress, domainSeparator)
-const custom = tokenType(domainSep, kernel.self());
-```
+- **Native token**: The type identifier is the 256-bit zero value
+- **Custom tokens**: derived by hashing a domain separator with the issuing contract's address
 
 ## References
 
 For detailed technical information:
 - **`references/utxo-mechanics.md`** - Complete UTXO lifecycle, nullifier computation
 - **`references/ledger-structure.md`** - Zswap state internals, Merkle tree details
-
-## Examples
-
-Working Compact patterns:
-- **`examples/token-handling.compact`** - Receiving, sending, and minting tokens
