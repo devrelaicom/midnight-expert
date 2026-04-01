@@ -43,8 +43,8 @@ circuit requireAdmin(): [] {
 // Guard: require caller to be on the allowlist
 circuit requireAllowlisted(): [] {
   const sk = local_secret_key();
-  const pk = get_public_key(sk);
-  assert(disclose(allowlist.member(pk)), "Not on allowlist");
+  const pk = disclose(get_public_key(sk));
+  assert(allowlist.member(pk), "Not on allowlist");
 }
 
 // Admin adds an address to the allowlist
@@ -114,15 +114,15 @@ import CompactStandardLibrary;
 export ledger credentialCommitment: Bytes<32>;
 export ledger isCredentialSet: Boolean;
 
-witness getCredentialValue(): Field;
+witness getCredentialValue(): Uint<64>;
 witness getCredentialSalt(): Bytes<32>;
-witness storeCredential(value: Field, salt: Bytes<32>): [];
+witness storeCredential(value: Uint<64>, salt: Bytes<32>): [];
 
 // Issue a credential: commit the value on-chain, store value off-chain
-export circuit issueCredential(value: Field): [] {
+export circuit issueCredential(value: Uint<64>): [] {
   assert(!isCredentialSet, "Credential already issued");
   const salt = getCredentialSalt();
-  const commitment = persistentCommit<Field>(value, salt);
+  const commitment = persistentCommit<Uint<64>>(value, salt);
   storeCredential(value, salt);
   credentialCommitment = disclose(commitment);
   isCredentialSet = true;
@@ -130,13 +130,13 @@ export circuit issueCredential(value: Field): [] {
 
 // Verify: prove the credential value meets a threshold
 // Only the boolean result is disclosed — NOT the actual value
-export circuit verifyThreshold(threshold: Field): Boolean {
+export circuit verifyThreshold(threshold: Uint<64>): Boolean {
   assert(isCredentialSet, "No credential issued");
   const value = getCredentialValue();
   const salt = getCredentialSalt();
 
   // Verify the witness value matches the on-chain commitment
-  const expected = persistentCommit<Field>(value, salt);
+  const expected = persistentCommit<Uint<64>>(value, salt);
   assert(disclose(expected == credentialCommitment), "Invalid credential");
 
   // Disclose only the boolean result, NOT the value
@@ -144,11 +144,11 @@ export circuit verifyThreshold(threshold: Field): Boolean {
 }
 
 // Verify: prove the credential value is within a range
-export circuit verifyRange(minimum: Field, maximum: Field): Boolean {
+export circuit verifyRange(minimum: Uint<64>, maximum: Uint<64>): Boolean {
   assert(isCredentialSet, "No credential issued");
   const value = getCredentialValue();
   const salt = getCredentialSalt();
-  const expected = persistentCommit<Field>(value, salt);
+  const expected = persistentCommit<Uint<64>>(value, salt);
   assert(disclose(expected == credentialCommitment), "Invalid credential");
 
   // Disclose the combined range check as a single boolean
@@ -330,11 +330,11 @@ export circuit memberAction(): [] {
   assert(members.checkRoot(disclose(digest)), "Not a member");
 
   // Step 4: Nullifier prevents reuse
-  const nul = persistentHash<Vector<2, Bytes<32>>>([
+  const nul = disclose(persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:member:act-nul:"), sk
-  ]);
-  assert(disclose(!usedNullifiers.member(nul)), "Already acted");
-  usedNullifiers.insert(disclose(nul));
+  ]));
+  assert(!usedNullifiers.member(nul), "Already acted");
+  usedNullifiers.insert(nul);
 
   // ... perform the action
 }

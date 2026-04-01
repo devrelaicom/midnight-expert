@@ -121,42 +121,42 @@ import CompactStandardLibrary;
 
 export ledger credentialCommitment: Bytes<32>;
 
-witness getCredentialValue(): Field;
+witness getCredentialValue(): Uint<64>;
 witness getCredentialSalt(): Bytes<32>;
 
 // Verify the witness value matches the on-chain commitment,
 // then disclose ONLY the boolean result of the comparison
-circuit verifyCredential(): Field {
+circuit verifyCredential(): Uint<64> {
   const value = getCredentialValue();
   const salt = getCredentialSalt();
-  const expected = persistentCommit<Field>(value, salt);
+  const expected = persistentCommit<Uint<64>>(value, salt);
   assert(disclose(expected == credentialCommitment), "Invalid credential");
   return value;
 }
 
 // Threshold check: prove value >= threshold
-export circuit meetsThreshold(threshold: Field): Boolean {
+export circuit meetsThreshold(threshold: Uint<64>): Boolean {
   const value = verifyCredential();
   // ONLY the boolean result is disclosed, NOT the value
   return disclose(value >= threshold);
 }
 
 // Range check: prove value is within bounds
-export circuit withinRange(minimum: Field, maximum: Field): Boolean {
+export circuit withinRange(minimum: Uint<64>, maximum: Uint<64>): Boolean {
   const value = verifyCredential();
   return disclose(value >= minimum && value <= maximum);
 }
 
 // Equality check: prove value equals a specific target
-export circuit equalsValue(target: Field): Boolean {
+export circuit equalsValue(target: Uint<64>): Boolean {
   const value = verifyCredential();
   return disclose(value == target);
 }
 
 // Selective field disclosure from a multi-field profile
-witness getProfile(): [Bytes<32>, Field, Field];
+witness getProfile(): [Bytes<32>, Uint<64>, Uint<64>];
 
-export circuit proveAgeAbove(minAge: Field): Boolean {
+export circuit proveAgeAbove(minAge: Uint<64>): Boolean {
   const profile = getProfile();
   // profile[0] = name (NOT disclosed)
   // profile[1] = age (comparison result disclosed)
@@ -164,7 +164,7 @@ export circuit proveAgeAbove(minAge: Field): Boolean {
   return disclose(profile[1] >= minAge);
 }
 
-export circuit proveIncomeInRange(minIncome: Field, maxIncome: Field): Boolean {
+export circuit proveIncomeInRange(minIncome: Uint<64>, maxIncome: Uint<64>): Boolean {
   const profile = getProfile();
   // Only the income range check is disclosed
   return disclose(profile[2] >= minIncome && profile[2] <= maxIncome);

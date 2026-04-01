@@ -117,8 +117,8 @@ constructor() {
 // Guard: require caller to have a specific role
 circuit requireRole(required: Role): [] {
   const sk = local_secret_key();
-  const caller = get_public_key(sk);
-  assert(disclose(roles.member(caller)), "No role assigned");
+  const caller = disclose(get_public_key(sk));
+  assert(roles.member(caller), "No role assigned");
   assert(disclose(roles.lookup(caller) == required), "Insufficient permissions");
 }
 
