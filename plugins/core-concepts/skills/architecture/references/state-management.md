@@ -2,140 +2,94 @@
 
 ## Global State Structure
 
-```text
-GlobalState {
-  zswap: ZswapState,
-  contracts: Map<ContractAddress, ContractState>
-}
-```
+The global ledger state consists of two parts:
+
+- **Zswap state** — tracks coin commitments and nullifiers for shielded token operations
+- **Contract map** — stores each deployed contract's current data and its verification keys, indexed by contract address
 
 ## Zswap State
 
 ### Components
 
-```text
-ZswapState {
-  // Merkle tree of all coin commitments
-  commitment_tree: MerkleTree,
+The Zswap state maintains four components that together enable shielded token transfers:
 
-  // Next available slot in tree
-  commitment_tree_first_free: bigint,
+- **Commitment tree** — an append-only Merkle tree containing all coin commitments ever created. New commitments are always appended at the next available position; existing entries are never modified or removed.
 
-  // All spent coin nullifiers
-  nullifiers: Set<CoinNullifier>,
+- **Next free position** — a running index that tracks the next available slot in the commitment tree. It increments by one each time a new commitment is inserted.
 
-  // Recent valid Merkle roots (expires over time)
-  commitment_tree_history: Set<MerkleTreeRoot>
-}
-```
+- **Nullifier set** — a permanent, append-only set of all spent coin nullifiers. Once a nullifier is added, it can never be removed. This prevents double-spending: a coin can only be spent once because its nullifier can only appear in this set once.
+
+- **Recent Merkle roots** — a time-windowed set of recent commitment tree roots. When the tree changes, the new root is recorded here. Old roots expire after a configurable number of blocks.
 
 ### Commitment Tree Operations
 
 **Insert (new coin created)**:
-```text
-1. Compute commitment = Hash<(CoinInfo, CoinPublicKey)>
-2. Insert at position commitment_tree_first_free
-3. Increment commitment_tree_first_free
-4. Recompute Merkle root
-5. Add new root to commitment_tree_history
-```
+
+1. Compute the commitment by hashing the coin information and public key
+2. Insert the commitment at the next free position in the tree
+3. Advance the next-free-position index
+4. Recompute the Merkle root
+5. Record the new root in the recent roots set
 
 **Verify (coin exists)**:
-```text
-1. Receive: commitment, Merkle path, claimed root
-2. Verify claimed root in commitment_tree_history
-3. Verify path leads from commitment to root
-```
+
+1. Receive the commitment, a Merkle path, and a claimed root
+2. Confirm the claimed root appears in the recent roots set
+3. Verify the Merkle path connects the commitment to the claimed root
 
 ### Nullifier Set Operations
 
 **Check (not spent)**:
-```text
-1. Compute nullifier = Hash<(CoinInfo, CoinSecretKey)>
-2. Check: nullifier NOT in nullifiers
-```
+
+1. Compute the nullifier by hashing the coin information and the owner's secret key
+2. Confirm the nullifier does not already appear in the nullifier set
 
 **Insert (mark spent)**:
-```text
-1. Add nullifier to nullifiers
-2. Nullifier can never be added again
-```
 
-### Commitment Tree History
+1. Add the nullifier to the set
+2. The nullifier can never be added again — any future transaction attempting to reuse it will be rejected
 
-Maintains recent Merkle roots for:
-- Users with slightly stale Merkle paths
-- Concurrent transaction handling
-- Practical usability
+### Recent Merkle Roots
 
-Window covers a configurable number of recent blocks. Old roots expire over time via the historic roots set.
+The recent roots set exists for practical usability:
+
+- Users who constructed a Merkle path a few blocks ago can still spend their coins even though the tree has since changed
+- Concurrent transactions that both modify the tree do not invalidate each other's proofs
+- The window covers a configurable number of recent blocks; roots older than the window are expired
 
 ## Contract State
 
 ### Structure
 
-Contract state consists of an Impact state value plus a map of entry point names to operations (SNARK verifier keys):
+Each deployed contract stores two things:
 
-```text
-ContractState {
-  state: ImpactValue,                            // Impact state value
-  operations: Map<String, SNARKVerifierKey>       // Entry point → verifier key
-}
-```
-
-Contract Merkle trees are `MerkleTree(d)` Impact values with compile-time-fixed depth, stored as part of the Impact state. They are not separate top-level structures.
+- **State data** — the contract's current ledger values, as defined by its Compact source code. This includes any Merkle trees declared in the contract; they are part of the contract's own state, not separate top-level structures.
+- **Verification keys** — one key per circuit entry point, used by the network to verify zero-knowledge proofs submitted with transactions
 
 ### Contract Address
 
-```text
-ContractAddress = Hash(contract_state, nonce)    // Bytes<32>
-```
-
-### Field Types
-
-| Compact Type | State Representation |
-|--------------|---------------------|
-| `Field` | Single field element |
-| `Boolean` | Field (0 or 1) |
-| `Bytes<N>` | N bytes |
-| `ContractAddress` | Bytes<32> |
-| `Map<K,V>` | Key-value mapping |
+A contract address is a 32-byte hash derived from the contract's initial state and a nonce, making each deployment unique.
 
 ## State Transitions
 
 ### Atomic Updates
 
-All state changes in a transaction are atomic:
-
-```text
-Before: State_n
-Transaction: Tx
-After: State_n+1
-
-Either ALL changes apply, or NONE do.
-```
+All state changes within a single transaction are atomic: either every change applies, or none of them do. There is no partial application.
 
 ### Contract State Update Flow
 
-```text
-1. Load current state: S_current
-2. Execute Impact program with transaction inputs
-3. Compute resulting effects: E_result
-4. Verify E_result == E_declared (from proof)
-5. Apply E_declared to S_current → S_new
-6. Store S_new
-```
+1. Load the contract's current state
+2. Execute the contract's circuit with the transaction inputs
+3. Compute the resulting effects
+4. Verify the computed effects match the effects declared in the proof
+5. Apply the declared effects to produce the new state
+6. Store the new state
 
 ### Zswap State Update Flow
 
-```text
-For each output:
-  commitment_tree.insert(output.commitment)
+For each new coin output in the transaction, the commitment is inserted into the commitment tree.
 
-For each input:
-  assert !nullifiers.contains(input.nullifier)
-  nullifiers.insert(input.nullifier)
-```
+For each coin input in the transaction, the nullifier is checked against the nullifier set to confirm the coin has not been spent, then the nullifier is added to the set.
 
 ## State Consistency
 
@@ -157,16 +111,14 @@ ZK proofs bind:
 
 ### What Can Be Pruned
 
-| Component | Prunable? | Notes |
-|-----------|-----------|-------|
-| `commitment_tree_history` | Yes | Old roots expire via the historic roots set |
-| Contract state | Current only | Historical states not needed |
+- **Recent Merkle roots** — old roots expire after the configured window passes
+- **Historical contract states** — only the current state is needed; past versions can be discarded
 
 ### What Cannot Be Pruned
 
-- `nullifiers` — Must persist forever to prevent double-spend
-- Current contract states
-- The commitment tree itself
+- **Nullifier set** — must persist forever to prevent double-spending
+- **Current contract states** — needed for ongoing operation
+- **Commitment tree** — the full tree must be retained so that Merkle paths can be verified
 
 ## State Queries
 
