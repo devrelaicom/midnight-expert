@@ -10,22 +10,29 @@ import CompactStandardLibrary;
 export ledger balances: Map<Bytes<32>, Uint<64>>;
 export ledger owner: Bytes<32>;
 
+witness local_secret_key(): Bytes<32>;
+
 export circuit mint(amount: Uint<64>): [] {
-  assert(caller == owner, "only owner can mint");
-  const current = balances.lookup(disclose(caller)).with_default(0);
-  balances.insert(disclose(caller), current + amount);
+  const caller_id = disclose(local_secret_key());
+  assert(caller_id == owner, "only owner can mint");
+  const disclosed_amount = disclose(amount);
+  const current = balances.lookup(caller_id);
+  balances.insert(caller_id, (current + disclosed_amount) as Uint<64>);
 }
 
 export circuit transfer(amount: Uint<64>, to: Bytes<32>): [] {
-  const senderBalance = balances.lookup(disclose(caller)).with_default(0);
-  assert(senderBalance >= amount, "insufficient balance");
-  balances.insert(disclose(caller), senderBalance - amount);
-  const receiverBalance = balances.lookup(to).with_default(0);
-  balances.insert(to, receiverBalance + amount);
+  const caller_id = disclose(local_secret_key());
+  const disclosed_amount = disclose(amount);
+  const disclosed_to = disclose(to);
+  const senderBalance = balances.lookup(caller_id);
+  assert(senderBalance >= disclosed_amount, "insufficient balance");
+  balances.insert(caller_id, (senderBalance - disclosed_amount) as Uint<64>);
+  const receiverBalance = balances.lookup(disclosed_to);
+  balances.insert(disclosed_to, (receiverBalance + disclosed_amount) as Uint<64>);
 }
 
 export circuit getBalance(user: Bytes<32>): Uint<64> {
-  return balances.lookup(user).with_default(0);
+  return balances.lookup(disclose(user));
 }
 ```
 

@@ -13,18 +13,23 @@ export ledger voters: Map<Bytes<32>, Boolean>;
 export ledger votingOpen: Boolean;
 export ledger owner: Bytes<32>;
 
+witness local_secret_key(): Bytes<32>;
+
 export circuit openVoting(): [] {
-  assert(caller == owner, "only owner can open voting");
+  const caller_id = disclose(local_secret_key());
+  assert(caller_id == owner, "only owner can open voting");
   votingOpen = true;
 }
 
 export circuit vote(option: Uint<64>): [] {
   assert(votingOpen == true, "voting is closed");
-  const hasVoted = voters.lookup(disclose(caller)).with_default(false);
+  const caller_id = disclose(local_secret_key());
+  const hasVoted = voters.lookup(caller_id);
   assert(hasVoted == false, "already voted");
-  voters.insert(disclose(caller), true);
-  assert(option == 0 || option == 1, "invalid option");
-  if option == 0 {
+  voters.insert(caller_id, true);
+  const disclosed_option = disclose(option);
+  assert(disclosed_option == 0 || disclosed_option == 1, "invalid option");
+  if (disclosed_option == 0) {
     votesA.increment(1);
   } else {
     votesB.increment(1);
@@ -32,7 +37,8 @@ export circuit vote(option: Uint<64>): [] {
 }
 
 export circuit closeVoting(): [] {
-  assert(caller == owner, "only owner can close voting");
+  const caller_id = disclose(local_secret_key());
+  assert(caller_id == owner, "only owner can close voting");
   votingOpen = false;
 }
 
