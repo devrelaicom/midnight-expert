@@ -14,42 +14,22 @@ Cryptographic binding ensures transaction integrity:
 
 Used for value binding in Zswap.
 
-**Structure**:
-```text
-Commit(v) = v·G + r·H
-```
+Pedersen commitments are elliptic-curve-based commitments with three key properties:
 
-where G and H are independent generator points on the elliptic curve and r is a random blinding factor.
+- **Hiding**: The committed value cannot be determined from the commitment alone
+- **Binding**: Once committed, the value cannot be changed without detection
+- **Homomorphic**: Adding two commitments produces a valid commitment to the sum of their values
 
-**Properties**:
-- **Hiding**: Cannot determine v from commitment
-- **Binding**: Cannot find different v' with same commitment
-- **Homomorphic**: Commit(a) + Commit(b) = Commit(a+b)
-
-**Usage in Midnight**:
-```text
-Coin commitment = Hash<(CoinInfo, CoinPublicKey)>
-Balance verification via homomorphic Pedersen value commitments
-```
+The commitment incorporates the token type through a type-dependent generator point (derived via hash-to-curve), enabling independent balance verification per token type. No actual values are revealed during balance checking.
 
 ### 2. Schnorr Proof
 
-One Schnorr proof per transaction. This is a lightweight ZK proof variant (not a separate category from ZK proofs) used to prove contract sections don't inject hidden value.
+Each contract interaction segment carries a Schnorr proof demonstrating the prover knows the randomness used in the Pedersen binding commitment. This binds the segment's effects to the transaction, preventing unauthorized value injection.
 
-**What it proves**:
-"The contract contribution to this transaction has zero net value."
+The proof uses the Fiat-Shamir transform (deterministic challenge derived from public data) to be non-interactive. During verification, the challenge is recomputed from the public data rather than stored in the proof itself.
 
 **Why needed**:
-Without this, contracts could create value from nothing by hiding it in their section.
-
-**Structure**:
-```text
-SchnorrProof {
-  commitment: Point,    // What we're proving about
-  challenge: Scalar,    // Fiat-Shamir challenge
-  response: Scalar      // Proof response
-}
-```
+Without this, contracts could inject hidden value into their transaction segment.
 
 ### 3. ZK Proof Binding
 
@@ -78,70 +58,34 @@ This approach preserves the homomorphic property needed for balance verification
 | Input proofs | Specific nullifier, Merkle root, transaction binding |
 | Output proofs | Specific commitment, transaction binding |
 | Contract proofs | Specific transcript, transaction binding |
-| Schnorr proof | Contract value vector, transaction binding |
+| Schnorr proof | Segment binding commitment, transaction binding |
 
 ## Balance Verification
 
 ### Homomorphic Balance Check
 
-The two offers are balanced separately with different adjustments:
+Balance verification is performed entirely over Pedersen commitments using their homomorphic property. No actual values are revealed.
 
-```text
-Guaranteed offer:
-  For each token type t:
-    sum(inputs[t]) - sum(outputs[t]) - fees[t] + mints[t] >= 0
+The two offers (guaranteed and fallible) are balanced separately:
 
-Fallible offer:
-  For each token type t:
-    sum(inputs[t]) - sum(outputs[t]) + mints[t] >= 0
-```
+- **Guaranteed offer**: For each token type, the sum of inputs minus outputs minus fees plus mints must be non-negative.
+- **Fallible offer**: For each token type, the sum of inputs minus outputs plus mints must be non-negative.
 
-Both must have a non-negative delta per token type. No actual values are revealed — verification is performed over Pedersen commitments using their homomorphic property.
-
-### Multi-Asset Balancing
-
-```text
-For each offer, per token type:
-  delta[type] = sum(inputs) - sum(outputs) + adjustments
-
-For valid transaction:
-  ∀ type: delta[type] >= 0  (non-negative)
-```
+Both must have a non-negative delta per token type to ensure no value is created from nothing.
 
 ## Proof Composition
 
-### How Proofs Link Together
-
-```text
-┌─────────────────────────────────────────────┐
-│              Transaction                     │
-│                                             │
-│  ┌─────────────────────────────────────┐   │
-│  │       Pedersen Binding               │   │
-│  │                │                     │   │
-│  │    ┌──────────┼──────────┐          │   │
-│  │    ↓          ↓          ↓          │   │
-│  │ Input     Output    Contract        │   │
-│  │ Proofs    Proofs    Proofs          │   │
-│  │    │          │          │          │   │
-│  │    └──────────┴──────────┘          │   │
-│  │              │                       │   │
-│  │              ↓                       │   │
-│  │       Schnorr Proof                  │   │
-│  │    (balance verification)            │   │
-│  └─────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
-```
-
 ### Verification Order
 
-All proof verification happens during the well-formedness check (stateless phase):
+Proof verification proceeds in a defined order:
 
 1. Verify each ZK proof independently
-2. Verify the Schnorr proof
-3. Verify all proofs reference the same binding
+2. Verify Schnorr proofs for each contract interaction segment
+3. Verify all proofs reference the same binding commitment
 4. Verify homomorphic balance (non-negative delta per token type)
-5. Transaction is well-formed
+5. State-dependent checks (nullifier uniqueness, verifier key lookup) require ledger access
+
+Steps 1-4 are stateless well-formedness checks. Step 5 requires state access, including looking up verifier keys for proof verification.
 
 ## Security Properties
 
@@ -168,22 +112,17 @@ All-or-nothing execution:
 
 ## Attack Prevention
 
-### Mix-and-Match Attack
-
-**Attack**: Take input proof from Tx1, output from Tx2.
-**Prevention**: Both proofs commit to different transaction bindings.
-
 ### Value Injection Attack
 
-**Attack**: Create value in contract section.
-**Prevention**: Schnorr proof ensures zero net contract value.
+**Attack**: Create value in a contract interaction segment.
+**Prevention**: The Schnorr proof for each segment demonstrates knowledge of the binding randomness, preventing unauthorized value injection.
 
 ### Proof Reuse Attack
 
 **Attack**: Reuse old proof in new transaction.
-**Prevention**: Proofs bound to specific transaction binding including fresh randomness.
+**Prevention**: Proofs are bound to a specific transaction binding commitment that includes fresh randomness. A proof from one transaction will not verify against a different binding.
 
 ### Double-Spend Attack
 
 **Attack**: Spend same coin twice.
-**Prevention**: Nullifier uniqueness + set membership check.
+**Prevention**: Nullifier uniqueness enforced at the ledger level. Each coin produces a unique nullifier when spent; the ledger rejects duplicate nullifiers.
