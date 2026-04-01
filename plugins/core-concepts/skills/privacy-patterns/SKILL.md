@@ -39,31 +39,7 @@ A commitment hides a value behind cryptographic randomness while binding the com
 
 **Column note**: "Clears Witness Taint" means the compiler no longer requires `disclose()` for values that flowed through the function's input. The commitment cryptographically hides the input, so the compiler considers it safe. Hash functions do not provide this guarantee because hash outputs could theoretically be brute-forced.
 
-```compact
-pragma language_version 0.22;
-import CompactStandardLibrary;
-
-// Witnesses are declaration-only; logic is implemented in TypeScript
-witness get_randomness(): Bytes<32>;
-witness store_opening(commitment: Bytes<32>, salt: Bytes<32>, value: Field): [];
-
-export ledger storedCommitment: Bytes<32>;
-
-export circuit commitValue(value: Field): [] {
-  // Fresh randomness from off-chain -- never reuse
-  const salt = get_randomness();
-  const valueBytes = value as Bytes<32>;
-  const commitment = persistentCommit<Vector<2, Bytes<32>>>(
-    [valueBytes, pad(32, "myapp:commit:")],  // pad(N, str): pads or truncates string to exactly N bytes
-    salt
-  );
-  // Store the opening off-chain for later reveal
-  store_opening(commitment, salt, value);
-  // persistentCommit clears witness taint on both input and result;
-  // no disclose() needed for the ledger write
-  storedCommitment = commitment;
-}
-```
+**How it works in practice:** A circuit accepts a value to commit and calls a witness function to obtain fresh randomness (a 32-byte salt). It then calls `persistentCommit` over a domain-separated vector containing the value and a purpose prefix (created with `pad(32, "myapp:commit:")`). The resulting commitment is stored on-chain. Because `persistentCommit` clears witness taint, no `disclose()` is needed for the ledger write. The opening (commitment, salt, and value) is stored off-chain via a witness function so the committer can reveal later. Randomness must never be reused across commitments.
 
 See `references/commitment-schemes.md` for detailed commitment properties, reveal patterns, and salt management.
 
@@ -73,85 +49,25 @@ A nullifier prevents double-actions without revealing which action is being prev
 
 ### Derivation Pattern
 
-Nullifiers are derived via `persistentHash` (SHA-256) with a domain-separated vector of inputs:
-
-```compact
-persistentHash<Vector<N, Bytes<32>>>([
-  pad(32, "contract:purpose:"),
-  secret,
-  ... additional inputs ...
-])
-```
+Nullifiers are derived by calling `persistentHash` over a domain-separated vector containing a unique purpose prefix (e.g., `pad(32, "contract:purpose:")`), the secret, and any additional context-specific inputs.
 
 **Domain separation is critical.** Nullifiers for different purposes MUST use different domain prefixes. Without domain separation, an observer who sees a nullifier from one contract can check whether the same secret was used in another contract.
 
 ### Nullifier vs Commitment Must Be Uncorrelatable
 
-If you derive both a commitment and a nullifier from the same secret, use different domain separators so an observer cannot match commitments to nullifiers:
-
-```compact
-// WRONG -- same derivation enables linking
-const commitment = persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:"), sk]);
-const nullifier = persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:"), sk]);
-
-// CORRECT -- different domains prevent correlation
-const commitment = persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:commit:"), sk]);
-const nullifier = persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:nul:"), sk]);
-```
+If you derive both a commitment and a nullifier from the same secret, use different domain separators so an observer cannot match commitments to nullifiers. For example, use `pad(32, "myapp:commit:")` for the commitment and `pad(32, "myapp:nul:")` for the nullifier. Using the same domain prefix for both produces identical outputs, enabling a linking attack.
 
 ### Multi-Round Nullifiers
 
-To allow one action per round (e.g., voting in multiple rounds), incorporate a round counter into the nullifier derivation:
-
-```compact
-circuit deriveNullifier(round: Uint<64>, sk: Bytes<32>): Bytes<32> {
-  // Two-step cast required: Uint<64> -> Field -> Bytes<32>
-  const roundBytes = (round as Field) as Bytes<32>;
-  return persistentHash<Vector<3, Bytes<32>>>([
-    pad(32, "myapp:round-nul:"),
-    roundBytes,
-    sk
-  ]);
-}
-```
-
-Each round produces a distinct nullifier from the same secret, allowing one action per round while still preventing double-actions within a round.
+To allow one action per round (e.g., voting in multiple rounds), incorporate a round counter into the nullifier derivation. A `deriveNullifier` circuit takes the round number (as `Uint<64>`) and the secret key, casts the round through `Field` to `Bytes<32>` (two-step cast required: `Uint<64>` cannot cast directly to `Bytes<32>`), then calls `persistentHash` over a three-element vector containing the round-specific domain prefix, the round bytes, and the secret key. Each round produces a distinct nullifier from the same secret, allowing one action per round while still preventing double-actions within a round.
 
 ### Storage
 
-Nullifiers are stored in `Set<Bytes<32>>`. This is public on-chain by design: the nullifier is already a derived value and reveals nothing about the underlying secret.
-
-```compact
-export ledger spentNullifiers: Set<Bytes<32>>;
-
-// Check and insert a nullifier
-const nul = deriveNullifier(currentRound, sk);
-// disclose() needed: nul is witness-derived; Set.member() argument must be public
-assert(!spentNullifiers.member(disclose(nul)), "Already acted this round");
-spentNullifiers.insert(disclose(nul));
-```
+Nullifiers are stored in a `Set<Bytes<32>>` ledger variable. This is public on-chain by design: the nullifier is already a derived value and reveals nothing about the underlying secret. To check and insert: derive the nullifier, then call `Set.member(disclose(nul))` to check for reuse (the `disclose()` is required because the nullifier is witness-derived and Set arguments must be public), and `Set.insert(disclose(nul))` to record it.
 
 ### Zerocash Pattern
 
-The Midnight zerocash implementation demonstrates the canonical commitment and nullifier separation:
-
-```compact
-// From zerocash.compact -- nullifier derivation
-circuit derive_nullifier(coin: coin_info, sk: zk_secret_key): nullifier {
-  // Note: domain "lares:zerocash:commit" is intentionally named this way
-  // in the reference implementation despite being a nullifier derivation.
-  // This is a historical naming artifact from the reference implementation
-  // where the same function was reused for both commitment and nullifier
-  // derivation with different inputs. The domain string was not updated
-  // when the function's purpose diverged.
-  return nullifier{ bytes: disclose(persistentHash<Vector<4, Bytes<32>>>([
-    pad(32, "lares:zerocash:commit"),
-    coin.nonce.bytes,
-    coin.opening.bytes,
-    sk.bytes
-  ]))};
-}
-```
+The Midnight zerocash implementation demonstrates the canonical commitment and nullifier separation. Its `derive_nullifier` circuit calls `persistentHash` over a four-element vector containing a domain prefix (`"lares:zerocash:commit"`), the coin nonce, the coin opening, and the secret key. The result is disclosed (nullifiers are public by design) and wrapped in a nullifier struct. Note: the domain string `"lares:zerocash:commit"` is a historical naming artifact from the reference implementation where the same function was reused for both commitment and nullifier derivation -- the domain string was not updated when the purposes diverged.
 
 ## Pattern 3: Merkle Tree Anonymous Authentication
 
@@ -173,54 +89,16 @@ Use `HistoricMerkleTree<N, T>` instead of `MerkleTree<N, T>` when members are ad
 
 ### Full Flow: Anonymous Authentication with Nullifier
 
-```compact
-pragma language_version 0.22;
-import CompactStandardLibrary;
+The contract declares an `HistoricMerkleTree<16, Bytes<32>>` for member registration and a `Set<Bytes<32>>` for spent nullifiers. A witness provides the user's secret key; another witness returns the `MerkleTreePath` for the user's public key.
 
-export ledger members: HistoricMerkleTree<16, Bytes<32>>;
-export ledger usedNullifiers: Set<Bytes<32>>;
+**Admin registration:** An `addMember` circuit inserts a member's public key commitment into the tree. The leaf value is hidden on-chain (the special privacy property of MerkleTree inserts), though `disclose()` is still required on the argument.
 
-witness local_secret_key(): Bytes<32>;
-witness getMemberPath(pk: Bytes<32>): MerkleTreePath<16, Bytes<32>>;
+**Anonymous action (four steps):**
 
-circuit get_public_key(sk: Bytes<32>): Bytes<32> {
-  return persistentHash<Vector<2, Bytes<32>>>([
-    pad(32, "myapp:pk:"), sk
-  ]);
-}
-
-// Admin adds a member (leaf value is hidden on-chain)
-export circuit addMember(memberPk: Bytes<32>): [] {
-  members.insert(disclose(memberPk));
-}
-
-// Member proves membership anonymously and performs a one-time action
-export circuit act(): [] {
-  const sk = local_secret_key();
-  const pk = get_public_key(sk);
-
-  // Step 1: Get Merkle proof from off-chain state
-  const memberPath = getMemberPath(pk);
-
-  // Step 2: Compute root from the full MerkleTreePath struct
-  // (no .value field -- pass the whole struct)
-  const digest = merkleTreePathRoot<16, Bytes<32>>(memberPath);
-
-  // Step 3: Verify against on-chain tree
-  // disclose() needed: digest is derived from witness data (the path)
-  assert(members.checkRoot(disclose(digest)), "Not a member");
-
-  // Step 4: Derive nullifier to prevent reuse
-  const nul = persistentHash<Vector<2, Bytes<32>>>([
-    pad(32, "myapp:act-nul:"), sk
-  ]);
-  // disclose() needed: nul is witness-derived; Set.member() argument must be public
-  assert(!usedNullifiers.member(disclose(nul)), "Already acted");
-  usedNullifiers.insert(disclose(nul));
-
-  // ... perform the action
-}
-```
+1. **Obtain proof off-chain.** The circuit derives the user's public key from their secret key via `persistentHash` with a `"myapp:pk:"` domain prefix, then calls a witness to get the `MerkleTreePath` for that public key.
+2. **Compute root in-circuit.** Call `merkleTreePathRoot<16, Bytes<32>>(memberPath)` passing the whole `MerkleTreePath` struct (there is no `.value` field).
+3. **Verify root on-chain.** Call `members.checkRoot(disclose(digest))` to confirm the computed root matches a current or historic root. The `disclose()` is required because the digest is derived from witness data.
+4. **Check and record nullifier.** Derive a nullifier via `persistentHash` with a different domain prefix (`"myapp:act-nul:"`), check it is not in the spent set, and insert it. Both `Set.member()` and `Set.insert()` require `disclose()` on the witness-derived nullifier.
 
 **Capacity planning:** `HistoricMerkleTree<N, T>` holds at most 2^N leaves. Depth 16 supports 65,536 members; depth 20 supports about 1 million. Depth also determines proof size (N sibling hashes), so balance capacity against circuit cost.
 
@@ -234,48 +112,14 @@ This pattern breaks the link between successive transactions from the same user.
 
 ### Mechanism
 
-The public key for each round incorporates a counter:
-
-```compact
-circuit publicKey(roundVal: Uint<64>, sk: Bytes<32>): Bytes<32> {
-  // Two-step cast: Uint<64> -> Field -> Bytes<32>
-  const roundBytes = (roundVal as Field) as Bytes<32>;
-  return persistentHash<Vector<3, Bytes<32>>>([
-    pad(32, "myapp:pk:"),
-    roundBytes,
-    sk
-  ]);
-}
-```
+A `publicKey` circuit derives a round-specific key by calling `persistentHash` over a three-element vector: a `"myapp:pk:"` domain prefix, the round number (cast through `Field` to `Bytes<32>` -- the two-step cast is required), and the secret key. The contract stores the current `authority` hash and a `Counter` for the round number.
 
 Each transaction:
-1. Reads the current round counter
+1. Reads the current round counter (`Counter.read()` returns `Uint<64>`)
 2. Derives the expected public key for this round
-3. Asserts it matches the stored authority
+3. Asserts it matches the stored authority (`disclose()` needed because the key is witness-derived)
 4. Increments the round counter
-5. Computes and stores the next round's authority
-
-```compact
-export ledger authority: Bytes<32>;
-export ledger round: Counter;
-
-witness local_secret_key(): Bytes<32>;
-
-export circuit authorize(): [] {
-  const sk = local_secret_key();
-  // Counter.read() returns Uint<64>; cast through Field for hash input
-  const currentRound = round.read();
-  const pk = publicKey(currentRound, sk);
-  // disclose() needed: pk is derived from witness data (sk)
-  assert(disclose(authority == pk), "Not authorized");
-
-  // Rotate to next round
-  round.increment(1);
-  const nextRound = round.read();
-  // disclose() needed: writing witness-derived value to ledger
-  authority = disclose(publicKey(nextRound, sk));
-}
-```
+5. Computes the next round's public key and writes it to `authority` (`disclose()` needed for the ledger write)
 
 **Observer perspective:** Each transaction shows a different authority hash. Without knowing the secret key, the observer cannot determine that the same user authorized all transactions.
 
@@ -289,66 +133,15 @@ Selective disclosure proves a property about private data without revealing the 
 
 Prove a witness-held value exceeds a threshold without revealing the value. Note: comparison operators (`>=`, `<=`, `>`, `<`) only work on `Uint<N>`, not `Field`.
 
-```compact
-pragma language_version 0.22;
-import CompactStandardLibrary;
-
-// Witnesses return Uint<64> because comparison operators
-// (>=, <=, >, <) only work on Uint<N>, NOT on Field
-witness getCredentialValue(): Uint<64>;
-witness getCredentialSalt(): Bytes<32>;
-
-export ledger credentialCommitment: Bytes<32>;
-
-// Prove value >= threshold without revealing value
-export circuit verifyThreshold(threshold: Uint<64>): [] {
-  const value = getCredentialValue();
-  const salt = getCredentialSalt();
-
-  // Verify the witness value matches the on-chain commitment
-  // persistentCommit<T> accepts any serializable type T
-  const expected = persistentCommit<Uint<64>>(value, salt);
-  // persistentCommit clears witness taint; no disclose() needed on result
-  assert(expected == credentialCommitment, "Invalid credential");
-
-  // Disclose only the boolean result, NOT the value
-  // disclose() needed: comparison involves witness data (value)
-  assert(disclose(value >= threshold), "Below threshold");
-}
-```
+The circuit obtains the credential value (as `Uint<64>`, required for comparisons) and its salt from witnesses. It recomputes the commitment via `persistentCommit<Uint<64>>(value, salt)` and asserts it matches the on-chain commitment (no `disclose()` needed on the result because `persistentCommit` clears taint). Then it discloses only the boolean result of the comparison: `disclose(value >= threshold)`. The value itself never leaves the circuit.
 
 ### Range Proof
 
-```compact
-export circuit verifyRange(minimum: Uint<64>, maximum: Uint<64>): [] {
-  const value = getCredentialValue();
-  const salt = getCredentialSalt();
-  const expected = persistentCommit<Uint<64>>(value, salt);
-  assert(expected == credentialCommitment, "Invalid credential");
-
-  // Disclose the combined range check as a single boolean
-  assert(disclose(value >= minimum && value <= maximum), "Out of range");
-}
-```
+The same pattern extends to range checks: after verifying the credential commitment, disclose a combined boolean expression like `disclose(value >= minimum && value <= maximum)`. The range boundaries are public circuit parameters; the value remains private.
 
 ### Selective Field Disclosure
 
-When working with structured data, disclose only specific fields:
-
-```compact
-// Witnesses return Uint<64> for fields that need comparison operators
-witness getProfile(): [Bytes<32>, Uint<64>, Uint<64>];
-
-// Reveal age bracket but not name or exact income
-export circuit proveAgeAbove(minAge: Uint<64>): [] {
-  const profile = getProfile();
-  const [name, age, income] = profile;  // name and income NOT disclosed; age comparison result disclosed
-
-  // Only the boolean result of the age comparison is made public
-  // disclose() needed: age is witness data used in a conditional
-  assert(disclose(age >= minAge), "Age requirement not met");
-}
-```
+When working with structured data, disclose only specific fields. For example, a witness might return a profile tuple containing a name (`Bytes<32>`), age (`Uint<64>`), and income (`Uint<64>`). A circuit can destructure this tuple and disclose only the boolean result of an age comparison -- `disclose(age >= minAge)` -- while the name and income fields never leave the circuit. The key principle: disclose the boolean result of a check, not the underlying data.
 
 ## Threat Model: What an On-Chain Observer Can See
 
@@ -401,9 +194,3 @@ export circuit proveAgeAbove(minAge: Uint<64>): [] {
 | Commitment properties, hiding/binding, `persistentCommit` vs `transientCommit`, salt management | `references/commitment-schemes.md` |
 | MerkleTree/HistoricMerkleTree, `MerkleTreePath` struct, `checkRoot` pattern, TypeScript integration | `references/merkle-tree-usage.md` |
 
-## Examples
-
-| Example | File | Pattern |
-|---------|------|---------|
-| Multi-signature and role-based authentication with Merkle proofs | `examples/auth-patterns.compact` | Authentication |
-| Anonymous voting with commit-reveal and nullifiers | `examples/private-voting.compact` | Private Voting |
