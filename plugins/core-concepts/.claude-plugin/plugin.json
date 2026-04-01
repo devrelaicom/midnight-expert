@@ -1,7 +1,7 @@
 {
   "name": "core-concepts",
-  "version": "0.2.0",
-  "description": "Core concepts and patterns for Midnight Network development: UTXO/account models, zero-knowledge proofs, privacy patterns, smart contracts, and protocol architecture",
+  "version": "0.3.0",
+  "description": "Conceptual foundations for understanding the Midnight Network: architecture, data models, privacy patterns, protocols, tokenomics, and zero-knowledge proofs",
   "author": {
     "name": "Aaron Bassett"
   },
@@ -11,7 +11,7 @@
     "zero-knowledge",
     "zk-proofs",
     "privacy",
-    "smart-contracts",
-    "compact"
+    "architecture",
+    "concepts"
   ]
 }
