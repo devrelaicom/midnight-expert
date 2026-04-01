@@ -1,6 +1,6 @@
 # Transaction Lifecycle
 
-Complete reference for the Midnight transaction lifecycle: from circuit call construction through ZK proving, balancing, submission, and on-chain finalization. For package-level API details, see `references/package-reference.md`. For the high-level deployment workflow, see `compact-core:compact-deployment`.
+Complete reference for the Midnight transaction lifecycle: from circuit call construction through ZK proving, balancing, submission, and on-chain finalization. For package-level API details, see `references/package-reference.md`. For the high-level deployment workflow, see `dapp-development:midnight-sdk`.
 
 ## Pipeline Overview
 

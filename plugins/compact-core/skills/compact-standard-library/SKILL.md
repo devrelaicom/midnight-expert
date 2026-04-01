@@ -160,7 +160,7 @@ Types provided by the standard library. All are available after `import CompactS
 | `ZswapCoinPublicKey` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `UserAddress` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `ShieldedCoinInfo` | none | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | All-zero fields |
-| `QualifiedShieldedCoinInfo` | none | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mtIndex: Uint<64>` | All-zero fields |
+| `QualifiedShieldedCoinInfo` | none | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mt_index: Uint<64>` | All-zero fields |
 | `ShieldedSendResult` | none | `change: Maybe<ShieldedCoinInfo>`, `sent: ShieldedCoinInfo` | Default Maybe + default coin |
 
 > **Verification:** Use `midnight-search-compact` with the type name (e.g., `MerkleTreeDigest`) to find real-world usage patterns across the Compact codebase.
@@ -302,7 +302,7 @@ Unshielded token functions:
 | `Map<K, V>` | `insert`, `lookup`, `member`, `remove`, `size` | All ops visible on-chain |
 | `Set<T>` | `insert`, `member`, `remove`, `size` | All ops visible on-chain |
 | `List<T>` | `pushFront`, `popFront`, `head`, `length` | Ordered sequence |
-| `MerkleTree<N, T>` | `insert`, `checkRoot`, `insertHash`, `isFull` | Insert is public; privacy via membership proofs |
+| `MerkleTree<N, T>` | `insert`, `checkRoot`, `insertHash`, `isFull` | Insert hides leaf (via `leaf_hash()`); privacy via membership proofs |
 | `HistoricMerkleTree<N, T>` | Same + `resetHistory` | Accepts proofs against past roots |
 
 > For complete ADT operation tables, nested composition, and state design patterns, see the `compact-ledger` skill.

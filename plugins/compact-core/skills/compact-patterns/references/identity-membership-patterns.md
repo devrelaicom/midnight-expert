@@ -87,7 +87,7 @@ export circuit restrictedAction(): [] {
 
 | Wrong | Correct | Why |
 |-------|---------|-----|
-| Not checking membership before lookup | Always use `member()` before acting on membership | Avoids acting on default/absent values |
+| Not checking membership before lookup | Always use `member()` before acting on membership | `lookup()` on a missing key throws a runtime error (ExpectedCell) |
 | Using `Map` when only membership matters | Use `Set` for boolean membership | `Set` is simpler and more appropriate when you only need to track existence |
 
 ---
@@ -308,7 +308,7 @@ constructor() {
   admin = disclose(get_public_key(local_secret_key()));
 }
 
-// Admin adds a member (leaf is visible on-chain; privacy comes from membership proofs not revealing which leaf)
+// Admin adds a member (leaf is hidden — leaf_hash() applied before storing; privacy also comes from membership proofs not revealing which leaf)
 export circuit addMember(memberPk: Bytes<32>): [] {
   const sk = local_secret_key();
   assert(disclose(get_public_key(sk) == admin), "Not admin");

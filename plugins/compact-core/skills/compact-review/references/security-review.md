@@ -321,7 +321,7 @@ Check assertions and error paths for information leakage and missing safety chec
 
   > **Tool:** `midnight-compile-contract` output may reveal runtime failures from missing safety checks. `midnight-search-docs` has guidance on safe Map/Set access patterns.
 
-- [ ] **Missing bounds checks before arithmetic operations.** Subtraction underflow, division by zero, and array out-of-bounds access must be guarded with assertions. For `Field` types, arithmetic underflow wraps around silently (modular arithmetic), producing an incorrect but valid-looking result. For `Uint<N>` types, subtraction underflow causes a runtime error. In both cases, explicit bounds checks prevent unexpected behavior.
+- [ ] **Missing bounds checks before arithmetic operations.** Subtraction underflow, division by zero, and array out-of-bounds access must be guarded with assertions. For `Field` types, arithmetic underflow wraps around silently (modular arithmetic), producing an incorrect but valid-looking result. For `Uint<N>` types: addition and multiplication cannot overflow (the compiler widens the result type), but subtraction underflow causes a runtime error. There is no silent wrapping for `Uint`. In both cases, explicit bounds checks prevent unexpected behavior.
 
   ```compact
   // BAD — subtraction without underflow check
@@ -419,7 +419,7 @@ Quick reference of common security anti-patterns in Compact contracts.
 | Regular `MerkleTree` for concurrent membership | Root changes on every insert; paths obtained before a concurrent insert become invalid | Use `HistoricMerkleTree` which retains previous roots and validates older paths |
 | Assert message reveals expected value | Failed transaction error message leaks private state (balance, authority key, expected commitment) to observers | Keep assert messages generic: "Not authorized", "Insufficient balance", "Invalid proof" |
 | Missing state machine guard on phase transition | Calling `reveal` before `commit`, or `execute` before `vote`, breaks protocol invariants | Assert current state at the top of each phase-transition circuit: `assert(state == State.COMMITTED, ...)` |
-| No bounds check before arithmetic | `Field` subtraction underflow wraps silently (modular arithmetic); `Uint<N>` subtraction underflow causes a runtime error. Both produce incorrect or failed results | Assert `a >= b` before computing `a - b`; assert `amount > 0` for all token operations |
+| No bounds check before arithmetic | `Field` subtraction underflow wraps silently (modular arithmetic); `Uint<N>` addition/multiplication widen the result type (no overflow), but subtraction underflow causes a runtime error. There is no silent wrapping for `Uint`. | Assert `a >= b` before computing `a - b`; assert `amount > 0` for all token operations |
 
 ## Tool Reference
 

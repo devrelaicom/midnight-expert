@@ -101,7 +101,7 @@ export pure circuit compute(x: Field): Field { ... }
 ```
 
 - `export` makes the circuit a transaction entry point
-- `pure` means no ledger state access AND no witness calls (computation from inputs only)
+- `pure` signals no side effects — the compiler's `identify-pure-circuits` pass checks for ledger access, witness calls, and calls to impure circuits. Primarily affects ZK proving key generation and `pureCircuits` export
 - Non-exported circuits are internal helpers
 
 For circuit rules, witness declarations, constructors, and pure circuits, consult `references/circuits-and-witnesses.md`.

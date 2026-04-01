@@ -37,8 +37,8 @@ For exhaustive syntax rules and modifier details, see `references/types-and-oper
 | `Map<K, V>` | Key-value store | `insert`, `lookup`, `member`, `remove` | All ops visible |
 | `Set<T>` | Unique elements | `insert`, `member`, `remove` | All ops visible |
 | `List<T>` | Ordered sequence | `pushFront`, `popFront`, `head` | All ops visible |
-| `MerkleTree<N, T>` | Privacy-preserving set | `insert`, `checkRoot` | All ops visible; **privacy via membership proofs** |
-| `HistoricMerkleTree<N, T>` | MerkleTree with root history | Same + `resetHistory` | All ops visible; **privacy via membership proofs** |
+| `MerkleTree<N, T>` | Privacy-preserving set | `insert`, `checkRoot` | **Insert hides leaf** (via `leaf_hash()`); **privacy via membership proofs** |
+| `HistoricMerkleTree<N, T>` | MerkleTree with root history | Same + `resetHistory` | **Insert hides leaf** (via `leaf_hash()`); **privacy via membership proofs** |
 
 For complete operations tables with parameters, return types, and edge cases, see `references/types-and-operations.md`.
 
@@ -86,8 +86,8 @@ For constructor patterns, pitfalls, and multi-field initialization strategies, s
 
 ## On-Chain Visibility Summary
 
-All ledger operations are publicly visible on-chain, including MerkleTree inserts.
-The privacy benefit of MerkleTree is in **membership proofs** -- ZK path proofs do not reveal which specific leaf is being proven.
+All ledger operations are publicly visible on-chain, **except** `MerkleTree.insert()` which hides the leaf value -- the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument.
+The additional privacy benefit of MerkleTree is in **membership proofs** -- ZK path proofs do not reveal which specific leaf is being proven.
 
 | Operation Type | Visible On-Chain |
 |---------------|-----------------|
@@ -96,7 +96,7 @@ The privacy benefit of MerkleTree is in **membership proofs** -- ZK path proofs 
 | Map insert/lookup/member/remove | Yes -- key and value visible |
 | Set insert/member/remove | Yes -- element visible |
 | List pushFront/popFront | Yes -- element visible |
-| MerkleTree insert | Yes -- leaf value visible |
+| MerkleTree insert | **No** -- the compiler applies `leaf_hash()` (a `persistent_hash`) before storing; only the hash is in the transaction transcript. This is the only ledger operation that hides its data argument. |
 | MerkleTree checkRoot | Yes -- digest visible |
 
 For detailed per-operation visibility analysis, MerkleTree vs Set privacy comparison, disclosure rules, and privacy design patterns, see `references/privacy-and-visibility.md`.
@@ -128,7 +128,7 @@ For the full Kernel API including zswap claim operations, see `references/types-
 |-------|---------|-----|
 | `ledger { field: Type; }` | `export ledger field: Type;` | Block syntax was removed in Compact 0.10.1 — causes a parse error |
 | `counter.value()` | `counter.read()` | `.value()` does not exist |
-| `map.lookup(key)` without member check | Check `map.member(key)` first | `lookup` on missing key returns default, not error |
+| `map.lookup(key)` without member check | Check `map.member(key)` first | `lookup` on missing key throws a runtime error (ExpectedCell) |
 | `sealed ledger export x: T` | `export sealed ledger x: T` | `export` must come before `sealed` |
 | Direct assignment to ADT | Use ADT methods | `count = 5` is wrong; use `count.increment(5)` |
 | `MerkleTree<1, T>` | `MerkleTree<2, T>` minimum | Depth must be > 1 and <= 32 |

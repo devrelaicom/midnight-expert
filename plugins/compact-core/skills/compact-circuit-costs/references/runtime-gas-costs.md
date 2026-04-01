@@ -53,7 +53,7 @@ if (current > 0 as Uint<64>) {
 - All arithmetic operations on circuit values
 - Hash function evaluations
 - Commitment computations
-- Conditional branches (both branches are evaluated in ZK circuits)
+- Conditional branches (at the language level, only the taken branch is evaluated; however, the compiled ZK circuit encodes both branches with a select gate — both sets of constraints exist in the circuit, affecting gate count)
 - Loop body evaluations (all iterations)
 
 **Optimization strategies:**

@@ -51,8 +51,8 @@ If the error message contains "internal compiler error" or the compilation exits
 
 1. Try a different compiler version (`version: "latest"` or a specific recent version)
 2. If it persists across versions, this is a compiler bug — inform the user and suggest filing an issue
-3. Cross-reference: `compact-core:compact-compilation` references/compiler-errors.md has a catalog of known internal errors and their fixed versions
+3. Cross-reference: `midnight-tooling:compact-cli` has documentation on known compiler errors and their fixed versions
 
 ## Full Error Catalog
 
-For detailed explanations of every error category, compiler behavior, and version-specific quirks, see `compact-core:compact-compilation` references/compiler-errors.md. The example files below cover the most common errors and how to fix them in the MCP context.
+For detailed explanations of compiler behavior and version-specific quirks, see `midnight-tooling:compact-cli`. The example files below cover the most common errors and how to fix them in the MCP context.

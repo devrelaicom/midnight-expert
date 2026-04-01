@@ -124,5 +124,5 @@ Ledger claims have a richer verification hierarchy than other domains because th
 Sub-agents may load these skills for context. They are **hints only** — never cite skill content as evidence.
 
 - `compact-core:compact-standard-library` skill — stdlib functions that map to ledger primitives
-- `compact-core:compact-compilation` skill — how Compact compiles to ZKIR (relevant for VM claims)
+- `midnight-tooling:compact-cli` skill — how Compact compiles to ZKIR (relevant for VM claims)
 - `midnight-tooling:compact-cli` skill — compiler behavior and flags

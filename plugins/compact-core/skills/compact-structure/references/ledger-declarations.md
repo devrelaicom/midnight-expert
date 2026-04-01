@@ -64,7 +64,7 @@ Nested ADTs are supported: `Map<K, Map<K2, V>>`, `Map<K, Set<T>>`, etc.
 
 ## On-Chain Visibility
 
-All ledger operations (reads, writes, ADT method arguments) are publicly visible on-chain, including `MerkleTree.insert()` and `HistoricMerkleTree.insert()`.
+All ledger operations (reads, writes, ADT method arguments) are publicly visible on-chain, **except** `MerkleTree.insert()` and `HistoricMerkleTree.insert()` which hide the leaf value — the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument.
 
 The privacy benefit of MerkleTree is that **membership proofs** (ZK path proofs via `merkleTreePathRoot` + `checkRoot`) do not reveal which specific leaf is being proven. This enables anonymous membership verification patterns (e.g., proving you are in a voter list without revealing which voter you are).
 
@@ -73,8 +73,8 @@ export ledger items: Set<Field>;
 export ledger tree: MerkleTree<10, Field>;
 
 items.insert(value);      // Reveals value on-chain
-tree.insert(value);       // Also reveals value on-chain (all ledger ops are visible)
-// Privacy comes from membership PROOFS, not from insert
+tree.insert(value);       // Hides value — the compiler applies leaf_hash() before storing; only the hash appears on-chain
+// Privacy comes from BOTH: insert hides the leaf (leaf_hash applied), and membership proofs hide which leaf
 ```
 
 ## ADT Operations
@@ -121,7 +121,7 @@ export ledger balances: Map<Bytes<32>, Uint<64>>;
 
 All Map operations are available in circuits.
 
-**Important**: `lookup()` returns the value type directly (not `Maybe<V>`). Check `.member()` first to avoid unexpected results for missing keys:
+**Important**: `lookup()` returns the value type directly (not `Maybe<V>`). It throws a runtime error (ExpectedCell) if the key is missing. Always check `.member()` before calling `.lookup()`:
 
 ```compact
 if (balances.member(address)) {

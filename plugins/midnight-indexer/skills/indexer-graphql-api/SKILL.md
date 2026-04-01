@@ -225,4 +225,4 @@ All contract actions share these fields:
 
 - `midnight-indexer:indexer-architecture` — Deployment modes and configuration
 - `midnight-indexer:indexer-data-model` — What gets indexed and database schema
-- `compact-core:compact-deployment` — DApp provider configuration using indexer endpoints
+- `dapp-development:midnight-sdk` — DApp provider configuration using indexer endpoints

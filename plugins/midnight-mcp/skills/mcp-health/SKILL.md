@@ -117,7 +117,7 @@ When the MCP server is unavailable or rate-limited, fall back to alternative app
 |----------|----------|
 | `midnight-search-compact` | Use skills from `compact-core` plugin |
 | `midnight-search-docs` | Use `midnight-fetch-docs` for live doc pages, or reference skill content |
-| `midnight-compile-contract` | Use local `compact compile` via the Compact CLI (see `compact-core:compact-compilation`) |
+| `midnight-compile-contract` | Use local `compact compile` via the Compact CLI (see `midnight-tooling:compact-cli`) |
 | `midnight-search-typescript` | Use `npm view` and GitHub source browsing |
 | `midnight-list-compiler-versions` | Use `compact list --installed` locally |
 | `midnight-list-libraries` | Reference `compact-core:compact-standard-library` skill content |
@@ -135,6 +135,6 @@ If `midnight-check-version` shows that the installed version is behind the lates
 | Topic | Skill / Plugin |
 |-------|----------------|
 | Tool routing and category overview | `midnight-mcp:mcp-overview` |
-| Local Compact CLI as fallback for compilation | `compact-core:compact-compilation` |
+| Local Compact CLI as fallback for compilation | `midnight-tooling:compact-cli` |
 | Compact standard library as fallback for library listing | `compact-core:compact-standard-library` |
 | Verification methodology | `midnight-verify:verify-correctness` |

@@ -168,7 +168,7 @@ export circuit adminAction(): [] {
 | Wrong | Correct | Why |
 |-------|---------|-----|
 | `roles.lookup(caller) == Role.admin` without `disclose()` | `disclose(roles.lookup(caller) == required)` | Witness comparison needs disclosure |
-| Checking role without checking `member()` first | Check `roles.member(caller)` before `roles.lookup(caller)` | `lookup` on non-existent key returns default, which may silently match |
+| Checking role without checking `member()` first | Check `roles.member(caller)` before `roles.lookup(caller)` | `lookup` on non-existent key throws a runtime error (ExpectedCell); always check `member()` first |
 
 ---
 

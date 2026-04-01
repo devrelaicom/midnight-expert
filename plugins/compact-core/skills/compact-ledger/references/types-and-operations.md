@@ -123,7 +123,7 @@ export ledger nested: Map<Boolean, Map<Field, Counter>>;
 
 ### Edge Cases and Gotchas
 
-- **`lookup()` on missing key**: Returns the default value for type V, not an error. Always check `member()` first:
+- **`lookup()` on missing key**: Throws a runtime error (ExpectedCell), not a default value. Always check `member()` first:
 
 ```compact
 if (balances.member(address)) {
@@ -265,7 +265,7 @@ N must satisfy: 1 < N <= 32.
 | `pathForLeaf(index: bigint, leaf: value_type)` | `MerkleTreePath<N, T>` | Get proof path by index and leaf value |
 | `findPathForLeaf(leaf)` | `MerkleTreePath<N, T>` | Find proof path by leaf value (O(n) scan) |
 
-**Visibility:** All operations (including `insert()`) reveal their arguments on-chain, like all ledger operations. The privacy benefit comes from membership proofs — ZK path proofs do not reveal which leaf is being proven.
+**Visibility:** `MerkleTree.insert()` hides the leaf value — the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument. The additional privacy benefit comes from membership proofs — ZK path proofs do not reveal which leaf is being proven.
 
 ### Membership Proof Pattern
 
@@ -299,7 +299,7 @@ function findItem(context: WitnessContext, item: bigint): MerkleTreePath<bigint>
 - **Depth bounds**: N must be > 1 and <= 32. `MerkleTree<1, T>` is invalid.
 - **Capacity**: A tree of depth N holds at most 2^N leaves. Check `isFull()` before inserting.
 - **Root not available in circuits**: `root()` is TypeScript-only. Use `checkRoot()` with a digest computed via `merkleTreePathRoot()` in circuits.
-- **Privacy via membership proofs**: `insert()` reveals the leaf value on-chain (like all ledger ops), but membership proofs via `merkleTreePathRoot()` + `checkRoot()` do not reveal which leaf is being proven. For private insertion, use `insertHash()` to insert a pre-hashed value.
+- **Privacy via insert and membership proofs**: `insert()` hides the leaf value — the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument. Additionally, membership proofs via `merkleTreePathRoot()` + `checkRoot()` do not reveal which leaf is being proven. Use `insertHash()` to insert a pre-hashed value when you need to control the hashing yourself.
 
 ## HistoricMerkleTree\<N, T>
 
@@ -348,9 +348,9 @@ The special `Kernel` type provides access to contract metadata and token operati
 | `claimUnshieldedCoinSpend(tokenType, recipient, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, recipient: Either<ContractAddress, UserAddress>, amount: Uint<64>` | `[]` | Circuit | Claim an unshielded coin spend |
 | `incUnshieldedOutputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Circuit | Increment unshielded outputs |
 | `incUnshieldedInputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Circuit | Increment unshielded inputs |
-| `balance(tokenType)` | `tokenType: Either<Bytes<32>, Bytes<32>>` | `Uint<64>` | Circuit | Query contract's unshielded balance |
-| `balanceLessThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Circuit | Check if balance < amount |
-| `balanceGreaterThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Circuit | Check if balance > amount |
+| `balance(tokenType)` | `tokenType: Either<Bytes<32>, Bytes<32>>` | `Uint<128>` | Circuit | Query contract's unshielded balance |
+| `balanceLessThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<128>` | `Boolean` | Circuit | Check if balance < amount |
+| `balanceGreaterThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<128>` | `Boolean` | Circuit | Check if balance > amount |
 | `blockTimeGreaterThan(time)` | `time: Uint<64>` | `Boolean` | Circuit | Check if block time > time |
 | `blockTimeLessThan(time)` | `time: Uint<64>` | `Boolean` | Circuit | Check if block time < time |
 

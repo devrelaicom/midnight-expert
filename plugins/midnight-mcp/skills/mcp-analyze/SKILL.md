@@ -117,6 +117,6 @@ All tools produce deterministic output for the same input. Call each tool once p
 | MCP-hosted compilation workflows and error recovery | `midnight-mcp:mcp-compile` |
 | MCP-hosted formatting and code style | `midnight-mcp:mcp-format` |
 | Tool routing and category overview | `midnight-mcp:mcp-overview` |
-| Local compilation with Compact CLI | `compact-core:compact-compilation` |
+| Local compilation with Compact CLI | `midnight-tooling:compact-cli` |
 | Verification methodology using compilation | `midnight-verify:verify-correctness` |
 | Compact standard library for resolving compile errors | `compact-core:compact-standard-library` |

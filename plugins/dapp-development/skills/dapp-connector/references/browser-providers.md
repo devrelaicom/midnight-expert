@@ -1,6 +1,6 @@
 # Building MidnightProviders from DApp Connector in Browser
 
-Reference for assembling the full `MidnightProviders` object in a browser-based DApp using the Lace wallet's DApp Connector API. For the DApp Connector type reference, see `references/connector-api-types.md`. For the Node.js provider pattern using WalletFacade, see `compact-core:compact-deployment`.
+Reference for assembling the full `MidnightProviders` object in a browser-based DApp using the Lace wallet's DApp Connector API. For the DApp Connector type reference, see `references/connector-api-types.md`. For the Node.js provider pattern using WalletFacade, see `dapp-development:midnight-sdk`.
 
 ## Browser vs Node.js Provider Differences
 

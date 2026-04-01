@@ -197,6 +197,6 @@ Always prefer compound tools when they cover your needs. Use individual tools on
 | Topic | Skill / Plugin |
 |-------|----------------|
 | Tool routing and category overview | `midnight-mcp:mcp-overview` |
-| Compact compilation for verifying retrieved code | `compact-core:compact-compilation` |
+| Compact compilation for verifying retrieved code | `midnight-tooling:compact-cli` |
 | Verification methodology using repository content | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |

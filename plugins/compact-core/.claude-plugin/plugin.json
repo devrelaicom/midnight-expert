@@ -1,6 +1,6 @@
 {
   "name": "compact-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core knowledge for writing Midnight Compact smart contracts — contract structure, data types, ledger declarations, circuits, witnesses, and common patterns.",
   "author": {
     "name": "Aaron Bassett",

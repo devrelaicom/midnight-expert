@@ -109,7 +109,7 @@ Check each ledger data structure usage for its inherent contention characteristi
   // determines the write value.
   ```
 
-- [ ] **`Map.insert(key, value)` — conflicts only when the same key is modified concurrently.** Map insertions conflict when two transactions insert to the same key simultaneously, because both are writing to the same storage slot. Insertions to different keys do not conflict. Design contracts so concurrent users modify different keys (e.g., per-user entries keyed by public key).
+- [ ] **`Map.insert(key, value)` — ALL insertions conflict, even to different keys.** All contract state modifications conflict because ZK proofs bind to the full contract state. After one transaction modifies any part of the contract's state, subsequent transactions have stale proofs — regardless of which key is written. Keying by user does not partition state for concurrency.
 
   ```compact
   // LOW CONTENTION — each user writes to their own key
@@ -125,7 +125,7 @@ Check each ledger data structure usage for its inherent contention characteristi
   }
   ```
 
-- [ ] **`Set.insert(value)` — conflicts only when the same value is inserted concurrently.** Two transactions inserting different values into a Set do not conflict. However, two transactions inserting the same value will conflict. This is generally low contention for use cases like nullifier sets where each value is unique.
+- [ ] **`Set.insert(value)` — ALL insertions conflict, even with different values.** All contract state modifications conflict because ZK proofs bind to the full contract state. Two transactions inserting different values into a Set still conflict because both modify the same contract's state, invalidating the other's proof.
 
 - [ ] **`MerkleTree.insert(leaf)` — conflicts when concurrent inserts occur.** Every insertion into a MerkleTree changes the root hash. If two transactions insert leaves concurrently, the second transaction's proof was computed against the old root and is now invalid. Use `HistoricMerkleTree` to mitigate this for membership proofs (old roots remain valid), but concurrent inserts themselves still contend on the tree structure.
 
@@ -167,17 +167,11 @@ Check the contract design for patterns that minimize transaction conflicts under
   }
   ```
 
-- [ ] **Use per-user Map entries rather than a single global value.** When each user needs to store state, use a Map keyed by user identity (public key or derived identifier). This ensures concurrent transactions from different users write to different keys, eliminating cross-user contention.
+- [ ] **Understand that per-user Map entries do NOT eliminate contention.** All contract state modifications conflict because ZK proofs bind to the full contract state. Using a Map keyed by user identity does NOT partition state — writes to different keys still invalidate other transactions' proofs. Per-user Maps are useful for data modeling, but they do not reduce concurrency conflicts.
 
   ```compact
-  // BAD — single global value; every user transaction contends
-  export ledger last_action: Field;
-
-  export circuit perform_action(action: Field): [] {
-    last_action = disclose(action);
-  }
-
-  // GOOD — per-user entries; no cross-user contention
+  // STILL CONFLICTS — per-user keys do not help because ZK proofs
+  // bind to the full contract state, not individual keys
   export ledger user_actions: Map<Bytes<32>, Field>;
 
   export circuit perform_action(action: Field): [] {
@@ -187,20 +181,14 @@ Check the contract design for patterns that minimize transaction conflicts under
   }
   ```
 
-- [ ] **Design circuits so concurrent users modify different state entries.** Structure the contract so that each user's transaction touches only state that belongs to that user. Shared state (global counters, configuration) should use conflict-free operations. The ideal is that two concurrent transactions from different users have zero state overlap in their writes.
+- [ ] **Maximize use of commutative operations (`Counter`) for concurrent state.** The only truly conflict-free operations are `Counter.increment()` and `Counter.decrement()`, which are commutative (order-independent). For shared state that accumulates values, always use Counter. For non-commutative state, consider splitting high-throughput operations into separate contracts to isolate state.
 
   ```compact
-  // GOOD — each user's deposit modifies only their own balance entry
-  // and the shared counter uses conflict-free increment
-  export ledger balances: Map<Bytes<32>, Field>;
+  // BEST APPROACH — Counter is the only conflict-free pattern
   export ledger total_deposits: Counter;
 
   export circuit deposit(amount: Field): [] {
-    const sk = local_secret_key();
-    const pk = disclose(publicKey(sk));
-    const current = balances.member(pk) ? balances.lookup(pk) : 0;
-    balances.insert(pk, current + disclose(amount));
-    total_deposits.increment(disclose(amount));
+    total_deposits.increment(disclose(amount));  // Commutative — conflict-free
   }
   ```
 
@@ -313,12 +301,12 @@ Quick reference of common concurrency anti-patterns in Compact contracts.
 | Anti-Pattern | Why It Fails | Correct Approach |
 |---|---|---|
 | `const val = counter.read(); counter = val + 1` | Two concurrent transactions both read the same value and both try to write the same result; only one succeeds, the rest fail | `counter.increment(1)` — commutative operation that never conflicts regardless of concurrency |
-| Single global `Field` variable updated by every transaction | Every concurrent transaction writes to the same storage slot; only one can succeed per block | Use `Counter` for additive updates, or `Map` with per-user keys for individual state |
+| Single global `Field` variable updated by every transaction | Every concurrent transaction writes to the same storage slot; only one can succeed per block | Use `Counter` for additive updates (the only conflict-free pattern) |
 | `highest_bid = amount` in auction circuit | Every bidder writes to the same field; under load, almost all bids fail | Store bids in a `Map` keyed by bidder identity; determine the winner in a separate finalize step |
-| `scores.insert(key, scores.lookup(key) + points)` on shared key | Read-modify-write on the same Map key; concurrent updates to the same key conflict | Use per-user keys so each user modifies only their own entry, or use `Counter` for additive accumulation |
+| `scores.insert(key, scores.lookup(key) + points)` on shared key | Read-modify-write on Map; all Map mutations conflict because ZK proofs bind to full contract state | Use `Counter` for additive accumulation (the only conflict-free pattern); per-user keys do not help with concurrency |
 | `MerkleTree.insert()` under high concurrent load | Every insert changes the root; concurrent inserts invalidate each other's proofs | Use `HistoricMerkleTree` for membership verification (old roots stay valid); accept that concurrent inserts still contend |
 | `List.pushFront()` from many concurrent users | Pushes conflict because list ordering depends on insertion sequence | Use `Map` or `Set` if ordering is not required; accept contention if strict ordering is necessary |
-| Single status flag (`state = State.ACTIVE`) set by every user | All concurrent transactions write to the same enum variable; only one succeeds | Redesign so the status is derived from per-user state, or limit state transitions to a single admin |
+| Single status flag (`state = State.ACTIVE`) set by every user | All concurrent transactions write to the same enum variable; only one succeeds | Limit state transitions to a single admin; per-user state does not help because all state modifications conflict |
 
 ## Tool Reference
 

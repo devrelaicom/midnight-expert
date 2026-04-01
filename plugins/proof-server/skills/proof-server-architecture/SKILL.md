@@ -162,4 +162,4 @@ The static musl build ensures the binary runs without any shared library depende
 |-------|-----------|
 | `midnight-tooling:proof-server` | Basic Docker setup, health checks, running the proof server |
 | `compact-core:compact-circuit-costs` | Understanding proof generation costs and circuit complexity |
-| `compact-core:compact-compilation` | Compiler output (ZKIR, proving keys) consumed by the proof server |
+| `midnight-tooling:compact-cli` | Compiler output (ZKIR, proving keys) consumed by the proof server |

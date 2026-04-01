@@ -88,7 +88,7 @@ block_limits = {
     read_time:     1 second,
     compute_time:  1 second,
     block_usage:   200,000 bytes,
-    bytes_written: 20,000 bytes,
+    bytes_written: 50,000 bytes,  // Note: the spec document says 20,000 but the implementation uses 50,000
     bytes_churned: 1,000,000 bytes,
 }
 ```

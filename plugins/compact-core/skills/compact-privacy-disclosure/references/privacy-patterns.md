@@ -180,7 +180,7 @@ invalidates all existing proofs.
 The Merkle membership proof involves coordinated on-chain and off-chain work:
 
 1. **Admin inserts commitments on-chain.** `tree.insert(commitment)` adds a
-   leaf. The leaf value is visible on-chain (like all ledger operations). Privacy
+   leaf. The leaf value is hidden -- the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument. Additional privacy
    comes from membership proofs -- ZK path proofs do not reveal which leaf is being proven.
 
 2. **User obtains a MerkleTreePath off-chain.** The witness function queries
@@ -210,7 +210,7 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
   ]);
 }
 
-// Admin adds a member (leaf is visible on-chain; privacy via membership proofs)
+// Admin adds a member (leaf is hidden — leaf_hash() applied before storing; privacy also via membership proofs)
 export circuit addMember(memberPk: Bytes<32>): [] {
   members.insert(disclose(memberPk));
 }

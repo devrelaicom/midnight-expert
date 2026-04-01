@@ -28,7 +28,7 @@ Useful hint skills:
 - `compact-core:compact-structure` skill — how to structure a contract (pragma, imports, exports)
 - `compact-core:compact-language-ref` skill — syntax reference, type system, operators
 - `compact-core:compact-privacy-disclosure` skill — disclosure rules to test
-- `compact-core:compact-compilation` skill — expected compiler behavior
+- `midnight-tooling:compact-cli` skill — expected compiler behavior
 
 Load any of these if they would help you write a better test. Do not load them all — only what's relevant to the claim.
 

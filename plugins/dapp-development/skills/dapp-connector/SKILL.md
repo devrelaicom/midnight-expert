@@ -6,7 +6,7 @@ version: 0.1.0
 
 # DApp Connector API v4.0.1
 
-This skill covers the Midnight DApp Connector API for browser-based wallet integration: connecting to the Lace wallet extension, using the ConnectedAPI for transactions and balances, handling errors, and building React 19.x / Next.js 16.x DApps. For Node.js CLI deployment with WalletFacade and HD keys, see `compact-core:compact-deployment`. For contract runtime and witness types, see `compact-core:compact-witness-ts`. For local development network setup, see `midnight-tooling:devnet`.
+This skill covers the Midnight DApp Connector API for browser-based wallet integration: connecting to the Lace wallet extension, using the ConnectedAPI for transactions and balances, handling errors, and building React 19.x / Next.js 16.x DApps. For Node.js CLI deployment with WalletFacade and HD keys, see `dapp-development:midnight-sdk`. For contract runtime and witness types, see `compact-core:compact-witness-ts`. For local development network setup, see `midnight-tooling:devnet`.
 
 ## Connection Lifecycle
 

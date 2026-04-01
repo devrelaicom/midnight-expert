@@ -326,7 +326,7 @@ Quick reference of common architecture anti-patterns in Compact contracts.
 
 | Anti-Pattern | Why It's Wrong | Correct Approach |
 |---|---|---|
-| `Field` used as a counter | Read-modify-write causes contention under concurrent load; also lacks semantic clarity | Use `Counter` with `increment()` and `decrement()` for conflict-free accumulation |
+| `Field` used as a counter | Read-modify-write causes contention under concurrent load; also lacks semantic clarity | Use `Counter` with `increment()` and `decrement()` — the only conflict-free (commutative) accumulation pattern |
 | `Map<K, Boolean>` for membership | Wastes a value slot; less idiomatic; `member()` check works the same on both but Map carries unnecessary data | Use `Set<T>` for pure membership checks where values are not needed |
 | `Set<T>` for anonymous membership | Set operations reveal which element is being checked or inserted; no privacy for members | Use `MerkleTree` or `HistoricMerkleTree` with nullifier pattern for anonymous membership |
 | `MerkleTree` when proofs must survive concurrent inserts | Regular MerkleTree invalidates existing proofs when root changes on insert | Use `HistoricMerkleTree` which retains previous roots so older paths remain valid |

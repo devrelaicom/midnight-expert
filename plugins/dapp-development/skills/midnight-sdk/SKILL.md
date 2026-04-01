@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Midnight SDK Reference
 
-Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For basic contract deployment patterns, see `compact-core:compact-deployment`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `dapp-development:dapp-connector`.
+Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see the Deployment section below. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `dapp-development:dapp-connector`.
 
 ## SDK Package Map
 
@@ -73,7 +73,7 @@ interface WalletProvider {
 }
 ```
 
-- **Node.js**: Built from `WalletFacade` (see `compact-core:compact-deployment`)
+- **Node.js**: Built from `WalletFacade` (see the Deployment section below)
 - **Browser**: Built from `ConnectedAPI.balanceUnsealedTransaction` (see `dapp-development:dapp-connector`)
 
 #### MidnightProvider

@@ -180,4 +180,4 @@ Both telemetry systems are disabled by default.
 ## Cross-References
 
 - `midnight-tooling:devnet` — Manages the indexer as part of the local development stack
-- `compact-core:compact-deployment` — Uses the indexer as a provider for contract state queries
+- `dapp-development:midnight-sdk` — Uses the indexer as a provider for contract state queries

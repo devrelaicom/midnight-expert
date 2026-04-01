@@ -70,7 +70,7 @@ Prompt the Task agent:
 >
 > **Type cast issues:**
 > - Direct `Uint` to `Bytes` cast (needs `Field` intermediary)
-> - Direct `Boolean` to `Field` cast (needs `Uint<0..1>` intermediary)
+> - Unnecessary multi-step `Boolean` to `Field` cast via `Uint` (direct `flag as Field` works)
 > - Arithmetic results not cast back to target type (e.g., `(a + b) as Uint<64>`)
 >
 > Return ONLY structured lines in this exact format, one per finding:

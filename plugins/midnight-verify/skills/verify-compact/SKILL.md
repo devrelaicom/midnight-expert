@@ -56,6 +56,6 @@ Sub-agents may load these compact-core skills to inform what to test or where to
 - `compact-core:compact-structure` skill — how to structure a test contract (pragma, imports, exports)
 - `compact-core:compact-language-ref` skill — syntax reference, type system, operators, casting
 - `compact-core:compact-privacy-disclosure` skill — disclosure rules and patterns to test
-- `compact-core:compact-compilation` skill — expected compiler behavior, flags, output structure
+- `midnight-tooling:compact-cli` skill — expected compiler behavior, flags, output structure
 
 Load only what's relevant to the specific claim. Do not load all skills for every verification.

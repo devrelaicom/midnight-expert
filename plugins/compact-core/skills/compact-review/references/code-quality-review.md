@@ -201,7 +201,7 @@ Check every circuit for excessive complexity. Long circuits with deep nesting ar
   }
   ```
 
-- [ ] **Pure circuits not used for reusable logic.** If a circuit does not read or write any ledger state, it should be declared as a `pure circuit`. This signals to readers (and the compiler) that the circuit has no side effects. Look for internal circuits that only compute values from their parameters without accessing ledger variables.
+- [ ] **Pure circuits not used for reusable logic.** If a circuit does not read or write any ledger state, it should be declared as a `pure circuit`. The `pure` modifier signals that a circuit should have no side effects; the compiler's `identify-pure-circuits` pass checks for ledger access, witness calls, and calls to impure circuits. It primarily affects whether the circuit generates ZK proving keys and appears in `pureCircuits` exports. Look for internal circuits that only compute values from their parameters without accessing ledger variables.
 
   ```compact
   // BAD — circuit marked as regular but has no side effects
