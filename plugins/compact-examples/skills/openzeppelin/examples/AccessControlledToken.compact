@@ -9,9 +9,9 @@
 pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
-import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/AccessControl"
+import "./modules/access/AccessControl"
   prefix AccessControl_;
-import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/token/FungibleToken"
+import "./modules/token/FungibleToken"
   prefix FungibleToken_;
 
 export sealed ledger MINTER_ROLE: Bytes<32>;
