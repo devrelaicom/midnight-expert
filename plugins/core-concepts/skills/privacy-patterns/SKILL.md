@@ -1,6 +1,6 @@
 ---
 name: core-concepts:privacy-patterns
-description: This skill should be used when implementing privacy-preserving logic in Compact smart contracts, including commitment schemes (persistentCommit, persistentHash), nullifier patterns, Merkle tree membership proofs (HistoricMerkleTree), anonymous authentication, commit-reveal protocols, selective disclosure, domain separation, witness taint management, disclose() for privacy boundaries, and keeping data private on-chain.
+description: This skill should be used when understanding privacy-preserving design patterns, including commitment schemes, nullifier patterns, Merkle tree membership proofs, anonymous authentication, commit-reveal protocols, selective disclosure, domain separation, and privacy boundaries in on-chain data.
 version: 0.1.0
 ---
 

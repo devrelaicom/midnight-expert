@@ -1,6 +1,6 @@
 ---
 name: core-concepts:architecture
-description: This skill should be used when the user asks about Midnight network architecture, transaction structure, guaranteed vs fallible sections, Zswap/Kachina/Impact integration, ledger and state management, cryptographic binding (Pedersen commitments, Schnorr proofs, ZK-SNARKs), balance verification, nullifiers, address derivation, transaction merging, atomic swaps, fee handling, or the privacy model separating private and public domains.
+description: This skill should be used when the user asks about Midnight network architecture, transaction structure, guaranteed vs fallible sections, Zswap/Kachina integration, ledger and state management, cryptographic binding, balance verification, nullifiers, address derivation, transaction merging, atomic swaps, fee handling, or the privacy model separating private and public domains.
 version: 0.1.0
 ---
 
