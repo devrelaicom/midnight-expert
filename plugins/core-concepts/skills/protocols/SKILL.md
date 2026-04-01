@@ -98,18 +98,7 @@ Zswap Offer = Inputs + Outputs + Transient + Deltas
 
 ### Offer Structure
 
-```text
-Offer {
-  inputs: [
-    { nullifier, type_value_commit, merkle_proof, zk_proof }
-  ],
-  outputs: [
-    { commitment, type_value_commit, optional_contract, optional_ciphertext, zk_proof }
-  ],
-  transient: [...],
-  deltas: Map<string, bigint>
-}
-```
+An offer comprises inputs (coins being spent, each identified by a nullifier with a Merkle proof and ZK validity proof), outputs (new coins being created, each carrying a commitment and optional encrypted note), transient coins (created and destroyed within the same transaction), and a delta vector describing the net value change per token type. Each input and output also carries a separate Pedersen value commitment for balance verification.
 
 ### Atomic Swaps
 
@@ -143,9 +132,9 @@ Contract can mint/burn tokens through Zswap stdlib operations
 
 ### Zswap Outputs
 
-New coins are created as hash-based commitments (`Hash(CoinInfo, ZswapCoinPublicKey)`), paired with a separate Pedersen value commitment for balance verification. See `references/zswap-internals.md` for the complete output structure.
+New coins are created as hash-based commitments (`Hash(CoinInfo, ZswapCoinPublicKey)`), paired with a separate Pedersen value commitment for balance verification. See `references/zswap-internals.md` for details.
 
-> **Important**: The coin commitment is hash-based, not a Pedersen commitment. The `type_value_commit` field is a separate Pedersen commitment used only for balance verification.
+> **Important**: The coin commitment is hash-based, not a Pedersen commitment. The Pedersen value commitment is a separate element used only for balance verification.
 
 ### Zswap Inputs
 
