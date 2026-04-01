@@ -195,14 +195,14 @@ Because arithmetic widens the result type, you must cast before assigning to a f
 ```compact
 export ledger balances: Map<Bytes<32>, Uint<64>>;
 
-export circuit transfer(from: Bytes<32>, to: Bytes<32>, amount: Uint<64>): [] {
-  const d_from = disclose(from);
-  const d_to = disclose(to);
+export circuit transfer(sender: Bytes<32>, receiver: Bytes<32>, amount: Uint<64>): [] {
+  const d_sender = disclose(sender);
+  const d_receiver = disclose(receiver);
   const d_amount = disclose(amount);
-  const from_bal = balances.lookup(d_from);
-  const to_bal = balances.lookup(d_to);
-  balances.insert(d_from, (from_bal - d_amount) as Uint<64>);
-  balances.insert(d_to, (to_bal + d_amount) as Uint<64>);
+  const sender_bal = balances.lookup(d_sender);
+  const receiver_bal = balances.lookup(d_receiver);
+  balances.insert(d_sender, (sender_bal - d_amount) as Uint<64>);
+  balances.insert(d_receiver, (receiver_bal + d_amount) as Uint<64>);
 }
 ```
 
