@@ -32,16 +32,7 @@ Midnight combines ZK proofs, shielded tokens, and smart contracts into a unified
 
 ## Transaction Anatomy
 
-Every Midnight transaction contains:
-
-```text
-Transaction {
-  guaranteed_zswap_offer,    // Always present; collects fees for all transaction phases
-  fallible_zswap_offer?,     // Optional: may-fail token ops
-  contract_calls_or_deploys?, // Optional: contract interactions or deployments
-  binding_randomness         // Opens the homomorphic Pedersen commitment
-}
-```
+A Midnight transaction combines three concerns: token operations (via Zswap offers), smart contract interactions (via contract calls), and cryptographic binding that ties everything together. The transaction has a guaranteed section whose effects always persist and one or more fallible sections whose effects are rolled back if they fail. Fees are collected in the guaranteed section. The guaranteed Zswap offer is optional (not every transaction must include one), and fallible token operations are organized as a map keyed by contract interaction segment rather than a single optional block.
 
 ### Guaranteed vs Fallible
 
@@ -52,43 +43,23 @@ Transaction {
 
 **Use case**: Guaranteed section collects fees. Fallible section attempts swap. If swap fails, fees still collected.
 
-**Subtlety**: The fallible Zswap offer's coin operations (commitments and nullifiers) are applied during the guaranteed phase. Only fallible contract call effects are rolled back on failure.
+**Subtlety**: Fallible coin operations (commitments and nullifiers) are validated during the guaranteed phase for well-formedness, but they are applied during their own fallible phase. If a fallible section fails, its coin operations are rolled back along with its contract call effects.
 
 ## Building Blocks
 
 ### 1. Zswap Offers
 
-Token movement layer:
-
-```text
-Offer {
-  inputs: Coin[],      // Spent coins (nullifiers)
-  outputs: Coin[],     // Created coins (commitments)
-  transient: Coin[],   // Created and spent same tx
-  deltas: Map<Type, Value>   // Net value per token
-}
-```
+The token movement layer. Each offer describes a set of coins being spent (which produce nullifiers), a set of new coins being created (which produce commitments), any transient coins that are created and consumed within the same transaction, and a per-token-type net value delta that must balance across the transaction.
 
 ### 2. Contract Calls
 
-Computation layer. Each ContractCall contains both guaranteed and fallible transcripts (split via the `ckpt` opcode within a single call):
-
-```text
-ContractCall {
-  contract_address: ContractAddress,   // Bytes<32>
-  entry_point: String,
-  guaranteed_transcript: Transcript,
-  fallible_transcript: Transcript,
-  communication_commitment: Option<...>,  // Protocol field; cross-contract not yet available
-  zk_proof: Proof
-}
-```
+The computation layer. Each contract interaction targets a specific contract address and entry point. It carries both a guaranteed transcript and a fallible transcript (split via the checkpoint opcode within a single call). A ZK proof accompanies each call, proving the transcripts are valid.
 
 ### 3. Cryptographic Binding
 
 Three complementary cryptographic guarantees ensure transaction integrity:
 - **Pedersen commitments** — Bind and link all transaction components via homomorphic value commitments
-- **Schnorr proof** — One lightweight ZK proof per transaction proving the contract section contributes zero net value
+- **Schnorr proofs** — Each contract interaction segment carries a Schnorr proof binding its effects to the transaction, ensuring that the token values contributed by that segment balance correctly
 - **ZK-SNARK proofs** — Prove transcript validity for each contract call (coin ownership, state transitions)
 
 ## Transaction Integrity
@@ -111,39 +82,20 @@ Transaction binding uses homomorphic Pedersen commitments rather than a simple h
 
 ### Ledger Structure
 
-```text
-Ledger {
-  zswap_state: {
-    commitment_tree: MerkleTree,
-    commitment_tree_first_free: u32,
-    nullifiers: Set<CoinNullifier>,
-    commitment_tree_history: Set<MerkleTreeRoot>
-  },
-  contract_map: Map<ContractAddress, ContractState>
-}
-```
+The ledger maintains two primary areas of state. The Zswap state consists of an append-only Merkle tree of coin commitments, a set of spent nullifiers that prevents double-spending, and a time-windowed history of recent Merkle roots so that slightly stale proofs remain valid. The contract map stores each deployed contract's state and verification keys, keyed by contract address.
 
 ### Contract State
 
-Contract state consists of an Impact state value plus a map of entry point names to operations (SNARK verifier keys):
-
-```text
-ContractState {
-  state: ImpactValue,                            // Impact state value
-  operations: Map<String, SNARKVerifierKey>       // Entry point → verifier key
-}
-```
-
-Contract Merkle trees are `MerkleTree(d)` Impact values with compile-time-fixed depth, stored as part of the Impact state.
+Each contract stores its current state data (managed by the Impact VM) and a set of verification keys for its entry points. Contract Merkle trees are Impact values whose depth is determined at runtime, stored as part of the contract's state.
 
 ## Execution Flow
 
 ### Transaction Processing
 
 ```text
-1. Well-formedness Check (stateless)
+1. Well-formedness Check
    ├─ Format validation
-   ├─ ZK proof verification
+   ├─ ZK proof verification (requires state access to look up verifier keys)
    ├─ Schnorr proof verification
    ├─ Balance verification
    └─ Claim matching
@@ -156,7 +108,7 @@ Contract Merkle trees are `MerkleTree(d)` Impact values with compile-time-fixed 
 
 3. Fallible Execution (stateful, may fail)
    ├─ Similar to guaranteed
-   └─ Only contract call effects reverted on failure
+   └─ All fallible effects (coin ops and contract calls) reverted on failure
 ```
 
 ### Balance Verification
@@ -190,33 +142,21 @@ Tx1 (Party A)     Tx2 (Party B)
 
 ### Merging Rules
 
-- At least one tx must have empty contract calls
-- Values must balance when combined
+- Coin sets must not overlap (no shared inputs or outputs)
+- Combined values must balance across all token types
 - Proofs remain independently valid
 
 **Why contract calls cannot be merged:** Each contract call includes its own ZK proof bound to a specific transcript. Combining two independent contract call transcripts would require a new proof that neither party can generate unilaterally, since each proof depends on private witness data known only to its creator.
 
 ## Address Derivation
 
-```text
-Contract Address = Hash(contract_state, nonce)
-```
-Uniquely identifies a deployed contract instance.
+**Contract address**: Derived by hashing the contract's initial state together with a nonce, producing a unique identifier for each deployed contract instance.
 
-```text
-Token Type = Hash(contract_address, domain_separator)
-```
-Identifies a specific token issued by a contract.
+**Token type**: Derived by hashing the domain separator first, followed by the contract address. This identifies a specific token issued by a given contract.
 
-```text
-Coin Commitment = Hash<(CoinInfo, CoinPublicKey)>
-```
-Represents a coin in the commitment tree (hides value and owner).
+**Coin commitment**: Derived by hashing the coin's information (value, type) together with the owner's public key. This represents a coin in the commitment tree while hiding its value and owner.
 
-```text
-Nullifier = Hash<(CoinInfo, CoinSecretKey)>
-```
-Prevents double-spending of a coin (unlinkable to the original commitment).
+**Nullifier**: Derived by hashing the coin's information together with the owner's secret key. This prevents double-spending while remaining unlinkable to the original commitment.
 
 ## Component Integration
 
@@ -282,8 +222,3 @@ For detailed technical information:
 - **`references/transaction-deep-dive.md`** — Complete transaction structure
 - **`references/state-management.md`** — Ledger operations, state transitions
 - **`references/cryptographic-binding.md`** — Pedersen, Schnorr, proof composition
-
-## Examples
-
-Working patterns:
-- **`examples/transaction-construction.md`** — Building transactions step by step
