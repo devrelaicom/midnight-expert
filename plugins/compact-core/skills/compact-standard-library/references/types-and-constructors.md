@@ -63,7 +63,7 @@ if (first.is_some) {
 - Return type of `List.head()` -- returns `Maybe<T>`
 - Optional witness data from TypeScript
 - The `change` field of `ShieldedSendResult` is `Maybe<ShieldedCoinInfo>`
-- Note: `Map.lookup()` returns `V` directly (not `Maybe<V>`). Use `Map.member()` to check existence.
+- Note: `Map.lookup()` returns `V` directly (not `Maybe<V>`), but throws a runtime error (ExpectedCell) if the key is missing. Always check `Map.member()` before calling `Map.lookup()`.
 
 ### TypeScript Representation
 
@@ -146,16 +146,9 @@ A point on the proof system's embedded elliptic curve (Jubjub), in affine coordi
 
 ### Definition
 
-```compact
-struct JubjubPoint {
-  x: Field;
-  y: Field;
-}
-```
+`JubjubPoint` is an opaque type — its internal representation is not directly accessible. Direct field access (`.x`, `.y`) does not work. You must use the accessor functions below to read coordinates.
 
 ### Accessor Functions
-
-While direct field access (`.x`, `.y`) currently works, the preferred approach is to use accessor functions:
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -428,9 +421,9 @@ Note on Map.lookup vs List.head:
 
 ```compact
 // Map.lookup(key) returns V directly (NOT Maybe<V>).
-// It returns default<V> if the key is not found.
-// Use Map.member(key) to check existence first.
-const val = myMap.lookup(key);           // returns V (or default<V> if missing)
+// It throws a runtime error (ExpectedCell) if the key is not found.
+// Always check Map.member(key) before calling Map.lookup(key).
+const val = myMap.lookup(key);           // returns V (throws if key missing)
 const exists = myMap.member(key);        // returns Boolean
 
 // Nested maps chain directly:

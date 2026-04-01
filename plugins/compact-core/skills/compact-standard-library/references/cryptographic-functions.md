@@ -70,7 +70,7 @@ circuit jubjubPointY(p: JubjubPoint): Field;
 circuit constructJubjubPoint(x: Field, y: Field): JubjubPoint;
 ```
 
-These functions extract or construct `JubjubPoint` coordinates. While direct field access (`.x`, `.y`) works, prefer `jubjubPointX` and `jubjubPointY` for long-term compatibility, as `JubjubPoint` may become opaque in a future compiler version.
+These functions extract or construct `JubjubPoint` coordinates. `JubjubPoint` is an opaque type — direct field access (`.x`, `.y`) does not work. You must use `jubjubPointX(p)` and `jubjubPointY(p)` to read coordinates.
 
 `constructJubjubPoint` builds a `JubjubPoint` from raw coordinates. Use with caution: the function does not validate that the point lies on the curve. Passing invalid coordinates can produce undefined circuit behavior.
 

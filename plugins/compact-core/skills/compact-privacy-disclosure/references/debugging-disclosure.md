@@ -119,8 +119,7 @@ If you did not intend to disclose the value, restructure the code to keep the
 data private:
 - **Use a commitment** instead of writing the raw value:
   `storedHash = disclose(persistentCommit<Field>(secret, rand))`
-- **Use a MerkleTree** instead of a Set for membership checks (membership
-  proofs hide which leaf is being proven, though inserts are public)
+- **Use a MerkleTree** instead of a Set for membership checks (inserts hide the leaf value via `leaf_hash()`, and membership proofs hide which leaf is being proven)
 - **Move computation inside the proof** -- do not write intermediate results
   to the ledger if they contain witness data
 - **Use an internal circuit** instead of returning from an exported circuit,
@@ -376,7 +375,7 @@ ledger_val = balance;       // Also public
 
 // Correct -- disclose only where needed for ledger writes
 const balance = getBalance();
-tree.insert(disclose(balance));        // Leaf visible on-chain (all ledger ops are)
+tree.insert(disclose(balance));        // Leaf hidden — leaf_hash() applied before storing; only hash is on-chain
 ledger_val = disclose(balance);        // Public (ledger write)
 ```
 

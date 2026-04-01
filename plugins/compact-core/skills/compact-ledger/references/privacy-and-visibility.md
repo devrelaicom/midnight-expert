@@ -4,7 +4,7 @@ Deep reference for understanding what ledger operations reveal on-chain, how to 
 
 ## Core Rule
 
-**Everything passed as an argument to a ledger operation, and all reads and writes of the ledger itself, are publicly visible on-chain** — including MerkleTree and HistoricMerkleTree insertions. What is public is the argument or ledger value itself, not the code that manipulates it. The privacy benefit of MerkleTree is in **membership proofs**, not in hiding inserted values.
+**Everything passed as an argument to a ledger operation, and all reads and writes of the ledger itself, are publicly visible on-chain** — except for `MerkleTree.insert()` and `HistoricMerkleTree.insert()`, which hide the leaf value by applying `leaf_hash()` (a `persistent_hash`) before storing. Only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument. The additional privacy benefit of MerkleTree is in **membership proofs** — ZK path proofs do not reveal which leaf is being proven.
 
 ```compact
 export ledger items: Set<Field>;
@@ -12,8 +12,8 @@ export ledger tree: MerkleTree<10, Field>;
 
 items.insert(value);      // Reveals value on-chain
 items.member(f(x));        // Reveals the *value* of f(x), but not x directly
-tree.insert(value);        // Also reveals value on-chain (all ledger ops are visible)
-// Privacy comes from membership PROOFS — ZK path proofs hide which leaf is being proven
+tree.insert(value);        // Hides value — the compiler applies leaf_hash() before storing; only the hash appears on-chain
+// Privacy comes from BOTH: insert hides the leaf (leaf_hash applied), and membership proofs hide which leaf is proven
 ```
 
 ## Visibility Rules by Operation
@@ -73,7 +73,7 @@ Set operations reveal which element is being tested, inserted, or removed. This 
 
 | Operation | What Is Visible On-Chain |
 |-----------|------------------------|
-| `insert(leaf)` | The leaf value (like all ledger operations) |
+| `insert(leaf)` | **Hidden** — the compiler applies `leaf_hash()` before storing; only the hash is in the transcript |
 | `insertHash(hash)` | The hash (but not the preimage) |
 | `insertIndex(item, index)` | The item and index |
 | `insertHashIndex(hash, index)` | The hash and index |
@@ -83,7 +83,7 @@ Set operations reveal which element is being tested, inserted, or removed. This 
 | `resetToDefault()` | The fact that a reset occurred |
 | `resetHistory()` | The fact that a reset occurred (HistoricMerkleTree only) |
 
-The privacy benefit of MerkleTree is not in hiding inserted values, but in **membership proofs**: ZK path proofs (via `merkleTreePathRoot` + `checkRoot`) do not reveal which specific leaf is being proven. This enables anonymous membership verification — proving you are in a set without revealing which member you are.
+MerkleTree provides two layers of privacy: (1) `insert()` hides the leaf value — the compiler applies `leaf_hash()` before storing, so only the hash is in the transaction transcript, and (2) **membership proofs**: ZK path proofs (via `merkleTreePathRoot` + `checkRoot`) do not reveal which specific leaf is being proven. This enables anonymous membership verification — proving you are in a set without revealing which member you are.
 
 ## MerkleTree vs Set: Privacy Comparison
 
@@ -140,7 +140,7 @@ Privacy implications: An observer sees that *someone* voted and sees the nullifi
 
 | Concern | `Set<T>` | `MerkleTree<N, T>` |
 |---------|---------|-------------------|
-| Insert reveals element | Yes | Yes (all ledger ops are visible) |
+| Insert reveals element | Yes | **No** — the compiler applies `leaf_hash()` before storing; only the hash is in the transaction transcript |
 | Membership check reveals element | Yes | **No** (proven via ZK path) |
 | Observer can identify which member acted | Yes | **No** (ZK proof hides which leaf) |
 | Double-action prevention | Check membership directly | Use commitment/nullifier pattern |
@@ -362,7 +362,7 @@ Key types:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Describes a coin's properties |
-| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mtIndex: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
+| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mt_index: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
 
 The standard library provides circuits for shielded operations:
 

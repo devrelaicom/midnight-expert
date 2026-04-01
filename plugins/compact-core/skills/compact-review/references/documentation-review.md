@@ -651,7 +651,7 @@ Check that the contract includes documentation explaining its privacy model: wha
   //
   // Registration (register circuit):
   //   - Input: commitment (public) — derived from secret key + nonce
-  //   - On-chain: commitment inserted into MerkleTree (leaf value visible on-chain)
+  //   - On-chain: commitment inserted into MerkleTree (leaf value hidden — leaf_hash() applied before storing)
   //   - Observable: a new leaf was inserted (tree size increased by 1)
   //
   // Voting (vote circuit):

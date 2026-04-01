@@ -129,7 +129,7 @@ Check ledger data structure choices for unintended information leakage.
 
 - [ ] **Using `List` which reveals insertion order and all values.** `List` operations make all stored values and their insertion order visible on-chain. If the data should be private, consider whether a `MerkleTree` or off-chain storage is more appropriate.
 
-- [ ] **`MerkleTree` used for anonymous membership proofs.** `MerkleTree.insert()` is publicly visible on-chain like all ledger operations. The privacy benefit of MerkleTree is that ZK membership proofs do not reveal which specific leaf is being proven. Verify that contracts needing to hide leaf values use commitments (e.g., `persistentCommit`) before inserting, rather than relying on insert itself for privacy.
+- [ ] **`MerkleTree` used for anonymous membership proofs.** `MerkleTree.insert()` hides the leaf value — the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument. The additional privacy benefit is that ZK membership proofs do not reveal which specific leaf is being proven. For stronger hiding (e.g., preventing brute-force preimage attacks on small input spaces), use commitments (e.g., `persistentCommit`) with a blinding factor before inserting.
 
 ## Cryptographic Privacy Checklist
 
@@ -213,7 +213,7 @@ Quick reference of common privacy anti-patterns in Compact contracts.
 | Anti-Pattern | Why It's Wrong | Correct Approach |
 |---|---|---|
 | `disclose(getSecret())` at call site | Marks private data as public too early; all downstream uses of the value lose privacy, risking multiple unintended disclosure paths | `disclose(x)` at the point where `x` crosses a public boundary (ledger write, return, public assertion) |
-| `Set<Bytes<32>>` for private membership | Set operations (`member()`, `insert()`) reveal the exact element identity on-chain; any observer can see who acted | `MerkleTree` + nullifier for anonymous membership proof; observer sees only a root check and opaque nullifier |
+| `Set<Bytes<32>>` for private membership | Set operations (`member()`, `insert()`) reveal the exact element identity on-chain; any observer can see who acted | `MerkleTree` + nullifier for anonymous membership proof; `insert()` hides the leaf (via `leaf_hash()`), and observer sees only a root check and opaque nullifier |
 | `persistentHash(secret)` to "hide" data | Hash does not clear witness taint; the compiler still tracks the result as private; hash without blinding provides no hiding guarantee | `persistentCommit(secret, nonce)` which cryptographically hides the input and clears witness taint |
 | Storing `transientHash` result in ledger | Transient operations are deterministic within a single execution but not guaranteed across compiler upgrades; the stored value cannot be reliably verified in future transactions | Use `persistentHash` or `persistentCommit` for any value that must be stored on the ledger or compared across transactions |
 | Same domain for commit + nullifier | Allows an observer to link a commitment to its corresponding nullifier, breaking unlinkability and deanonymizing the user | Different domain strings for each purpose: `"app:commit"` vs `"app:nullifier"` |

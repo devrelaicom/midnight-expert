@@ -415,7 +415,7 @@ Check whether expensive computations are correctly placed at the circuit/witness
 
 Check for opportunities to use `pure circuit` for reusable logic that does not access ledger state.
 
-- [ ] **Reusable logic that does not touch ledger state should be `pure circuit`.** A `pure circuit` cannot read or write ledger state. This restriction enforces purity at compile time and enables the circuit to be exported as a `pureCircuits` function callable from TypeScript witness code. If a helper circuit does not access any ledger variables, mark it as `pure circuit`.
+- [ ] **Reusable logic that does not touch ledger state should be `pure circuit`.** The `pure` modifier signals that a circuit should have no side effects. The compiler's `identify-pure-circuits` pass checks for ledger access, witness calls, and calls to impure circuits. The enforcement is contextual — the `pure` modifier primarily affects whether the circuit generates ZK proving keys and appears in `pureCircuits` exports (callable from TypeScript witness code). If a helper circuit does not access any ledger variables, mark it as `pure circuit`.
 
   ```compact
   // BAD — regular circuit that does not use ledger state

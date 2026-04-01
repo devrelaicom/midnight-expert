@@ -233,9 +233,9 @@ ledger kernel: Kernel;
 | `kernel.claimUnshieldedCoinSpend(tokenType, recipient, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, recipient: Either<ContractAddress, UserAddress>, amount: Uint<64>` | `[]` | Claim an unshielded coin spend |
 | `kernel.incUnshieldedOutputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Increment unshielded outputs for a token type |
 | `kernel.incUnshieldedInputs(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `[]` | Increment unshielded inputs for a token type |
-| `kernel.balance(tokenType)` | `tokenType: Either<Bytes<32>, Bytes<32>>` | `Uint<64>` | Get contract's balance for a token type |
-| `kernel.balanceLessThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Check if balance is less than amount |
-| `kernel.balanceGreaterThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<64>` | `Boolean` | Check if balance is greater than amount |
+| `kernel.balance(tokenType)` | `tokenType: Either<Bytes<32>, Bytes<32>>` | `Uint<128>` | Get contract's balance for a token type |
+| `kernel.balanceLessThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<128>` | `Boolean` | Check if balance is less than amount |
+| `kernel.balanceGreaterThan(tokenType, amount)` | `tokenType: Either<Bytes<32>, Bytes<32>>, amount: Uint<128>` | `Boolean` | Check if balance is greater than amount |
 
 ### Claim Operations
 

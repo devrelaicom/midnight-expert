@@ -112,7 +112,7 @@ No flags with code/file: `--explore`. No flags, no code: interactive mode.
 |-------|---------------|
 | Tool routing and category overview | `midnight-mcp:mcp-overview` |
 | Compilation workflows and compiler errors | `midnight-mcp:mcp-compile` |
-| Local CLI compilation and artifacts | `compact-core:compact-compilation` |
+| Local CLI compilation and artifacts | `midnight-tooling:compact-cli` |
 | Verification methodology | `midnight-verify:verify-correctness` |
 | Compact standard library for understanding circuit behavior | `compact-core:compact-standard-library` |
 | Local devnet for on-chain testing | `midnight-tooling:devnet` |

@@ -99,6 +99,6 @@ Different tool categories have different cost profiles. Follow these limits to a
 | Simulation lifecycle | `midnight-mcp:mcp-simulate` |
 | Repository and version tools | `midnight-mcp:mcp-repository` |
 | Health and diagnostics | `midnight-mcp:mcp-health` |
-| Compact compilation with local CLI | `compact-core:compact-compilation` |
+| Compact compilation with local CLI | `midnight-tooling:compact-cli` |
 | Verification methodology using MCP tools | `midnight-verify:verify-correctness` |
 | Compact standard library reference | `compact-core:compact-standard-library` |

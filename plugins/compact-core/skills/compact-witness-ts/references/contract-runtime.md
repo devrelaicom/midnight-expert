@@ -157,7 +157,7 @@ When deploying or joining a contract, you provide a string identifier for the pr
 
 ```typescript
 // Wrap the Contract instance in a CompiledContract
-import { CompiledContract } from "@midnight-ntwrk/midnight-js-contracts";
+import { CompiledContract } from "@midnight-ntwrk/compact-js";
 const compiledContract = new CompiledContract(contractInstance);
 
 // Deploying
@@ -204,7 +204,7 @@ import { Contract, Ledger, witnesses, createMyPrivateState } from "@midnight-ntw
 | Mistake | Correct | Why |
 |---------|---------|-----|
 | Calling `impureCircuits` directly | Use `deployedContract.callTx.circuitName()` | Impure circuits need the full transaction pipeline |
-| Using `pureCircuits` for state-changing logic | Pure circuits cannot read or modify ledger | Use impure circuits for state changes |
+| Using `pureCircuits` for state-changing logic | The `pure` modifier signals no side effects; the compiler's `identify-pure-circuits` pass flags ledger access and witness calls in pure circuits | Use impure circuits for state changes |
 | Forgetting to export ledger fields in Compact | `export ledger myField: Type;` | Non-exported fields aren't in the `ledger()` output |
 | Importing from wrong path | `./managed/<name>/contract/index.js` | Path includes the contract name subdirectory |
 | Mixing up `.js` and `.cjs` imports | Check your package `type` field | `"type": "module"` uses `.js`, CommonJS uses `.cjs` |

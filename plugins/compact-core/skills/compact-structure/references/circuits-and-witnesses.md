@@ -45,7 +45,7 @@ circuit computeHash(data: Bytes<32>): Bytes<32> {
 
 #### `pure`
 
-A pure circuit cannot read or modify ledger state AND cannot call witness functions. Use for stateless helper computations:
+The `pure` modifier signals that a circuit should have no side effects. The compiler's `identify-pure-circuits` pass checks for ledger access, witness calls, and calls to impure circuits. The `pure` modifier primarily affects whether the circuit generates ZK proving keys and appears in `pureCircuits` exports. Use for stateless helper computations:
 
 ```compact
 export pure circuit add(a: Field, b: Field): Field {

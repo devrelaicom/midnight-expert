@@ -101,11 +101,11 @@ Check every token-spending circuit for proper nullifier handling and commitment 
 
 Check all arithmetic operations on token amounts for type sufficiency and bounds safety.
 
-- [ ] **Token amount type: `Uint<64>` vs `Uint<128>` — is the chosen type sufficient?** Compact supports both `Uint<64>` and `Uint<128>` for token amounts. Most shielded operations (`mintShieldedToken`, `sendShielded`, `sendImmediateShielded`) and unshielded send operations (`sendUnshielded`) use `Uint<128>` for amounts. The exception is `mintUnshieldedToken`, which uses `Uint<64>`. Using the wrong type can cause truncation or compilation errors. Verify that the type matches the token operation context.
+- [ ] **Token amount type: `Uint<64>` vs `Uint<128>` — is the chosen type sufficient?** Compact supports both `Uint<64>` and `Uint<128>` for token amounts. The `sendShielded`, `sendImmediateShielded`, and `sendUnshielded` functions use `Uint<128>` for the amount parameter. The `mintShieldedToken` and `mintUnshieldedToken` functions both use `Uint<64>` for the value parameter. Using the wrong type can cause truncation or compilation errors. Verify that the type matches the token operation context.
 
   ```compact
-  // GOOD — Uint<128> for shielded mint value parameter
-  export circuit mintShielded(amount: Uint<128>): ShieldedCoinInfo {
+  // GOOD — Uint<64> for shielded mint value parameter
+  export circuit mintShielded(amount: Uint<64>): ShieldedCoinInfo {
     return mintShieldedToken(
       disclose(domainSep), disclose(amount),
       evolveNonce(0 as Uint<64>, disclose(domainSep)),
@@ -116,13 +116,13 @@ Check all arithmetic operations on token amounts for type sufficiency and bounds
 
   > **Tool:** `midnight-get-latest-syntax` provides the authoritative stdlib function signatures showing the exact `Uint` width for each token operation. `midnight-compile-contract` output will show type mismatch errors if the wrong width is used.
 
-- [ ] **Addition overflow check: total does not exceed maximum value.** When adding to a balance or accumulating amounts, the result must not exceed the maximum representable value for the type. In ZK circuits, overflow wraps silently, producing a small value instead of a large one. Always assert that the addition will not overflow before performing it.
+- [ ] **Addition overflow check: total does not exceed maximum value.** When adding to a balance or accumulating amounts, be aware of type widening: `Uint` addition and multiplication cannot overflow because the compiler widens the result type (e.g., `Uint<64> + Uint<64>` produces `Uint<65>`). The wider result must then be cast back to the storage type, which can fail if the value exceeds the target width. `Uint` subtraction underflow produces a runtime error. There is no silent wrapping for `Uint`. For `Field`, arithmetic wraps silently (modular arithmetic). Always validate that accumulated values fit within the intended type bounds.
 
   ```compact
-  // BAD — addition could overflow silently, wrapping to a small value
+  // CAUTION — Uint addition widens the result type; cast back to storage type can fail
   export circuit deposit(account: Bytes<32>, amount: Uint<128>): [] {
     const current = balances.lookup(account);
-    balances.insert(account, current + amount);
+    balances.insert(account, (current + amount) as Uint<128>);  // Cast narrows; fails if sum exceeds Uint<128> max
   }
 
   // GOOD — overflow check before addition
@@ -155,7 +155,7 @@ Check all arithmetic operations on token amounts for type sufficiency and bounds
   }
   ```
 
-- [ ] **Total supply overflow on mint operations.** When minting new tokens, the total supply increases. If the contract does not track total supply or does not check for overflow at the supply level, it is possible to mint tokens past the maximum representable value, wrapping the total supply to a small number.
+- [ ] **Total supply overflow on mint operations.** When minting new tokens, the total supply increases. `Uint` addition widens the result type (no silent overflow), but the widened result must be cast back to the storage type, which fails if it exceeds the target width. If the contract does not track total supply or does not validate that the accumulated value fits the intended type, minting can fail unexpectedly or, for `Field`-based supply tracking, wrap silently via modular arithmetic.
 
   ```compact
   // BAD — no supply tracking or overflow check
@@ -409,11 +409,11 @@ Check all shielded (zswap) token operations for correct API usage and value hand
   }
   ```
 
-- [ ] **Correct `Uint` width for token operations.** Token operations use specific `Uint` widths. The `mintShieldedToken` function takes `Uint<128>` for the value parameter, while `mintUnshieldedToken` takes `Uint<64>`. The `sendShielded`, `sendImmediateShielded`, and `sendUnshielded` functions all take `Uint<128>` for the amount parameter. Check the stdlib signatures below for the exact types required by each function.
+- [ ] **Correct `Uint` width for token operations.** Token operations use specific `Uint` widths. The `mintShieldedToken` function takes `Uint<64>` for the value parameter, as does `mintUnshieldedToken`. The `sendShielded`, `sendImmediateShielded`, and `sendUnshielded` functions all take `Uint<128>` for the amount parameter. Check the stdlib signatures below for the exact types required by each function.
 
   Standard library function signatures for reference:
   ```
-  mintShieldedToken(Bytes<32>, Uint<128>, Bytes<32>, Either<ZswapCoinPublicKey, ContractAddress>)
+  mintShieldedToken(Bytes<32>, Uint<64>, Bytes<32>, Either<ZswapCoinPublicKey, ContractAddress>)
   sendImmediateShielded(ShieldedCoinInfo, Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>)
   sendShielded(QualifiedShieldedCoinInfo, Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>)
   mintUnshieldedToken(Bytes<32>, Uint<64>, Either<ContractAddress, UserAddress>)
@@ -488,13 +488,13 @@ Quick reference of common token security anti-patterns in Compact contracts.
 | Anti-Pattern | Risk | Correct Pattern |
 |---|---|---|
 | `export circuit mint(amount)` with no auth check | Anyone can mint unlimited tokens, destroying the token's economic model | Add `assert(caller == authority)` or role-based authorization check before minting |
-| `balance - amount` without `assert(balance >= amount)` | Underflow wraps to maximum unsigned value in ZK circuits, effectively creating tokens from nothing | Always assert `balance >= amount` before any subtraction on token amounts |
+| `balance - amount` without `assert(balance >= amount)` | `Uint` subtraction underflow causes a runtime error (there is no silent wrapping for `Uint`); `Field` subtraction underflow wraps silently via modular arithmetic | Always assert `balance >= amount` before any subtraction on token amounts |
 | Missing `receiveShielded(disclose(coin))` in receiving contract | Shielded tokens sent to the contract are permanently lost with no recovery mechanism | Always call `receiveShielded(disclose(coin))` before processing any received shielded coin |
 | `if (unshieldedBalance(...) > 0)` in conditional logic | Balance is captured at proof construction time, not execution time; decision is based on stale data | Use `unshieldedBalanceGt` or `unshieldedBalanceLt` stdlib comparison circuits instead |
 | `kernel.mintShielded(pk, amount)` directly | Low-level kernel call bypasses stdlib safety checks, proper nonce handling, and coin registration | Use `mintShieldedToken(domainSep, amount, nonce, recipient)` stdlib wrapper which handles all safety concerns |
 | Allowance checked but not deducted after spend | Approved spender can drain the entire owner balance with repeated calls using the same approval | Atomically deduct the spent amount from the allowance in the same circuit that performs the transfer |
 | `sendImmediateShielded` return value discarded | Change output from partial spend is lost; tokens equal to `coinValue - sentAmount` are destroyed | Capture the return value and process `res.sent` and any change coins |
-| Wrong `Uint` width for token operations | Using the wrong `Uint` width for token functions causes type mismatches; `mintShieldedToken` takes `Uint<128>` for value, `mintUnshieldedToken` takes `Uint<64>` for minting | Check the stdlib function signatures for the exact `Uint` width required by each token operation |
+| Wrong `Uint` width for token operations | Using the wrong `Uint` width for token functions causes type mismatches; `mintShieldedToken` takes `Uint<64>` for value, `mintUnshieldedToken` takes `Uint<64>` for minting, while send functions take `Uint<128>` | Check the stdlib function signatures for the exact `Uint` width required by each token operation |
 | Nullifier derived using `transientHash` | Non-deterministic; same coin produces different nullifiers each time, completely defeating double-spend prevention | Use `persistentHash` with domain separation and secret key for deterministic nullifier derivation |
 | `unsafeTransfer` to a contract address | Recipient contract may not call `receiveShielded`, causing permanent token loss | Use safe transfer wrappers that verify recipient handling, or ensure the target contract is known to call `receiveShielded` |
 

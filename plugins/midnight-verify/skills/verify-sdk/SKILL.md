@@ -65,6 +65,6 @@ Sub-agents may load these skills for context. They are **hints only** — never 
 - `dapp-development:midnight-sdk` skill — provider setup, component overview
 - `dapp-development:dapp-connector` skill — wallet integration patterns
 - `compact-core:compact-witness-ts` skill — witness implementation patterns
-- `compact-core:compact-deployment` skill — deployment patterns
+- `dapp-development:midnight-sdk` skill — deployment patterns
 
 Load only what's relevant to the specific claim.

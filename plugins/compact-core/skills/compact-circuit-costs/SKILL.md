@@ -45,7 +45,7 @@ Nested loops are the most common source of circuit size explosions. A 4-level ne
 
 ### Pure Circuit Benefits
 
-A circuit is pure if it has no ledger operations, no witness calls, and no calls to impure circuits.
+The `pure` modifier signals that a circuit should have no side effects. The compiler's `identify-pure-circuits` pass checks for ledger access, witness calls, and calls to impure circuits. The enforcement is contextual — the `pure` modifier primarily affects whether the circuit generates ZK proving keys and appears in `pureCircuits` exports.
 
 | Property | Impure Circuit | Pure Circuit |
 |----------|---------------|-------------|
@@ -72,7 +72,7 @@ Complex anonymous circuits inside `map`/`fold` multiply: every statement in the 
 
 ### Compiler Optimizations
 
-The compiler performs these **circuit-phase** optimization passes automatically (in order). These are a subset of the full compilation pipeline (~23 passes total including frontend, analysis, and emission phases):
+The compiler performs these **circuit-phase** optimization passes automatically (in order). These are a subset of the full compilation pipeline (~41 passes total across 10 frontend, 15 analysis, 11 circuit, 2 ZKIR, 2 TypeScript, and 1 metadata phase):
 
 1. **Copy propagation** — Replaces variable references with their definitions
 2. **Constant folding** — Evaluates constant expressions at compile time (`3 + 4` → `7`)
@@ -104,8 +104,8 @@ Circuits can have a `gasLimit` set; execution fails if the limit is exceeded.
 | `Map<K, V>` | Variable | Grows with entries | Public (keys + values visible) | Medium |
 | `Set<T>` | Variable | Grows with entries | Public (elements visible) | Medium |
 | `List<T>` | Variable | Grows with entries | Public | Medium |
-| `MerkleTree<N, T>` | Fixed (2^N capacity) | Pre-allocated | Insert public; **privacy via membership proofs** | Higher |
-| `HistoricMerkleTree<N, T>` | Fixed + root history | Pre-allocated + history | **Private** | Highest |
+| `MerkleTree<N, T>` | Fixed (2^N capacity) | Sparse, lazy (grows on demand) | **Insert hides leaf** (via `leaf_hash()`); **privacy via membership proofs** | Higher |
+| `HistoricMerkleTree<N, T>` | Fixed + root history | Sparse, lazy + history | **Insert hides leaf** (via `leaf_hash()`); **privacy via membership proofs** | Highest |
 
 `sealed` fields eliminate state-write circuit costs entirely since they are set once at construction.
 

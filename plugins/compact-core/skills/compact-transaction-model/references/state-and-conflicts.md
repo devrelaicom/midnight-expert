@@ -104,16 +104,16 @@ The choice of ledger data types and access patterns directly determines how susc
 
 | State Type | Conflict Risk | Why | Recommendation |
 |-----------|--------------|-----|----------------|
-| `Counter` | Low | Increments commute | Preferred for counters, sequences |
-| `Set<T>` | Low | Insertions do not conflict | Preferred for membership tracking |
-| `MerkleTree<N, T>` | Low | Append-only insertions | Preferred for privacy-preserving sets |
-| `Map<K, V>` (unique keys) | Low | Different keys do not conflict | Good for per-user state |
+| `Counter` | Low | Increments/decrements are commutative (order-independent) | Preferred for counters, sequences |
+| `Set<T>` | High | All state modifications conflict because ZK proofs bind to the full contract state | Use Counter for accumulation instead |
+| `MerkleTree<N, T>` | High | All state modifications conflict because ZK proofs bind to the full contract state | Use `HistoricMerkleTree` to mitigate for membership proofs |
+| `Map<K, V>` (unique keys) | High | All state modifications conflict — even writes to different keys — because ZK proofs bind to the full contract state | Consider Counter for additive patterns |
 | `Map<K, V>` (shared keys) | High | Overwrites conflict | Avoid for concurrent writes |
 | `Field` / `Bytes<N>` (shared) | High | Any write conflicts | Use Counter or Map instead |
 
 ### Append-Only and Commutative Structures
 
-`Counter` operations are commutative. Two transactions that each call `counter.increment(1)` on the same counter will both succeed regardless of ordering, because the final result is the same: the counter increases by 2. The intermediate state does not matter because the operation is defined as a relative increment, not an absolute write.
+`Counter` operations are commutative (order-independent). Two transactions that each call `counter.increment(1)` on the same counter will both succeed regardless of ordering, because the final result is the same: the counter increases by 2. The intermediate state does not matter because the operation is defined as a relative increment, not an absolute write. Note: Counter operations still require the proof to be against the current state, but because the effects are order-independent, the system can reconcile them.
 
 ```compact
 // Low conflict: both transactions succeed regardless of order
@@ -122,10 +122,11 @@ export circuit vote(): [] {
 }
 ```
 
-`Set<T>` and `MerkleTree<N, T>` insertions are similarly low-conflict. Two transactions that insert different elements into the same set will both succeed. The set grows by two elements regardless of which transaction is applied first.
+**Important:** All other contract state modifications conflict because ZK proofs bind to the full contract state. After one transaction modifies any part of a contract's state, subsequent transactions referencing the same contract have stale proofs. This applies to `Set<T>`, `MerkleTree<N, T>`, and `Map<K, V>` — even operations on different keys or elements conflict.
 
 ```compact
-// Low conflict: independent insertions into a set
+// HIGH CONFLICT: even though users insert different elements,
+// each insert modifies contract state, invalidating other proofs
 export circuit register(member: Bytes<32>): [] {
   members.insert(member);
 }
@@ -133,10 +134,10 @@ export circuit register(member: Bytes<32>): [] {
 
 ### Per-User State with Map
 
-Using a `Map` keyed by the user's public key (or other unique identifier) partitions the state so that each user's transaction modifies a different key. Two users updating their own balances in a `Map<Bytes<32>, Uint<64>>` do not conflict because they write to different keys.
+**Warning:** Using a `Map` keyed by the user's public key does NOT partition state for concurrency purposes. Two users updating different keys in a `Map<Bytes<32>, Uint<64>>` still conflict because ZK proofs bind to the full contract state — not individual keys.
 
 ```compact
-// Low conflict: each user modifies only their own entry
+// HIGH CONFLICT despite different keys — ZK proofs bind to the full contract state
 export ledger balances: Map<Bytes<32>, Uint<64>>;
 
 export circuit deposit(
@@ -148,7 +149,7 @@ export circuit deposit(
 }
 ```
 
-However, if multiple transactions write to the same map key -- for example, a shared configuration value or a global accumulator stored as a single map entry -- conflicts arise just as they would with a plain scalar field.
+The only truly conflict-free operations are commutative ones (`Counter.increment()` and `Counter.decrement()`) where the effects are order-independent.
 
 ### Patterns to Avoid
 
@@ -179,10 +180,10 @@ export circuit addToTotal(amount: Uint<32>): [] {
 
 ### Combining Strategies
 
-Real contracts often combine multiple conflict-reduction strategies. A token contract might use:
+Real contracts should maximize the use of commutative operations. A token contract might use:
 
-- A `Counter` for total supply (commutative increments from concurrent mints)
-- A `Map<Bytes<32>, Uint<64>>` for per-user balances (partitioned by user key)
-- A `Set<Bytes<32>>` for tracking authorized minters (independent insertions)
+- A `Counter` for total supply (commutative increments from concurrent mints — the only truly conflict-free pattern)
+- A `Map<Bytes<32>, Uint<64>>` for per-user balances
+- A `Set<Bytes<32>>` for tracking authorized minters
 
-This combination ensures that most operations from different users can succeed concurrently. The remaining high-conflict scenario -- two users trying to transfer tokens from the same account simultaneously -- is handled by the application's business logic rather than the data structure choice.
+Note that only the `Counter` operations are truly conflict-free. Operations on the `Map` and `Set` still conflict with all other state modifications to the same contract because ZK proofs bind to the full contract state. Under high concurrent load, consider splitting high-throughput operations into a separate contract to isolate their state.

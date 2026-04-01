@@ -158,16 +158,16 @@ witness getProfile(): [Bytes<32>, Field, Field];
 
 export circuit proveAgeAbove(minAge: Field): Boolean {
   const profile = getProfile();
-  // profile.0 = name (NOT disclosed)
-  // profile.1 = age (comparison result disclosed)
-  // profile.2 = income (NOT disclosed)
-  return disclose(profile.1 >= minAge);
+  // profile[0] = name (NOT disclosed)
+  // profile[1] = age (comparison result disclosed)
+  // profile[2] = income (NOT disclosed)
+  return disclose(profile[1] >= minAge);
 }
 
 export circuit proveIncomeInRange(minIncome: Field, maxIncome: Field): Boolean {
   const profile = getProfile();
   // Only the income range check is disclosed
-  return disclose(profile.2 >= minIncome && profile.2 <= maxIncome);
+  return disclose(profile[2] >= minIncome && profile[2] <= maxIncome);
 }
 ```
 

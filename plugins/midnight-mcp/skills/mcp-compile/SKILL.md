@@ -14,11 +14,11 @@ Evaluate these conditions before continuing. If any match, stop loading this ski
 
 | Condition | Use Instead |
 |-----------|-------------|
-| Project imports from locally installed npm Compact packages | `compact-core:compact-compilation` |
-| Need full artifact tree on disk (ZKIR, keys, TS bindings as files) | `compact-core:compact-compilation` |
-| Bulk or automated compilation (hundreds+ of contracts) | `compact-core:compact-compilation` |
-| CI/CD pipeline compilation | `compact-core:compact-compilation` + `midnight-tooling:compact-cli` |
-| Need custom compiler flags not exposed by the MCP tool | `compact-core:compact-compilation` |
+| Project imports from locally installed npm Compact packages | `midnight-tooling:compact-cli` |
+| Need full artifact tree on disk (ZKIR, keys, TS bindings as files) | `midnight-tooling:compact-cli` |
+| Bulk or automated compilation (hundreds+ of contracts) | `midnight-tooling:compact-cli` |
+| CI/CD pipeline compilation | `midnight-tooling:compact-cli` + `midnight-tooling:compact-cli` |
+| Need custom compiler flags not exposed by the MCP tool | `midnight-tooling:compact-cli` |
 
 If none of these apply, continue with MCP-hosted compilation below.
 
@@ -58,7 +58,7 @@ When hitting rate limits: fix all reported errors before recompiling rather than
 
 | Topic | Skill / Plugin |
 |-------|----------------|
-| Local CLI compilation, artifacts, ZKIR, keys | `compact-core:compact-compilation` |
+| Local CLI compilation, artifacts, ZKIR, keys | `midnight-tooling:compact-cli` |
 | Compact standard library reference | `compact-core:compact-standard-library` |
 | Analysis, visualization, diffing | `midnight-mcp:mcp-analyze` |
 | Compact code formatting via MCP | `midnight-mcp:mcp-format` |

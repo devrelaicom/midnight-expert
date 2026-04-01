@@ -71,8 +71,8 @@ Use this when you need to inspect the generated types without running a local co
 
 - During iterative development — use `skipZk: true` for fast feedback
 - When you only need to check syntax/types — full compile is wasteful for validation
-- When you need artifacts on disk — use local compilation (`compact-core:compact-compilation`)
+- When you need artifacts on disk — use local compilation (`midnight-tooling:compact-cli`)
 
 ## Cross-Reference
 
-For detailed documentation of ZKIR format, prover/verifier key structure, and TypeScript binding types, see `compact-core:compact-compilation`.
+For detailed documentation of compiler flags, output structure, and TypeScript binding types, see `midnight-tooling:compact-cli`.

@@ -463,17 +463,17 @@ PLONK proving benchmarks (Intel Core i9-10885H) showing how circuit size affects
 
 | Circuit Size (rows) | Compile Time | Prove Time | Verify Time |
 |---------------------|-------------|------------|-------------|
-| 2^5 (32) | 17.6 ms | 16.2 ms | 4.3 ms |
-| 2^8 (256) | 47.5 ms | ~30 ms | 4.3 ms |
-| 2^10 (1,024) | 97.5 ms | ~65 ms | ~4.3 ms |
-| 2^12 (4,096) | 314.7 ms | ~167 ms | ~4.3 ms |
-| 2^14 (16,384) | 1.03 s | ~527 ms | ~4.3 ms |
-| 2^16 (65,536) | 3.78 s | ~2.0 s | ~4.3 ms |
-| 2^18 (262,144) | 13.6 s | ~6.7 s | ~4.3 ms |
+| 2^5 (32) | 17.6 ms | 16.2 ms | ~3.4 ms |
+| 2^8 (256) | 47.5 ms | ~30 ms | ~3.5 ms |
+| 2^10 (1,024) | 97.5 ms | ~65 ms | ~3.5 ms |
+| 2^12 (4,096) | 314.7 ms | ~167 ms | ~3.6 ms |
+| 2^14 (16,384) | 1.03 s | ~527 ms | ~3.7 ms |
+| 2^16 (65,536) | 3.78 s | ~2.0 s | ~3.9 ms |
+| 2^18 (262,144) | 13.6 s | ~6.7 s | ~4.2 ms |
 
 Key insights:
 - **Proving time scales roughly linearly** with circuit size (doubling rows ≈ doubles proving time)
-- **Verification time is constant** (~4.3 ms regardless of circuit size)
+- **Verification has a constant component** (~3.4 ms) plus a small linear component that scales with the number of public inputs
 - The bottleneck is always the prover (user's device), never the verifier (network)
 - A circuit with 2^16 rows takes ~2 seconds to prove — this is the approximate threshold where users start noticing latency
 - A circuit with 2^18 rows takes ~7 seconds — likely too slow for interactive use

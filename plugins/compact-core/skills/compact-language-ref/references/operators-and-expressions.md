@@ -53,13 +53,13 @@ export circuit accumulate(x: Field): [] {
 }
 ```
 
-Mixing `Field` and `Uint` in a single expression is a type error. Cast the `Uint` operand first:
+`Uint` is a subtype of `Field`. In mixed arithmetic, `Uint` operands are implicitly widened to `Field`, and the result is `Field`:
 
 ```compact
 const f: Field = 10;
 const u: Uint<64> = 5;
-// const bad = f + u;           // type error
-const good = f + (u as Field);  // ok: Field + Field -> Field
+const result = f + u;            // ok: Uint<64> implicitly widened to Field; result is Field
+const explicit = f + (u as Field);  // explicit cast also works
 ```
 
 ### No Division or Modulo

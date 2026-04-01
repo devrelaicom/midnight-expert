@@ -219,4 +219,4 @@ To unsubscribe, send `chain_unsubscribeNewHeads` with the subscription ID.
 ## Cross-References
 
 - `midnight-indexer:indexer-graphql-api` — Higher-level GraphQL API for querying indexed chain data
-- `compact-core:compact-deployment` — DApp provider configuration using node RPC endpoints
+- `dapp-development:midnight-sdk` — DApp provider configuration using node RPC endpoints

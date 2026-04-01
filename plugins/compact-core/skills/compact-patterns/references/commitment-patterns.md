@@ -97,8 +97,8 @@ export circuit revealValue(): Field {
   const pk = get_public_key(sk);
   assert(disclose(commitments.member(pk)), "No commitment found");
   const opening = getOpening();
-  const salt = opening.0;
-  const value = opening.1;
+  const salt = opening[0];
+  const value = opening[1];
   const valueBytes = value as Bytes<32>;
   const expected = persistentHash<Vector<2, Bytes<32>>>([valueBytes, salt]);
   assert(disclose(expected == commitments.lookup(pk)), "Commitment mismatch");
@@ -218,8 +218,8 @@ export circuit revealBid(): [] {
   assert(disclose(bidCommitments.member(pk)), "No bid commitment found");
   assert(disclose(!revealedBids.member(pk)), "Already revealed");
   const opening = getBidOpening();
-  const salt = opening.0;
-  const amount = opening.1;
+  const salt = opening[0];
+  const amount = opening[1];
   const amountBytes = (disclose(amount) as Field) as Bytes<32>;
   const expected = persistentHash<Vector<2, Bytes<32>>>([amountBytes, salt]);
   assert(disclose(expected == bidCommitments.lookup(pk)), "Bid commitment mismatch");

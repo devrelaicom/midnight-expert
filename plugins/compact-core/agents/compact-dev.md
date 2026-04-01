@@ -159,7 +159,7 @@ These are non-negotiable. Violating any of these produces compilation errors:
 ### Type System Rules
 - **Uint<N> arithmetic:** Results have expanded bounds — cast back: `(a + b) as Uint<64>`
 - **Uint to Bytes:** NOT direct — go through Field: `(amount as Field) as Bytes<32>`
-- **Boolean to Field:** NOT direct — go through Uint: `(flag as Uint<0..1>) as Field`
+- **Boolean to Field:** Direct cast is valid: `flag as Field` (false → 0, true → 1)
 - **Counter:** Use `.read()` — NOT `.value()` (does not exist)
 - **Map/Set:** `.lookup()` and `.member()` are ledger state operations — available in impure circuits that access ledger state, but NOT in `pure circuit` declarations
 

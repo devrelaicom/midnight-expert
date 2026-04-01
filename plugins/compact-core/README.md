@@ -124,24 +124,6 @@ Cost model across three dimensions: circuit/proving costs (gate counts, hash tra
 
 **Triggers on**: gate count, proving time, gas costs, transientHash vs persistentHash, loop unrolling, optimization
 
-### compact-compilation
-
-Compiler pipeline — output artifacts (TypeScript bindings, ZKIR, prover/verifier keys, metadata), circuit metrics, compiler errors, --skip-zk flag, and build directory structure.
-
-**Triggers on**: compiling contracts, compiler output, ZKIR, prover keys, k-value, compilation errors
-
-### compact-deployment
-
-Deployment lifecycle — provider configuration (indexer, node, proof server), wallet setup (WalletFacade, HD wallet), network connections (undeployed, preview, preprod), deployContract, findDeployedContract, and callTx.
-
-**Triggers on**: deploying contracts, providers, wallet setup, network config, contract addresses
-
-### compact-testing
-
-Unit testing with Vitest — Simulator pattern, createConstructorContext, createCircuitContext, asserting ledger state, testing assertion failures, multi-user tests, and compilation as a test gate.
-
-**Triggers on**: testing, Vitest, Simulator, createCircuitContext, test-driven development
-
 ### compact-init-project
 
 Project scaffolding with `create-mn-app` — templates, project structure, and first-time setup.

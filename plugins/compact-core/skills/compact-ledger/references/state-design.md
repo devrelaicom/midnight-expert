@@ -55,7 +55,7 @@ Both track membership, but with different privacy properties:
 
 | Property | `Set<T>` | `MerkleTree<N, T>` |
 |----------|---------|-------------------|
-| Insert privacy | Element visible | **Element visible** (use commitments to hide) |
+| Insert privacy | Element visible | **Element hidden** — `insert()` applies `leaf_hash()` before storing; only the hash is in the transcript |
 | Membership check | Element visible | **Element hidden** (proven via ZK) |
 | Capacity | Unbounded | 2^N leaves |
 | Proof complexity | O(1) | O(N) (tree depth) |
@@ -148,7 +148,7 @@ constructor() {
 | Setting sealed field in exported circuit | Static compile error | Move to constructor or constructor-only helper |
 | Assigning directly to ADT field | Type error | Use ADT methods (`insert`, `increment`, etc.) |
 | Multiple constructors | Only one allowed per contract | Combine into single constructor |
-| Forgetting to initialize nested ADTs | `lookup` returns default, not the initialized value you expect | Use `insert(key, default<V>)` explicitly |
+| Forgetting to initialize nested ADTs | `lookup` throws a runtime error (ExpectedCell) if the key does not exist | Use `insert(key, default<V>)` to initialize before calling `lookup` |
 
 ## Nested ADT Strategies
 
@@ -276,7 +276,7 @@ The standard library provides these types for token operations:
 | Type | Fields | Purpose |
 |------|--------|---------|
 | `ShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>` | Describes a new shielded coin |
-| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mtIndex: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
+| `QualifiedShieldedCoinInfo` | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mt_index: Uint<64>` | Fully qualified shielded coin (with Merkle tree index) |
 | `ContractAddress` | `bytes: Bytes<32>` | Contract address for token sends |
 
 ### Token Operations via Kernel

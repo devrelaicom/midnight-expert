@@ -28,21 +28,21 @@ These types grow with the number of entries:
 | `Set<T>` | element_size | Linear with entries | Minimal (empty set) |
 | `List<T>` | element_size + pointer | Linear with entries | Minimal (empty list) |
 
-### Pre-Allocated Types
+### Sparse, Lazy Storage Types
 
-These types allocate storage for their maximum capacity at deployment:
+MerkleTree uses sparse, lazy storage — `MerkleTree::blank(height)` creates a single stub node. Nodes are computed on-demand via `rehash()`. Storage grows only as leaves are inserted, not upfront.
 
-| Type | Storage Size | Capacity | Notes |
+| Type | Storage Model | Leaf Capacity | Notes |
 |------|-------------|----------|-------|
-| `MerkleTree<N, T>` | ~2^(N+1) nodes | 2^N leaves | Full tree allocated upfront |
-| `HistoricMerkleTree<N, T>` | ~2^(N+1) nodes + root history | 2^N leaves | Larger than MerkleTree due to root history |
+| `MerkleTree<N, T>` | Sparse, lazy — nodes computed on demand | 2^N leaves | No upfront allocation |
+| `HistoricMerkleTree<N, T>` | Sparse, lazy + root history | 2^N leaves | Additional storage for retained roots |
 
 MerkleTree depth `N` has significant cost implications:
 - `MerkleTree<10, Bytes<32>>` — 1,024 leaf capacity
 - `MerkleTree<20, Bytes<32>>` — 1,048,576 leaf capacity
 - `MerkleTree<32, Bytes<32>>` — 4,294,967,296 leaf capacity (maximum depth)
 
-Choose the minimum depth that supports your expected membership set size. Oversizing wastes storage; undersizing requires contract redeployment.
+Choose the minimum depth that supports your expected membership set size. Deeper trees incur more per-proof hash operations (O(N) hashes per membership proof); undersizing requires contract redeployment.
 
 ## Privacy-Cost Tradeoffs
 
@@ -57,11 +57,11 @@ Different ledger types offer different privacy characteristics at different cost
 | `Map<K, V>` | Key + value visible | Key + value visible | Key visible | Key visible |
 | `Set<T>` | Element visible | N/A | Element visible | Element visible |
 | `List<T>` | Element visible | Value visible | N/A | N/A |
-| `MerkleTree<N, T>` | Leaf visible | N/A | **Proven via ZK (hides which leaf)** | N/A |
-| `HistoricMerkleTree<N, T>` | Leaf visible | N/A | **Proven via ZK (hides which leaf)** | N/A |
+| `MerkleTree<N, T>` | **Leaf hidden** — `insert()` applies `leaf_hash()` before storing | N/A | **Proven via ZK (hides which leaf)** | N/A |
+| `HistoricMerkleTree<N, T>` | **Leaf hidden** — `insert()` applies `leaf_hash()` before storing | N/A | **Proven via ZK (hides which leaf)** | N/A |
 
-Key insight: `MerkleTree` inserts are visible on-chain like all ledger operations, but membership is proven without revealing which entry (via ZK path proofs). This privacy comes at the cost of:
-- Pre-allocated storage (full tree)
+Key insight: `MerkleTree.insert()` hides the leaf value — the compiler applies `leaf_hash()` (a `persistent_hash`) before storing, so only the hash appears in the transaction transcript. This is the only ledger operation that hides its data argument. Additionally, membership is proven without revealing which entry (via ZK path proofs). This privacy comes at the cost of:
+- Storage grows with insertions (sparse, lazy allocation)
 - Path proof computation (O(N) hashes in-circuit for depth N)
 - Off-chain path generation (witness provides the proof path)
 

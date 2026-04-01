@@ -94,7 +94,7 @@ These are the versions used by `create-mn-app` v0.3.26 hello-world template (ver
 |---------|---------|
 | `@midnight-ntwrk/compact-runtime` | 0.15.0 |
 | `@midnight-ntwrk/compact-js` | 2.5.0 |
-| `@midnight-ntwrk/ledger-v7` | 7.0.3 |
+| `@midnight-ntwrk/ledger-v8` | 8.0.3 |
 | `@midnight-ntwrk/midnight-js-contracts` | 4.0.2 |
 | `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.2 |
 | `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.0.2 |
@@ -111,7 +111,7 @@ These are the versions used by `create-mn-app` v0.3.26 hello-world template (ver
 
 Dev dependencies: `typescript ^5.9.3`, `tsx ^4.21.0`, `@types/node ^22.0.0`
 
-Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.30.0).
+Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.30.x).
 
 ## Toolchain Versions
 
@@ -119,9 +119,9 @@ Verified on 2026-03-30. Use `compact --version` and `npm view create-mn-app vers
 
 | Component | Version | Install/Update |
 |-----------|---------|----------------|
-| Compact compiler | compactc-v0.30.0 | `compact update` |
+| Compact compiler | compactc-v0.30.x | `compact update` |
 | create-mn-app | 0.3.26 | `npx create-mn-app@latest` |
-| Proof server Docker image | midnightntwrk/proof-server:7.0.0 | Via Docker |
+| Proof server Docker image | midnightntwrk/proof-server:8.0.3 | Via Docker |
 | Node.js | 22+ required | https://nodejs.org/ |
 
 ## Network Endpoints (Preprod)

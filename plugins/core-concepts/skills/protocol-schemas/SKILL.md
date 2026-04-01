@@ -20,7 +20,7 @@ Midnight defines three core JSON schemas that describe the protocol's primary da
 
 The Compact AST schema defines the structure of programs produced by the Compact compiler. The root type is `Program`, which contains imports, ledger declarations, circuits, witnesses, and type definitions.
 
-See `compact-core:compact-compilation` for how the compiler produces this AST.
+See `midnight-tooling:compact-cli` for how the compiler produces this AST.
 
 ### Root Structure
 

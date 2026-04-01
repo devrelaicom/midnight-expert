@@ -22,7 +22,7 @@ Contradiction detected:
   Source A (docs): "Counter supports increment and decrement"
   Source B (code): only Counter.increment() found in examples
 
-Flag to user: "Documentation suggests Counter supports decrement, but no code examples demonstrate it. This may be planned but unimplemented, or the documentation may be ahead of the current version. Verify by compiling a test contract with Counter decrement — use `compact-core:compact-compilation` to check."
+Flag to user: "Documentation suggests Counter supports decrement, but no code examples demonstrate it. This may be planned but unimplemented, or the documentation may be ahead of the current version. Verify by compiling a test contract with Counter decrement — use `midnight-tooling:compact-cli` to check."
 ```
 
 **Why:** Silently picking one source hides important uncertainty. The user needs to know about the contradiction so they can verify before relying on either source.

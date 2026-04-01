@@ -152,7 +152,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
 
   > **Tool:** `midnight-compile-contract` output will show undefined type errors for stdlib types if the import is missing. `midnight-extract-contract-structure` checks for the import presence.
 
-- [ ] **`include "std"` (outdated) instead of `import CompactStandardLibrary;`.** Older versions of Compact used `include "std"` to load the standard library. Since Compact 0.13.0, the standard library is a builtin module imported via `import CompactStandardLibrary;`. The `std.compact` file is still provided for backward compatibility, so `include "std"` may still compile, but the `import` form is the recommended approach. Note: the `include` keyword itself is still valid for including other `.compact` files — only its use for the standard library is outdated.
+- [ ] **`include "std"` (outdated) instead of `import CompactStandardLibrary;`.** Older versions of Compact used `include "std"` to load the standard library. Since language version 0.12.3 (compiler 0.19.7), the standard library is a builtin module imported via `import CompactStandardLibrary;`. The `std.compact` file is still provided for backward compatibility, so `include "std"` may still compile, but the `import` form is the recommended approach. Note: the `include` keyword itself is still valid for including other `.compact` files — only its use for the standard library is outdated.
 
   ```compact
   // BAD — deprecated include syntax
@@ -305,19 +305,19 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   assert(a as Uint<64> < b as Uint<64>, "a must be less than b");
   ```
 
-- [ ] **Mixing `Field` and `Uint<N>` in arithmetic expressions.** Compact does not implicitly convert between `Field` and `Uint<N>`. Arithmetic operations require both operands to be the same type. Cast one operand to match the other before performing the operation.
+- [ ] **Mixing `Field` and `Uint<N>` in arithmetic expressions.** `Uint` is a subtype of `Field`. In mixed arithmetic, `Uint` operands are implicitly widened to `Field`. This means the result is a `Field`, not a `Uint` — losing the range constraint. If you need the result to remain a `Uint`, cast explicitly after the operation.
 
   ```compact
-  // BAD — mixing Field and Uint in arithmetic
+  // WORKS — Uint is implicitly widened to Field; result is Field
   const field_val: Field = 100;
   const uint_val: Uint<64> = 5;
   const result = field_val + uint_val;
-  // Compiler error: type mismatch in arithmetic
+  // result is Field (Uint<64> implicitly widened)
 
-  // GOOD — cast one operand to match
+  // If you need a Uint result, cast explicitly:
   const field_val: Field = 100;
   const uint_val: Uint<64> = 5;
-  const result = field_val + (uint_val as Field);
+  const result = (field_val + uint_val) as Uint<64>;
   ```
 
 - [ ] **Arithmetic result type widening: `Uint<8> + Uint<8>` produces a wider type.** When two `Uint<N>` values are added, the result type widens to accommodate the full range of possible values (e.g., two `Uint<8>` values can sum to at most 510, so the result is a range type). This means the result may not fit back into the original type without an explicit cast. Assignments to narrower types will fail without a cast.
