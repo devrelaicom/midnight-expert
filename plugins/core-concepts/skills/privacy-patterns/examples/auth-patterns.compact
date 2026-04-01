@@ -151,6 +151,13 @@ export ledger memberActionNullifiers: Set<Bytes<32>>;
 witness getAdminPath(pk: Bytes<32>): MerkleTreePath<8, Bytes<32>>;
 witness getMemberPath(pk: Bytes<32>): MerkleTreePath<16, Bytes<32>>;
 
+// Derive a public key from a secret key for role-based access
+circuit get_public_key(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "roles:pk:"), sk
+  ]);
+}
+
 // Internal circuit to verify admin role
 circuit requireAdmin(): [] {
   const sk = local_secret_key();

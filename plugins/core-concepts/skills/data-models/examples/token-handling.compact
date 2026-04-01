@@ -33,7 +33,7 @@
 //                  recipient: Either<ContractAddress, UserAddress>): []
 //   mintShieldedToken(domainSep: Bytes<32>, amount: Uint<64>,
 //                     nonce: Bytes<32>,
-//                     recipient: Either<ZswapCoinPublicKey, ContractAddress>): CoinInfo
+//                     recipient: Either<ZswapCoinPublicKey, ContractAddress>): ShieldedCoinInfo
 //   mintUnshieldedToken(domainSep: Bytes<32>, amount: Uint<64>,
 //                       recipient: Either<ContractAddress, UserAddress>): Bytes<32>
 //   nativeToken(): Bytes<32>
@@ -91,7 +91,7 @@ witness get_token_color(): Bytes<32>;
 // receiveShielded() adds the coin to the Zswap state as a shielded output.
 export circuit receivePayment(): [] {
   const coin = get_coin();
-  receiveShielded(coin);
+  receiveShielded(disclose(coin));
   received_count.increment(1);
 }
 
@@ -105,9 +105,9 @@ export circuit receivePayment(): [] {
 export circuit sendReward(amount: Uint<128>): ShieldedSendResult {
   const input = get_shielded_input();
   const recipientKey = get_recipient_key();
-  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(disclose(recipientKey));
 
-  return sendShielded(input, recipient, disclose(amount));
+  return disclose(sendShielded(disclose(input), recipient, disclose(amount)));
 }
 
 // =============================================================================
@@ -131,7 +131,7 @@ export circuit receiveUnshieldedPayment(color: Bytes<32>, amount: Uint<128>): []
 // The color, amount, and recipient are all publicly visible on-chain.
 export circuit sendUnshieldedReward(color: Bytes<32>, amount: Uint<128>): [] {
   const userAddr = get_user_address();
-  const recipient = right<ContractAddress, UserAddress>(userAddr);
+  const recipient = right<ContractAddress, UserAddress>(disclose(userAddr));
 
   sendUnshielded(disclose(color), disclose(amount), recipient);
 }
@@ -157,9 +157,9 @@ export circuit sendUnshieldedToSelf(color: Bytes<32>, amount: Uint<128>): [] {
 export circuit mintShielded(
   amount: Uint<64>,
   domain_separator: Bytes<32>
-): CoinInfo {
+): ShieldedCoinInfo {
   const recipientKey = get_recipient_key();
-  const recipient = left<ZswapCoinPublicKey, ContractAddress>(recipientKey);
+  const recipient = left<ZswapCoinPublicKey, ContractAddress>(disclose(recipientKey));
   const nonce = get_nonce();
 
   const newCoin = mintShieldedToken(
@@ -184,7 +184,7 @@ export circuit mintUnshielded(
   domain_separator: Bytes<32>
 ): Bytes<32> {
   const userAddr = get_user_address();
-  const recipient = right<ContractAddress, UserAddress>(userAddr);
+  const recipient = right<ContractAddress, UserAddress>(disclose(userAddr));
 
   const tokenId = mintUnshieldedToken(
     disclose(domain_separator),
