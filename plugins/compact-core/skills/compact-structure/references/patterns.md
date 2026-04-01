@@ -260,16 +260,16 @@ export circuit mint(to: Bytes<32>, amount: Uint<64>): [] {
 
 export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
   const sk = local_secret_key();
-  const from = get_public_key(sk);
-  const d_from = disclose(from);
+  const sender = get_public_key(sk);
+  const d_sender = disclose(sender);
   const d_to = disclose(to);
   const d_amount = disclose(amount);
 
-  assert(balances.member(d_from), "No balance");
-  const senderBalance = balances.lookup(d_from);
+  assert(balances.member(d_sender), "No balance");
+  const senderBalance = balances.lookup(d_sender);
   assert(senderBalance >= d_amount, "Insufficient balance");
 
-  balances.insert(d_from, (senderBalance - d_amount) as Uint<64>);
+  balances.insert(d_sender, (senderBalance - d_amount) as Uint<64>);
 
   if (balances.member(d_to)) {
     const receiverBalance = balances.lookup(d_to);
