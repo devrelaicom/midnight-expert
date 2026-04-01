@@ -1,38 +1,14 @@
 # ZK SNARK Internals
 
-## Mathematical Foundation
-
-### Elliptic Curves
-
-ZK SNARKs use elliptic curve cryptography for:
-- Efficient group operations
-- Bilinear pairings
-- Compact representations
-
-### Bilinear Pairings
-
-A pairing is a function:
-```text
-e: G1 × G2 → GT
-```
-
-Properties:
-- Bilinearity: e(aP, bQ) = e(P, Q)^(ab)
-- Non-degeneracy: e(P, Q) ≠ 1 for generators
-- Computability: Efficiently computable
-
-Pairings enable verification without revealing values.
-
 ## PLONK Proving System
 
-Midnight uses the **PLONK** (Permutations over Lagrange-bases for Oecumenical Non-interactive Arguments of Knowledge) proving system with polynomial commitments.
+Midnight uses the **PLONK** proving system with polynomial commitments.
 
 ### Gate-Based Arithmetization
 
 PLONK uses gate-based arithmetization rather than constraint matrices:
 - **Gate constraints**: Define arithmetic relationships at each gate (e.g., multiplication, addition)
-- **Copy constraints**: Ensure wires carrying the same value are consistent across gates
-- **Permutation argument**: Enforces copy constraints efficiently via a grand product check
+- **Copy constraints**: Ensure values that should be equal across different gates remain consistent
 
 ### 1. Universal Setup
 
@@ -71,8 +47,6 @@ Verifier checks proof using:
 ```text
 Verify(VerificationKey, Proof, PublicInputs) → bool
 ```
-
-Verification involves checking polynomial commitment evaluations via pairing checks.
 
 **Cost**: Constant time (milliseconds), regardless of circuit complexity.
 

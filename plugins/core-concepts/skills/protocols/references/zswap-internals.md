@@ -27,20 +27,14 @@ Where CoinInfo = {value, type, nonce}.
 
 These are stored in the commitment Merkle tree as leaves.
 
-### Value Commitments (Pedersen Multi-Base)
+### Value Commitments (Pedersen)
 
-Separate from coin commitments, Pedersen commitments are used for the `type_value_commit` field on inputs and outputs. These exist solely for **balance verification**:
-
-```text
-type_value_commit = type·G_t + value·G_v + randomness·G_r
-```
+Separate from coin commitments, each input and output carries a Pedersen value commitment used solely for **balance verification**.
 
 **Properties**:
 - Perfectly hiding: Cannot determine committed values
 - Computationally binding: Cannot open to different values
-- Homomorphic: Commit(a) + Commit(b) = Commit(a+b)
-
-The homomorphic property allows verifiers to check that inputs and outputs balance without learning individual values.
+- Homomorphic: These are homomorphic -- the network can check that inputs and outputs balance without learning individual values
 
 **Important**: Do not confuse these with coin commitments. Coin commitments are hash-based and identify coins in the Merkle tree. Value commitments are Pedersen-based and exist only for balance proofs.
 
@@ -57,58 +51,21 @@ Where CoinInfo = {value, type, nonce}. The coin commitment is NOT an input to nu
 - Unlinkable: Cannot derive the commitment from the nullifier
 - Collision-resistant: Different inputs produce different nullifiers
 
-## Offer Structure Details
+## Offer Structure
 
-### Complete Offer
+An offer comprises inputs (coins being spent), outputs (new coins being created), transient coins (created and destroyed within the same transaction), and a delta vector describing the net value change per token type.
 
-```text
-Offer {
-  inputs: [Input, ...],
-  outputs: [Output, ...],
-  transient: [TransientCoin, ...],
-  deltas: Map<string, bigint>
-}
-```
+### Inputs
 
-### Input Structure
+An input provides a nullifier, evidence of coin existence (a Merkle proof against a recent root), and a Pedersen value commitment for balance verification. An accompanying ZK proof demonstrates knowledge of the coin information and secret key that produce the nullifier, that the corresponding coin commitment exists in the Merkle tree, and that the owner authorized the spend.
 
-```text
-Input {
-  nullifier: Bytes<32>,
-  type_value_commit: PedersenCommit,
-  contract_address: Option<ContractAddress>,
-  merkle_root: Bytes<32>,
-  merkle_proof: MerklePath,
-  zk_proof: Proof
-}
-```
+### Outputs
 
-**Proof demonstrates**:
-- Knowledge of CoinInfo and ZswapCoinSecretKey that produce the nullifier
-- Knowledge of CoinInfo and ZswapCoinPublicKey whose hash exists in the Merkle tree
-- Nullifier correctly computed from CoinInfo and secret key
-- Owner authorized the spend
-
-### Output Structure
-
-```text
-Output {
-  commitment: Bytes<32>,
-  type_value_commit: PedersenCommit,
-  contract_address: Option<ContractAddress>,
-  ciphertext: Option<EncryptedNote>,
-  zk_proof: Proof
-}
-```
-
-**Proof demonstrates**:
-- Commitment correctly formed as Hash(CoinInfo, ZswapCoinPublicKey)
-- Type/value commitment matches the coin's type and value
-- Valid encryption (if present)
+An output carries a coin commitment, a Pedersen value commitment for balance verification, and optional encrypted data for the recipient. An accompanying ZK proof demonstrates that the commitment is correctly formed, that the value commitment matches the coin's type and value, and that the encryption (if present) is valid.
 
 ### Transient Coins
 
-Coins created and spent in same transaction:
+Coins created and spent in the same transaction:
 - Never actually exist on-chain
 - Enable complex swap patterns
 - Balance internally
@@ -124,12 +81,7 @@ sum(input_values) = sum(output_values) + fees
 
 ### Homomorphic Verification
 
-Using the homomorphic property of the **Pedersen value commitments** (type_value_commit fields):
-```text
-sum(input_type_value_commits) - sum(output_type_value_commits) = Commit(delta)
-```
-
-This applies to Pedersen value commitments only, not to coin commitments. Verifiable without knowing actual values.
+Using the homomorphic property of the Pedersen value commitments, the network verifies that the sum of input commitments minus the sum of output commitments equals a commitment to the declared delta. This applies to Pedersen value commitments only, not to coin commitments, and is verifiable without knowing actual values.
 
 The contract section's zero-value contribution is proven via a Schnorr proof (one per transaction).
 
@@ -156,14 +108,7 @@ Two offers can merge if:
 
 ### Merge Process
 
-```text
-Offer1 + Offer2 = MergedOffer {
-  inputs: Offer1.inputs + Offer2.inputs,
-  outputs: Offer1.outputs + Offer2.outputs,
-  transient: Offer1.transient + Offer2.transient,
-  deltas: Offer1.deltas + Offer2.deltas
-}
-```
+Merging concatenates all inputs, outputs, and transient coins from both offers, and sums the delta vectors element-wise. The result is a single combined offer that executes atomically.
 
 ### Non-Interactive Merging
 
@@ -192,18 +137,7 @@ Tokens are issued through Zswap mint operations in Compact contracts.
 
 ### Coin Operations in Contracts
 
-Token operations are stdlib circuit calls, imported via `import CompactStandardLibrary;`:
-
-```compact
-// Receive a shielded coin targeted to this contract
-receiveShielded(coin: ShieldedCoinInfo): []
-
-// Send value to a recipient
-sendShielded(input: QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): SendResult
-
-// Mint an unshielded token
-mintUnshieldedToken(domainSep: Bytes<32>, value: Uint<64>, recipient: Either<ContractAddress, UserAddress>): Bytes<32>
-```
+Compact contracts interact with Zswap through standard library functions for receiving, sending, and minting tokens. These are stdlib circuit calls imported via `import CompactStandardLibrary;`. See `compact-core:compact-standard-library` for function signatures and usage details.
 
 ## Security Properties
 

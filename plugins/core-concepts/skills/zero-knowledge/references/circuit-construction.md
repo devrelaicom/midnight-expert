@@ -18,7 +18,7 @@ Proving/Verification Keys
 ```
 
 - **Circuit IR**: Intermediate representation that captures the contract logic as abstract circuit operations, before ZK-specific transformations.
-- **ZKIR**: Zero-Knowledge IR — the final circuit representation optimized for the PLONK proving system, with concrete gate assignments and wire routing.
+- **ZKIR**: Zero-Knowledge IR — the final circuit representation optimized for the PLONK proving system.
 
 ### What Becomes Constraints
 

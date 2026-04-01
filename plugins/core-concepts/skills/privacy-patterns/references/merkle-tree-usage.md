@@ -6,41 +6,21 @@ Detailed reference for `MerkleTree`, `HistoricMerkleTree`, membership proofs, an
 
 ### MerkleTree<N, T>
 
-A Merkle tree with depth `N` and leaf type `T`. Supports up to 2^N leaves. Each insertion changes the root, which invalidates all existing proofs.
-
-```compact
-export ledger tree: MerkleTree<10, Bytes<32>>;
-```
+A Merkle tree with depth `N` and leaf type `T`. Supports up to 2^N leaves. Each insertion changes the root, which invalidates all existing proofs. Declared as a ledger variable, e.g., `export ledger tree: MerkleTree<10, Bytes<32>>`.
 
 ### HistoricMerkleTree<N, T>
 
-Like `MerkleTree` but retains all historic roots. `checkRoot()` accepts proofs against any prior version of the tree, so proofs generated before new insertions remain valid. Use this when members are added over time.
-
-```compact
-export ledger members: HistoricMerkleTree<16, Bytes<32>>;
-```
+Like `MerkleTree` but retains all historic roots. `checkRoot()` accepts proofs against any prior version of the tree, so proofs generated before new insertions remain valid. Use this when members are added over time. Declared as a ledger variable, e.g., `export ledger members: HistoricMerkleTree<16, Bytes<32>>`.
 
 ## Operations
 
 ### insert(value)
 
-Adds a leaf to the tree. The leaf value is **hidden on-chain** -- this is the unique privacy property of MerkleTree inserts. An observer sees that an insertion occurred but cannot determine what was inserted.
-
-```compact
-// disclose() required: argument is witness-derived
-// Even though insert() hides the value on-chain, the compiler
-// still requires disclose() for the argument
-members.insert(disclose(memberPk));
-```
+Adds a leaf to the tree. The leaf value is **hidden on-chain** -- this is the unique privacy property of MerkleTree inserts. An observer sees that an insertion occurred but cannot determine what was inserted. Call as `members.insert(disclose(memberPk))`. Note: even though `insert()` hides the value on-chain, the compiler still requires `disclose()` on the argument when it is witness-derived.
 
 ### checkRoot(digest)
 
-Verifies that `digest` matches a valid root of the tree. For `HistoricMerkleTree`, this checks against all historic roots. For `MerkleTree`, only the current root.
-
-```compact
-// disclose() required: digest is derived from witness data (the path)
-assert(members.checkRoot(disclose(digest)), "Not a member");
-```
+Verifies that `digest` matches a valid root of the tree. For `HistoricMerkleTree`, this checks against all historic roots. For `MerkleTree`, only the current root. Call as `members.checkRoot(disclose(digest))`. The `disclose()` is required because the digest is derived from witness data (the path).
 
 **Important**: There is no `historicMember` method. Use `checkRoot` only. There is no `.member(value, path)` method either -- membership is verified by computing the root from a path and checking it.
 
@@ -68,69 +48,20 @@ Each `MerkleTreePathEntry` has:
 merkleTreePathRoot<N, T>(path: MerkleTreePath<N, T>): MerkleTreeDigest
 ```
 
-Recomputes the Merkle root by hashing from the leaf up through all siblings. Pass the entire `MerkleTreePath` struct -- not a field of it.
-
-```compact
-// CORRECT: pass the whole MerkleTreePath struct
-const digest = merkleTreePathRoot<16, Bytes<32>>(memberPath);
-
-// WRONG: no .value field exists on MerkleTreePath
-// const digest = merkleTreePathRoot<16, Bytes<32>>(memberPath.value);  // ERROR
-```
+Recomputes the Merkle root by hashing from the leaf up through all siblings. Pass the entire `MerkleTreePath` struct -- not a field of it. For example: `merkleTreePathRoot<16, Bytes<32>>(memberPath)`. A common mistake is trying to pass `memberPath.value` -- `MerkleTreePath` has no `.value` field.
 
 ## Complete Membership Proof Pattern
 
-The canonical four-step pattern for anonymous membership verification:
+The canonical four-step pattern for anonymous membership verification uses an `HistoricMerkleTree<16, Bytes<32>>` for members and a `Set<Bytes<32>>` for spent nullifiers. Witnesses provide the secret key and the Merkle path.
 
-```compact
-pragma language_version 0.22;
-import CompactStandardLibrary;
+**Registration:** An admin circuit inserts a member's public key into the tree via `members.insert(disclose(memberPk))`. The leaf value is hidden on-chain.
 
-export ledger members: HistoricMerkleTree<16, Bytes<32>>;
-export ledger usedNullifiers: Set<Bytes<32>>;
+**Anonymous action (four steps):**
 
-// Witnesses are declaration-only
-witness local_secret_key(): Bytes<32>;
-witness getMemberPath(pk: Bytes<32>): MerkleTreePath<16, Bytes<32>>;
-
-circuit get_public_key(sk: Bytes<32>): Bytes<32> {
-  return persistentHash<Vector<2, Bytes<32>>>([
-    pad(32, "myapp:pk:"), sk
-  ]);
-}
-
-// Admin adds a member (leaf value is hidden on-chain)
-export circuit addMember(memberPk: Bytes<32>): [] {
-  // disclose() required: circuit parameter treated as witness data
-  members.insert(disclose(memberPk));
-}
-
-// Member proves membership anonymously
-export circuit proveAndAct(): [] {
-  const sk = local_secret_key();
-  const pk = get_public_key(sk);
-
-  // Step 1: Get Merkle proof from off-chain state via witness
-  const memberPath = getMemberPath(pk);
-
-  // Step 2: Compute root from the full MerkleTreePath struct
-  const digest = merkleTreePathRoot<16, Bytes<32>>(memberPath);
-
-  // Step 3: Verify against on-chain tree
-  // disclose() required: digest is derived from witness data (the path)
-  assert(members.checkRoot(disclose(digest)), "Not a member");
-
-  // Step 4: Derive and check nullifier to prevent reuse
-  const nul = persistentHash<Vector<2, Bytes<32>>>([
-    pad(32, "myapp:act-nul:"), sk
-  ]);
-  // disclose() required: nul is witness-derived; Set.member() argument must be public
-  assert(!usedNullifiers.member(disclose(nul)), "Already acted");
-  usedNullifiers.insert(disclose(nul));
-
-  // ... perform the action
-}
-```
+1. **Derive identity.** The circuit obtains the secret key from a witness and derives the public key via `persistentHash` with a domain-separated prefix.
+2. **Obtain and compute proof.** A witness returns the `MerkleTreePath` for the public key. The circuit calls `merkleTreePathRoot` on the full struct to compute the digest.
+3. **Verify on-chain.** The circuit calls `members.checkRoot(disclose(digest))` to confirm membership. The `disclose()` is required because the digest is witness-derived.
+4. **Nullifier check.** The circuit derives a nullifier via `persistentHash` with a different domain prefix, checks it against the spent set with `Set.member(disclose(nul))`, and records it with `Set.insert(disclose(nul))`. Both operations require `disclose()` because nullifiers are witness-derived and Set arguments must be public.
 
 ## TypeScript Integration
 
@@ -144,23 +75,9 @@ O(n) scan through all leaves to find the matching one and construct the path. Us
 
 O(log n) path construction when the leaf's index is known. More efficient for large trees.
 
-### Example Witness Implementation
+### Witness Implementation Approach
 
-Note: The API shape below is illustrative. Consult the current Midnight SDK documentation for exact method signatures.
-
-```typescript
-// Simplified TypeScript witness implementation
-const getMemberPath = async (pk: Bytes) => {
-  // Query the local ledger state for the tree
-  const treeState = await ledgerState.members;
-  // Find the path for this leaf
-  const path = treeState.findPathForLeaf(pk);
-  if (!path) {
-    throw new Error("Member not found in tree");
-  }
-  return path;
-};
-```
+The TypeScript witness queries the local ledger state for the tree, then calls `findPathForLeaf(pk)` to locate the member's leaf and construct the authentication path. If the leaf is not found, the witness throws an error. Consult the current Midnight SDK documentation for exact method signatures, as the API shape may evolve.
 
 ## Capacity Planning
 
@@ -177,17 +94,7 @@ Deeper trees increase circuit complexity (more hash computations per proof) but 
 
 ### Leaf Guessing
 
-If the set of possible leaf values is small (e.g., 10 known public keys), an observer can hash each candidate and check whether it appears as a leaf. Mitigate by using commitments with randomness as leaves:
-
-```compact
-// Instead of inserting raw public keys:
-// members.insert(disclose(pk));
-
-// Insert commitments that hide the public key behind randomness:
-const rand = get_randomness();
-const leafCommitment = persistentCommit<Bytes<32>>(pk, rand);
-members.insert(disclose(leafCommitment));
-```
+If the set of possible leaf values is small (e.g., 10 known public keys), an observer can hash each candidate and check whether it appears as a leaf. Mitigate by using commitments with randomness as leaves: instead of inserting raw public keys, obtain fresh randomness from a witness, compute a commitment via `persistentCommit<Bytes<32>>(pk, rand)`, and insert the commitment as the leaf. This hides the public key behind the randomness, making leaf-guessing attacks infeasible.
 
 ### Tree Size Leakage
 

@@ -8,132 +8,87 @@ Midnight's ledger has two main components:
 
 ## Zswap State
 
-```text
-ZswapState {
-  commitment_tree: MerkleTree<CoinCommitment>,
-  commitment_tree_first_free: u32,
-
-  nullifiers: Set<CoinNullifier>,
-  commitment_tree_history: TimeFilterMap<MerkleTreeRoot>
-}
-```
+The Zswap state tracks all coin activity on the ledger.
 
 ### Commitment Tree
 
-- Merkle tree of all coin commitments
-- Depth determines maximum coins
-- Leaves are coin commitments: `CoinCommitment = Hash<(CoinInfo, ZswapCoinPublicKey)>`
+- Merkle tree of all coin commitments ever created
+- Depth determines maximum coins the network can hold
+- Each leaf is a cryptographic commitment that hides the coin's value, type, and owner
 - Note: Pedersen commitments are used separately for balance proofs, not as Merkle tree leaves
 
-### Commitment Tree First Free
+### First Free Index
 
-- Points to next available tree position (`u32`)
+- Points to the next available tree position
 - Increments with each new coin
 - Never decreases (append-only)
 
 ### Nullifiers
 
-- `Set<CoinNullifier>` containing all spent coin nullifiers
+- A set containing all spent-coin nullifiers
 - Checked before accepting new spends
 - Prevents double-spending
 
 ### Commitment Tree History
 
-- `TimeFilterMap<MerkleTreeRoot>` of accepted historic Merkle roots
+- Recent Merkle roots kept for a time window so proofs can reference slightly older tree states
 - Allows proofs against recent tree states
-- Entries expire based on time window (not kept indefinitely)
+- Entries expire based on the time window (not kept indefinitely)
 
 ## Contract Map
 
-```text
-ContractMap = Map<ContractAddress, ContractState>
-```
-
-A contract state consists of an Impact state value plus a map of entry point names to operations (SNARK verifier keys). The verifier keys allow the network to verify ZK proofs for each circuit entry point.
+The contract map associates each contract address with its state. A contract state consists of an Impact state value plus a map of entry point names to operations (SNARK verifier keys). The verifier keys allow the network to verify ZK proofs for each circuit entry point.
 
 ### Contract Address
 
-Derived from deployment:
-```text
-address = Hash(contract_state, nonce)
-```
+The address is derived by hashing the initial contract state with a nonce, not from the full deployment transaction data.
 
-The address is computed from the initial contract state and a nonce, not from the full deployment transaction data.
+### State Visibility
 
-### State Types
-
-| Type | Storage | Visibility |
-|------|---------|------------|
-| Field | Direct value | Public |
-| MerkleTree | Root only on-chain | Contents private |
-| Set | Membership structure | Contents private |
-
-These are Compact contract state types used within the Impact VM. They correspond to on-chain data structures managed by the Midnight ledger.
+Contract state fields are stored directly and are public. Merkle trees store their full tree structure on-chain, but leaf preimages are hidden -- the tree shape is visible but not what was inserted. Sets store a membership structure with contents remaining private. These are Compact contract state types used within the Impact VM, corresponding to on-chain data structures managed by the Midnight ledger.
 
 ## State Transitions
 
 ### Adding a Coin
 
-```text
-1. Compute commitment = Hash<(CoinInfo, ZswapCoinPublicKey)>
-2. Insert commitment at commitment_tree_first_free
-3. Increment commitment_tree_first_free
-4. Update Merkle root
-5. Add new root to commitment_tree_history
-```
+1. Compute the coin commitment from the coin data and the owner's public key
+2. Insert the commitment at the next free leaf position
+3. Increment the first-free index
+4. Recompute the Merkle root
+5. Add the new root to the historic roots
 
 ### Spending a Coin
 
-```text
-1. Verify nullifier not in nullifiers set
-2. Verify Merkle proof against valid root in commitment_tree_history
-3. Verify ZK proof of ownership
-4. Add nullifier to nullifiers set
-```
+1. Verify the nullifier is not already in the nullifier set
+2. Verify a Merkle proof against a valid root in the historic roots
+3. Verify a ZK proof of ownership
+4. Add the nullifier to the nullifier set
 
 ### Updating Contract State
 
-```text
-1. Lookup contract by address
-2. Verify ZK proof matches circuit (using stored verifier keys)
-3. Execute Impact program
-4. Verify resulting effects match declared
-5. Store new state
-```
+1. Look up the contract by address
+2. Verify the ZK proof matches the circuit (using stored verifier keys)
+3. Execute the Impact program
+4. Verify resulting effects match those declared
+5. Store the new state
 
 ## Token Types
 
 ### Native Token
 
-```text
-type = 0x0000...0000  (256-bit zero)
-```
-
-The native token TYPE IDENTIFIER is the 256-bit zero value. This identifies the token type, not the token's value or balance. Retrieved in Compact via `nativeToken(): Bytes<32>`.
+The native token type identifier is the 256-bit zero value. This identifies the token type, not the token's value or balance.
 
 ### Custom Tokens
 
-```text
-type = Hash(contract_address, domain_separator)
-```
-
-The domain separator allows one contract to issue multiple token types.
+Custom token types are derived by hashing a domain separator with the issuing contract's address. The domain separator allows one contract to issue multiple token types.
 
 ## Value Accounting
 
 ### Zswap Balance Equation
 
-Per token type:
-```text
-sum(input_values) - sum(output_values) + mints >= 0
-```
+For each token type, the sum of inputs minus the sum of outputs plus any minted value must be non-negative. Fees are accounted for in the native token dimension.
 
-Fees are accounted for in the native token dimension.
-
-Enforced via:
-- Multi-base Pedersen commitment homomorphism (for balance proofs)
-- Balance proofs per token type
-- Fee verification on the native token dimension
+This is enforced via multi-base Pedersen commitment homomorphism for balance proofs, with independent balance proofs per token type and fee verification on the native token dimension.
 
 ### Multi-Asset Support
 

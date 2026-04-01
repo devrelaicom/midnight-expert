@@ -1,6 +1,6 @@
 ---
 name: core-concepts:zero-knowledge
-description: This skill should be used when the user asks about zero-knowledge proofs, ZK SNARKs, PLONK proving system, circuit compilation, circuit optimization, witness data, prover/verifier roles, constraint systems, structured reference string (SRS), proof generation, proof verification, polynomial commitments, disclose() for privacy boundaries, or how Midnight uses ZK cryptography for transaction privacy and data protection.
+description: This skill should be used when the user asks about zero-knowledge proofs, ZK SNARKs, witness data, prover/verifier roles, constraint systems, proof generation, proof verification, privacy boundaries, or how Midnight uses ZK cryptography for transaction privacy and data protection.
 version: 0.1.0
 ---
 
