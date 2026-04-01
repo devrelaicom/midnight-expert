@@ -10,13 +10,17 @@ import CompactStandardLibrary;
 export ledger owner: Bytes<32>;
 export ledger data: Counter;
 
+witness local_secret_key(): Bytes<32>;
+
 export circuit transferOwnership(newOwner: Bytes<32>): [] {
-  assert(caller == owner, "caller must be owner");
-  owner = newOwner;
+  const caller_id = disclose(local_secret_key());
+  assert(caller_id == owner, "caller must be owner");
+  owner = disclose(newOwner);
 }
 
 export circuit restricted(): [] {
-  assert(caller == owner, "caller must be owner");
+  const caller_id = disclose(local_secret_key());
+  assert(caller_id == owner, "caller must be owner");
   data.increment(1);
 }
 
