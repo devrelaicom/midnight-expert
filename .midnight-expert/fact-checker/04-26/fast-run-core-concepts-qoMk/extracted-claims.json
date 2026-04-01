@@ -1,0 +1,1283 @@
+[
+  {
+    "claim": "Every Midnight transaction contains a guaranteed_zswap_offer that is always present and collects fees for all transaction phases",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "35-44",
+    "category": "transaction-structure",
+    "id": "claim-001"
+  },
+  {
+    "claim": "Every Midnight transaction contains an optional fallible_zswap_offer that may fail without affecting the guaranteed section",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "35-44",
+    "category": "transaction-structure",
+    "id": "claim-002"
+  },
+  {
+    "claim": "Every Midnight transaction contains an optional contract_calls_or_deploys field for contract interactions or deployments",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "35-44",
+    "category": "transaction-structure",
+    "id": "claim-003"
+  },
+  {
+    "claim": "Every Midnight transaction contains a binding_randomness field that opens the homomorphic Pedersen commitment",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "35-44",
+    "category": "transaction-structure",
+    "id": "claim-004"
+  },
+  {
+    "claim": "The guaranteed section must succeed or the entire transaction is rejected",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "47-53",
+    "category": "transaction-structure",
+    "id": "claim-005"
+  },
+  {
+    "claim": "The fallible section may fail without affecting the guaranteed section",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "47-53",
+    "category": "transaction-structure",
+    "id": "claim-006"
+  },
+  {
+    "claim": "The fallible Zswap offer's coin operations (commitments and nullifiers) are applied during the guaranteed phase",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "55-55",
+    "category": "transaction-structure",
+    "id": "claim-007"
+  },
+  {
+    "claim": "Only fallible contract call effects are rolled back on failure",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "55-55",
+    "category": "transaction-structure",
+    "id": "claim-008"
+  },
+  {
+    "claim": "Each ContractCall contains both guaranteed and fallible transcripts split via the ckpt opcode within a single call",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "74-85",
+    "category": "contract-call",
+    "id": "claim-009"
+  },
+  {
+    "claim": "ContractCall contains a contract_address field of type ContractAddress (Bytes<32>)",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "77-85",
+    "category": "contract-call",
+    "id": "claim-010"
+  },
+  {
+    "claim": "ContractCall contains an entry_point field of type String",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "77-85",
+    "category": "contract-call",
+    "id": "claim-011"
+  },
+  {
+    "claim": "Transaction binding uses homomorphic Pedersen commitments rather than a simple hash",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "107-108",
+    "category": "cryptography",
+    "id": "claim-012"
+  },
+  {
+    "claim": "The ledger structure contains zswap_state with a commitment_tree (MerkleTree), commitment_tree_first_free (u32), nullifiers (Set<CoinNullifier>), and commitment_tree_history (Set<MerkleTreeRoot>)",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "114-124",
+    "category": "state-model",
+    "id": "claim-013"
+  },
+  {
+    "claim": "ContractState has a state field of type ImpactValue and an operations field of type Map<String, SNARKVerifierKey>",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "130-136",
+    "category": "state-model",
+    "id": "claim-014"
+  },
+  {
+    "claim": "Contract Merkle trees are MerkleTree(d) Impact values with compile-time-fixed depth, stored as part of the Impact state",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "137-137",
+    "category": "state-model",
+    "id": "claim-015"
+  },
+  {
+    "claim": "Transaction processing has three phases: Well-formedness Check (stateless), Guaranteed Execution (stateful), and Fallible Execution (stateful, may fail)",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "143-159",
+    "category": "execution-flow",
+    "id": "claim-016"
+  },
+  {
+    "claim": "ZK proof verification occurs during the well-formedness check (stateless phase)",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "144-159",
+    "category": "execution-flow",
+    "id": "claim-017"
+  },
+  {
+    "claim": "Contract call ZK proofs are verified in the guaranteed phase, not during the well-formedness check",
+    "source_file": "plugins/core-concepts/skills/architecture/references/transaction-deep-dive.md",
+    "source_lines": "207-209",
+    "category": "execution-flow",
+    "id": "claim-018"
+  },
+  {
+    "claim": "For guaranteed offer balance: for each token type, sum(inputs) - sum(outputs) - fees + mints >= 0",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "165-174",
+    "category": "balance-verification",
+    "id": "claim-019"
+  },
+  {
+    "claim": "For merging transactions, at least one transaction must have empty contract calls",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "192-196",
+    "category": "transaction-merging",
+    "id": "claim-020"
+  },
+  {
+    "claim": "Contract Address = Hash(contract_state, nonce)",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "201-204",
+    "category": "address-derivation",
+    "id": "claim-021"
+  },
+  {
+    "claim": "Token Type = Hash(contract_address, domain_separator)",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "205-208",
+    "category": "address-derivation",
+    "id": "claim-022"
+  },
+  {
+    "claim": "Coin Commitment = Hash<(CoinInfo, CoinPublicKey)>",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "209-212",
+    "category": "cryptography",
+    "id": "claim-023"
+  },
+  {
+    "claim": "Nullifier = Hash<(CoinInfo, CoinSecretKey)>",
+    "source_file": "plugins/core-concepts/skills/architecture/SKILL.md",
+    "source_lines": "213-219",
+    "category": "cryptography",
+    "id": "claim-024"
+  },
+  {
+    "claim": "Pedersen commitment formula: Commit(v) = v*G + r*H where G and H are independent generator points on the elliptic curve",
+    "source_file": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md",
+    "source_lines": "17-22",
+    "category": "cryptography",
+    "id": "claim-025"
+  },
+  {
+    "claim": "There is one Schnorr proof per transaction",
+    "source_file": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md",
+    "source_lines": "36-37",
+    "category": "cryptography",
+    "id": "claim-026"
+  },
+  {
+    "claim": "The Schnorr proof proves that the contract contribution to the transaction has zero net value",
+    "source_file": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md",
+    "source_lines": "38-41",
+    "category": "cryptography",
+    "id": "claim-027"
+  },
+  {
+    "claim": "SchnorrProof structure contains: commitment (Point), challenge (Scalar), response (Scalar)",
+    "source_file": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md",
+    "source_lines": "45-51",
+    "category": "cryptography",
+    "id": "claim-028"
+  },
+  {
+    "claim": "The Schnorr challenge uses the Fiat-Shamir transform",
+    "source_file": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md",
+    "source_lines": "47-51",
+    "category": "cryptography",
+    "id": "claim-029"
+  },
+  {
+    "claim": "Coin commitment insertion places the commitment at position commitment_tree_first_free and then increments commitment_tree_first_free",
+    "source_file": "plugins/core-concepts/skills/architecture/references/state-management.md",
+    "source_lines": "33-41",
+    "category": "state-model",
+    "id": "claim-030"
+  },
+  {
+    "claim": "The commitment_tree_history window covers a configurable number of recent blocks and old roots expire over time",
+    "source_file": "plugins/core-concepts/skills/architecture/references/state-management.md",
+    "source_lines": "65-71",
+    "category": "state-model",
+    "id": "claim-031"
+  },
+  {
+    "claim": "The nullifiers set must persist forever to prevent double-spend and cannot be pruned",
+    "source_file": "plugins/core-concepts/skills/architecture/references/state-management.md",
+    "source_lines": "165-168",
+    "category": "state-model",
+    "id": "claim-032"
+  },
+  {
+    "claim": "The Compact type Boolean maps to a Field (0 or 1) in state representation",
+    "source_file": "plugins/core-concepts/skills/architecture/references/state-management.md",
+    "source_lines": "95-101",
+    "category": "type-mapping",
+    "id": "claim-033"
+  },
+  {
+    "claim": "Input structure contains: nullifier (Bytes<32>), type_value_commit (Bytes<32>), contract_address (Option<ContractAddress>), merkle_root (Bytes<32>), merkle_path (Vec<Bytes<32>>), zk_proof (Proof)",
+    "source_file": "plugins/core-concepts/skills/architecture/references/transaction-deep-dive.md",
+    "source_lines": "38-57",
+    "category": "transaction-structure",
+    "id": "claim-034"
+  },
+  {
+    "claim": "Output structure contains: commitment (Bytes<32>), type_value_commit (Bytes<32>), contract_address (Option<ContractAddress>), ciphertext (Option<Bytes>), zk_proof (Proof)",
+    "source_file": "plugins/core-concepts/skills/architecture/references/transaction-deep-dive.md",
+    "source_lines": "61-78",
+    "category": "transaction-structure",
+    "id": "claim-035"
+  },
+  {
+    "claim": "Transcript structure contains: gas_bound (u64), and effects including claimed_nullifiers, received_commitments, spent_commitments, contract_calls_claimed, mints, and program (ImpactProgram)",
+    "source_file": "plugins/core-concepts/skills/architecture/references/transaction-deep-dive.md",
+    "source_lines": "127-153",
+    "category": "transaction-structure",
+    "id": "claim-036"
+  },
+  {
+    "claim": "The Schnorr proof prevents value injection attacks where contracts could create value from nothing",
+    "source_file": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md",
+    "source_lines": "175-179",
+    "category": "security",
+    "id": "claim-037"
+  },
+  {
+    "claim": "CoinCommitment = Hash<(CoinInfo, ZswapCoinPublicKey)>",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "32-32",
+    "category": "cryptography",
+    "id": "claim-038"
+  },
+  {
+    "claim": "CoinNullifier = Hash<(CoinInfo, ZswapCoinSecretKey)>",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "42-42",
+    "category": "cryptography",
+    "id": "claim-039"
+  },
+  {
+    "claim": "CoinInfo = { value, type, nonce }",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "45-45",
+    "category": "data-model",
+    "id": "claim-040"
+  },
+  {
+    "claim": "The nullifier is computed from the raw coin data and the spending key, not from the commitment",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "47-47",
+    "category": "cryptography",
+    "id": "claim-041"
+  },
+  {
+    "claim": "The Zswap state historic roots are typed TimeFilterMap<MerkleTreeRoot> with time-based expiry",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "92-92",
+    "category": "state-model",
+    "id": "claim-042"
+  },
+  {
+    "claim": "Token types are 256-bit collision-resistant hashes",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "99-99",
+    "category": "token-type",
+    "id": "claim-043"
+  },
+  {
+    "claim": "The native token type identifier is the 256-bit zero value",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "100-100",
+    "category": "token-type",
+    "id": "claim-044"
+  },
+  {
+    "claim": "The native token type identifier is retrieved via nativeToken(): Bytes<32>",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "100-100",
+    "category": "token-type",
+    "id": "claim-045"
+  },
+  {
+    "claim": "Custom token types are computed as Hash(contract_address, domain_separator)",
+    "source_file": "plugins/core-concepts/skills/data-models/SKILL.md",
+    "source_lines": "101-101",
+    "category": "token-type",
+    "id": "claim-046"
+  },
+  {
+    "claim": "The commitment tree is append-only: commitment_tree_first_free never decreases",
+    "source_file": "plugins/core-concepts/skills/data-models/references/ledger-structure.md",
+    "source_lines": "32-33",
+    "category": "state-model",
+    "id": "claim-047"
+  },
+  {
+    "claim": "The commitment tree history is typed TimeFilterMap<MerkleTreeRoot> and entries expire based on time window",
+    "source_file": "plugins/core-concepts/skills/data-models/references/ledger-structure.md",
+    "source_lines": "42-44",
+    "category": "state-model",
+    "id": "claim-048"
+  },
+  {
+    "claim": "Contract address is computed as Hash(contract_state, nonce), derived from the initial contract state and a nonce",
+    "source_file": "plugins/core-concepts/skills/data-models/references/ledger-structure.md",
+    "source_lines": "57-61",
+    "category": "address-derivation",
+    "id": "claim-049"
+  },
+  {
+    "claim": "MerkleTree state type stores only the root on-chain and its contents are private",
+    "source_file": "plugins/core-concepts/skills/data-models/references/ledger-structure.md",
+    "source_lines": "67-67",
+    "category": "state-model",
+    "id": "claim-050"
+  },
+  {
+    "claim": "Pedersen commitments are used separately for balance proofs, not as Merkle tree leaves",
+    "source_file": "plugins/core-concepts/skills/data-models/references/ledger-structure.md",
+    "source_lines": "26-26",
+    "category": "cryptography",
+    "id": "claim-051"
+  },
+  {
+    "claim": "The entire UTXO is consumed on spending -- partial spends are impossible. Change is returned as a new UTXO",
+    "source_file": "plugins/core-concepts/skills/data-models/references/utxo-mechanics.md",
+    "source_lines": "34-34",
+    "category": "utxo-model",
+    "id": "claim-052"
+  },
+  {
+    "claim": "Midnight maintains a TimeFilterMap<MerkleTreeRoot> of valid past roots with time-based expiry",
+    "source_file": "plugins/core-concepts/skills/data-models/references/utxo-mechanics.md",
+    "source_lines": "98-102",
+    "category": "state-model",
+    "id": "claim-053"
+  },
+  {
+    "claim": "Midnight keeps the nullifier set append-only (does not prune spent outputs, unlike Bitcoin)",
+    "source_file": "plugins/core-concepts/skills/data-models/references/utxo-mechanics.md",
+    "source_lines": "143-143",
+    "category": "state-model",
+    "id": "claim-054"
+  },
+  {
+    "claim": "Bitcoin's Merkle tree contains transactions, while Midnight's Merkle tree contains coin commitments",
+    "source_file": "plugins/core-concepts/skills/data-models/references/utxo-mechanics.md",
+    "source_lines": "142-142",
+    "category": "data-model",
+    "id": "claim-055"
+  },
+  {
+    "claim": "persistentCommit<T> signature is (value: T, rand: Bytes<32>): Bytes<32>",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "31-31",
+    "category": "compact-stdlib",
+    "id": "claim-056"
+  },
+  {
+    "claim": "persistentHash<T> signature is (value: T): Bytes<32>",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "32-32",
+    "category": "compact-stdlib",
+    "id": "claim-057"
+  },
+  {
+    "claim": "transientCommit<T> signature is (value: T, rand: Field): Field",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "33-33",
+    "category": "compact-stdlib",
+    "id": "claim-058"
+  },
+  {
+    "claim": "transientHash<T> signature is (value: T): Field",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "34-34",
+    "category": "compact-stdlib",
+    "id": "claim-059"
+  },
+  {
+    "claim": "persistentCommit and persistentHash use SHA-256 and produce stable outputs across compiler upgrades",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "36-36",
+    "category": "compact-stdlib",
+    "id": "claim-060"
+  },
+  {
+    "claim": "transientCommit and transientHash are circuit-optimized but their algorithm may change between compiler versions",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "36-36",
+    "category": "compact-stdlib",
+    "id": "claim-061"
+  },
+  {
+    "claim": "persistentCommit clears witness taint on both input and result; no disclose() needed for the ledger write",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "62-64",
+    "category": "compact-stdlib",
+    "id": "claim-062"
+  },
+  {
+    "claim": "Hash functions do not clear witness taint because hash outputs could theoretically be brute-forced",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "40-40",
+    "category": "compact-stdlib",
+    "id": "claim-063"
+  },
+  {
+    "claim": "Compact provides hash-based commitments, not algebraic Pedersen commitments",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "27-27",
+    "category": "compact-stdlib",
+    "id": "claim-064"
+  },
+  {
+    "claim": "Pedersen commitments (v*G + r*H) are used internally by Zswap for balance proofs, not by Compact's persistentCommit",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "27-27",
+    "category": "cryptography",
+    "id": "claim-065"
+  },
+  {
+    "claim": "Set.member() argument must be public, so disclose() is needed when the argument is witness-derived",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "129-131",
+    "category": "compact-syntax",
+    "id": "claim-066"
+  },
+  {
+    "claim": "A two-step cast is required for Uint<64> to Bytes<32>: (round as Field) as Bytes<32>; direct Uint<64> to Bytes<32> cast is invalid",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "109-109",
+    "category": "compact-syntax",
+    "id": "claim-067"
+  },
+  {
+    "claim": "HistoricMerkleTree.checkRoot() accepts proofs against any prior version of the tree",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "162-162",
+    "category": "compact-stdlib",
+    "id": "claim-068"
+  },
+  {
+    "claim": "With plain MerkleTree, each insertion changes the root and invalidates all existing proofs",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "162-162",
+    "category": "compact-stdlib",
+    "id": "claim-069"
+  },
+  {
+    "claim": "MerkleTree.insert() hides the leaf value argument on-chain",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "166-166",
+    "category": "compact-stdlib",
+    "id": "claim-070"
+  },
+  {
+    "claim": "MerkleTreePath<N, T> struct has fields leaf: T and path: Vector<N, MerkleTreePathEntry>",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "170-170",
+    "category": "compact-stdlib",
+    "id": "claim-071"
+  },
+  {
+    "claim": "MerkleTreePathEntry has fields sibling: MerkleTreeDigest and goes_left: Boolean",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "170-170",
+    "category": "compact-stdlib",
+    "id": "claim-072"
+  },
+  {
+    "claim": "MerkleTreePath has no .value field",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "170-170",
+    "category": "compact-stdlib",
+    "id": "claim-073"
+  },
+  {
+    "claim": "There is no historicMember method on HistoricMerkleTree; use checkRoot only",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "172-172",
+    "category": "compact-stdlib",
+    "id": "claim-074"
+  },
+  {
+    "claim": "HistoricMerkleTree<N, T> holds at most 2^N leaves; depth 16 supports 65,536 members; depth 20 supports about 1 million",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "225-225",
+    "category": "compact-stdlib",
+    "id": "claim-075"
+  },
+  {
+    "claim": "Counter.read() returns Uint<64>",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "269-269",
+    "category": "compact-stdlib",
+    "id": "claim-076"
+  },
+  {
+    "claim": "Comparison operators (>=, <=, >, <) only work on Uint<N>, not Field",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "290-290",
+    "category": "compact-syntax",
+    "id": "claim-077"
+  },
+  {
+    "claim": "Which exported circuit was called is always visible to an on-chain observer (circuit name is part of the transaction)",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "357-357",
+    "category": "privacy-model",
+    "id": "claim-078"
+  },
+  {
+    "claim": "Map and Set operation arguments (keys, values, and elements) are public, with the exception that MerkleTree.insert() hides its leaf argument",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/SKILL.md",
+    "source_lines": "362-362",
+    "category": "privacy-model",
+    "id": "claim-079"
+  },
+  {
+    "claim": "generateRandomness() and generateSecureRandom() do not exist in Compact; randomness must come from a witness",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/references/commitment-schemes.md",
+    "source_lines": "151-151",
+    "category": "compact-stdlib",
+    "id": "claim-080"
+  },
+  {
+    "claim": "findPathForLeaf(leaf) performs an O(n) scan through all leaves",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/references/merkle-tree-usage.md",
+    "source_lines": "140-141",
+    "category": "compact-stdlib",
+    "id": "claim-081"
+  },
+  {
+    "claim": "pathForLeaf(index, leaf) performs O(log n) path construction when the leaf's index is known",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/references/merkle-tree-usage.md",
+    "source_lines": "144-145",
+    "category": "compact-stdlib",
+    "id": "claim-082"
+  },
+  {
+    "claim": "The number of MerkleTree insertions is observable (the tree index increments visibly)",
+    "source_file": "plugins/core-concepts/skills/privacy-patterns/references/merkle-tree-usage.md",
+    "source_lines": "193-194",
+    "category": "privacy-model",
+    "id": "claim-083"
+  },
+  {
+    "claim": "Midnight defines three core JSON schemas: the Compact AST, transactions, and zero-knowledge proofs",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "9-9",
+    "category": "protocol-schema",
+    "id": "claim-084"
+  },
+  {
+    "claim": "The Proof definition type property is an enum with values groth16 and plonk",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "94-94",
+    "category": "protocol-schema",
+    "id": "claim-085"
+  },
+  {
+    "claim": "The ZK proof schema proofSystem property is an enum with values groth16, plonk, and halo2",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "119-119",
+    "category": "protocol-schema",
+    "id": "claim-086"
+  },
+  {
+    "claim": "The ZK proof schema curve property is an enum with values bn254 and bls12-381",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "120-120",
+    "category": "protocol-schema",
+    "id": "claim-087"
+  },
+  {
+    "claim": "The ZK proof proof object element b is an array of exactly 2 arrays of 2 strings representing a G2 point",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "134-134",
+    "category": "protocol-schema",
+    "id": "claim-088"
+  },
+  {
+    "claim": "The transaction schema hash property is of type string with pattern ^0x[a-fA-F0-9]{64}$",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "76-76",
+    "category": "protocol-schema",
+    "id": "claim-089"
+  },
+  {
+    "claim": "The transaction schema has required properties: version, hash, contractAddress, circuitName, inputs, proof, publicOutputs, stateChanges, timestamp, sender, nonce, fee",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "75-86",
+    "category": "protocol-schema",
+    "id": "claim-090"
+  },
+  {
+    "claim": "The Compact compiler produces ASTs conforming to the Compact AST schema",
+    "source_file": "plugins/core-concepts/skills/protocol-schemas/SKILL.md",
+    "source_lines": "157-157",
+    "category": "protocol-schema",
+    "id": "claim-091"
+  },
+  {
+    "claim": "Midnight uses two foundational protocols: Kachina for data-protecting smart contracts and Zswap for shielded token transfers",
+    "source_file": "plugins/core-concepts/skills/protocols/SKILL.md",
+    "source_lines": "9-9",
+    "category": "protocol-design",
+    "id": "claim-092"
+  },
+  {
+    "claim": "Zswap is based on Zerocash",
+    "source_file": "plugins/core-concepts/skills/protocols/SKILL.md",
+    "source_lines": "77-77",
+    "category": "protocol-design",
+    "id": "claim-093"
+  },
+  {
+    "claim": "Token type in Zswap is computed as Hash(domain_separator, contract_address)",
+    "source_file": "plugins/core-concepts/skills/protocols/SKILL.md",
+    "source_lines": "139-141",
+    "category": "token-type",
+    "id": "claim-094"
+  },
+  {
+    "claim": "Kachina uses only non-interactive zero-knowledge proofs",
+    "source_file": "plugins/core-concepts/skills/protocols/references/kachina-deep-dive.md",
+    "source_lines": "6-8",
+    "category": "protocol-design",
+    "id": "claim-095"
+  },
+  {
+    "claim": "Kachina operates within the Universal Composability (UC) framework",
+    "source_file": "plugins/core-concepts/skills/protocols/references/kachina-deep-dive.md",
+    "source_lines": "14-18",
+    "category": "protocol-design",
+    "id": "claim-096"
+  },
+  {
+    "claim": "In Kachina, proof sizes are sublinear with respect to circuit complexity",
+    "source_file": "plugins/core-concepts/skills/protocols/references/kachina-deep-dive.md",
+    "source_lines": "151-152",
+    "category": "performance",
+    "id": "claim-097"
+  },
+  {
+    "claim": "In Kachina, verification time is constant per proof (milliseconds)",
+    "source_file": "plugins/core-concepts/skills/protocols/references/kachina-deep-dive.md",
+    "source_lines": "152-152",
+    "category": "performance",
+    "id": "claim-098"
+  },
+  {
+    "claim": "Zswap extends Zerocash with native token support (multi-asset) and atomic swaps",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "5-7",
+    "category": "protocol-design",
+    "id": "claim-099"
+  },
+  {
+    "claim": "Coin commitments in Zswap use a hash function, not Pedersen commitments",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "14-21",
+    "category": "cryptography",
+    "id": "claim-100"
+  },
+  {
+    "claim": "type_value_commit uses Pedersen commitments and exists solely for balance verification: type_value_commit = type*G_t + value*G_v + randomness*G_r",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "32-36",
+    "category": "cryptography",
+    "id": "claim-101"
+  },
+  {
+    "claim": "The receiveShielded function takes a ShieldedCoinInfo argument and returns []",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "197-199",
+    "category": "compact-stdlib",
+    "id": "claim-102"
+  },
+  {
+    "claim": "The sendShielded function takes QualifiedShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>; returns SendResult",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "201-203",
+    "category": "compact-stdlib",
+    "id": "claim-103"
+  },
+  {
+    "claim": "The mintUnshieldedToken function takes domainSep: Bytes<32>, value: Uint<64>, recipient: Either<ContractAddress, UserAddress>; returns Bytes<32>",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "205-207",
+    "category": "compact-stdlib",
+    "id": "claim-104"
+  },
+  {
+    "claim": "Zswap offers merge non-interactively",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "169-173",
+    "category": "protocol-design",
+    "id": "claim-105"
+  },
+  {
+    "claim": "Coins in Zswap can specify a contract address, and only that contract can spend them",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "180-182",
+    "category": "token-model",
+    "id": "claim-106"
+  },
+  {
+    "claim": "For balance verification in Zswap, for each token type: sum(input_values) = sum(output_values) + fees",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "120-122",
+    "category": "balance-verification",
+    "id": "claim-107"
+  },
+  {
+    "claim": "Homomorphic balance verification uses Pedersen value commitments: sum(input_type_value_commits) - sum(output_type_value_commits) = Commit(delta)",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "125-130",
+    "category": "balance-verification",
+    "id": "claim-108"
+  },
+  {
+    "claim": "The contract section's zero-value contribution is proven via a Schnorr proof (one per transaction)",
+    "source_file": "plugins/core-concepts/skills/protocols/references/zswap-internals.md",
+    "source_lines": "133-134",
+    "category": "cryptography",
+    "id": "claim-109"
+  },
+  {
+    "claim": "Contracts are written in Compact and compiled to Impact VM bytecode for on-chain execution and ZK circuits for off-chain proof generation",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "9-9",
+    "category": "contract-lifecycle",
+    "id": "claim-110"
+  },
+  {
+    "claim": "Each ledger field is declared individually with export ledger",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "27-27",
+    "category": "compact-syntax",
+    "id": "claim-111"
+  },
+  {
+    "claim": "Return type [] (empty tuple) indicates no return value",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "56-56",
+    "category": "compact-syntax",
+    "id": "claim-112"
+  },
+  {
+    "claim": "Witnesses are declaration-only in Compact -- they have no body",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "60-60",
+    "category": "compact-syntax",
+    "id": "claim-113"
+  },
+  {
+    "claim": "The implementation of witness functions is in TypeScript, running off-chain",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "60-60",
+    "category": "compact-syntax",
+    "id": "claim-114"
+  },
+  {
+    "claim": "There is no function keyword in Compact",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "86-86",
+    "category": "compact-syntax",
+    "id": "claim-115"
+  },
+  {
+    "claim": "The optional constructor() block runs once at deployment to initialize ledger state",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "90-90",
+    "category": "compact-syntax",
+    "id": "claim-116"
+  },
+  {
+    "claim": "The constructor has no parameters, no return type declaration, and no export or circuit keyword",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "101-101",
+    "category": "compact-syntax",
+    "id": "claim-117"
+  },
+  {
+    "claim": "Field is a finite field element (~254 bits) and occupies 1 field element",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "169-169",
+    "category": "compact-types",
+    "id": "claim-118"
+  },
+  {
+    "claim": "Uint<N> occupies ceil(N/254) field elements",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "170-170",
+    "category": "compact-types",
+    "id": "claim-119"
+  },
+  {
+    "claim": "Bytes<N> occupies ceil(N/31) field elements",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "171-171",
+    "category": "compact-types",
+    "id": "claim-120"
+  },
+  {
+    "claim": "Void does not exist in Compact -- use []",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "176-176",
+    "category": "compact-syntax",
+    "id": "claim-121"
+  },
+  {
+    "claim": "Address is not a primitive in Compact -- use Bytes<32> or ContractAddress/ZswapCoinPublicKey from stdlib",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "176-176",
+    "category": "compact-syntax",
+    "id": "claim-122"
+  },
+  {
+    "claim": "Use Vector<N, T> for fixed-size arrays. The syntax Field[5] is invalid",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "178-178",
+    "category": "compact-syntax",
+    "id": "claim-123"
+  },
+  {
+    "claim": "Only const exists for local variables in Compact. There is no let keyword",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "180-180",
+    "category": "compact-syntax",
+    "id": "claim-124"
+  },
+  {
+    "claim": "Token operations are imported via import CompactStandardLibrary; -- there is no selective import syntax",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "205-205",
+    "category": "compact-syntax",
+    "id": "claim-125"
+  },
+  {
+    "claim": "Every .compact file needs: pragma language_version 0.22;",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "314-314",
+    "category": "compact-syntax",
+    "id": "claim-126"
+  },
+  {
+    "claim": "for loop syntax is for (const i of 0..10) { } -- const, of keyword, parentheses required",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "318-318",
+    "category": "compact-syntax",
+    "id": "claim-127"
+  },
+  {
+    "claim": "Map uses .lookup(key) to read and .insert(key, value) to write (no bracket access)",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "323-323",
+    "category": "compact-syntax",
+    "id": "claim-128"
+  },
+  {
+    "claim": "Set uses .member(value) to check membership (not .contains())",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/SKILL.md",
+    "source_lines": "324-324",
+    "category": "compact-syntax",
+    "id": "claim-129"
+  },
+  {
+    "claim": "The ledger { } block syntax was removed in Compact 0.10.1 and causes a parse error",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "141-141",
+    "category": "compact-syntax",
+    "id": "claim-130"
+  },
+  {
+    "claim": "export sealed ledger is used for fields that should only be written during contract initialization",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "142-142",
+    "category": "compact-syntax",
+    "id": "claim-131"
+  },
+  {
+    "claim": "MerkleTree supports depths 2 through 32 (2 <= d <= 32)",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "86-86",
+    "category": "compact-stdlib",
+    "id": "claim-132"
+  },
+  {
+    "claim": "Map .lookup(key) returns the value, or zero/empty if key not present",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "49-50",
+    "category": "compact-stdlib",
+    "id": "claim-133"
+  },
+  {
+    "claim": "Division is available on Field only (modular inverse)",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "255-255",
+    "category": "compact-syntax",
+    "id": "claim-134"
+  },
+  {
+    "claim": "Direct Uint<N> to Bytes<N> cast is invalid -- cast through Field first",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "293-293",
+    "category": "compact-syntax",
+    "id": "claim-135"
+  },
+  {
+    "claim": "persistentHash takes exactly ONE typed argument; to hash multiple values, wrap them in a Vector",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "314-314",
+    "category": "compact-stdlib",
+    "id": "claim-136"
+  },
+  {
+    "claim": "Enum values use dot notation: Phase.commit (not Phase::commit)",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md",
+    "source_lines": "386-386",
+    "category": "compact-syntax",
+    "id": "claim-137"
+  },
+  {
+    "claim": "Phase 1 (Well-Formedness) is stateless: it does not read from or write to the ledger",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md",
+    "source_lines": "23-23",
+    "category": "execution-flow",
+    "id": "claim-138"
+  },
+  {
+    "claim": "Effects from phase 2 (Guaranteed) always persist, even if phase 3 fails",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md",
+    "source_lines": "27-27",
+    "category": "execution-flow",
+    "id": "claim-139"
+  },
+  {
+    "claim": "Phase 3 (Fallible) failure does NOT revert guaranteed phase effects",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md",
+    "source_lines": "47-47",
+    "category": "execution-flow",
+    "id": "claim-140"
+  },
+  {
+    "claim": "The ckpt opcode marks the boundary between guaranteed and fallible sections within a contract call",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md",
+    "source_lines": "129-129",
+    "category": "execution-flow",
+    "id": "claim-141"
+  },
+  {
+    "claim": "Contract calls within a transaction execute sequentially; each call sees state changes from previous calls",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md",
+    "source_lines": "115-125",
+    "category": "execution-flow",
+    "id": "claim-142"
+  },
+  {
+    "claim": "Every Impact VM operation has a fixed gas cost; if execution exceeds the declared gas bound, the transcript fails",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md",
+    "source_lines": "168-170",
+    "category": "gas-model",
+    "id": "claim-143"
+  },
+  {
+    "claim": "The Impact VM is stack-based and operates on a stack of values",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "7-7",
+    "category": "impact-vm",
+    "id": "claim-144"
+  },
+  {
+    "claim": "The Impact VM is non-Turing-complete: no backward jumps, guaranteeing termination",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "8-8",
+    "category": "impact-vm",
+    "id": "claim-145"
+  },
+  {
+    "claim": "The VM stack is initialized with three elements: [Context, Effects, State]",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "18-19",
+    "category": "impact-vm",
+    "id": "claim-146"
+  },
+  {
+    "claim": "The Impact VM supports value types: Cell, Array(n) where 0 < n < 16, Map, and MerkleTree(d) where 1 <= d <= 32",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "32-38",
+    "category": "impact-vm",
+    "id": "claim-147"
+  },
+  {
+    "claim": "The context is an Array with 5 entries: contract address, new coin allocations, block timestamp, timestamp divergence bound, block hash",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "44-51",
+    "category": "impact-vm",
+    "id": "claim-148"
+  },
+  {
+    "claim": "Currently only first two context entries (contract address and new coin allocations) are correctly initialized; entries 2-4 not yet correctly populated",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "53-53",
+    "category": "impact-vm",
+    "id": "claim-149"
+  },
+  {
+    "claim": "The program counter starts at 0 and can only increase; all iteration is unrolled at compile time",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "108-108",
+    "category": "impact-vm",
+    "id": "claim-150"
+  },
+  {
+    "claim": "Compact code compiles to two outputs: Impact bytecode (public state changes) and ZK circuits (private computation)",
+    "source_file": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md",
+    "source_lines": "128-129",
+    "category": "contract-lifecycle",
+    "id": "claim-151"
+  },
+  {
+    "claim": "Midnight uses a dual-token model: NIGHT for value/governance, DUST for transaction fees",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "9-9",
+    "category": "tokenomics",
+    "id": "claim-152"
+  },
+  {
+    "claim": "NIGHT has a fixed supply of 24 billion tokens (non-inflationary)",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "15-19",
+    "category": "tokenomics",
+    "id": "claim-153"
+  },
+  {
+    "claim": "1 NIGHT = 1,000,000 STARs",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "21-21",
+    "category": "tokenomics",
+    "id": "claim-154"
+  },
+  {
+    "claim": "NIGHT is unshielded (public)",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "22-22",
+    "category": "tokenomics",
+    "id": "claim-155"
+  },
+  {
+    "claim": "NIGHT is native on both Cardano and Midnight",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "23-23",
+    "category": "tokenomics",
+    "id": "claim-156"
+  },
+  {
+    "claim": "DUST is non-transferable between users",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "34-34",
+    "category": "tokenomics",
+    "id": "claim-157"
+  },
+  {
+    "claim": "DUST is shielded (private)",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "35-35",
+    "category": "tokenomics",
+    "id": "claim-158"
+  },
+  {
+    "claim": "DUST is continuously generated from NIGHT holdings",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "36-36",
+    "category": "tokenomics",
+    "id": "claim-159"
+  },
+  {
+    "claim": "DUST decays when disassociated from NIGHT",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "38-38",
+    "category": "tokenomics",
+    "id": "claim-160"
+  },
+  {
+    "claim": "Block reward formula: Actual Reward = Base Reward x [S + (1 - S) x U] where S=95% at launch, target U=50%",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "60-65",
+    "category": "tokenomics",
+    "id": "claim-161"
+  },
+  {
+    "claim": "Tokens are distributed for free \u2014 there is no token sale",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "81-81",
+    "category": "tokenomics",
+    "id": "claim-162"
+  },
+  {
+    "claim": "The Glacier Drop lasts 60 days",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "83-83",
+    "category": "tokenomics",
+    "id": "claim-163"
+  },
+  {
+    "claim": "Glacier Drop allocates 50% to Cardano holders, 20% to Bitcoin holders, 30% to other chain holders",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "88-90",
+    "category": "tokenomics",
+    "id": "claim-164"
+  },
+  {
+    "claim": "Glacier Drop eligibility requires minimum portfolio value of $100 USD at snapshot time",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "94-94",
+    "category": "tokenomics",
+    "id": "claim-165"
+  },
+  {
+    "claim": "The Scavenger Mine lasts 30 days",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "98-98",
+    "category": "tokenomics",
+    "id": "claim-166"
+  },
+  {
+    "claim": "The Lost-and-Found phase runs for 4 years after the Scavenger Mine",
+    "source_file": "plugins/core-concepts/skills/tokenomics/SKILL.md",
+    "source_lines": "110-110",
+    "category": "tokenomics",
+    "id": "claim-167"
+  },
+  {
+    "claim": "Midnight uses ZK SNARKs (Zero-Knowledge Succinct Non-interactive Arguments of Knowledge)",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/SKILL.md",
+    "source_lines": "19-19",
+    "category": "proof-system",
+    "id": "claim-168"
+  },
+  {
+    "claim": "A circuit is an arithmetic circuit \u2014 a directed acyclic graph of addition and multiplication gates over a finite field",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/SKILL.md",
+    "source_lines": "40-40",
+    "category": "proof-system",
+    "id": "claim-169"
+  },
+  {
+    "claim": "Proof size is small (less than a kilobyte)",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/SKILL.md",
+    "source_lines": "160-160",
+    "category": "performance",
+    "id": "claim-170"
+  },
+  {
+    "claim": "The Compact compilation pipeline is: Compact Source \u2192 Compiler \u2192 Circuit IR \u2192 ZKIR \u2192 Proving/Verification Keys",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/circuit-construction.md",
+    "source_lines": "1-18",
+    "category": "compilation",
+    "id": "claim-171"
+  },
+  {
+    "claim": "ZKIR is the final circuit representation optimized for the PLONK proving system",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/circuit-construction.md",
+    "source_lines": "21-21",
+    "category": "compilation",
+    "id": "claim-172"
+  },
+  {
+    "claim": "In Compact, ledger reads become public inputs in the circuit",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/circuit-construction.md",
+    "source_lines": "40-41",
+    "category": "circuit-construction",
+    "id": "claim-173"
+  },
+  {
+    "claim": "In Compact, values returned by witness functions become the witness (private inputs) in the circuit",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/circuit-construction.md",
+    "source_lines": "46-47",
+    "category": "circuit-construction",
+    "id": "claim-174"
+  },
+  {
+    "claim": "Verification is constant time regardless of circuit size (the succinct property)",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/circuit-construction.md",
+    "source_lines": "120-120",
+    "category": "performance",
+    "id": "claim-175"
+  },
+  {
+    "claim": "Midnight uses the PLONK proving system with polynomial commitments",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "28-28",
+    "category": "proof-system",
+    "id": "claim-176"
+  },
+  {
+    "claim": "PLONK uses gate-based arithmetization rather than constraint matrices",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "32-32",
+    "category": "proof-system",
+    "id": "claim-177"
+  },
+  {
+    "claim": "PLONK enforces copy constraints via a permutation argument using a grand product check",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "35-35",
+    "category": "proof-system",
+    "id": "claim-178"
+  },
+  {
+    "claim": "PLONK uses a universal Structured Reference String (SRS) \u2014 a single trusted setup that works for ALL circuits up to a maximum size",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "39-39",
+    "category": "proof-system",
+    "id": "claim-179"
+  },
+  {
+    "claim": "Per-circuit proving and verification keys are derived from the universal SRS during compilation \u2014 no per-circuit ceremony needed",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "47-47",
+    "category": "proof-system",
+    "id": "claim-180"
+  },
+  {
+    "claim": "Proof generation cost is proportional to circuit size",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "62-62",
+    "category": "performance",
+    "id": "claim-181"
+  },
+  {
+    "claim": "Verification involves checking polynomial commitment evaluations via pairing checks",
+    "source_file": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md",
+    "source_lines": "75-75",
+    "category": "proof-system",
+    "id": "claim-182"
+  },
+  {
+    "claim": "The concept-explainer agent loads exactly six skills: core-concepts:data-models, core-concepts:zero-knowledge, core-concepts:privacy-patterns, core-concepts:smart-contracts, core-concepts:protocols, core-concepts:architecture",
+    "source_file": "plugins/core-concepts/agents/concept-explainer.md",
+    "source_lines": "23-23",
+    "category": "agent-config",
+    "id": "claim-183"
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "files": [
+    {"path": "plugins/core-concepts/skills/architecture/SKILL.md", "type": "plugin", "chunk_group": "architecture"},
+    {"path": "plugins/core-concepts/skills/architecture/references/cryptographic-binding.md", "type": "plugin", "chunk_group": "architecture"},
+    {"path": "plugins/core-concepts/skills/architecture/references/state-management.md", "type": "plugin", "chunk_group": "architecture"},
+    {"path": "plugins/core-concepts/skills/architecture/references/transaction-deep-dive.md", "type": "plugin", "chunk_group": "architecture"},
+    {"path": "plugins/core-concepts/skills/data-models/SKILL.md", "type": "plugin", "chunk_group": "data-models"},
+    {"path": "plugins/core-concepts/skills/data-models/references/ledger-structure.md", "type": "plugin", "chunk_group": "data-models"},
+    {"path": "plugins/core-concepts/skills/data-models/references/utxo-mechanics.md", "type": "plugin", "chunk_group": "data-models"},
+    {"path": "plugins/core-concepts/skills/privacy-patterns/SKILL.md", "type": "plugin", "chunk_group": "privacy-patterns"},
+    {"path": "plugins/core-concepts/skills/privacy-patterns/references/commitment-schemes.md", "type": "plugin", "chunk_group": "privacy-patterns"},
+    {"path": "plugins/core-concepts/skills/privacy-patterns/references/merkle-tree-usage.md", "type": "plugin", "chunk_group": "privacy-patterns"},
+    {"path": "plugins/core-concepts/skills/protocol-schemas/SKILL.md", "type": "plugin", "chunk_group": "protocol-schemas"},
+    {"path": "plugins/core-concepts/skills/protocols/SKILL.md", "type": "plugin", "chunk_group": "protocols"},
+    {"path": "plugins/core-concepts/skills/protocols/references/kachina-deep-dive.md", "type": "plugin", "chunk_group": "protocols"},
+    {"path": "plugins/core-concepts/skills/protocols/references/zswap-internals.md", "type": "plugin", "chunk_group": "protocols"},
+    {"path": "plugins/core-concepts/skills/smart-contracts/SKILL.md", "type": "plugin", "chunk_group": "smart-contracts"},
+    {"path": "plugins/core-concepts/skills/smart-contracts/references/compact-syntax.md", "type": "plugin", "chunk_group": "smart-contracts"},
+    {"path": "plugins/core-concepts/skills/smart-contracts/references/execution-semantics.md", "type": "plugin", "chunk_group": "smart-contracts"},
+    {"path": "plugins/core-concepts/skills/smart-contracts/references/impact-vm.md", "type": "plugin", "chunk_group": "smart-contracts"},
+    {"path": "plugins/core-concepts/skills/tokenomics/SKILL.md", "type": "plugin", "chunk_group": "tokenomics"},
+    {"path": "plugins/core-concepts/skills/zero-knowledge/SKILL.md", "type": "plugin", "chunk_group": "zero-knowledge"},
+    {"path": "plugins/core-concepts/skills/zero-knowledge/references/circuit-construction.md", "type": "plugin", "chunk_group": "zero-knowledge"},
+    {"path": "plugins/core-concepts/skills/zero-knowledge/references/snark-internals.md", "type": "plugin", "chunk_group": "zero-knowledge"},
+    {"path": "plugins/core-concepts/agents/concept-explainer.md", "type": "plugin", "chunk_group": "agents"}
+  ]
+}

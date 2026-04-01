@@ -1,0 +1,10 @@
+[
+{"claim":"Midnight defines three core JSON schemas: the Compact AST, transactions, and zero-knowledge proofs","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"9-9","category":"protocol-schema"},
+{"claim":"The Proof definition type property is an enum with values groth16 and plonk","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"94-94","category":"protocol-schema"},
+{"claim":"The ZK proof schema proofSystem property is an enum with values groth16, plonk, and halo2","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"119-119","category":"protocol-schema"},
+{"claim":"The ZK proof schema curve property is an enum with values bn254 and bls12-381","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"120-120","category":"protocol-schema"},
+{"claim":"The ZK proof proof object element b is an array of exactly 2 arrays of 2 strings representing a G2 point","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"134-134","category":"protocol-schema"},
+{"claim":"The transaction schema hash property is of type string with pattern ^0x[a-fA-F0-9]{64}$","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"76-76","category":"protocol-schema"},
+{"claim":"The transaction schema has required properties: version, hash, contractAddress, circuitName, inputs, proof, publicOutputs, stateChanges, timestamp, sender, nonce, fee","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"75-86","category":"protocol-schema"},
+{"claim":"The Compact compiler produces ASTs conforming to the Compact AST schema","source_file":"plugins/core-concepts/skills/protocol-schemas/SKILL.md","source_lines":"157-157","category":"protocol-schema"}
+]

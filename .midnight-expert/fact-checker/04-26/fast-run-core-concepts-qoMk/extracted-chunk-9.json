@@ -1,0 +1,3 @@
+[
+{"claim":"The concept-explainer agent loads exactly six skills: core-concepts:data-models, core-concepts:zero-knowledge, core-concepts:privacy-patterns, core-concepts:smart-contracts, core-concepts:protocols, core-concepts:architecture","source_file":"plugins/core-concepts/agents/concept-explainer.md","source_lines":"23-23","category":"agent-config"}
+]

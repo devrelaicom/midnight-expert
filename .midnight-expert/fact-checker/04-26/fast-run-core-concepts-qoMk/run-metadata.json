@@ -1,0 +1,6 @@
+{
+  "mode": "fast-check",
+  "targets": ["@plugins/core-concepts/"],
+  "started_at": "2026-04-01T02:35:31Z",
+  "run_dir": ".midnight-expert/fact-checker/04-26/fast-run-core-concepts-qoMk"
+}
