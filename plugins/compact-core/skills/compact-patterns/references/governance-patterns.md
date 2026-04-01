@@ -45,8 +45,8 @@ constructor(requiredApprovals: Uint<64>) {
 
 circuit requireSigner(): Bytes<32> {
   const sk = local_secret_key();
-  const pk = get_public_key(sk);
-  assert(disclose(signers.member(pk)), "Not an authorized signer");
+  const pk = disclose(get_public_key(sk));
+  assert(signers.member(pk), "Not an authorized signer");
   return pk;
 }
 
@@ -71,8 +71,8 @@ export circuit propose(data: Bytes<32>): [] {
 export circuit approve(): [] {
   const pk = requireSigner();
   assert(proposalActive, "No active proposal");
-  assert(disclose(!approvals.member(pk)), "Already approved");
-  approvals.insert(disclose(pk), true);
+  assert(!approvals.member(pk), "Already approved");
+  approvals.insert(pk, true);
   approvalCount.increment(1);
 }
 

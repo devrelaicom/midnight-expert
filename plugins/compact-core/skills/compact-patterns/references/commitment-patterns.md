@@ -192,14 +192,14 @@ export circuit submitBid(bidAmount: Uint<64>): [] {
   assert(auctionPhase == AuctionPhase.bidding, "Bidding closed");
   assert(blockTimeLt(bidDeadline), "Bid deadline passed");
   const sk = local_secret_key();
-  const pk = get_public_key(sk);
-  assert(disclose(!bidCommitments.member(pk)), "Already submitted a bid");
+  const pk = disclose(get_public_key(sk));
+  assert(!bidCommitments.member(pk), "Already submitted a bid");
   const salt = get_randomness();
   // Do NOT disclose bidAmount here — the hash hides it
   const amountBytes = (bidAmount as Field) as Bytes<32>;
   const commitment = persistentHash<Vector<2, Bytes<32>>>([amountBytes, salt]);
   storeBidOpening(salt, bidAmount);
-  bidCommitments.insert(disclose(pk), disclose(commitment));
+  bidCommitments.insert(pk, disclose(commitment));
 }
 
 // Advance to reveal phase (anyone can call after deadline)
@@ -214,16 +214,16 @@ export circuit revealBid(): [] {
   assert(auctionPhase == AuctionPhase.revealing, "Not in reveal phase");
   assert(blockTimeLt(revealDeadline), "Reveal deadline passed");
   const sk = local_secret_key();
-  const pk = get_public_key(sk);
-  assert(disclose(bidCommitments.member(pk)), "No bid commitment found");
-  assert(disclose(!revealedBids.member(pk)), "Already revealed");
+  const pk = disclose(get_public_key(sk));
+  assert(bidCommitments.member(pk), "No bid commitment found");
+  assert(!revealedBids.member(pk), "Already revealed");
   const opening = getBidOpening();
   const salt = opening[0];
   const amount = opening[1];
   const amountBytes = (disclose(amount) as Field) as Bytes<32>;
   const expected = persistentHash<Vector<2, Bytes<32>>>([amountBytes, salt]);
   assert(disclose(expected == bidCommitments.lookup(pk)), "Bid commitment mismatch");
-  revealedBids.insert(disclose(pk), disclose(amount));
+  revealedBids.insert(pk, disclose(amount));
   // Track highest bid
   if (disclose(amount) > highestBid) {
     highestBid = disclose(amount);
