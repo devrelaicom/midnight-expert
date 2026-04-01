@@ -9,7 +9,7 @@ This error occurs when Node.js attempts to import a directory instead of a speci
 - **Stale terminal environment** after updating `~/.zshrc`, `~/.bashrc`, or similar shell config
 - **Node version switch** without opening a new terminal (e.g., after `nvm install` or `nvm alias default`)
 - **Environment variable changes** that haven't taken effect in the current shell session
-- **Incorrect Node version** - Midnight requires Node 18+
+- **Incorrect Node version** - Midnight requires Node 22+
 
 ## Fix
 
@@ -19,7 +19,7 @@ Do **not** just run `source ~/.zshrc` - this does not fully reset the shell envi
 
 ### 2. Verify the Node Version
 
-Midnight requires Node 18 or later.
+Midnight requires Node 22 or later.
 
 ```bash
 node --version
@@ -31,11 +31,11 @@ If a `.nvmrc` file exists in the project, use it:
 nvm use
 ```
 
-If the version is below 18, install and switch:
+If the version is below 22, install and switch:
 
 ```bash
-nvm install 18
-nvm use 18
+nvm install 22
+nvm use 22
 ```
 
 ### 3. Clear Module Caches

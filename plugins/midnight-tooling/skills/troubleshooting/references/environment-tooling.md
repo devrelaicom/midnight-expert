@@ -137,10 +137,9 @@ mise env
    compact --version
    ```
 4. **Open a new terminal** if environment tool configurations were changed during the switch.
-5. Reinstall the desired compiler version:
+5. Reinstall the desired compiler version and set it as default:
    ```bash
-   compact install <version>
-   compact use <version>
+   compact update <version>
    ```
 
 ## Claude Code Settings for COMPACT_DIRECTORY

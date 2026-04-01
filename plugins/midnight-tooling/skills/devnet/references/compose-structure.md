@@ -88,7 +88,7 @@ indexer:
 | `APP__INFRA__NODE__URL` | WebSocket connection to the node. Uses Docker internal DNS name `node` (the service name), not `localhost`. |
 | `APP__INFRA__STORAGE__PASSWORD`, `PUB_SUB__PASSWORD`, `LEDGER_STATE_STORAGE__PASSWORD` | Internal service passwords. These are dev defaults — all set to `indexer`. Only relevant inside the container. |
 | `APP__INFRA__SECRET` | Internal encryption secret for the indexer. Dev default — hex-encoded bytes. |
-| `healthcheck` | Checks for the existence of `/var/run/indexer-standalone/running` — a file the indexer creates once it's finished startup and is actively indexing. Longer `interval` (10s) and `start_period` (10s) because the indexer takes longer to initialize than the node. |
+| `healthcheck` | Checks for the existence of `/var/run/indexer-standalone/running` — a process-presence sentinel file created by the entrypoint script before launching the indexer binary, and removed on container exit. Its presence indicates the container is alive and the indexer process has been started. Longer `interval` (10s) and `start_period` (10s) because the indexer takes longer to initialize than the node. |
 | `depends_on` | Waits for the node's healthcheck to pass before starting. This ensures the node's RPC endpoint is ready before the indexer tries to connect. |
 
 ### Proof Server (`midnight-proof-server`)
