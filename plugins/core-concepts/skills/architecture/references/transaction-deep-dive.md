@@ -2,7 +2,7 @@
 
 ## Complete Transaction Anatomy
 
-A Midnight transaction combines token operations, contract interactions, and cryptographic binding into an atomic unit. Every transaction contains at least a guaranteed Zswap offer (which also handles fee payment), and optionally includes a fallible Zswap offer, contract calls, and authorized mints. A binding randomness value cryptographically ties all components together via homomorphic Pedersen commitments.
+A Midnight transaction combines token operations, contract interactions, and cryptographic binding into an atomic unit. A transaction optionally includes a guaranteed Zswap offer, one or more fallible Zswap offers (organized per segment), contract calls, and authorized mints. A binding randomness value cryptographically ties all components together via homomorphic Pedersen commitments.
 
 ## Zswap Offer Details
 
@@ -82,12 +82,12 @@ This phase validates structure and verifies all proofs:
 ### 3. Fallible Execution (stateful, may fail)
 
 - Similar to guaranteed phase
-- Only contract call effects reverted on failure
-- Fallible Zswap coin operations applied during guaranteed phase
+- Each fallible segment's effects (both coin operations and contract calls) are applied only if that segment succeeds
+- If a fallible segment fails, all its effects are discarded — guaranteed phase effects are unaffected
 
 ## Fee Handling
 
-Fees are paid through the Zswap balance mechanism. The guaranteed offer's balance must satisfy a non-negative delta for each token type. The excess — the amount by which inputs exceed outputs plus mints — becomes the transaction fee paid to the network. There is no explicit fee field; fees emerge naturally from the balance surplus.
+Transaction fees are paid in DUST and handled at the protocol level. There is no explicit fee field in the transaction structure. The balance mechanism ensures non-negative deltas per token type, with the fee accounting occurring in the DUST token dimension.
 
 ## Transaction Lifecycle
 
