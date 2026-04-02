@@ -46,7 +46,7 @@ For each claim in the list below (filtered by category if targeted):
 3. Dispatch the sub-agent(s) indicated by the domain skill's routing table
 4. Collect the verdict
 
-This follows the same flow as the `/verify` command — you are the orchestrator for each claim.
+This follows the same flow as the `/midnight-verify:verify` command — you are the orchestrator for each claim.
 
 ## Claim List
 
@@ -108,7 +108,7 @@ If there are zero failures, end with:
 ## Adding New Claims
 
 Add a row to the claim list table above. Each claim should:
-- Be verifiable through the normal `/verify` pipeline
+- Be verifiable through the normal `/midnight-verify:verify` pipeline
 - Have a deterministic expected verdict
 - Test a specific, observable behavior
 - Include the expected verdict qualifier (tested, zkir-checked, zkir-inspected, source-verified)

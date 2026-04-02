@@ -1,5 +1,6 @@
 ---
-description: Comprehensive review of Compact smart contract code covering 10 categories including privacy, security, tokens, concurrency, performance, and more, plus mechanical verification via /verify. Supports parallel execution via agent teams (when enabled) or concurrent subagents.
+name: compact-core:review-compact
+description: Comprehensive review of Compact smart contract code covering 10 categories including privacy, security, tokens, concurrency, performance, and more, plus mechanical verification via /midnight-verify:verify. Supports parallel execution via agent teams (when enabled) or concurrent subagents.
 allowed-tools: Bash, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, ToolSearch
 argument-hint: "[path/to/contract.compact or directory]"
 ---
@@ -265,16 +266,16 @@ Shared MCP Tool Evidence (pre-computed by orchestrator — reference when evalua
 
 ## Step 3.5: Mechanical Verification
 
-After all reviewer agents complete, run `/verify` on the contract for mechanical verification:
+After all reviewer agents complete, run `/midnight-verify:verify` on the contract for mechanical verification:
 
 ```bash
-/verify <contract.compact>
+/midnight-verify:verify <contract.compact>
 ```
 
 If witness `.ts` files were identified in Step 1, include them:
 
 ```bash
-/verify <contract.compact> <witnesses.ts>
+/midnight-verify:verify <contract.compact> <witnesses.ts>
 ```
 
 This provides authoritative verification of compilation, type correctness, witness consistency, and behavioral correctness. Include the verification results in the consolidated report.
@@ -329,7 +330,7 @@ After ALL reviewers complete, produce the consolidated report.
 
 **Contract:** [file path]
 **Witness:** [file path, if applicable]
-**Result:** [/verify output — verdict and evidence summary]
+**Result:** [/midnight-verify:verify output — verdict and evidence summary]
 
 ---
 

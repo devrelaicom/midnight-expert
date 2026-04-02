@@ -1,5 +1,5 @@
 ---
-name: core
+name: midnight-dapp-dev:core
 description: >-
   This skill should be used when building a Midnight DApp frontend,
   "create a React component for contract interaction", "set up wallet

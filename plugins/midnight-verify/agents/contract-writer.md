@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify Compact claims by writing and executing test contracts.
   Translates a claim into a minimal Compact contract, compiles it with the Compact
   CLI, runs the compiled output with @midnight-ntwrk/compact-runtime, and reports
-  what was observed. Dispatched by the /verify command.
+  what was observed. Dispatched by the /midnight-verify:verify command.
 
   Example 1: Claim "Tuples are 0-indexed" — writes a contract that returns tuple
   elements by index, compiles, runs, checks that t[0] is the first element.

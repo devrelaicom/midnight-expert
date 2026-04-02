@@ -1,5 +1,5 @@
 ---
-name: compact-cli
+name: midnight-tooling:compact-cli
 description: >-
   This skill should be used when the user asks about the Compact CLI, Compact
   Dev Tool, Compact Developer CLI, or compact devtools for Midnight Network

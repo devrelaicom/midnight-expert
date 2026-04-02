@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify Compact or Midnight claims by inspecting the actual
   source code of the compiler, ledger, runtime, or related repositories.
   Uses octocode-mcp for quick lookups, falls back to local cloning for deep
-  investigation. Dispatched by the /verify command.
+  investigation. Dispatched by the /midnight-verify:verify command.
 
   Example 1: Claim "Compact exports 57 unique primitives" — searches
   LFDT-Minokawa/compact for midnight-natives.ss, counts the actual exports.

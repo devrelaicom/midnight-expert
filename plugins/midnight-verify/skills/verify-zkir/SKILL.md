@@ -6,13 +6,13 @@ description: >-
   (accept/reject testing), circuit inspection (compiled structure analysis),
   or source investigation. Handles claims about opcode semantics, constraint
   behavior, field arithmetic, transcript protocol, and compiled circuit
-  properties. Loaded by the /verify command alongside the hub skill.
+  properties. Loaded by the /midnight-verify:verify command alongside the hub skill.
 version: 0.4.0
 ---
 
 # ZKIR Claim Classification
 
-This skill classifies ZKIR-related claims and determines which verification method to use. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies ZKIR-related claims and determines which verification method to use. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Claim Type → Method Routing
 

@@ -1,5 +1,5 @@
 ---
-name: compact-testing
+name: midnight-cq:compact-testing
 description: >-
   This skill should be used when the user asks to write compact tests, test my
   contract, set up simulator, mock contract, test witnesses, write unit tests

@@ -1,5 +1,5 @@
 ---
-name: release-notes
+name: midnight-tooling:release-notes
 description: This skill should be used when the user asks about "Midnight release notes", "what changed in version X", "latest release", "changelog", "show me the changelog", "what's new in Midnight", "component versions", "list versions", "compact release notes", "ledger release notes", "wallet release notes", "proof server release notes", "node release notes", "lace release notes", "midnight-js release notes", "indexer release notes", viewing release history, checking component update details, or comparing versions of any Midnight Network component.
 ---
 

@@ -1,4 +1,5 @@
 ---
+name: midnight-tooling:devnet
 description: Manage a local Midnight devnet — generate compose files, start/stop the network, check status and health, view logs and configuration
 allowed-tools: Bash, Read, Write, Edit, AskUserQuestion, mcp__octocode-mcp__githubGetFileContent, mcp__octocode-mcp__githubViewRepoStructure
 argument-hint: <generate [--directory <path>] [--node-version <X.Y.Z>] [--indexer-version <X.Y.Z>] [--proof-server-version <X.Y.Z>] [--skip-compatibility-matrix] [--no-verify] | update [--file <path>] [--skip-compatibility-matrix] | start [--pull] [--file <path>] | stop [--remove-volumes] [--name <name>] | restart [--pull] [--remove-volumes] [--file <path>] [--name <name>] | status [--name <name>] | health [--name <name>] | logs [--service <name>] [--lines <n>] [--name <name>] | config [--file <path>]>
@@ -19,7 +20,7 @@ If any command fails, report the error clearly and suggest:
 
 1. Check that Docker Desktop is running and the Docker daemon is accessible (`docker info`).
 2. Check that Docker Compose V2 is available (`docker compose version`).
-3. See the **troubleshooting** skill for further diagnosis, or run `/doctor` for automated diagnostics.
+3. See the **troubleshooting** skill for further diagnosis, or run `/midnight-tooling:doctor` for automated diagnostics.
 
 ## Step 1: Parse Subcommand from Arguments
 
@@ -190,7 +191,7 @@ Display the returned logs.
 If no subcommand was provided or the subcommand is not recognized, display:
 
 ```
-/devnet — Manage a local Midnight devnet
+/midnight-tooling:devnet — Manage a local Midnight devnet
 
 Compose file management:
   generate [--directory <path>]           Create a devnet.yml with latest stable versions

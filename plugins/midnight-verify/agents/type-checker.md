@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify SDK type claims or check user TypeScript files
   by running tsc --noEmit. Writes type assertion files for claims about
   the SDK API, or copies user .ts files into the SDK workspace. Dispatched
-  by the /verify command.
+  by the /midnight-verify:verify command.
 
   Example 1: Claim "deployContract returns DeployedContract" — writes a .ts
   file with type-level assertions, runs tsc, confirms the return type matches.

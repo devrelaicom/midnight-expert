@@ -1,6 +1,6 @@
 ---
-name: compact-review
-description: This skill should be used when reviewing Compact smart contract code, TypeScript witness implementations, or test files for a Midnight project. Applies when a user asks to "review my Compact contract", "audit this smart contract", "check my Midnight code", or "run a code review checklist". Provides category-specific checklists covering privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, architecture, code quality, testing, and documentation, plus mechanical verification via /verify.
+name: compact-core:compact-review
+description: This skill should be used when reviewing Compact smart contract code, TypeScript witness implementations, or test files for a Midnight project. Applies when a user asks to "review my Compact contract", "audit this smart contract", "check my Midnight code", or "run a code review checklist". Provides category-specific checklists covering privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, architecture, code quality, testing, and documentation, plus mechanical verification via /midnight-verify:verify.
 version: 0.1.0
 ---
 
@@ -29,16 +29,16 @@ The assigned review category determines which reference file to load. Load the r
 
 ## Verification
 
-Every review MUST include running `/verify` on the contract:
+Every review MUST include running `/midnight-verify:verify` on the contract:
 
 ```bash
-/verify <contract.compact>
+/midnight-verify:verify <contract.compact>
 ```
 
 For contracts with TypeScript witness implementations:
 
 ```bash
-/verify <contract.compact> <witnesses.ts>
+/midnight-verify:verify <contract.compact> <witnesses.ts>
 ```
 
 Verification results are authoritative for compilation correctness, type safety, witness consistency, and behavioral correctness. Include verification results alongside checklist findings in the review report.

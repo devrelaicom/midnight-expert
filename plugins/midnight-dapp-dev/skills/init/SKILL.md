@@ -1,5 +1,5 @@
 ---
-name: init
+name: midnight-dapp-dev:init
 description: >-
   This skill should be used when the user asks to "scaffold a Midnight DApp",
   "initialize a DApp UI", "add a frontend to my Midnight project",

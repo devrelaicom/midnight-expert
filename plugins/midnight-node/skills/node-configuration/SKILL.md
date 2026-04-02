@@ -1,5 +1,5 @@
 ---
-name: node-configuration
+name: midnight-node:node-configuration
 description: This skill should be used when the user asks about configuring a Midnight node, including CLI flags, environment variables, TOML presets, chain spec files, network selection (qanet, preview, preprod, perfnet, devnet), validator key setup (AURA seed, GRANDPA seed, BEEFY key, cross-chain seed), Substrate pruning and RPC flags, or debugging configuration with SHOW_CONFIG.
 version: 0.1.0
 ---

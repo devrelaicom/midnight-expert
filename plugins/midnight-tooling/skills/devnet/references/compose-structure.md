@@ -148,4 +148,4 @@ Users can edit the generated `devnet.yml` freely. Common modifications:
 - **Change log levels**: Modify `RUST_LOG` for more or less verbose indexer output.
 - **Change project name**: Edit the top-level `name` field. Use `--name` flag with commands to match.
 
-When running `/devnet update`, the agent reads the file and edits only the image tags — all other bespoke modifications are preserved. The `# Generated:` timestamp is also refreshed. If the file lacks a `# Generated:` comment, the agent adds one.
+When running `/midnight-tooling:devnet update`, the agent reads the file and edits only the image tags — all other bespoke modifications are preserved. The `# Generated:` timestamp is also refreshed. If the file lacks a `# Generated:` comment, the agent adds one.

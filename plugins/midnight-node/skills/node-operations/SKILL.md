@@ -1,5 +1,5 @@
 ---
-name: node-operations
+name: midnight-node:node-operations
 description: Running the Midnight node, validator mode, full node, archive node, dev mode, Docker deployment, midnight-node-docker, Prometheus metrics, node monitoring, memory monitoring, graceful shutdown, P2P networking, bootnodes, node keys, port 30333, node troubleshooting, blocks not finalizing, mainchain follower errors, IPC errors, state sync issues, node logs, node peers, node health checks, start a node, deploy a node, node not syncing, node crashes, out of memory, check node status.
 version: 0.1.0
 ---

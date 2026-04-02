@@ -1,5 +1,5 @@
 ---
-name: proof-server-api
+name: proof-server:proof-server-api
 description: This skill covers the proof server REST API and HTTP interface. Use it when the user asks about the prove, check, k-value, fetch-params, or proof-versions endpoints, the deprecated prove-tx endpoint, proof generation API, proof server health check, proof server readiness check, proof server port, worker utilization, queue capacity, request/response format, binary serialization format, status codes, CORS policy, or error codes.
 version: 0.1.0
 ---

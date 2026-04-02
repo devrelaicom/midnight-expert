@@ -1,7 +1,7 @@
 {
   "name": "midnight-fact-check",
-  "version": "0.2.0",
-  "description": "Fact-checking pipeline for Midnight content — extracts testable claims from any source (markdown, code, PDFs, URLs, GitHub repos), classifies them by domain (Compact, SDK, ZKIR, Witness), and verifies each claim using the midnight-verify framework. Produces structured JSON artifacts and human-readable reports.",
+  "version": "0.2.1",
+  "description": "Fact-checking pipeline for Midnight content \u2014 extracts testable claims from any source (markdown, code, PDFs, URLs, GitHub repos), classifies them by domain (Compact, SDK, ZKIR, Witness), and verifies each claim using the midnight-verify framework. Produces structured JSON artifacts and human-readable reports.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"

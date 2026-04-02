@@ -1,5 +1,5 @@
 ---
-name: setup-test-wallets
+name: midnight-wallet:setup-test-wallets
 description: >-
   This skill should be used when the user asks to setup test wallets, create
   test accounts, generate test wallets, create alice bob charlie wallets,

@@ -196,7 +196,7 @@ node ledger-exec.mjs
 
 **Claim mode** — you received a natural language claim about the SDK (e.g., "deployContract returns DeployedContract"). Go to Step 3A.
 
-**File mode** — you received a `.ts` file to verify (e.g., `/verify src/deploy.ts`). Go to Step 3B.
+**File mode** — you received a `.ts` file to verify (e.g., `/midnight-verify:verify src/deploy.ts`). Go to Step 3B.
 
 ## Step 3A: Claim Mode — Write Type Assertions
 

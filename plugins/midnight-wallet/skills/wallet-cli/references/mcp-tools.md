@@ -288,11 +288,11 @@ Delete the cached wallet synchronization state. Forces the next operation to re-
 
 > **Warning:** The tools in this section conflict with the `midnight-tooling` plugin's devnet skill. The wallet-cli manages containers with names `node`, `indexer`, and `proof-server`, while the devnet skill uses `midnight-node`, `midnight-indexer`, and `midnight-proof-server` — different container names but the same ports. Running both results in port conflicts and an unstable environment.
 >
-> **Do not use `midnight_localnet_up`, `midnight_localnet_stop`, `midnight_localnet_down`, or `midnight_localnet_clean` when the devnet is managed by `/devnet`.** Only `midnight_localnet_status` is safe to call as a read-only health check.
+> **Do not use `midnight_localnet_up`, `midnight_localnet_stop`, `midnight_localnet_down`, or `midnight_localnet_clean` when the devnet is managed by `/midnight-tooling:devnet`.** Only `midnight_localnet_status` is safe to call as a read-only health check.
 
 ### `midnight_localnet_up`
 
-**DO NOT USE.** Start local development network containers. Use `/devnet start` from the `midnight-tooling` plugin instead.
+**DO NOT USE.** Start local development network containers. Use `/midnight-tooling:devnet start` from the `midnight-tooling` plugin instead.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -302,7 +302,7 @@ Delete the cached wallet synchronization state. Forces the next operation to re-
 
 ### `midnight_localnet_stop`
 
-**DO NOT USE.** Stop running containers while preserving state. Use `/devnet stop` from the `midnight-tooling` plugin instead.
+**DO NOT USE.** Stop running containers while preserving state. Use `/midnight-tooling:devnet stop` from the `midnight-tooling` plugin instead.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -312,7 +312,7 @@ Delete the cached wallet synchronization state. Forces the next operation to re-
 
 ### `midnight_localnet_down`
 
-**DO NOT USE.** Remove containers and volumes. Use `/devnet stop` from the `midnight-tooling` plugin instead.
+**DO NOT USE.** Remove containers and volumes. Use `/midnight-tooling:devnet stop` from the `midnight-tooling` plugin instead.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -340,7 +340,7 @@ Stream service logs from running containers.
 |-----------|------|----------|-------------|
 | _(none)_ | — | — | — |
 
-**Returns:** Log output from containers. Safe to call for debugging, but do not use `midnight_localnet_up/stop/down/clean` when the devnet is managed by `/devnet`.
+**Returns:** Log output from containers. Safe to call for debugging, but do not use `midnight_localnet_up/stop/down/clean` when the devnet is managed by `/midnight-tooling:devnet`.
 
 ---
 

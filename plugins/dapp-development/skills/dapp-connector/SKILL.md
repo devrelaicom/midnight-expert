@@ -1,5 +1,5 @@
 ---
-name: dapp-connector
+name: dapp-development:dapp-connector
 description: This skill should be used when the user asks about the DApp connector, Lace wallet, wallet connection, InitialAPI, ConnectedAPI, WalletConnectedAPI, DAppConnectorAPIError, browser wallet, React wallet, Next.js wallet, wallet integration, Lace setup, wallet detection, shielded address, unshielded address, building MidnightProviders in a browser context, bridging wallet to SDK providers, window.midnight, getConfiguration, FetchZkConfigProvider, or balanceUnsealedTransaction.
 version: 0.1.0
 ---

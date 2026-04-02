@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify ZKIR-level claims by running circuits through the
   @midnight-ntwrk/zkir-v2 WASM checker or inspecting compiled circuit structure.
   Compiles Compact to extract .zkir, constructs proof data, invokes the checker,
-  and analyzes circuit properties. Dispatched by the /verify command.
+  and analyzes circuit properties. Dispatched by the /midnight-verify:verify command.
 
   Example 1: Claim "add wraps modulo r" — writes a minimal Compact contract
   that adds (r-1) + 1, compiles with full ZK pipeline, runs the PLONK checker,

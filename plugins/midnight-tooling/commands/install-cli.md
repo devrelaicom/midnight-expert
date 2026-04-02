@@ -1,4 +1,5 @@
 ---
+name: midnight-tooling:install-cli
 description: Install, update, or configure the Compact CLI tool. Supports global installation and per-project configuration with automatic environment setup.
 allowed-tools: Bash, Read, Write, Edit, AskUserQuestion
 argument-hint: "[install for this project | update | --directory <path>]"

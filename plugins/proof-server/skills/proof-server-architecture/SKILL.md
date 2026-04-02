@@ -1,5 +1,5 @@
 ---
-name: proof-server-architecture
+name: proof-server:proof-server-architecture
 description: This skill covers proof server internals and how the proof server works. Use it when the user asks about architecture, worker pool, job queue, job lifecycle, proving pipeline, concurrency, capacity limiting, garbage collection, ZKIR versioning, key material management, key prefetching, binary serialization format, the midnight-proof-server binary, Rust codebase, components, dependencies, Docker image build, or multi-arch support.
 version: 0.1.0
 ---

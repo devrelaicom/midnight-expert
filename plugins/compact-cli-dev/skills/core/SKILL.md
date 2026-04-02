@@ -1,5 +1,5 @@
 ---
-name: core
+name: compact-cli-dev:core
 description: >-
   This skill should be used when the user asks about CLI scaffold, Oclif CLI,
   CLI template, wallet commands, contract deployment CLI, devnet CLI,

@@ -1,5 +1,5 @@
 ---
-name: quality-init
+name: midnight-cq:quality-init
 description: >-
   This skill should be used when the user asks to set up linting, add code
   quality tooling, configure biome, init project quality, add CI workflows,

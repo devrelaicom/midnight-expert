@@ -1,5 +1,5 @@
 ---
-name: proof-server-operations
+name: proof-server:proof-server-operations
 description: This skill covers monitoring, troubleshooting, and capacity planning for the proof server. Use it when the user asks about health check patterns, readiness checks, busy status, logs, performance, job queue monitoring, Docker or Kubernetes health checks, 503 errors, 429 errors, 400 errors, timeout issues, memory issues, debugging, version mismatch, version compatibility, scaling, horizontal scaling, or how to diagnose proof server issues.
 version: 0.1.0
 ---

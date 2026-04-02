@@ -1,5 +1,5 @@
 ---
-name: wallet-testing
+name: midnight-cq:wallet-testing
 description: >-
   This skill should be used when the user asks to write wallet tests, test my
   wallet variant, test my capability, test my wallet service, test WalletBuilder,

@@ -3,7 +3,7 @@ name: midnight-verify:verify-compact
 description: >-
   Compact-specific claim classification and method routing. Determines what
   kind of Compact claim is being verified and which verification method applies:
-  execution (compile+run), source inspection, or both. Loaded by the /verify
+  execution (compile+run), source inspection, or both. Loaded by the /midnight-verify:verify
   command alongside the hub skill. Provides the claim type → method routing
   table and guidance on negative testing.
 version: 0.3.0
@@ -11,7 +11,7 @@ version: 0.3.0
 
 # Compact Claim Classification
 
-This skill classifies Compact-related claims and determines which verification method to use. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies Compact-related claims and determines which verification method to use. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Claim Type → Method Routing
 

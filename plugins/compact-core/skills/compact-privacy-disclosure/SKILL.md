@@ -1,5 +1,5 @@
 ---
-name: compact-privacy-disclosure
+name: compact-core:compact-privacy-disclosure
 description: This skill should be used when the user asks about Midnight's privacy model, the disclose() function and disclosure rules, how to fix disclosure compiler errors, privacy-by-default design, witness protection program, commitment schemes (persistentCommit, transientCommit), nullifier patterns for double-spend prevention, MerkleTree membership proofs for anonymous authentication, unlinkable actions via round-based keys, selective disclosure, commit-reveal schemes, shielded vs transparent state design, what is visible on-chain, safe stdlib routines (transientCommit hiding witness data), or debugging "potential witness-value disclosure must be declared" errors.
 version: 0.1.0
 ---

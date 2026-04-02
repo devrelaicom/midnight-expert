@@ -23,7 +23,7 @@ description: >-
   knowledge of stdlib coin management functions, UTXO model, and nonce management.
 
   Example 5: After writing a counter contract with witnesses — the compact-dev
-  agent compiles, then runs /verify contracts/counter.compact src/witnesses.ts
+  agent compiles, then runs /midnight-verify:verify contracts/counter.compact src/witnesses.ts
   to mechanically verify the contract-witness interface before presenting to user.
 model: opus
 color: cyan
@@ -127,13 +127,13 @@ compact compile <path-to-contract>.compact
 
 ### Step 7: Verify
 
-After the contract compiles, run `/verify` to mechanically verify correctness through the full verification pipeline (compilation, execution, and proof validation).
+After the contract compiles, run `/midnight-verify:verify` to mechanically verify correctness through the full verification pipeline (compilation, execution, and proof validation).
 
-- After writing or modifying a `.compact` file: invoke `/verify <file.compact>`
-- After writing a `.compact` file with a corresponding `.ts` witness: invoke `/verify <contract.compact> <witnesses.ts>`
-- After modifying existing contract or witness code: invoke `/verify` on the changed files
+- After writing or modifying a `.compact` file: invoke `/midnight-verify:verify <file.compact>`
+- After writing a `.compact` file with a corresponding `.ts` witness: invoke `/midnight-verify:verify <contract.compact> <witnesses.ts>`
+- After modifying existing contract or witness code: invoke `/midnight-verify:verify` on the changed files
 
-**This is not optional.** Verification is part of the development workflow. Do not present code to the user as complete until `/verify` confirms it.
+**This is not optional.** Verification is part of the development workflow. Do not present code to the user as complete until `/midnight-verify:verify` confirms it.
 
 ### Step 8: Review (For Complex Contracts)
 

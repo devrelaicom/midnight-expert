@@ -1,5 +1,5 @@
 ---
-name: indexer-graphql-api
+name: midnight-indexer:indexer-graphql-api
 description: This skill should be used when the user asks about indexer GraphQL, indexer queries, indexer subscriptions, indexer mutations, GraphQL API, contractAction query, block query, wallet connect, shieldedTransactions subscription, unshieldedTransactions, dustLedgerEvents, zswapLedgerEvents, indexer endpoint, api/v4/graphql, indexer network endpoints, or GraphQL query limits. Covers "how to query blocks", "how to subscribe to contract events", "GraphQL schema", and "WebSocket subscription".
 version: 0.1.0
 ---

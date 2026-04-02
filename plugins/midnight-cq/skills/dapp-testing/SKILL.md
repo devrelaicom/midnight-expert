@@ -1,5 +1,5 @@
 ---
-name: dapp-testing
+name: midnight-cq:dapp-testing
 description: >-
   This skill should be used when the user asks to test my dapp, write e2e
   tests, test wallet connection, playwright midnight, test transaction UI,

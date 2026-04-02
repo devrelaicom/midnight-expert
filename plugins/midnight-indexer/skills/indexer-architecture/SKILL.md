@@ -1,5 +1,5 @@
 ---
-name: indexer-architecture
+name: midnight-indexer:indexer-architecture
 description: This skill covers indexer architecture, components, chain-indexer, wallet-indexer, indexer-api, spo-indexer, standalone mode, cloud mode, configuration, deployment, storage, PostgreSQL vs SQLite, NATS, telemetry, or node connection. Covers "how does the indexer connect to a node", "what database does the indexer use", "how to run the indexer locally", "choosing between standalone and cloud deployment", and "indexer data flow".
 version: 0.1.0
 ---

@@ -2,10 +2,10 @@
 
 ## Proof Server in Devnet Context
 
-If the proof server is running as part of the local devnet (started via `/devnet start`), it is one of three services managed together. Issues may be caused by the node or indexer rather than the proof server itself.
+If the proof server is running as part of the local devnet (started via `/midnight-tooling:devnet start`), it is one of three services managed together. Issues may be caused by the node or indexer rather than the proof server itself.
 
-- Check all services: use `/devnet status` and `/devnet health`
-- Check logs for the specific service: `/devnet logs --service proof-server`
+- Check all services: use `/midnight-tooling:devnet status` and `/midnight-tooling:devnet health`
+- Check logs for the specific service: `/midnight-tooling:devnet logs --service proof-server`
 - For network-level issues (all services failing), see `references/devnet-issues.md`
 
 The troubleshooting steps below apply to both standalone and devnet proof servers.

@@ -6,15 +6,15 @@ Covers how `midnight-wallet-cli` integrates with the local development network m
 
 ## Core Rule
 
-Use `/devnet` for network lifecycle management. Use wallet MCP tools for wallet operations.
+Use `/midnight-tooling:devnet` for network lifecycle management. Use wallet MCP tools for wallet operations.
 
 | Task | Tool |
 |------|------|
-| Start the devnet | `/devnet start` |
-| Stop the devnet | `/devnet stop` |
-| Check devnet health | `/devnet health` |
-| View devnet logs | `/devnet logs` |
-| Restart devnet | `/devnet restart` |
+| Start the devnet | `/midnight-tooling:devnet start` |
+| Stop the devnet | `/midnight-tooling:devnet stop` |
+| Check devnet health | `/midnight-tooling:devnet health` |
+| View devnet logs | `/midnight-tooling:devnet logs` |
+| Restart devnet | `/midnight-tooling:devnet restart` |
 | Generate a wallet | `midnight_wallet_generate` |
 | Check balance | `midnight_balance` |
 | Transfer tokens | `midnight_transfer` |
@@ -135,8 +135,8 @@ Individual tool calls also accept endpoint override parameters without changing 
 ## Typical Devnet Workflow
 
 ```
-1. /devnet start          ← Start node, indexer, proof server
-2. /devnet health         ← Wait for all services to be healthy
+1. /midnight-tooling:devnet start          ← Start node, indexer, proof server
+2. /midnight-tooling:devnet health         ← Wait for all services to be healthy
 3. midnight_wallet_generate { "name": "alice" }
 4. midnight_airdrop { "amount": "100" }
 5. midnight_dust_register {}
@@ -149,9 +149,9 @@ Individual tool calls also accept endpoint override parameters without changing 
 
 If wallet tools fail with `NETWORK_ERROR` or `ECONNREFUSED`:
 
-1. Check devnet status: `/devnet status`
-2. Check service health: `/devnet health`
-3. View recent logs: `/devnet logs`
-4. Restart if needed: `/devnet restart`
+1. Check devnet status: `/midnight-tooling:devnet status`
+2. Check service health: `/midnight-tooling:devnet health`
+3. View recent logs: `/midnight-tooling:devnet logs`
+4. Restart if needed: `/midnight-tooling:devnet restart`
 
 The wallet-cli auto-detects endpoints from `docker ps`, so if the devnet is running and healthy, no manual endpoint configuration is needed.

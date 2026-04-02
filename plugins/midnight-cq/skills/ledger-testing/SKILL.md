@@ -1,5 +1,5 @@
 ---
-name: ledger-testing
+name: midnight-cq:ledger-testing
 description: >-
   This skill should be used when the user asks to write ledger tests, test
   transaction construction, test proof staging, test ZswapLocalState, test

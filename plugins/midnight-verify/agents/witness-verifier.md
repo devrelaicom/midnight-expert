@@ -5,9 +5,9 @@ description: >-
   match Compact contract declarations. Compiles the contract, type-checks the
   witness against generated types, runs structural analysis (name matching,
   return tuple shape, WitnessContext usage, private state patterns), and
-  executes the combined contract+witness pipeline. Dispatched by the /verify command.
+  executes the combined contract+witness pipeline. Dispatched by the /midnight-verify:verify command.
 
-  Example 1: User runs /verify contracts/counter.compact src/witnesses.ts —
+  Example 1: User runs /midnight-verify:verify contracts/counter.compact src/witnesses.ts —
   the agent compiles the contract, type-checks the witness against the generated
   Witnesses type, runs the structural checklist, and executes the circuit with
   the witness implementation.

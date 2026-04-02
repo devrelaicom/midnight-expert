@@ -1,7 +1,7 @@
 {
   "name": "dapp-development",
-  "version": "0.1.0",
-  "description": "Building browser-based DApps on Midnight — DApp Connector API for Lace wallet integration, React and Next.js patterns, and advanced Midnight.js SDK usage",
+  "version": "0.1.1",
+  "description": "Building browser-based DApps on Midnight \u2014 DApp Connector API for Lace wallet integration, React and Next.js patterns, and advanced Midnight.js SDK usage",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"

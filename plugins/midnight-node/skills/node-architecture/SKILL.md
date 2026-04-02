@@ -1,5 +1,5 @@
 ---
-name: node-architecture
+name: midnight-node:node-architecture
 description: Midnight node architecture, Substrate runtime, Polkadot SDK, pallets, consensus, AURA, GRANDPA, BEEFY, MMR, ledger storage, ParityDB, transaction lifecycle, ZK proof verification, Cardano integration, partner chains, cNIGHT bridging, transaction filtering, throttle pallet, source layout, epoch, block production, finality, light client, how does the Midnight node produce blocks, what pallets does Midnight use, how do transactions flow through the node, how does Midnight connect to Cardano.
 version: 0.1.0
 ---

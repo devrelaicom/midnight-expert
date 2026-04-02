@@ -1,5 +1,5 @@
 ---
-name: compact-structure
+name: compact-core:compact-structure
 description: This skill should be used when the user asks to write, structure, or scaffold a Compact smart contract for Midnight, or asks about contract anatomy, pragma and imports, ledger declarations (including sealed ledger), data types (Field, Bytes, Uint, enums, structs), circuits, witnesses, constructors, export patterns, or disclosure rules. Also triggered by mentions of "pragma language_version", "CompactStandardLibrary", circuit definitions, or Compact common mistakes.
 version: 0.1.0
 ---

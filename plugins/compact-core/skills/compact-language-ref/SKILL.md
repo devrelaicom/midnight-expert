@@ -1,5 +1,5 @@
 ---
-name: compact-language-ref
+name: compact-core:compact-language-ref
 description: This skill should be used when the user asks about Compact language mechanics, syntax reference, types (Field, Bytes, Uint, Boolean, Opaque, Vector, Maybe, Either, enums, structs), type casting with "as", operators, arithmetic, control flow, for loops, modules, imports, include, pragma, stdlib functions (persistentHash, transientHash, disclose, assert, pad, default), map and fold operations, or Compact compiler errors and wrong syntax patterns.
 version: 0.1.0
 ---

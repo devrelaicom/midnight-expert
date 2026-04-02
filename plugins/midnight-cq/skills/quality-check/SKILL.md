@@ -1,5 +1,5 @@
 ---
-name: quality-check
+name: midnight-cq:quality-check
 description: >-
   This skill should be used when the user asks to run linting, check code
   quality, run tests, or needs help with "why is biome failing", "fix lint

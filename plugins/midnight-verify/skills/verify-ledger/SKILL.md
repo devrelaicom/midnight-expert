@@ -8,14 +8,14 @@ description: >-
   (secondary for API behavioral claims). Handles claims about transaction
   structure, token mechanics (Night/Zswap/Dust), cost model, on-chain VM,
   contract execution, cryptographic primitives, well-formedness rules, and the
-  @midnight-ntwrk/ledger-v8 TypeScript API. Loaded by the /verify command
+  @midnight-ntwrk/ledger-v8 TypeScript API. Loaded by the /midnight-verify:verify command
   alongside the hub skill.
 version: 0.1.0
 ---
 
 # Ledger/Protocol Claim Classification
 
-This skill classifies ledger and protocol claims and determines which verification method to use. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies ledger and protocol claims and determines which verification method to use. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Verification Flow
 

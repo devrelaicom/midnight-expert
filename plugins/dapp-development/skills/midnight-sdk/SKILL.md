@@ -1,5 +1,5 @@
 ---
-name: midnight-sdk
+name: dapp-development:midnight-sdk
 description: Midnight SDK, midnight-js packages, MidnightProviders, deployContract, findDeployedContract, callTx, submitCallTx, transaction lifecycle, SDK types, testkit-js, FinalizedTxData, WalletProvider, MidnightProvider, PublicDataProvider, ProofProvider, ZkConfigProvider, contract maintenance, verifier keys, replaceAuthority, observable patterns, state subscriptions, setNetworkId, indexerPublicDataProvider, httpClientProofProvider, @midnight-ntwrk, set up providers, or connect to indexer.
 version: 0.1.0
 ---
