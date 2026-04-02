@@ -8,16 +8,8 @@ AI-powered development tools for the [Midnight](https://midnight.network/) block
 
 ## Install
 
-Install the full marketplace from within Claude Code:
-
-```
-/install-marketplace https://github.com/devrelaicom/midnight-expert
-```
-
-Or install individual plugins:
-
-```
-/install-plugin compact-core
+```bash
+curl -fsSL midnightntwrk.expert/me-install.sh | bash
 ```
 
 Once installed, skills activate automatically based on what you're working on. Ask Claude to write a Compact contract, review existing code, set up a devnet, or explain a privacy pattern — the relevant skills engage on their own.
