@@ -1,6 +1,6 @@
 ---
 name: midnight-expert:doctor
-description: This skill should be used when the user asks to "check my setup", "run diagnostics", "doctor", "health check", "verify my installation", "are my plugins working", "check plugin status", "what's broken", "fix my setup", or invokes /midnight-expert:doctor. Provides comprehensive health reporting for the midnight-expert ecosystem — plugin installation, MCP servers, external tools, cross-plugin references, and NPM registry.
+description: This skill should be used when the user asks to "check my setup", "run diagnostics", "doctor", "health check", "verify my installation", "are my plugins working", "check plugin status", "what's broken", "fix my setup", "debug my environment", "check dependencies", "environment check", "troubleshoot setup", or invokes /midnight-expert:doctor. Provides comprehensive health reporting for the midnight-expert ecosystem — plugin installation, MCP servers, external tools, cross-plugin references, and NPM registry.
 version: 0.1.0
 ---
 
@@ -68,6 +68,16 @@ Each agent has `subagent_type: "general-purpose"` and `run_in_background: true`.
 - If the user says **yes**: invoke the `midnight-tooling:doctor` skill (via Skill tool) and wait for it and all 5 background agents to complete.
 - If the user says **no**: wait for the 5 background agents to complete.
 
+## Step 2.5: Handle Agent Failures
+
+If any background agent fails (returns an error instead of structured output), include a single row in the corresponding report section:
+
+```
+| <section-name> | FAIL | Agent error: <error message> |
+```
+
+Do not skip the section — partial results are better than silence.
+
 ## Step 3: Present Health Report
 
 Parse all agent output. Each script outputs lines in the format:
@@ -76,11 +86,11 @@ Parse all agent output. Each script outputs lines in the format:
 CHECK_NAME | STATUS | DETAIL
 ```
 
-Map each STATUS to an emoji:
-- `pass` → PASS
-- `warn` → WARN
-- `critical` → FAIL
-- `info` → INFO
+Map each STATUS to a badge:
+- `pass` → `PASS`
+- `warn` → `WARN`
+- `critical` → `FAIL`
+- `info` → `INFO`
 
 Present a single formatted report. Omit any section where all checks pass and there is an `ALL_*_PASS` summary line — only show sections with issues or mixed results. If ALL sections pass, show a brief "all clear" summary.
 

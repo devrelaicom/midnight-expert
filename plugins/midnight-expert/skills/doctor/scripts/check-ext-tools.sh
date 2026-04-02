@@ -34,8 +34,8 @@ fail=0
 # --- Node.js ---
 if command -v node >/dev/null 2>&1; then
   node_ver="$(extract_version "$(node --version 2>&1)")"
-  node_latest="$(curl -sf --max-time 5 "https://registry.npmjs.org/node/latest" 2>/dev/null \
-    | grep '"version"' | head -1 | sed 's/.*"version": *"//;s/".*//')" || node_latest=""
+  node_latest="$(curl -sf --max-time 5 "https://nodejs.org/dist/index.json" 2>/dev/null \
+    | grep -oE '"version":"v[0-9]+\.[0-9]+\.[0-9]+"' | head -1 | sed 's/.*"v//;s/"//')" || node_latest=""
   if [ -z "$node_latest" ]; then
     # Fallback: try nvm ls-remote
     node_latest="$(nvm ls-remote --lts 2>/dev/null | tail -1 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')" || node_latest=""

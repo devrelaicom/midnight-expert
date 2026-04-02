@@ -16,17 +16,22 @@ if [ ! -f "$INSTALLED_PLUGINS" ]; then
   exit 0
 fi
 
+if ! command -v python3 >/dev/null 2>&1; then
+  emit "cross-refs" "warn" "python3 not available — cannot validate cross-plugin references"
+  exit 0
+fi
+
 # Helper: resolve install path for a plugin key (name@marketplace)
 resolve_path() {
   local key="$1"
   python3 -c "
-import json
-with open('$INSTALLED_PLUGINS') as f:
+import json, sys
+with open(sys.argv[1]) as f:
     data = json.load(f)
-entries = data.get('plugins', {}).get('$key', [])
+entries = data.get('plugins', {}).get(sys.argv[2], [])
 if entries:
     print(entries[0].get('installPath', ''))
-" 2>/dev/null
+" "$INSTALLED_PLUGINS" "$key" 2>/dev/null
 }
 
 # Helper: get version from plugin.json at a given path
@@ -34,11 +39,11 @@ get_version() {
   local path="$1"
   if [ -f "$path/.claude-plugin/plugin.json" ]; then
     python3 -c "
-import json
-with open('$path/.claude-plugin/plugin.json') as f:
+import json, sys
+with open(sys.argv[1]) as f:
     data = json.load(f)
 print(data.get('version', 'unknown'))
-" 2>/dev/null
+" "$path/.claude-plugin/plugin.json" 2>/dev/null
   fi
 }
 
