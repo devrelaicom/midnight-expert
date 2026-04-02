@@ -1,11 +1,14 @@
 ---
 name: midnight-fact-check:fact-check-extraction
 description: >-
-  Claim extraction skill for the midnight-fact-check pipeline. Defines what
-  constitutes a testable claim in Midnight documentation, how to identify
-  claims in source content, the JSON output schema, and examples of good
-  vs bad extractions. Used by the claim-extractor agent to parse content
-  chunks and produce structured claim lists.
+  This skill should be used when extracting testable claims from Midnight
+  documentation or source content. Covers how to identify verifiable
+  statements about Compact syntax, types, APIs, compiler behavior, and
+  runtime errors. Defines the JSON output schema for structured claim
+  lists. Relevant when asked to "extract claims", "find testable
+  statements", "parse documentation for verifiable facts", or "produce
+  a claim list from content chunks". Used by the claim-extractor agent
+  in the midnight-fact-check pipeline.
 version: 0.1.0
 ---
 
@@ -93,5 +96,7 @@ Return a JSON array of claim objects. Nothing else — no commentary, no markdow
 3. **Preserve specificity.** "persistentHash returns Bytes<32>" is better than "persistentHash returns bytes".
 4. **Include negative claims.** "Division (/) does NOT exist in Compact" is testable.
 5. **Include error claims.** "Using X produces error Y" is testable.
-6. **Skip code examples that are purely illustrative** unless they contain an implicit claim about behavior.
+6. **Skip purely illustrative code examples** unless they contain an implicit claim about behavior. For example, a snippet showing `const x: Uint<32> = 5n` is illustrative. But a snippet showing `assert(hash.length === 32)` implicitly claims that the hash output is 32 bytes — extract that.
 7. If the content contains no testable claims, return an empty array: `[]`
+8. **Split compound claims.** If a statement lists multiple items ("Compact supports Uint<8>, Uint<16>, and Uint<32>"), extract each as a separate claim unless they are inseparable (e.g., "X returns Y and Z" where Y and Z are a single return type).
+9. **Preserve duplicates with distinct sources.** If the same fact appears in two locations, extract it twice with the correct source for each. Downstream deduplication is handled separately.
