@@ -1,11 +1,13 @@
 ---
 name: compact-cli-dev:core
 description: >-
-  This skill should be used when the user asks about CLI scaffold, Oclif CLI,
-  CLI template, wallet commands, contract deployment CLI, devnet CLI,
+  This skill should be used when the user asks about scaffolding, extending, or
+  debugging an Oclif CLI for Midnight Compact contracts -- including CLI scaffold,
+  Oclif CLI template, wallet commands, contract deployment CLI, devnet CLI,
   CLI development, add CLI commands, Midnight CLI patterns, CLI error handling,
-  CLI progress feedback, building a command-line interface for Compact contracts,
-  scaffolding a new CLI project, or extending the generated CLI with new commands
+  CLI spinner and progress patterns, building a command-line interface for Compact
+  contracts, scaffolding a new CLI project, or extending the generated CLI with
+  new commands
 version: 0.1.0
 ---
 
@@ -111,6 +113,18 @@ Place the file under `src/commands/` — the directory structure determines the 
 | `.midnight-expert/deployed-contracts.json` | `0o644` | Contract addresses and deployment timestamps. Safe to share. |
 
 Both files are stored relative to the project working directory.
+
+## Templates
+
+The `templates/cli/` directory contains a complete, production-ready scaffolding template. Use it as the starting point when generating a new CLI project. Template files use the following placeholders:
+
+| Placeholder | Description | Example |
+|-------------|-------------|---------|
+| `{{CONTRACT_PACKAGE}}` | npm package name of the compiled contract | `@my-org/my-contract` |
+| `{{CONTRACT_NAME}}` | PascalCase contract name matching the Compact source | `MyContract` |
+| `{{CONTRACT_ZK_CONFIG_PATH}}` | Path to the ZK config JSON from the compiled contract package | `node_modules/@my-org/my-contract/zk-config.json` |
+| `{{CLI_PACKAGE_NAME}}` | Name of the generated CLI binary (used in help text and error messages) | `my-contract-cli` |
+| `{{GENERATED_AT}}` | ISO timestamp of when the CLI was scaffolded | `2026-04-02T12:00:00Z` |
 
 ## Reference Docs
 
