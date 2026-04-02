@@ -43,6 +43,11 @@ interface StubConfig {
   };
   connectionStatus: { status: 'connected'; networkId: string } | { status: 'disconnected' };
 
+  // Identity overrides
+  name?: string;
+  icon?: string;
+  apiVersion?: string;
+
   // Error injection (per method)
   connectError?: ErrorCode;
   errors?: Partial<Record<keyof ConnectedAPI, ErrorCode>>;
@@ -80,9 +85,9 @@ function createWalletStub(config?: Partial<StubConfig>): InitialAPI {
 
   return Object.freeze({
     rdns: 'com.test.wallet',
-    name: 'Test Wallet',
-    icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    apiVersion: '1.0.0',
+    name: cfg.name ?? 'Test Wallet',
+    icon: cfg.icon ?? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    apiVersion: cfg.apiVersion ?? '1.0.0',
     connect: async (networkId: string) => {
       if (cfg.connectError) throw createAPIError(cfg.connectError);
       return createConnectedStub(cfg);
@@ -213,6 +218,13 @@ beforeEach(async () => {
 
 ### E2E Tests (Playwright addInitScript)
 
+> **Warning:** `bigint` literals (e.g. `1000n`) inside `page.addInitScript()`
+> can fail during Playwright serialization because the function body is
+> serialized to a string and `bigint` values are not JSON-serializable.
+> Use `BigInt(1000)` instead of `1000n` inside injected scripts, or pass
+> bigint values via `page.addInitScript(fn, arg)` after converting them
+> to strings.
+
 ```typescript
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -222,9 +234,9 @@ test.beforeEach(async ({ page }) => {
       icon: 'data:image/png;base64,...',
       apiVersion: '1.0.0',
       connect: async () => ({
-        getShieldedBalances: async () => ({ '0x00': 1000n }),
+        getShieldedBalances: async () => ({ '0x00': BigInt(1000) }),
         getUnshieldedBalances: async () => ({}),
-        getDustBalance: async () => ({ cap: 0n, balance: 0n }),
+        getDustBalance: async () => ({ cap: BigInt(0), balance: BigInt(0) }),
         // ... minimal stub for E2E scenario
         submitTransaction: async () => {},
       }),

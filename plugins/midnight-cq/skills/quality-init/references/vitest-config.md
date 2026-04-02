@@ -64,8 +64,8 @@ import { join, resolve } from 'node:path';
  * Incremental: skips compilation if the artifact is newer than the source.
  */
 export async function setup() {
-  const srcDir = resolve(__dirname, '..', 'src');
-  const artifactsDir = resolve(__dirname, '..', 'artifacts');
+  const srcDir = resolve(import.meta.dirname, '..', 'src');
+  const artifactsDir = resolve(import.meta.dirname, '..', 'artifacts');
 
   const compactFiles = findCompactFiles(srcDir);
 
@@ -81,7 +81,7 @@ export async function setup() {
       // Sequential compilation -- Compact compiler does not support parallel invocations
       execSync(`compact compile --skip-zk ${compactFile}`, {
         stdio: 'inherit',
-        cwd: resolve(__dirname, '..'),
+        cwd: resolve(import.meta.dirname, '..'),
       });
     } catch (error: unknown) {
       // Exit code 127 means the compact compiler is not installed
@@ -177,7 +177,7 @@ Key settings:
 ```jsonc
 {
   "scripts": {
-    "test": "compact-compiler --skip-zk && vitest run",
+    "test": "compact compile --skip-zk && vitest run",
     "types": "tsc --noEmit"
   }
 }

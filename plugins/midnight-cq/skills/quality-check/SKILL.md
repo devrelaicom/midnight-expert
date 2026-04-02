@@ -4,10 +4,10 @@ description: >-
   This skill should be used when the user asks to run linting, check code
   quality, run tests, or needs help with "why is biome failing", "fix lint
   errors", "CI is failing", "type check errors", "biome error",
-  "vitest failing", or "tsc error". Also triggered by requests to interpret
-  Biome output, fix tsc errors in Midnight projects, debug vitest failures
-  with simulator stack traces, run the full pre-push suite, or understand
-  why compact-compiler is failing.
+  "vitest failing", "tsc error", "playwright failing", or "e2e tests failing".
+  Also triggered by requests to interpret Biome output, fix tsc errors in
+  Midnight projects, debug vitest failures with simulator stack traces,
+  run the full pre-push suite, or understand why compact compile is failing.
 version: 0.1.0
 ---
 

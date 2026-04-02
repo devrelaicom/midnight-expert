@@ -6,7 +6,9 @@ description: >-
   integration test frontend, end-to-end test, browser test, test UI with
   contract, write Playwright tests for a Midnight dapp, mock ContractProvider,
   test wallet disconnect, test confirmation screen, test rejected transaction,
-  or test contract state displayed in the UI.
+  test contract state displayed in the UI, test React components with contract
+  simulator, mock wallet in tests, or set up e2e testing. NOT for testing
+  Compact contract logic in isolation — see midnight-cq:compact-testing.
 version: 0.1.0
 ---
 
@@ -34,7 +36,7 @@ Every Midnight DApp has three testing layers. Use the right tool at each layer
 │         ContractProvider mocked to wrap simulator          │
 ├────────────────────────────────────────────────────────────┤
 │  Layer 1 – Unit Tests                                      │
-│  Tool: Vitest (contracts via compact-testing)              │
+│  Tool: Vitest (contracts via midnight-cq:compact-testing)  │
 │  Scope: Contract logic in isolation; pure TypeScript       │
 │         utilities; component logic without DOM             │
 └────────────────────────────────────────────────────────────┘
@@ -46,7 +48,7 @@ Layer 1 is covered by `midnight-cq:compact-testing`. This skill starts at Layer 
 
 | Question | Answer |
 |----------|--------|
-| Does the test call a Compact circuit directly? | Use `compact-testing` |
+| Does the test call a Compact circuit directly? | Use `midnight-cq:compact-testing` |
 | Does the test verify UI renders correct contract state? | You are here |
 | Does the test simulate a user clicking through a flow? | You are here (E2E) |
 | Does the test check a pure utility function? | Plain Vitest, no skill needed |
@@ -69,10 +71,12 @@ export function createMockContractProvider() {
 
   return {
     // Mirror the real ContractProvider interface
-    submitTransaction: vi.fn(async (circuit, ...args) => {
-      return simulator[circuit](...args);
+    callCircuit: vi.fn(async (circuit: string, args: unknown[]) => {
+      const fn = (simulator.circuits.impure as Record<string, (...a: unknown[]) => unknown>)[circuit];
+      if (!fn) throw new Error(`Unknown circuit: ${circuit}`);
+      return fn(...args);
     }),
-    queryState: vi.fn(async () => simulator.ledger()),
+    queryState: vi.fn(async () => simulator.getPublicState()),
   };
 }
 ```
@@ -103,14 +107,14 @@ describe('MyComponent — integration', () => {
     );
   });
 
-  it('calls submitTransaction on button click', async () => {
+  it('calls callCircuit on button click', async () => {
     render(
       <ContractContext.Provider value={provider}>
         <MyComponent />
       </ContractContext.Provider>,
     );
     await userEvent.click(screen.getByRole('button', { name: /submit/i }));
-    expect(provider.submitTransaction).toHaveBeenCalledOnce();
+    expect(provider.callCircuit).toHaveBeenCalledOnce();
   });
 });
 ```
@@ -206,22 +210,33 @@ the constructor, multi-step flows in named methods.
 | Transaction rejected by user | E2E | Assert rejection error message |
 | Network error during submission | E2E | Assert error modal, retry option |
 | Contract state displayed on mount | Integration | Provider mock returns simulator state |
-| State updates after transaction | Integration | submitTransaction → re-query → UI refresh |
+| State updates after transaction | Integration | callCircuit → re-query → UI refresh |
 | Error state from bad contract call | Integration | Provider throws → UI shows error |
 
 ### Wallet Mocking for E2E
 
 When a real browser wallet extension is unavailable in CI, inject a stub via
-`page.addInitScript()` before any app code runs:
+`page.addInitScript()` before any app code runs. The stub must match the real
+DApp Connector API shape (`window.midnight.mnLace.enable()`) — see
+`references/playwright-patterns.md` for the full fixture pattern.
 
 ```typescript
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     (window as any).midnight = {
-      wallet: {
-        connect: async () => ({ address: '0xdeadbeef' }),
-        disconnect: async () => {},
-        isConnected: () => false,
+      mnLace: {
+        enable: async () => ({
+          isEnabled: async () => true,
+          state: async () => ({
+            address: 'mn_test_addr_deadbeef',
+            coinPublicKey: '0'.repeat(64),
+          }),
+          submitTransaction: async (_tx: unknown) => ({
+            txHash: 'mock_tx_hash_' + Date.now(),
+          }),
+        }),
+        apiVersion: '1.0.0',
+        name: 'MockLace',
       },
     };
   });

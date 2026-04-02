@@ -143,9 +143,9 @@ The spec requires DApps to sanitize wallet-provided name and icon:
 ```typescript
 describe('wallet name/icon sanitization', () => {
   it('should render wallet name as text, not HTML', () => {
-    const stub = createWalletStub();
-    // Override name with XSS payload
-    (stub as any).name = '<img src=x onerror=alert(1)>';
+    const stub = createWalletStub({
+      name: '<img src=x onerror=alert(1)>',
+    });
 
     // Render your wallet selector component with this stub
     // Assert: the name appears as literal text, no tag interpretation
@@ -153,9 +153,9 @@ describe('wallet name/icon sanitization', () => {
   });
 
   it('should render wallet icon in img tag only', () => {
-    const stub = createWalletStub();
-    // Override with SVG that could contain scripts
-    (stub as any).icon = 'data:image/svg+xml,<svg onload="alert(1)"/>';
+    const stub = createWalletStub({
+      icon: 'data:image/svg+xml,<svg onload="alert(1)"/>',
+    });
 
     // Render your wallet selector component with this stub
     // Assert: icon is rendered as <img src="...">, not inline <svg>
@@ -168,16 +168,18 @@ describe('wallet name/icon sanitization', () => {
 ```typescript
 describe('wallet version validation', () => {
   it('should reject incompatible wallet version', () => {
-    const stub = createWalletStub();
-    (stub as any).apiVersion = '0.1.0'; // too old
+    const stub = createWalletStub({
+      apiVersion: '0.1.0', // too old
+    });
 
     // DApp should check semver compatibility before calling connect()
     // Assert: DApp shows "wallet version not supported" message
   });
 
   it('should accept compatible wallet version', () => {
-    const stub = createWalletStub();
-    stub.apiVersion = '1.2.0'; // compatible with ^1.0.0
+    const stub = createWalletStub({
+      apiVersion: '1.2.0', // compatible with ^1.0.0
+    });
 
     // DApp should proceed with connection
   });
