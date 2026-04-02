@@ -5,9 +5,37 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATES_DIR="$(cd "$SCRIPT_DIR/../../core/templates" && pwd)"
 
 if [ ! -d "$TEMPLATES_DIR/ui" ] || [ ! -d "$TEMPLATES_DIR/api" ]; then
-  echo "Error: Templates not found at $TEMPLATES_DIR" >&2
+  echo "Error: Template directory not found at $TEMPLATES_DIR" >&2
   exit 1
 fi
+
+# --- Parse CLI arguments ---
+
+ARG_UI_NAME=""
+ARG_API_NAME=""
+ARG_CONTRACT_PACKAGE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ui-name)
+      ARG_UI_NAME="$2"
+      shift 2
+      ;;
+    --api-name)
+      ARG_API_NAME="$2"
+      shift 2
+      ;;
+    --contract-package)
+      ARG_CONTRACT_PACKAGE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      echo "Usage: init.sh [--ui-name <name>] [--api-name <name>] [--contract-package <pkg>]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 # --- Step 1: Derive values ---
 
@@ -15,6 +43,7 @@ PROJECT_NAME=""
 if [ -f "package.json" ]; then
   PROJECT_NAME=$(python3 -c "import json; print(json.load(open('package.json')).get('name', ''))" 2>/dev/null || echo "")
 fi
+PROJECT_NAME="${PROJECT_NAME:-my-midnight-dapp}"
 
 CONTRACT_PACKAGE=""
 for dir in */src/managed/*/; do
@@ -27,8 +56,10 @@ for dir in */src/managed/*/; do
   fi
 done
 
-UI_DIR="ui"
-API_DIR="api"
+# Apply CLI arguments or defaults
+UI_DIR="${ARG_UI_NAME:-ui}"
+API_DIR="${ARG_API_NAME:-api}"
+CONTRACT_PACKAGE="${ARG_CONTRACT_PACKAGE:-${CONTRACT_PACKAGE:-@${PROJECT_NAME}/contract}}"
 
 PACKAGE_MANAGER="npm"
 if [ -f "pnpm-lock.yaml" ]; then
@@ -39,27 +70,7 @@ elif [ -f "package-lock.json" ]; then
   PACKAGE_MANAGER="npm"
 fi
 
-# --- Step 2: Confirm with user ---
-
-echo ""
-echo "Midnight DApp Scaffold"
-echo "======================"
-echo ""
-
-read -rp "Project name [${PROJECT_NAME:-my-midnight-dapp}]: " input
-PROJECT_NAME="${input:-${PROJECT_NAME:-my-midnight-dapp}}"
-
-read -rp "UI directory [$UI_DIR]: " input
-UI_DIR="${input:-$UI_DIR}"
-
-read -rp "API directory [$API_DIR]: " input
-API_DIR="${input:-$API_DIR}"
-
-read -rp "Contract package [${CONTRACT_PACKAGE:-@${PROJECT_NAME}/contract}]: " input
-CONTRACT_PACKAGE="${input:-${CONTRACT_PACKAGE:-@${PROJECT_NAME}/contract}}"
-
-read -rp "Package manager [$PACKAGE_MANAGER]: " input
-PACKAGE_MANAGER="${input:-$PACKAGE_MANAGER}"
+# --- Step 2: Display resolved configuration ---
 
 UI_PACKAGE_NAME="${PROJECT_NAME}-ui"
 API_PACKAGE_NAME="${PROJECT_NAME}-api"

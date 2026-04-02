@@ -221,6 +221,8 @@ Typical durations for each stage on a healthy network:
 | Submit | < 500ms | < 2s |
 | Finalize | ~6s (one block) | ~20s (block time varies) |
 
+These timings are approximate and vary based on network conditions, contract complexity, and hardware.
+
 Proof generation is the bottleneck. Complex circuits with many constraints take longer to prove. The proof server caches some intermediate computations, so repeated proofs for the same circuit are faster.
 
 ## Concurrent Transactions

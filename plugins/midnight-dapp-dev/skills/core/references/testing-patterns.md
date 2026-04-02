@@ -277,9 +277,43 @@ describe('createProviders', () => {
 ## Testing Components with Context
 
 Components that consume wallet or provider context must be wrapped in the
-appropriate providers during testing. Use the TestConsumer pattern:
+appropriate providers during testing. Use the TestConsumer pattern.
+
+The mock factories below follow the same pattern as `createMockConnectedApi()` — each returns
+an object matching the corresponding provider interface from `@midnight-ntwrk/midnight-js-types`:
 
 ```typescript
+function createMockPublicDataProvider(): PublicDataProvider {
+  return { contractStateObservable: vi.fn().mockReturnValue(new BehaviorSubject(null)) };
+}
+
+function createMockZkConfigProvider(): ZkConfigProvider {
+  return { getZkConfig: vi.fn().mockResolvedValue({ circuit: new Uint8Array() }) };
+}
+
+function createMockProofProvider(): ProofProvider {
+  return { prove: vi.fn().mockResolvedValue(new Uint8Array()) };
+}
+
+function createMockWalletProvider(): WalletProvider {
+  return {
+    getCoinPublicKey: vi.fn().mockReturnValue(new Uint8Array(32)),
+    getEncryptionPublicKey: vi.fn().mockReturnValue(new Uint8Array(32)),
+    balanceTx: vi.fn().mockImplementation(async (tx) => tx),
+  };
+}
+
+function createMockMidnightProvider(): MidnightProvider {
+  return { submitTx: vi.fn().mockResolvedValue('mock-tx-id') };
+}
+
+function createMockPrivateStateProvider(): PrivateStateProvider {
+  return {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 function renderWithProviders(ui: React.ReactElement) {
   const mockConnectedApi = createMockConnectedApi();
   const mockProviders = {

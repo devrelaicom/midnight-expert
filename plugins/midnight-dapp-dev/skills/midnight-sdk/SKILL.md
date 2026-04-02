@@ -1,12 +1,20 @@
 ---
 name: midnight-dapp-dev:midnight-sdk
-description: Midnight SDK, midnight-js packages, MidnightProviders, deployContract, findDeployedContract, callTx, submitCallTx, transaction lifecycle, SDK types, testkit-js, FinalizedTxData, WalletProvider, MidnightProvider, PublicDataProvider, ProofProvider, ZkConfigProvider, contract maintenance, verifier keys, replaceAuthority, observable patterns, state subscriptions, setNetworkId, indexerPublicDataProvider, httpClientProofProvider, @midnight-ntwrk, set up providers, or connect to indexer.
+description: >-
+  This skill should be used when the user asks about the Midnight.js SDK,
+  midnight-js packages, @midnight-ntwrk npm packages, setting up SDK providers,
+  deploying or finding contracts with deployContract or findDeployedContract,
+  calling circuits with callTx or submitCallTx, the transaction lifecycle,
+  SDK provider types (WalletProvider, MidnightProvider, PublicDataProvider,
+  ProofProvider, ZkConfigProvider, PrivateStateProvider), testkit-js testing,
+  observable state subscriptions, contract maintenance and verifier keys,
+  or connecting to the indexer or proof server.
 version: 0.1.0
 ---
 
 # Midnight SDK Reference
 
-Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see the Deployment section below. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
+Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see `references/transaction-lifecycle.md`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
 
 ## SDK Package Map
 

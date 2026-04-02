@@ -5,8 +5,10 @@ description: >-
   "create a React component for contract interaction", "set up wallet
   connection", "add a contract state subscription", "configure Vite for
   Midnight", "write tests for a DApp component", "debug wallet connection",
-  "provider assembly", "transaction flow in the browser", or working with
-  Midnight SDK packages in a Vite + React project.
+  "provider assembly", "transaction flow in the browser", "DApp Connector API",
+  "RxJS observable for contract state", "scaffold a Midnight DApp",
+  "useContractState hook", or working with Midnight SDK packages
+  (@midnight-ntwrk/*) in a Vite + React project.
 version: 0.1.0
 ---
 

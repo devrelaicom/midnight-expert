@@ -1,6 +1,14 @@
 ---
 name: midnight-dapp-dev:dapp-connector
-description: This skill should be used when the user asks about the DApp connector, Lace wallet, wallet connection, InitialAPI, ConnectedAPI, WalletConnectedAPI, DAppConnectorAPIError, browser wallet, React wallet, Next.js wallet, wallet integration, Lace setup, wallet detection, shielded address, unshielded address, building MidnightProviders in a browser context, bridging wallet to SDK providers, window.midnight, getConfiguration, FetchZkConfigProvider, or balanceUnsealedTransaction.
+description: >-
+  This skill should be used when the user asks about connecting a browser-based
+  DApp to the Midnight Lace wallet extension using the DApp Connector API. Covers
+  the full connection lifecycle (InitialAPI, ConnectedAPI, WalletConnectedAPI),
+  wallet detection via window.midnight, error handling with DAppConnectorAPIError,
+  React 19.x and Next.js 16.x wallet integration patterns, building
+  MidnightProviders from the DApp Connector, FetchZkConfigProvider,
+  balanceUnsealedTransaction, getConfiguration, shielded and unshielded addresses,
+  Lace setup and funding, and wallet-delegated proving.
 version: 0.1.0
 ---
 
@@ -356,8 +364,10 @@ async function createWalletProvider(api: ConnectedAPI): Promise<WalletProvider> 
   return {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    balanceTx: (tx, newCoins, ttl) =>
-      api.balanceUnsealedTransaction(tx, { newCoins, ttl }),
+    balanceTx: async (tx, newCoins, ttl) => {
+      const result = await api.balanceUnsealedTransaction(tx, { newCoins, ttl });
+      return result.tx;
+    },
   };
 }
 
