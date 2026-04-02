@@ -1,4 +1,6 @@
-# midnight-expert
+<p align="center">
+  <img src="assets/banner.png" alt="midnight expert" width="100%" />
+</p>
 
 AI-powered development tools for the [Midnight](https://midnight.network/) blockchain — a suite of [Claude Code plugins](https://docs.anthropic.com/en/docs/claude-code/plugins) that help you write, test, deploy, and review smart contracts in the Compact language.
 
