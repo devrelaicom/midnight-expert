@@ -1,6 +1,6 @@
 ---
-name: expert:doctor
-description: This skill should be used when the user asks to "check my setup", "run diagnostics", "doctor", "health check", "verify my installation", "are my plugins working", "check plugin status", "what's broken", "fix my setup", or invokes /expert:doctor. Provides comprehensive health reporting for the midnight-expert ecosystem — plugin installation, MCP servers, external tools, cross-plugin references, and NPM registry.
+name: midnight-expert:doctor
+description: This skill should be used when the user asks to "check my setup", "run diagnostics", "doctor", "health check", "verify my installation", "are my plugins working", "check plugin status", "what's broken", "fix my setup", or invokes /midnight-expert:doctor. Provides comprehensive health reporting for the midnight-expert ecosystem — plugin installation, MCP servers, external tools, cross-plugin references, and NPM registry.
 version: 0.1.0
 ---
 
@@ -10,8 +10,8 @@ Comprehensive diagnostic and health report for the midnight-expert ecosystem.
 
 ## Usage
 
-- `/expert:doctor` — run diagnostics interactively, offer fixes one at a time
-- `/expert:doctor --auto-fix` — install missing dependencies silently, prompt only for upgrades and preference choices
+- `/midnight-expert:doctor` — run diagnostics interactively, offer fixes one at a time
+- `/midnight-expert:doctor --auto-fix` — install missing dependencies silently, prompt only for upgrades and preference choices
 
 ## Step 1: Launch & Ask (concurrent)
 

@@ -1,7 +1,7 @@
 {
   "name": "midnight-expert",
   "metadata": {
-    "version": "0.15.0",
+    "version": "0.17.0",
     "description": "AI agent plugins for the Midnight data-protection blockchain. Covers Compact smart contract development, privacy-preserving patterns, DApp frontend design, and Midnight toolchain management."
   },
   "owner": {
@@ -10,8 +10,8 @@
   },
   "plugins": [
     {
-      "name": "expert",
-      "source": "./plugins/expert"
+      "name": "midnight-expert",
+      "source": "./plugins/midnight-expert"
     },
     {
       "name": "compact-core",
@@ -48,6 +48,14 @@
     {
       "name": "midnight-fact-check",
       "source": "./plugins/midnight-fact-check"
+    },
+    {
+      "name": "compact-cli-dev",
+      "source": "./plugins/compact-cli-dev"
+    },
+    {
+      "name": "midnight-dapp-dev",
+      "source": "./plugins/midnight-dapp-dev"
     }
   ]
 }

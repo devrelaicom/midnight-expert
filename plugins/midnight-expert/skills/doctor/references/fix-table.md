@@ -1,6 +1,6 @@
 # Fix Table
 
-Reference for resolving issues found by expert:doctor. Each section maps diagnostic output to actionable fixes.
+Reference for resolving issues found by midnight-expert:doctor. Each section maps diagnostic output to actionable fixes.
 
 ## Auto-Fix Classification
 
