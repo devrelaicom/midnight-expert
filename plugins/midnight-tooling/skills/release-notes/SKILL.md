@@ -1,6 +1,6 @@
 ---
 name: midnight-tooling:release-notes
-description: This skill should be used when the user asks about "Midnight release notes", "what changed in version X", "latest release", "changelog", "show me the changelog", "what's new in Midnight", "component versions", "list versions", "compact release notes", "ledger release notes", "wallet release notes", "proof server release notes", "node release notes", "lace release notes", "midnight-js release notes", "indexer release notes", viewing release history, checking component update details, or comparing versions of any Midnight Network component.
+description: This skill should be used when the user asks about "Midnight release notes", "what changed in version X", "latest release", "changelog", "show me the changelog", "what's new in Midnight", "component versions", "list versions", "compact release notes", "ledger release notes", "wallet release notes", "proof server release notes", "node release notes", "lace release notes", "midnight-js release notes", "indexer release notes", "breaking changes", "latest version of X", viewing release history, checking component update details, or comparing versions of any Midnight Network component.
 ---
 
 # Midnight Release Notes
@@ -33,6 +33,10 @@ For large files, use `matchString` instead of `fullContent`. The `matchStringCon
 
 - `matchString="title:"` with `matchStringContextLines=1` — extract frontmatter title (1 line above and below)
 - `matchString="## Breaking Changes"` with `matchStringContextLines=30` — extract a specific section (30 lines of context)
+
+### Missing Data
+
+If a component directory does not exist or a version file is not found, inform the user that no release notes were found for that component or version. Suggest checking for typos, listing available versions, or consulting the component map (`references/component-map.md`) for the correct name.
 
 ## MDX Format
 

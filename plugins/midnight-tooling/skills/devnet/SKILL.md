@@ -1,6 +1,6 @@
 ---
 name: midnight-tooling:devnet
-description: This skill should be used when the user asks about the Midnight local development network, including "start the devnet", "stop the devnet", "restart the network", "local development network", "midnight node", "midnight indexer", "network status", "network health", "devnet config", "network endpoints", "port 9944", "port 8088", "port 6300", "Docker Compose", "devnet not starting", "local blockchain", "devnet logs", "network ID", "generate devnet", "devnet versions", "update devnet", "devnet stale"
+description: This skill should be used when the user asks about the Midnight local development network, including "start the devnet", "stop the devnet", "restart the network", "local development network", "midnight node", "midnight indexer", "network status", "network health", "devnet config", "network endpoints", "port 9944", "port 8088", "port 6300", "Docker Compose", "devnet not starting", "local blockchain", "devnet logs", "network ID", "generate devnet", "devnet versions", "update devnet", "devnet stale", "proof server", "devnet volumes", "clean slate", "docker containers", "devnet compose file", "devnet endpoints"
 ---
 
 # Midnight Development Network (Devnet)

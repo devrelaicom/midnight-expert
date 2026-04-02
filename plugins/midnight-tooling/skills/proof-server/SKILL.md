@@ -1,6 +1,6 @@
 ---
 name: midnight-tooling:proof-server
-description: This skill should be used when the user asks about the Midnight proof server in any context — local, testnet, or mainnet. Includes "start the proof server", "run the proof server", "restart the proof server", "stop the proof server", "proof server not working", "proof server logs", "check if proof server is running", "proof server port 6300", "proof server version", "proof server image tag", "proof server health check", "proof server API endpoints", "proof server readiness check", "Docker container for proofs", "set up Docker for the proof server", "proof server endpoint", or "proof server URL". Covers proof server concepts, version selection, API endpoints, standalone Docker usage, and troubleshooting. For local development setup, see the devnet skill.
+description: This skill should be used when the user asks about the Midnight proof server in any context — local, testnet, or mainnet. Includes "start the proof server", "restart the proof server", "stop the proof server", "proof server not working", "proof server logs", "check if proof server is running", "proof server port 6300", "proof server version", "proof server image tag", "proof server health check", "proof server API endpoints", "Docker container for proofs", "set up Docker for the proof server", or "proof server endpoint". Covers proof server concepts, version selection, API endpoints, standalone Docker usage, and troubleshooting. For local development setup, see the devnet skill.
 ---
 
 # Midnight Proof Server
