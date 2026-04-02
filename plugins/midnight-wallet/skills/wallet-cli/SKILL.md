@@ -57,16 +57,9 @@ Derives the wallet from the BIP-39 mnemonic, then hands off to `/midnight-wallet
 
 ## Wallet Nicknames
 
-The `#name` syntax in user messages is resolved from alias files using `wallet-aliases.sh`.
+The `#name` syntax in user messages resolves to wallet addresses via alias files. Load the `midnight-wallet:wallet-aliases` skill for the script, alias file format, and search order.
 
-**Search order:**
-
-1. `.claude/midnight-wallet/wallets.local.json` — project-local aliases (checked first)
-2. `~/.claude/midnight-wallet/wallets.json` — global aliases (fallback)
-
-Resolution is performed via `wallet-aliases.sh get <name> --network <active-network>`. The script returns the address for the active network, or exits with code 1 if the nickname is not found.
-
-If a nickname is not found in either alias file, suggest running `/midnight-wallet:setup-test-wallets` to create and register the wallet.
+To resolve a nickname: run `wallet-aliases.sh get <name> --network <active-network>`. If exit code 1 (not found), suggest running `/midnight-wallet:setup-test-wallets` to create and register the wallet.
 
 ## Quick MCP Tool Reference
 
