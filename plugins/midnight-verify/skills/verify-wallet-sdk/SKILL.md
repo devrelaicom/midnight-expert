@@ -76,8 +76,8 @@ When you receive a wallet SDK claim, classify it using this table:
 
 Sub-agents may load these skills for context. They are **hints only** — never cite skill content as evidence in the verdict.
 
-- `dapp-development:midnight-sdk` skill — provider setup, SDK component overview
-- `dapp-development:dapp-connector` skill — wallet integration patterns
+- `midnight-dapp-dev:midnight-sdk` skill — provider setup, SDK component overview
+- `midnight-dapp-dev:dapp-connector` skill — wallet integration patterns
 - `compact-core:compact-witness-ts` skill — witness implementation patterns (if claim spans wallet + witness)
 
 Load only what's relevant to the specific claim.

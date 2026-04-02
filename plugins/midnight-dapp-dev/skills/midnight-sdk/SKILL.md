@@ -1,12 +1,12 @@
 ---
-name: dapp-development:midnight-sdk
+name: midnight-dapp-dev:midnight-sdk
 description: Midnight SDK, midnight-js packages, MidnightProviders, deployContract, findDeployedContract, callTx, submitCallTx, transaction lifecycle, SDK types, testkit-js, FinalizedTxData, WalletProvider, MidnightProvider, PublicDataProvider, ProofProvider, ZkConfigProvider, contract maintenance, verifier keys, replaceAuthority, observable patterns, state subscriptions, setNetworkId, indexerPublicDataProvider, httpClientProofProvider, @midnight-ntwrk, set up providers, or connect to indexer.
 version: 0.1.0
 ---
 
 # Midnight SDK Reference
 
-Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see the Deployment section below. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `dapp-development:dapp-connector`.
+Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see the Deployment section below. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
 
 ## SDK Package Map
 
@@ -74,7 +74,7 @@ interface WalletProvider {
 ```
 
 - **Node.js**: Built from `WalletFacade` (see the Deployment section below)
-- **Browser**: Built from `ConnectedAPI.balanceUnsealedTransaction` (see `dapp-development:dapp-connector`)
+- **Browser**: Built from `ConnectedAPI.balanceUnsealedTransaction` (see `midnight-dapp-dev:dapp-connector`)
 
 #### MidnightProvider
 
@@ -120,7 +120,7 @@ interface PrivateStateProvider<PSI extends string, PS> {
 ```
 
 - **Node.js**: `levelPrivateStateProvider()` using LevelDB
-- **Browser**: In-memory `Map` or IndexedDB (see `dapp-development:dapp-connector`)
+- **Browser**: In-memory `Map` or IndexedDB (see `midnight-dapp-dev:dapp-connector`)
 
 #### ZkConfigProvider
 

@@ -1,12 +1,12 @@
 ---
-name: dapp-development:dapp-connector
+name: midnight-dapp-dev:dapp-connector
 description: This skill should be used when the user asks about the DApp connector, Lace wallet, wallet connection, InitialAPI, ConnectedAPI, WalletConnectedAPI, DAppConnectorAPIError, browser wallet, React wallet, Next.js wallet, wallet integration, Lace setup, wallet detection, shielded address, unshielded address, building MidnightProviders in a browser context, bridging wallet to SDK providers, window.midnight, getConfiguration, FetchZkConfigProvider, or balanceUnsealedTransaction.
 version: 0.1.0
 ---
 
 # DApp Connector API v4.0.1
 
-This skill covers the Midnight DApp Connector API for browser-based wallet integration: connecting to the Lace wallet extension, using the ConnectedAPI for transactions and balances, handling errors, and building React 19.x / Next.js 16.x DApps. For Node.js CLI deployment with WalletFacade and HD keys, see `dapp-development:midnight-sdk`. For contract runtime and witness types, see `compact-core:compact-witness-ts`. For local development network setup, see `midnight-tooling:devnet`.
+This skill covers the Midnight DApp Connector API for browser-based wallet integration: connecting to the Lace wallet extension, using the ConnectedAPI for transactions and balances, handling errors, and building React 19.x / Next.js 16.x DApps. For Node.js CLI deployment with WalletFacade and HD keys, see `midnight-dapp-dev:midnight-sdk`. For contract runtime and witness types, see `compact-core:compact-witness-ts`. For local development network setup, see `midnight-tooling:devnet`.
 
 ## Connection Lifecycle
 
