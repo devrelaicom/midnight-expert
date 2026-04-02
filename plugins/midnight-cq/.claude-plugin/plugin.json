@@ -1,6 +1,6 @@
 {
   "name": "midnight-cq",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Code quality tooling for Midnight Network projects \u2014 linting, formatting, type checking, testing, Git hooks, and CI workflows.",
   "author": {
     "name": "Aaron Bassett",
