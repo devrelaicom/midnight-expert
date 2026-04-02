@@ -1,5 +1,5 @@
 ---
-name: compact-patterns
+name: compact-core:compact-patterns
 description: This skill should be used when the user asks about Compact contract design patterns, reusable building blocks, or how to combine patterns. Covers access control (owner-only, RBAC, pausable, initializable), state management (state machine, time-locked), commitment schemes (commit-reveal, sealed-bid auction), value handling (escrow, treasury), governance (multi-sig, voting), identity and membership (registry, credential, anonymous Merkle membership), and privacy (unlinkability, selective disclosure).
 version: 0.1.0
 ---

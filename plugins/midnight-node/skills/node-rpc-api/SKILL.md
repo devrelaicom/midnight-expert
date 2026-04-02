@@ -1,5 +1,5 @@
 ---
-name: node-rpc-api
+name: midnight-node:node-rpc-api
 description: Midnight node RPC API, WebSocket, port 9944, midnight_contractState, midnight_zswapStateRoot, midnight_ledgerStateRoot, midnight_apiVersions, midnight_ledgerVersion, systemParameters RPC, sidechain RPC, system_health, chain_getBlock, state_getStorage, author_submitExtrinsic, grandpa_roundState, beefy RPC, mmr RPC, rpc.discover, OpenRPC, subscribe, subscription, query contract state, submit transaction to node, connect to Midnight RPC, subscribe to block headers, check node sync status.
 version: 0.1.0
 ---
@@ -219,4 +219,4 @@ To unsubscribe, send `chain_unsubscribeNewHeads` with the subscription ID.
 ## Cross-References
 
 - `midnight-indexer:indexer-graphql-api` — Higher-level GraphQL API for querying indexed chain data
-- `dapp-development:midnight-sdk` — DApp provider configuration using node RPC endpoints
+- `midnight-dapp-dev:midnight-sdk` — DApp provider configuration using node RPC endpoints

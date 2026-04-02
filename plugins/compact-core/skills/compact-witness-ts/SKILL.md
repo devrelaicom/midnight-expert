@@ -1,5 +1,5 @@
 ---
-name: compact-witness-ts
+name: compact-core:compact-witness-ts
 description: This skill should be used when the user asks about implementing Compact witness functions in TypeScript, the WitnessContext pattern, private state management, Compact-to-TypeScript type mappings (Field to bigint, Bytes to Uint8Array, Uint to bigint), compiler-generated .d.ts files (Witnesses interface, Circuits type, Contract class), the Compact JavaScript runtime, how contract.circuits works, pure circuits in TypeScript, reading ledger state from TypeScript, the witness return tuple pattern [PrivateState, ReturnValue], or how to connect a Compact contract to its TypeScript implementation.
 version: 0.1.0
 ---
@@ -164,7 +164,7 @@ For Contract class details, circuits vs impureCircuits, and the ledger function,
 Witness implementations can be mechanically verified against their contract declarations:
 
 ```bash
-/verify <contract.compact> <witnesses.ts>
+/midnight-verify:verify <contract.compact> <witnesses.ts>
 ```
 
 This verifies:
@@ -172,4 +172,4 @@ This verifies:
 - **Structural patterns** — name matching (exact casing), return tuple shape (`[PrivateState, ReturnValue]`), WitnessContext first parameter, private state immutability, no side effects
 - **Behavioral correctness** — the contract executes successfully with the witness implementation
 
-Strongly recommend running `/verify` after writing or modifying any witness implementation. Do not consider a witness implementation complete until verification passes.
+Strongly recommend running `/midnight-verify:verify` after writing or modifying any witness implementation. Do not consider a witness implementation complete until verification passes.

@@ -1,12 +1,13 @@
 ---
-name: dapp-connector-testing
+name: midnight-cq:dapp-connector-testing
 description: >-
   This skill should be used when the user asks to test DApp Connector API
   integration, test wallet connection, test makeTransfer, test
   balanceTransaction, test submitTransaction, mock ConnectedAPI, stub wallet
   for tests, test wallet errors, test PermissionRejected, test Disconnected
-  handling, test progressive enhancement, write wallet integration tests, or
-  test DApp Connector error codes.
+  handling, test progressive enhancement, write wallet integration tests,
+  test DApp Connector error codes, test wallet discovery, test window.midnight,
+  test apiVersion, test signData, or test DApp Connector security.
 version: 0.1.0
 ---
 
@@ -77,16 +78,16 @@ Build a configurable test double that implements `InitialAPI` and `ConnectedAPI`
 function createWalletStub(config?: Partial<StubConfig>): InitialAPI {
   const cfg = { ...defaultConfig, ...config };
 
-  return {
+  return Object.freeze({
     rdns: 'com.test.wallet',
-    name: 'Test Wallet',
-    icon: 'data:image/png;base64,...',
-    apiVersion: '1.0.0',
+    name: cfg.name ?? 'Test Wallet',
+    icon: cfg.icon ?? 'data:image/png;base64,...',
+    apiVersion: cfg.apiVersion ?? '1.0.0',
     connect: async (networkId) => {
       if (cfg.connectError) throw createAPIError(cfg.connectError);
       return createConnectedStub(cfg);
     },
-  };
+  });
 }
 
 function createConnectedStub(cfg: StubConfig): ConnectedAPI {
@@ -112,13 +113,23 @@ See `references/connector-stub-patterns.md` for complete implementations.
 ```typescript
 it('should retry after Rejected', async () => {
   let callCount = 0;
-  const stub = createWalletStub({
-    errors: {
-      submitTransaction: callCount++ === 0 ? 'Rejected' : undefined,
-    },
-  });
+  const stub = createWalletStub();
+  const wallet = await stub.connect('undeployed');
+
+  // Wrap submitTransaction with a closure so the error
+  // is evaluated per-call, not at object creation time
+  const originalSubmit = wallet.submitTransaction.bind(wallet);
+  wallet.submitTransaction = async (tx) => {
+    if (callCount++ === 0) throw createAPIError('Rejected');
+    return originalSubmit(tx);
+  };
+
   // First call → Rejected, DApp shows "try again"
+  await expect(wallet.submitTransaction('tx')).rejects.toMatchObject({
+    code: 'Rejected',
+  });
   // Second call → success
+  await wallet.submitTransaction('tx');
 });
 
 it('should not retry after PermissionRejected', async () => {
@@ -165,15 +176,17 @@ The DApp Connector spec requires DApps to sanitize wallet-provided data:
 
 ```typescript
 it('should sanitize wallet name to prevent XSS', () => {
-  const stub = createWalletStub();
-  stub.name = '<script>alert("xss")</script>';
+  const stub = createWalletStub({
+    name: '<script>alert("xss")</script>',
+  });
   // Render wallet selector UI
   // Assert no script execution, name displayed as text
 });
 
 it('should render wallet icon in img tag only', () => {
-  const stub = createWalletStub();
-  stub.icon = 'data:image/svg+xml,...'; // SVG can contain scripts
+  const stub = createWalletStub({
+    icon: 'data:image/svg+xml,...', // SVG can contain scripts
+  });
   // Assert icon is rendered as <img src="...">, not inline SVG
 });
 ```

@@ -7,13 +7,13 @@ description: >-
   E2E (fallback). Handles claims about @midnight-ntwrk/wallet-sdk-* packages,
   WalletFacade, WalletBuilder, the DApp Connector API, HD derivation, Bech32m
   addresses, branded types, and the three-wallet architecture. Loaded by the
-  /verify command alongside the hub skill.
+  /midnight-verify:verify command alongside the hub skill.
 version: 0.1.0
 ---
 
 # Wallet SDK Claim Classification
 
-This skill classifies wallet SDK claims and determines which verification method to use. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies wallet SDK claims and determines which verification method to use. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Verification Flow
 
@@ -76,8 +76,8 @@ When you receive a wallet SDK claim, classify it using this table:
 
 Sub-agents may load these skills for context. They are **hints only** — never cite skill content as evidence in the verdict.
 
-- `dapp-development:midnight-sdk` skill — provider setup, SDK component overview
-- `dapp-development:dapp-connector` skill — wallet integration patterns
+- `midnight-dapp-dev:midnight-sdk` skill — provider setup, SDK component overview
+- `midnight-dapp-dev:dapp-connector` skill — wallet integration patterns
 - `compact-core:compact-witness-ts` skill — witness implementation patterns (if claim spans wallet + witness)
 
 Load only what's relevant to the specific claim.

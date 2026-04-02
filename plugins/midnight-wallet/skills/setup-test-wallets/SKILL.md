@@ -1,7 +1,7 @@
 ---
-name: setup-test-wallets
+name: midnight-wallet:setup-test-wallets
 description: >-
-  This skill should be used when the user asks to setup test wallets, create
+  This skill should be used when the user asks to set up test wallets, create
   test accounts, generate test wallets, create alice bob charlie wallets,
   fund test accounts, set up development wallets, or needs to create and
   fund wallets for local Midnight development and testing
@@ -21,35 +21,44 @@ Orchestrated skill for creating, funding, and registering test wallets on the Mi
 | `alice mn_addr_undeployed1...` | Use as-is, save alias "alice" → address |
 | `alice bob charlie` | Process each name (batch mode) |
 
+## Required MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `midnight_config_get` | Read config values — use `midnight_config_get key:network-id` to determine the active network |
+| `midnight_wallet_generate` | Create a new wallet, returns name and address |
+| `midnight_airdrop` | Send NIGHT tokens from genesis wallet (undeployed network only) |
+| `midnight_dust_register` | Register UTXOs so the wallet can pay transaction fees |
+
+## Network Detection
+
+Before funding, determine the active network by calling `midnight_config_get` with `key: "network-id"`. The returned value determines the funding method.
+
 ## Flow for Each Wallet
 
 1. **Resolve name/address** — if a name is given but no alias exists, generate a new wallet via `midnight_wallet_generate`. If an address is given, run a reverse lookup to find an existing alias, or assign a random name.
-2. **Fund via airdrop** — call `midnight_airdrop` to send NIGHT tokens from the genesis wallet. This step only applies on the `undeployed` (local devnet) network. For `preprod`, direct the user to https://faucet.preprod.midnight.network/; for `preview`, use https://faucet.preview.midnight.network/ — skip the airdrop and note the faucet URLs.
+2. **Fund** — funding method depends on the active network:
+
+   | Network | Method |
+   |---------|--------|
+   | `undeployed` | Call `midnight_airdrop` to send NIGHT from the genesis wallet |
+   | `preprod` | Direct the user to https://faucet.preprod.midnight.network/ — do not call airdrop |
+   | `preview` | Direct the user to https://faucet.preview.midnight.network/ — do not call airdrop |
+
 3. **Register dust** — call `midnight_dust_register` to register UTXOs so the wallet can pay transaction fees.
-4. **Save alias** — call `${CLAUDE_SKILL_DIR}/scripts/wallet-aliases.sh set <name> --network <active-network> --address <addr>` to persist the name → address mapping.
+4. **Save alias** — load the `midnight-wallet:wallet-aliases` skill and run `wallet-aliases.sh set <name> --network <active-network> --address <addr>` to persist the name → address mapping.
 
-> **WARNING:** Wallet aliases store public addresses only, not private keys or seeds. The test wallets themselves (in `~/.midnight/wallets/`) contain seeds. This system is for local development and testing only. Never use test wallets for real funds.
+## Error Handling
 
-## Script Reference
+| Step | Failure | Action |
+|------|---------|--------|
+| Wallet generation | `midnight_wallet_generate` returns error | Report the error and stop processing this wallet. Continue with remaining wallets in batch mode. |
+| Airdrop | `midnight_airdrop` fails | Report the error. The wallet is created but unfunded — suggest the user retry or fund manually. |
+| Dust registration | `midnight_dust_register` fails | Report the error. The wallet has NIGHT but cannot pay fees yet — suggest retrying after a brief wait. |
+| Alias save | `wallet-aliases.sh set` fails | Report the error. The wallet is functional but not saved as an alias — suggest saving manually. |
 
-Alias management is handled by `${CLAUDE_SKILL_DIR}/scripts/wallet-aliases.sh`. Brief usage summary:
+## Alias Management
 
-```
-wallet-aliases.sh get <name> [--network <net>] [--file <path>]
-wallet-aliases.sh set <name> --network <net> --address <addr> [--file <path>] [--global]
-wallet-aliases.sh reverse <address> [--file <path>]
-wallet-aliases.sh list [--file <path>]
-wallet-aliases.sh remove <name> [--file <path>]
-wallet-aliases.sh random-name
-```
+All alias operations (get, set, reverse, list, remove, random-name) are provided by the `midnight-wallet:wallet-aliases` skill. Load that skill for the script location, usage reference, and alias file format.
 
-- `get` — resolve a name to an address (searches project-local then global alias file)
-- `set` — write a name → address mapping
-- `reverse` — look up the alias name for a given address
-- `list` — show all saved aliases
-- `remove` — delete an alias entry
-- `random-name` — generate a collision-checked random name
-
-## Random Name Format
-
-When no name is supplied, a random name is generated in `adjective-noun` format (e.g. `swift-falcon`, `bright-coral`). Use `wallet-aliases.sh random-name` to generate a name that does not already exist in the alias file.
+When no name is supplied, generate a random name with `wallet-aliases.sh random-name` (see the wallet-aliases skill for details).

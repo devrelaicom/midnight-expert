@@ -1,7 +1,7 @@
 {
   "name": "compact-examples",
-  "version": "0.1.0",
-  "description": "Handpicked examples of Compact smart contracts — curated library implementations, patterns, and usage guides for building on Midnight.",
+  "version": "0.1.1",
+  "description": "Handpicked examples of Compact smart contracts \u2014 curated library implementations, patterns, and usage guides for building on Midnight.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"

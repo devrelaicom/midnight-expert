@@ -1,6 +1,6 @@
 ---
 version: 0.1.0
-name: openzeppelin-compact
+name: compact-examples:openzeppelin
 description: This skill should be used when the user asks about OpenZeppelin Contracts for Compact, OZ modules for Midnight, the Module/Contract pattern, importing OpenZeppelin into a Compact project, access control (Ownable, ZOwnablePK, AccessControl), security modules (Initializable, Pausable), token modules (FungibleToken/ERC-20, NonFungibleToken/ERC-721, MultiToken/ERC-1155), role-based permissions, creating tokens in Compact, pausing contracts, or testing with createSimulator and mocks.
 ---
 

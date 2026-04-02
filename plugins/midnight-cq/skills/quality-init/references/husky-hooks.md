@@ -55,6 +55,7 @@ What it does not do:
 Create `.husky/pre-push`:
 
 ```bash
+set -e
 npx biome ci
 npx tsc --noEmit
 npx vitest run

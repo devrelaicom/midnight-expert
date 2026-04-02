@@ -93,7 +93,7 @@ Some features reference skills from companion plugins:
 
 - **compact-core** — Compact language, testing patterns, and deployment skills used by the reviewer agent
 - **midnight-tooling** — CLI installation, proof server management, devnet, and release notes
-- **dapp-development** — DApp architecture, provider setup, and wallet integration skills
+- **midnight-dapp-dev** — DApp architecture, provider setup, and wallet integration skills
 
 ## License
 

@@ -5,8 +5,9 @@
         "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "WARNING: Your training data about Midnight, Compact, and the Midnight SDK is UNRELIABLE. It contains known errors and is likely outdated.\n\nDo NOT trust your recalled knowledge about:\n- Compact syntax, types, or operators\n- Standard library functions (names, signatures, behavior)\n- SDK API signatures, package names, or import paths\n- Tooling behavior, CLI flags, or configuration\n- Privacy/disclosure rules\n- Transaction semantics or protocol behavior\n\nEverything you 'know' about Compact is suspect. Treat your training data as potentially wrong.\n\nBefore presenting ANY Compact code, SDK usage, or Midnight-specific claims to the user:\n1. Verify using /verify or by dispatching the appropriate midnight-verify agent\n2. Compilation alone does NOT prove correctness — code must be compiled AND executed\n3. Prefer skill content from midnight-expert plugins over recalled knowledge, but even skills are hints, not proof\n\nThe cost of checking is low. The cost of presenting wrong information is high. When in doubt, VERIFY."
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/SessionStart.sh",
+            "timeout": 10
           }
         ]
       }
@@ -17,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop-check.sh",
             "timeout": 10
           }
         ]
@@ -29,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-contract-writer.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-contract-writer.sh",
             "timeout": 10
           }
         ]
@@ -39,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-source-investigator.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-source-investigator.sh",
             "timeout": 10
           }
         ]
@@ -49,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-type-checker.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-type-checker.sh",
             "timeout": 10
           }
         ]
@@ -59,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-cli-tester.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-cli-tester.sh",
             "timeout": 10
           }
         ]
@@ -69,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-sdk-tester.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-sdk-tester.sh",
             "timeout": 10
           }
         ]
@@ -79,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-witness-verifier.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-witness-verifier.sh",
             "timeout": 10
           }
         ]
@@ -89,7 +90,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-zkir-checker.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/subagent-stop-zkir-checker.sh",
             "timeout": 10
           }
         ]

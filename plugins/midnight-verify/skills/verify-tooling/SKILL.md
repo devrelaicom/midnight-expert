@@ -6,14 +6,14 @@ description: >-
   CLI execution (primary for behavioral claims) or source investigation
   (for internal/architectural claims). Handles claims about compact compile
   flags, compactc behavior, compiler output structure, error messages, exit
-  codes, version management, and CLI installation. Loaded by the /verify
+  codes, version management, and CLI installation. Loaded by the /midnight-verify:verify
   command alongside the hub skill.
 version: 0.1.0
 ---
 
 # Tooling Claim Classification
 
-This skill classifies Compact CLI tooling claims and determines which verification method to use. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies Compact CLI tooling claims and determines which verification method to use. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Distinction from verify-compact
 

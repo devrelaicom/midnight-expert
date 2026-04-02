@@ -218,12 +218,16 @@ Desktop.ini
 # LLMs
 # =========================
 .claude/
+.claire/
+.codex-workspace/
+.gemini-workspace/
+.superpowers/
 reviews/
 
 # =========================
 # Midnight
 # =========================
 .compact/
-docs/plans/
-docs/findings/
+.midnight-expert/
+docs/
 .worktrees/

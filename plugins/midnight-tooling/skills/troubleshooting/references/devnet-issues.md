@@ -4,7 +4,7 @@ Diagnose and resolve common issues with the Midnight local devnet, including net
 
 ## Network Fails to Start
 
-**Symptoms:** `/devnet start` fails, containers do not appear in `docker ps`, or the command hangs.
+**Symptoms:** `/midnight-tooling:devnet start` fails, containers do not appear in `docker ps`, or the command hangs.
 
 **Common causes and fixes:**
 
@@ -12,7 +12,7 @@ Diagnose and resolve common issues with the Midnight local devnet, including net
    ```bash
    docker info
    ```
-   If this fails, start Docker before retrying `/devnet start`.
+   If this fails, start Docker before retrying `/midnight-tooling:devnet start`.
 
 2. **Port conflicts:** The devnet uses several ports by default:
    - **9944** — Midnight node (WebSocket RPC)
@@ -35,15 +35,15 @@ Diagnose and resolve common issues with the Midnight local devnet, including net
 
 **Diagnosis:**
 
-1. Check overall status with `/devnet status` to see which services are running.
-2. Check health of each service with `/devnet health`.
+1. Check overall status with `/midnight-tooling:devnet status` to see which services are running.
+2. Check health of each service with `/midnight-tooling:devnet health`.
 3. Inspect logs for the failing service:
    ```
-   /devnet logs --service node
-   /devnet logs --service indexer
-   /devnet logs --service proof-server
+   /midnight-tooling:devnet logs --service node
+   /midnight-tooling:devnet logs --service indexer
+   /midnight-tooling:devnet logs --service proof-server
    ```
-4. A service may fail to start if its dependencies are not yet ready. The indexer depends on the node being available. If the node starts slowly, the indexer may fail on its initial connection attempt. Restarting the network with `/devnet stop` then `/devnet start` often resolves transient startup ordering issues.
+4. A service may fail to start if its dependencies are not yet ready. The indexer depends on the node being available. If the node starts slowly, the indexer may fail on its initial connection attempt. Restarting the network with `/midnight-tooling:devnet stop` then `/midnight-tooling:devnet start` often resolves transient startup ordering issues.
 
 ## Wallet Initialization and Funding
 
@@ -60,7 +60,7 @@ Wallet initialization, account funding, balance checking, transfers, and dust re
 1. Check node health first — the indexer cannot sync if the node is not producing or processing blocks.
 2. Check indexer logs for connection errors or sync failures:
    ```
-   /devnet logs --service indexer
+   /midnight-tooling:devnet logs --service indexer
    ```
 3. If the node is healthy but the indexer is stale, restart the indexer. If the issue persists, perform a clean slate recovery (see below).
 
@@ -72,18 +72,18 @@ Wallet initialization, account funding, balance checking, transfers, and dust re
 
 1. Stop the network and remove all volumes:
    ```
-   /devnet stop --remove-volumes
+   /midnight-tooling:devnet stop --remove-volumes
    ```
 2. Start a fresh network:
    ```
-   /devnet start
+   /midnight-tooling:devnet start
    ```
 
 This removes all chain data, indexer state, and proof server caches. After a clean start, any wallet operations (initialization, funding) must be re-run via the `midnight-wallet` plugin.
 
 ## MCP Server Connectivity
 
-**Symptoms:** `/devnet` commands fail before reaching Docker, MCP tool calls return errors, or the midnight-devnet MCP server does not start.
+**Symptoms:** `/midnight-tooling:devnet` commands fail before reaching Docker, MCP tool calls return errors, or the midnight-devnet MCP server does not start.
 
 **Common causes and fixes:**
 

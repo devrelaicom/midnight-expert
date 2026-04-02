@@ -1,12 +1,12 @@
 ---
-name: wallet-testing
+name: midnight-cq:wallet-testing
 description: >-
   This skill should be used when the user asks to write wallet tests, test my
   wallet variant, test my capability, test my wallet service, test WalletBuilder,
   write wallet SDK tests, test Effect code, test Observable state, mock wallet
-  services, or test wallet state management. Also triggered by requests to write
-  tests for custom wallet implementations, extend wallet capabilities, implement
-  custom wallet services, or compose wallets with WalletBuilder.
+  services, test wallet state management, wallet test fixtures, wallet test setup,
+  or Vitest wallet. Also triggered by requests to write tests for custom wallet
+  implementations or compose wallets with WalletBuilder.
 version: 0.1.0
 ---
 
@@ -20,9 +20,9 @@ Midnight Wallet SDK packages (`@midnight-ntwrk/wallet-sdk-*`).
 | Question | Skill |
 |----------|-------|
 | Am I building a custom wallet variant or capability? | **wallet-testing** (this skill) |
-| Am I integrating with the wallet via the DApp Connector API? | `dapp-connector-testing` |
-| Am I testing Compact contract logic? | `compact-testing` |
-| Am I testing DApp UI flows? | `dapp-testing` |
+| Am I integrating with the wallet via the DApp Connector API? | `midnight-cq:dapp-connector-testing` |
+| Am I testing Compact contract logic? | `midnight-cq:compact-testing` |
+| Am I testing DApp UI flows? | `midnight-cq:dapp-testing` |
 
 ## What This Skill Covers
 
@@ -36,9 +36,9 @@ You are testing code that uses the wallet SDK packages directly:
 
 ## What This Skill Does NOT Cover
 
-- Testing DApp code that integrates via the DApp Connector API (use `dapp-connector-testing`)
-- Testing Compact contracts (use `compact-testing`)
-- Testing DApp UI end-to-end (use `dapp-testing`)
+- Testing DApp code that integrates via the DApp Connector API (use `midnight-cq:dapp-connector-testing`)
+- Testing Compact contracts (use `midnight-cq:compact-testing`)
+- Testing DApp UI end-to-end (use `midnight-cq:dapp-testing`)
 - Enforcing the wallet SDK's internal coding standards — those are the SDK team's concern, not the user's
 
 ## The Boundary Problem

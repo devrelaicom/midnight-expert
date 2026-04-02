@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify SDK behavioral claims by running E2E scripts
   against a local Midnight devnet. Checks devnet health first, then writes
   raw SDK scripts or testkit-js tests to exercise the full transaction
-  pipeline. Dispatched by the /verify command.
+  pipeline. Dispatched by the /midnight-verify:verify command.
 
   Example 1: Claim "deployContract deploys and returns a contract address" —
   writes a raw SDK script that deploys a counter contract, checks the result

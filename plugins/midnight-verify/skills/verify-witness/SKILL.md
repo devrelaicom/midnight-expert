@@ -5,13 +5,13 @@ description: >-
   witness claim is being verified and dispatches to the witness-verifier.
   Handles claims about witness type correctness, name matching, return tuple
   shape, type mappings, behavioral correctness, private state patterns, and
-  two-file verification. Loaded by the /verify command alongside the hub skill.
+  two-file verification. Loaded by the /midnight-verify:verify command alongside the hub skill.
 version: 0.5.0
 ---
 
 # Witness Claim Classification
 
-This skill classifies witness-related claims and determines which agent(s) to dispatch. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies witness-related claims and determines which agent(s) to dispatch. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Claim Type → Method Routing
 
@@ -33,7 +33,7 @@ When you receive a witness-related claim, classify it using this table:
 | Claim Type | Example | Dispatch |
 |---|---|---|
 | Behavioral correctness | "This contract + witness combination produces valid results" | @"midnight-verify:witness-verifier (agent)" |
-| Two-file verification | `/verify contracts/counter.compact src/witnesses.ts` | @"midnight-verify:witness-verifier (agent)" (both files) |
+| Two-file verification | `/midnight-verify:verify contracts/counter.compact src/witnesses.ts` | @"midnight-verify:witness-verifier (agent)" (both files) |
 | Witness + devnet E2E | "This witness works correctly when deployed" | @"midnight-verify:witness-verifier (agent)" + @"midnight-verify:sdk-tester (agent)" (concurrent) |
 
 ### Cross-Domain Claims

@@ -1,17 +1,20 @@
 ---
 name: midnight-fact-check:fact-check-classification
 description: >-
-  Domain classification skill for the midnight-fact-check pipeline. Defines
-  the four verification domains (Compact, SDK, ZKIR, Witness), how to tag
-  claims with domains, rules for cross-domain classification, and handling
-  of boundary cases. Used by the domain-classifier agent to tag claims in
-  its assigned domain.
+  This skill should be used when classifying fact-check claims into
+  verification domains (Compact, SDK, ZKIR, Witness). Covers how to tag
+  claims with their domain, assign classification confidence, handle
+  cross-domain claims, and resolve boundary cases between domains like
+  compiler behavior vs compiled output. Triggered by queries like
+  "classify these claims", "tag claims by domain", "which domain does
+  this claim belong to", or "run domain classification on the claims file".
+  Used by the domain-classifier agent in the midnight-fact-check pipeline.
 version: 0.1.0
 ---
 
 # Domain Classification
 
-You are a domain-specialist classifier. You have been assigned **one domain** and must tag every claim in the claims file that belongs to your domain.
+The domain classifier operates on one domain at a time. To classify claims, read the claims file and tag each claim that belongs to the assigned domain.
 
 ## The Four Domains
 
@@ -74,9 +77,9 @@ Claims about TypeScript witness implementations:
 - "Boolean maps to boolean in TypeScript" → witness
 - "WitnessContext is the first parameter" → witness
 
-## Your Task
+## Classification Task
 
-You have been assigned the domain: **[provided in dispatch prompt]**
+The dispatching agent provides the assigned domain as a parameter in the dispatch prompt.
 
 1. Read the claims file (your copy)
 2. For each claim, determine if it belongs to your domain
@@ -100,8 +103,8 @@ Add or merge these fields:
 ```
 
 - If `domains` already exists (from another classifier), **append** your domain to the array.
-- If `classification` already exists, only overwrite `primary_domain` if your confidence is higher.
-- **confidence** values: `"high"` (clearly in your domain), `"medium"` (partially in your domain, might be cross-domain).
+- If `classification` already exists, only overwrite `primary_domain` if the new confidence is higher. When both are `"high"` or both `"medium"`, keep the existing `primary_domain` and append the new domain to `domains`.
+- **confidence** values: `"high"` (clearly in this domain), `"medium"` (partially in this domain, might be cross-domain).
 
 ### Cross-Domain Claims
 
@@ -125,5 +128,6 @@ Write the updated claims file to your copy path. Return a summary:
 
 ```
 Tagged N claims as [domain]. Skipped M claims (not in my domain).
-Cross-domain tags: K claims also tagged by other domains.
 ```
+
+Note: cross-domain tag counts are determined after all classifiers merge results, not at individual classification time.

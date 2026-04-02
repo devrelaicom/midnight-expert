@@ -1,12 +1,14 @@
 ---
-name: wallet-cli
+name: midnight-wallet:wallet-cli
 description: >-
   This skill should be used when the user asks about the Midnight wallet CLI,
   midnight wallet, wallet balance, NIGHT tokens, DUST tokens, transferring
-  NIGHT, funding accounts, test wallets, wallet setup, dust registration,
-  airdrop on devnet, genesis address, wallet generation, BIP-39 mnemonics,
-  midnight-wallet-cli, midnight-wallet-mcp, MCP wallet tools, wallet addresses,
-  checking balances, or troubleshooting wallet operation errors and exit codes
+  NIGHT, send tokens, funding accounts, test wallets, wallet setup, dust
+  registration, airdrop on devnet, genesis address, wallet generation,
+  BIP-39 mnemonics, midnight-wallet-cli, midnight-wallet-mcp, MCP wallet tools,
+  wallet addresses, checking balances, list wallets, active wallet, wallet config,
+  wallet cache, removing wallets, or troubleshooting wallet operation errors and
+  exit codes
 ---
 
 # Midnight Wallet CLI
@@ -27,7 +29,7 @@ This skill covers the `midnight-wallet-cli` MCP tools for wallet management on t
 
 ### Set up test wallets
 
-> `/setup-test-wallets alice bob charlie`
+> `/midnight-wallet:setup-test-wallets alice bob charlie`
 
 Generates 3 wallets, airdrops NIGHT from the genesis wallet, registers dust for each, and saves aliases so they can be referenced by name.
 
@@ -39,7 +41,7 @@ Agent resolves `#alice` and `#bob` nicknames from the alias file, then calls `mi
 
 ### Fund an existing address
 
-> `/setup-test-wallets myapp mn_addr_undeployed1...`
+> `/midnight-wallet:setup-test-wallets myapp mn_addr_undeployed1...`
 
 Saves the alias `myapp` pointing to the given address, airdrops NIGHT, and registers dust.
 
@@ -51,24 +53,19 @@ Agent reads the alias file, then calls `midnight_balance` and `midnight_dust_sta
 
 ### Restore wallet from mnemonic
 
-> `/fund-mnemonic alice "word1 word2 ... word24"`
+> `/midnight-wallet:fund-mnemonic alice "word1 word2 ... word24"`
 
-Derives the wallet from the BIP-39 mnemonic, then hands off to `/setup-test-wallets` with the derived address.
+Derives the wallet from the BIP-39 mnemonic, then hands off to `/midnight-wallet:setup-test-wallets` with the derived address.
 
 ## Wallet Nicknames
 
-The `#name` syntax in user messages is resolved from alias files using `wallet-aliases.sh`.
+The `#name` syntax in user messages resolves to wallet addresses via alias files. Load the `midnight-wallet:wallet-aliases` skill for the script, alias file format, and search order.
 
-**Search order:**
-
-1. `.claude/midnight-wallet/wallets.local.json` — project-local aliases (checked first)
-2. `~/.claude/midnight-wallet/wallets.json` — global aliases (fallback)
-
-Resolution is performed via `wallet-aliases.sh get <name> --network <active-network>`. The script returns the address for the active network, or exits with code 1 if the nickname is not found.
-
-If a nickname is not found in either alias file, suggest running `/setup-test-wallets` to create and register the wallet.
+To resolve a nickname: run `wallet-aliases.sh get <name> --network <active-network>`. If exit code 1 (not found), suggest running `/midnight-wallet:setup-test-wallets` to create and register the wallet.
 
 ## Quick MCP Tool Reference
+
+For full parameter schemas and examples, see `references/mcp-tools.md`.
 
 | Tool | Description |
 |------|-------------|
@@ -91,13 +88,14 @@ If a nickname is not found in either alias file, suggest running `/setup-test-wa
 | `midnight_config_set` | Write a wallet CLI config value |
 | `midnight_config_unset` | Remove a wallet CLI config value |
 | `midnight_cache_clear` | Clear wallet state cache |
-| `midnight_localnet_up` | DO NOT USE — use `/devnet start` instead |
-| `midnight_localnet_stop` | DO NOT USE — use `/devnet stop` instead |
-| `midnight_localnet_down` | DO NOT USE — use `/devnet stop` instead |
+| `midnight_localnet_up` | DO NOT USE — use `/midnight-tooling:devnet start` instead |
+| `midnight_localnet_stop` | DO NOT USE — use `/midnight-tooling:devnet stop` instead |
+| `midnight_localnet_down` | DO NOT USE — use `/midnight-tooling:devnet stop` instead |
 | `midnight_localnet_status` | Show local network service status (safe read-only check) |
+| `midnight_localnet_logs` | Stream service logs (safe read-only) |
 | `midnight_localnet_clean` | DO NOT USE without explicit user confirmation |
 
-The `midnight_localnet_*` tools (except `midnight_localnet_status`) conflict with the `midnight-tooling` plugin's devnet skill. Do not use them to manage the local network — use `/devnet start`, `/devnet stop`, etc. instead.
+The `midnight_localnet_*` tools (except `midnight_localnet_status`) conflict with the `midnight-tooling` plugin's devnet skill. Do not use them to manage the local network — use `/midnight-tooling:devnet start`, `/midnight-tooling:devnet stop`, etc. instead.
 
 ## Reference Files
 

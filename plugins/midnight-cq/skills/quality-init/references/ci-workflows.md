@@ -111,7 +111,7 @@ jobs:
           compact-version: '0.29.0'
 
       - name: Compile contracts
-        run: npx compact-compiler --skip-zk
+        run: npx compact compile --skip-zk
 
       - name: Run type checks
         run: npx tsc --noEmit

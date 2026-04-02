@@ -1,11 +1,11 @@
 ---
-name: devnet
-description: This skill should be used when the user asks about the Midnight local development network, including "start the devnet", "stop the devnet", "restart the network", "local development network", "midnight node", "midnight indexer", "network status", "network health", "devnet config", "network endpoints", "port 9944", "port 8088", "port 6300", "Docker Compose", "devnet not starting", "local blockchain", "devnet logs", "network ID", "generate devnet", "devnet versions", "update devnet", "devnet stale"
+name: midnight-tooling:devnet
+description: This skill should be used when the user asks about the Midnight local development network, including "start the devnet", "stop the devnet", "restart the network", "local development network", "midnight node", "midnight indexer", "network status", "network health", "devnet config", "network endpoints", "port 9944", "port 8088", "port 6300", "Docker Compose", "devnet not starting", "local blockchain", "devnet logs", "network ID", "generate devnet", "devnet versions", "update devnet", "devnet stale", "proof server", "devnet volumes", "clean slate", "docker containers", "devnet compose file", "devnet endpoints"
 ---
 
 # Midnight Development Network (Devnet)
 
-The devnet is a local 3-service blockchain network for Midnight development. It runs via Docker Compose and is managed through the `/devnet` command, which uses bash and Docker Compose commands directly.
+The devnet is a local 3-service blockchain network for Midnight development. It runs via Docker Compose and is managed through the `/midnight-tooling:devnet` command, which uses bash and Docker Compose commands directly.
 
 ## Terminology -- Read This First
 
@@ -37,15 +37,15 @@ If Docker is not installed, see `references/docker-setup.md` for platform-specif
 
 | Command | Purpose |
 |---------|---------|
-| `/devnet generate` | Create a `devnet.yml` from template with latest stable versions |
-| `/devnet update` | Update image versions in an existing `devnet.yml` |
-| `/devnet start` | Start all 3 services (generates compose file on first run) |
-| `/devnet stop` | Stop all containers |
-| `/devnet restart` | Stop and restart the network |
-| `/devnet status` | Check Docker container state for all services (fast) |
-| `/devnet health` | Hit HTTP endpoints on each service to verify responsiveness (thorough, with timing) |
-| `/devnet logs` | View recent logs from the network services |
-| `/devnet config` | Show endpoint URLs, network ID, image versions, and file info |
+| `/midnight-tooling:devnet generate` | Create a `devnet.yml` from template with latest stable versions |
+| `/midnight-tooling:devnet update` | Update image versions in an existing `devnet.yml` |
+| `/midnight-tooling:devnet start` | Start all 3 services (generates compose file on first run) |
+| `/midnight-tooling:devnet stop` | Stop all containers |
+| `/midnight-tooling:devnet restart` | Stop and restart the network |
+| `/midnight-tooling:devnet status` | Check Docker container state for all services (fast) |
+| `/midnight-tooling:devnet health` | Hit HTTP endpoints on each service to verify responsiveness (thorough, with timing) |
+| `/midnight-tooling:devnet logs` | View recent logs from the network services |
+| `/midnight-tooling:devnet config` | Show endpoint URLs, network ID, image versions, and file info |
 
 ## Services
 
@@ -81,12 +81,12 @@ The compose file template is at `${CLAUDE_SKILL_DIR}/templates/devnet.yml`.
 | `docker compose: command not found` | Older Docker without Compose V2 | Update Docker Desktop or install docker-compose-plugin |
 | Services fail to start or exit immediately | Insufficient Docker resources | Allocate at least 4 GB RAM to Docker Desktop (see `references/docker-setup.md`) |
 | Port 9944, 8088, or 6300 already in use | Another process occupying a required port | Stop the conflicting process; use `lsof -i :<port>` to identify it |
-| Network starts but indexer not responding | Indexer still syncing with node | Wait 10-20 seconds after start; use `/devnet health` to check readiness |
+| Network starts but indexer not responding | Indexer still syncing with node | Wait 10-20 seconds after start; use `/midnight-tooling:devnet health` to check readiness |
 | Stale chain state causing errors | Corrupted or outdated volumes | Restart with `--remove-volumes` for a clean slate |
-| Container name conflicts | Previous containers not cleaned up | Stop the devnet first (`/devnet stop`), then start again |
+| Container name conflicts | Previous containers not cleaned up | Stop the devnet first (`/midnight-tooling:devnet stop`), then start again |
 | `Failed to fetch tags` from Docker Hub | Docker Hub unreachable or rate-limited | Check internet connection; use `--node-version` etc. to specify versions manually |
 | Architecture mismatch on Apple Silicon | Image not available for arm64 | See Apple Silicon note in `references/docker-setup.md` |
-| Compose file stale warning | File older than 5 days | Run `/devnet update` to refresh image versions |
+| Compose file stale warning | File older than 5 days | Run `/midnight-tooling:devnet update` to refresh image versions |
 
 ## Wallet Operations
 

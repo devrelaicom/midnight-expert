@@ -1,5 +1,5 @@
 ---
-name: compact-cli
+name: midnight-tooling:compact-cli
 description: >-
   This skill should be used when the user asks about the Compact CLI, Compact
   Dev Tool, Compact Developer CLI, or compact devtools for Midnight Network
@@ -11,8 +11,9 @@ description: >-
   which version of the compiler or language they're running, setting up a
   project-local toolchain directory, configuring import search paths for
   multi-file contracts, understanding error messages or exit codes from the
-  compiler or formatter, or troubleshooting why format or fixup is reporting
-  failures
+  compiler or formatter, setting up or uninstalling the Compact toolchain,
+  resolving GitHub API rate limiting when listing or updating versions,
+  or troubleshooting why format or fixup is reporting failures
 ---
 
 # Compact CLI Management
@@ -77,6 +78,8 @@ The CLI and compiler update independently:
 | `compact check` | `ch` | Check for compiler updates without downloading |
 | `compact clean` | `cl` | Remove all installed compiler versions |
 | `compact clean --keep-current` | | Remove all except current default version |
+| `compact clean --cache` | | Remove only cached download artifacts |
+| `compact update --no-set-default [VERSION]` | | Download compiler version without setting it as default |
 | `compact self check` | `s check` | Check for CLI tool updates |
 | `compact self update` | `s update` | Update the CLI tool itself |
 
@@ -92,13 +95,13 @@ The `--directory` flag can appear before or after the subcommand — both positi
 
 ## Compiling
 
-The CLI invokes the compiler via `compact compile <source> <target-dir>`. Use `--skip-zk` during development to skip proving key generation (significantly faster). Prefix with `+VERSION` (full semver, e.g. `+0.29.0`) to use a specific installed compiler version. See `references/compile-format-fixup.md` for all compiler flags, output structure, import paths, and compilation troubleshooting.
+The CLI invokes the compiler via `compact compile <source> <target-dir>`. Use `--skip-zk` during development to skip proving key generation (significantly faster). Prefix with `+VERSION` (full semver, e.g. `+0.29.0`) to use a specific installed compiler version. See `references/compile-format-fixup.md` for all compiler flags, output structure, import paths, and compilation troubleshooting. See `references/troubleshooting.md` for compilation error messages and exit codes.
 
 ## Formatting and Fixup
 
 `compact format` formats `.compact` source files in place. When no files are specified, it recursively formats all `.compact` files in the current directory, respecting `.gitignore`. Use `--check` for CI pipelines (exits non-zero if changes needed).
 
-`compact fixup` applies source-level transformations such as renaming deprecated identifiers. It shares the same file-targeting and `--check` behavior as `format`. See `references/compile-format-fixup.md` for full details on both commands.
+`compact fixup` applies source-level transformations such as renaming deprecated identifiers. It shares the same file-targeting and `--check` behavior as `format`. See `references/compile-format-fixup.md` for full details on both commands. See `references/troubleshooting.md` for formatting and fixup error messages.
 
 ## Version Management
 

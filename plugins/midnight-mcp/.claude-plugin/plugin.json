@@ -1,7 +1,7 @@
 {
   "name": "midnight-mcp",
-  "version": "0.1.0",
-  "description": "Skills for effective use of the Midnight MCP server — search strategies, contract analysis and compilation workflows, simulation, repository access, and troubleshooting",
+  "version": "0.1.1",
+  "description": "Skills for effective use of the Midnight MCP server \u2014 search strategies, contract analysis and compilation workflows, simulation, repository access, and troubleshooting",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"

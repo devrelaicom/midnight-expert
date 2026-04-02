@@ -103,7 +103,7 @@ When displaying Ledger release notes as a substitute, include a note such as:
 | lace (RC) | `lace-1-0-0-RC1.mdx` | 1.0.0-RC1 |
 | wallet | `wallet-5-0-0.mdx` | 5.0.0 |
 | compact | `compact-0-20-28-0.mdx` | Check `title` in frontmatter |
-| compact (special) | `minokawa-0-18-26-0.mdx` | Check `title` in frontmatter |
+| compact (special) | `minokawa-0-18-26-0.mdx` | Check `title` in frontmatter. "Minokawa" is a historical codename used in early Compact compiler release note filenames. |
 
 ### Extraction Rules
 

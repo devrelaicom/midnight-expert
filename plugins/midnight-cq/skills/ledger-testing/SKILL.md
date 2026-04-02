@@ -1,5 +1,5 @@
 ---
-name: ledger-testing
+name: midnight-cq:ledger-testing
 description: >-
   This skill should be used when the user asks to write ledger tests, test
   transaction construction, test proof staging, test ZswapLocalState, test
@@ -7,8 +7,9 @@ description: >-
   test onchain-runtime, or test well-formedness. Also triggered by requests
   to write tests for code that uses @midnight-ntwrk/ledger-v8 or
   @midnight-ntwrk/onchain-runtime directly, test proof staging lifecycle,
-  test token type functions, test crypto fixtures, or test serialization
-  round-trips for ledger types.
+  test token type functions, test crypto fixtures, test serialization
+  round-trips for ledger types, test fee estimation, test SyntheticCost,
+  or test coinNullifier.
 version: 0.1.0
 ---
 
@@ -22,10 +23,10 @@ Write tests for code that uses `@midnight-ntwrk/ledger-v8` and
 | Question | Skill |
 |----------|-------|
 | Am I testing code that calls ledger-v8 or onchain-runtime APIs? | **ledger-testing** (this skill) |
-| Am I testing Compact contract logic? | `compact-testing` |
-| Am I building a custom wallet variant or capability? | `wallet-testing` |
-| Am I integrating with the wallet via the DApp Connector API? | `dapp-connector-testing` |
-| Am I testing DApp UI flows? | `dapp-testing` |
+| Am I testing Compact contract logic? | `midnight-cq:compact-testing` |
+| Am I building a custom wallet variant or capability? | `midnight-cq:wallet-testing` |
+| Am I integrating with the wallet via the DApp Connector API? | `midnight-cq:dapp-connector-testing` |
+| Am I testing DApp UI flows? | `midnight-cq:dapp-testing` |
 
 ## What This Skill Covers
 
@@ -42,10 +43,10 @@ You are testing code that uses the ledger packages directly:
 
 ## What This Skill Does NOT Cover
 
-- Testing Compact contract logic (use `compact-testing`)
-- Testing DApp UI flows end-to-end (use `dapp-testing`)
-- Testing wallet SDK implementations (use `wallet-testing`)
-- Testing DApp Connector API integration (use `dapp-connector-testing`)
+- Testing Compact contract logic (use `midnight-cq:compact-testing`)
+- Testing DApp UI flows end-to-end (use `midnight-cq:dapp-testing`)
+- Testing wallet SDK implementations (use `midnight-cq:wallet-testing`)
+- Testing DApp Connector API integration (use `midnight-cq:dapp-connector-testing`)
 
 ## The Core Testing Challenges
 

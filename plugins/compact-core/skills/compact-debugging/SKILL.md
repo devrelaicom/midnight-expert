@@ -1,5 +1,5 @@
 ---
-name: compact-debugging
+name: compact-core:compact-debugging
 description: This skill should be used when a user needs help debugging Compact smart contract errors, including compiler failures ("parse error", "unbound identifier"), proof generation issues, TypeScript witness type mismatches, disclosure errors ("potential witness-value disclosure must be declared"), or compatibility problems between Midnight components. Also applies when a user says their contract "won't compile", "worked before but broke after update", or when consecutive fix attempts keep revealing new errors. This skill orchestrates the debugging process and routes to domain-specific compact-core skills.
 version: 0.1.0
 ---
@@ -45,16 +45,16 @@ First determine: **"Is this a code bug or a compatibility issue?"**
 
 ## Step 0 — Mechanical Verification Baseline
 
-Before any investigation, run `/verify` on the contract:
+Before any investigation, run `/midnight-verify:verify` on the contract:
 
 ```bash
-/verify <file.compact>
+/midnight-verify:verify <file.compact>
 ```
 
 If the issue involves witnesses:
 
 ```bash
-/verify <contract.compact> <witnesses.ts>
+/midnight-verify:verify <contract.compact> <witnesses.ts>
 ```
 
 The verification result immediately narrows the problem space:
@@ -64,7 +64,7 @@ The verification result immediately narrows the problem space:
 - **Execution failure** → the contract logic fails at runtime (proceed to hypothesis phase)
 - **All pass** → the contract is mechanically correct; the issue may be environmental or integration-related
 
-If `/verify` identifies the issue directly, present the finding — no further investigation may be needed.
+If `/midnight-verify:verify` identifies the issue directly, present the finding — no further investigation may be needed.
 
 ## Symptom-Driven Triage Table
 

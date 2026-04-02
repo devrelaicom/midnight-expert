@@ -53,6 +53,30 @@ export function classifyError(err: unknown): ClassifiedError {
 		};
 	}
 
+	if (lower.includes("wallet") && lower.includes("not found")) {
+		return {
+			code: ErrorCode.WALLET_NOT_FOUND,
+			message,
+			action: `Run \`${CLI_NAME} wallet:list\` to see available wallets, or \`${CLI_NAME} wallet:create <name>\` to create one.`,
+		};
+	}
+
+	if (lower.includes("stale") || lower.includes("utxo") && lower.includes("spent")) {
+		return {
+			code: ErrorCode.STALE_UTXO,
+			message,
+			action: "A coin was already spent. Wait for wallet sync to complete and retry.",
+		};
+	}
+
+	if (lower.includes("invalid") && (lower.includes("seed") || lower.includes("mnemonic"))) {
+		return {
+			code: ErrorCode.INVALID_SEED,
+			message,
+			action: "The wallet seed must be a 64-character hex string (32 bytes).",
+		};
+	}
+
 	if (lower.includes("timeout") || lower.includes("timed out")) {
 		return {
 			code: ErrorCode.SYNC_TIMEOUT,

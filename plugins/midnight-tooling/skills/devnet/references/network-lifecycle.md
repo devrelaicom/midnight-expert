@@ -13,7 +13,7 @@ The `generate` subcommand creates a `devnet.yml` from the plugin's template:
 3. Runs the generator script to substitute versions into the template
 4. Writes `devnet.yml` to the target directory (default: `~/.midnight-expert/devnet/`)
 
-If `/devnet start` is run and no compose file exists, the generate flow runs automatically.
+If `/midnight-tooling:devnet start` is run and no compose file exists, the generate flow runs automatically.
 
 ### Update (Existing File)
 
@@ -31,14 +31,14 @@ Update works on any Docker Compose file — including hand-written ones or files
 
 Generated compose files include a `# Generated: <timestamp>` header comment. The `check-staleness.sh` script parses this and reports the file's age.
 
-When `/devnet start` runs (without `--pull`), it checks staleness:
+When `/midnight-tooling:devnet start` runs (without `--pull`), it checks staleness:
 - **Under 5 days**: Proceeds normally
 - **5 days or older**: Pauses, informs the user of the file's age, and offers to run an update
 - **No timestamp found**: Notes this and proceeds (user-created files won't have the header)
 
 ## Starting the Network
 
-`/devnet start [--pull] [--file <path>]`
+`/midnight-tooling:devnet start [--pull] [--file <path>]`
 
 1. Locates `devnet.yml` via the finder script (or `--file`). If not found, runs the generate flow.
 2. If `--pull`: runs the update flow first (resolves latest versions, edits the file), then runs `docker compose pull` to fetch the new images.
@@ -53,11 +53,11 @@ The network is fully ready when:
 - The indexer is responding to GraphQL queries on port 8088 (healthcheck passing)
 - The proof server health endpoint returns OK on port 6300
 
-Use `/devnet health` to verify all of these conditions.
+Use `/midnight-tooling:devnet health` to verify all of these conditions.
 
 ## Stopping the Network
 
-`/devnet stop [--remove-volumes] [--name <project-name>]`
+`/midnight-tooling:devnet stop [--remove-volumes] [--name <project-name>]`
 
 1. If `--remove-volumes`: confirms with the user (destructive operation).
 2. Runs `docker compose -p <name> down` (adds `-v` if removing volumes).
@@ -82,7 +82,7 @@ Do **not** use `--remove-volumes` when:
 
 ## Restarting the Network
 
-`/devnet restart [--pull] [--remove-volumes] [--file <path>] [--name <project-name>]`
+`/midnight-tooling:devnet restart [--pull] [--remove-volumes] [--file <path>] [--name <project-name>]`
 
 Stops the network (with `--remove-volumes` if specified), then starts it (with `--pull` if specified). A restart with `--remove-volumes` is the most reliable way to return to a known-good state.
 
@@ -111,7 +111,7 @@ A container can be "running" (per Docker) but not yet ready to accept requests �
 
 ## Getting Network Configuration
 
-`/devnet config [--file <path>]`
+`/midnight-tooling:devnet config [--file <path>]`
 
 Reads the `devnet.yml` file and displays:
 - Image versions for each service
@@ -136,7 +136,7 @@ The network ID for the local devnet is `undeployed`. This value is used in DApp 
 
 ## Viewing Logs
 
-`/devnet logs [--service <name>] [--lines <n>] [--name <project-name>]`
+`/midnight-tooling:devnet logs [--service <name>] [--lines <n>] [--name <project-name>]`
 
 Retrieves log output from devnet containers via `docker compose -p <name> logs`. Use this to diagnose startup failures, connection issues, or unexpected service behavior.
 
@@ -165,21 +165,21 @@ Generated compose files include `name: midnight-devnet`. Commands that target ru
 ### First-time setup
 
 1. Ensure Docker Desktop is installed and running (see `docker-setup.md`)
-2. Run `/devnet start` — this generates the compose file (resolving latest versions), pulls images, and starts services
-3. Run `/devnet health` to confirm everything is ready
+2. Run `/midnight-tooling:devnet start` — this generates the compose file (resolving latest versions), pulls images, and starts services
+3. Run `/midnight-tooling:devnet health` to confirm everything is ready
 
 ### Daily development
 
-1. Run `/devnet start` to bring up the network
+1. Run `/midnight-tooling:devnet start` to bring up the network
 2. Develop and test against the local endpoints
-3. Run `/devnet stop` when done (state is preserved for next time)
+3. Run `/midnight-tooling:devnet stop` when done (state is preserved for next time)
 
 ### Updating to latest versions
 
-1. Run `/devnet update` to resolve and apply the latest stable image versions
-2. Run `/devnet start --pull` to pull the new images and restart
+1. Run `/midnight-tooling:devnet update` to resolve and apply the latest stable image versions
+2. Run `/midnight-tooling:devnet start --pull` to pull the new images and restart
 
 ### Starting fresh
 
-1. Run `/devnet stop --remove-volumes` to wipe all state
-2. Run `/devnet start` to restart with a clean chain
+1. Run `/midnight-tooling:devnet stop --remove-volumes` to wipe all state
+2. Run `/midnight-tooling:devnet start` to restart with a clean chain

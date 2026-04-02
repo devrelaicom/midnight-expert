@@ -1,4 +1,5 @@
 ---
+name: midnight-tooling:doctor
 description: Comprehensive diagnostic and health report for the Compact CLI installation, compiler versions, PATH configuration, custom directory setup, proof server status, and plugin dependencies
 allowed-tools: Bash, Task, AskUserQuestion, mcp__plugin_midnight-tooling_octocode__githubViewRepoStructure, mcp__plugin_midnight-tooling_octocode__githubGetFileContent, mcp__plugin_midnight-tooling_midnight-devnet__network-status, mcp__plugin_midnight-tooling_midnight-devnet__health-check, mcp__plugin_midnight-tooling_midnight-devnet__get-network-config
 argument-hint: "[--auto-fix]"

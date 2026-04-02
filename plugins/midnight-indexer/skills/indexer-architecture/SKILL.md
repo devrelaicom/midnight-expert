@@ -1,5 +1,5 @@
 ---
-name: indexer-architecture
+name: midnight-indexer:indexer-architecture
 description: This skill covers indexer architecture, components, chain-indexer, wallet-indexer, indexer-api, spo-indexer, standalone mode, cloud mode, configuration, deployment, storage, PostgreSQL vs SQLite, NATS, telemetry, or node connection. Covers "how does the indexer connect to a node", "what database does the indexer use", "how to run the indexer locally", "choosing between standalone and cloud deployment", and "indexer data flow".
 version: 0.1.0
 ---
@@ -180,4 +180,4 @@ Both telemetry systems are disabled by default.
 ## Cross-References
 
 - `midnight-tooling:devnet` — Manages the indexer as part of the local development stack
-- `dapp-development:midnight-sdk` — Uses the indexer as a provider for contract state queries
+- `midnight-dapp-dev:midnight-sdk` — Uses the indexer as a provider for contract state queries

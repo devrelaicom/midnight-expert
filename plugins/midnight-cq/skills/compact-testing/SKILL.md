@@ -1,14 +1,12 @@
 ---
-name: compact-testing
+name: midnight-cq:compact-testing
 description: >-
-  This skill should be used when the user asks to write compact tests, test my
-  contract, set up simulator, mock contract, test witnesses, write unit tests
-  for compact, simulator pattern, createSimulator, mock contract pattern,
-  witness override, or test coverage. Also triggered by requests to write
-  Compact contract tests, use the OpenZeppelin simulator framework, set up
-  Vitest for a Compact project, test access control or error cases in a
-  Compact circuit, use describe.each or it.each for parameterized contract
-  tests, override witnesses in tests, or check invariants with afterEach.
+  This skill should be used when the user asks to write Compact contract tests,
+  test a contract with the simulator, set up createSimulator, mock contract
+  patterns, override witnesses in tests, write unit tests for Compact circuits,
+  set up Vitest for a Compact project, test access control or error cases,
+  use describe.each or it.each for parameterized tests, check invariants with
+  afterEach, property-based testing with fast-check, or ZK commitment testing.
 version: 0.1.0
 ---
 

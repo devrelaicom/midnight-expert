@@ -1,6 +1,6 @@
 ---
 name: midnight-verify:fast-verify
-description: Fast source-first verification of Midnight claims. Uses source inspection as the primary method with optional background execution checks. Faster and cheaper than /verify.
+description: Fast source-first verification of Midnight claims. Uses source inspection as the primary method with optional background execution checks. Faster and cheaper than /midnight-verify:verify.
 allowed-tools: Agent, AskUserQuestion, Read, Glob, Grep, Skill
 argument-hint: "[claim, file path, code snippet, or SDK question]"
 ---
@@ -123,7 +123,7 @@ If a background agent was dispatched and it completes:
 > **WARNING: Background verification disagrees with source verdict.**
 > - Source verdict: [foreground verdict]
 > - Execution verdict: [background verdict]
-> - Recommendation: Run `/verify` for full verification.
+> - Recommendation: Run `/midnight-verify:verify` for full verification.
 ```
 
 If the background agent has not completed by the time you present the foreground verdict, that is fine — the background result will surface later only if it disagrees.

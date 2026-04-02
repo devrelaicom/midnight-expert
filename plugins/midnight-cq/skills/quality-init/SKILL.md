@@ -1,11 +1,11 @@
 ---
-name: quality-init
+name: midnight-cq:quality-init
 description: >-
   This skill should be used when the user asks to set up linting, add code
-  quality tooling, configure biome, init project quality, add CI workflows,
-  set up git hooks, or add testing to a Midnight Network project. Also
-  triggered by "set up linting", "add code quality", "configure biome",
-  "init project quality", "add CI", "set up git hooks", or "add testing".
+  quality tooling, configure biome, init project quality, initialize code
+  quality, add CI workflows, add GitHub Actions, set up git hooks, add
+  pre-commit hooks, add testing, add Vitest, add Playwright, or configure
+  formatter for a Midnight Network project.
 version: 0.1.0
 ---
 

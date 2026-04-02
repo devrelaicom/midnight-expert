@@ -215,9 +215,9 @@ Use this if the cached state appears stale (e.g., after a devnet restart or afte
 |---------|-------|-----|
 | `DUST_REQUIRED` | Dust not registered | Call `midnight_dust_register` before `midnight_transfer`. |
 | `STALE_UTXO` | Concurrent transaction consumed a UTXO before submission | Wait 5–10 seconds, then retry. Use `"no-cache": true` on the next call. |
-| `PROOF_TIMEOUT` | Proof server too slow or not responding | Check proof server with `/devnet health`. Restart with `/devnet restart` if needed. |
+| `PROOF_TIMEOUT` | Proof server too slow or not responding | Check proof server with `/midnight-tooling:devnet health`. Restart with `/midnight-tooling:devnet restart` if needed. |
 | `INSUFFICIENT_BALANCE` | Not enough NIGHT | Call `midnight_airdrop` to top up (undeployed only), or receive a transfer. |
 | `TX_REJECTED` on airdrop | Using airdrop on preprod/preview | Use testnet faucet instead. |
-| `NETWORK_ERROR` on transfer | Devnet not running | Run `/devnet start` and wait for all services to be healthy. |
+| `NETWORK_ERROR` on transfer | Devnet not running | Run `/midnight-tooling:devnet start` and wait for all services to be healthy. |
 | Balance shows 0 after airdrop | Indexer not yet synced | Wait a few seconds and call `midnight_balance` again. |
 | Dust status shows registered but transfer fails with `DUST_REQUIRED` | Cache is stale | Call `midnight_cache_clear`, then retry. |

@@ -1,7 +1,7 @@
 {
   "name": "midnight-tooling",
-  "version": "0.2.0",
-  "description": "Installs, configures, and manages the Midnight Network development toolchain — Compact CLI, compiler version switching, local devnet (node, indexer, proof server), diagnostics, and release notes for all Midnight components.",
+  "version": "0.3.0",
+  "description": "Installs, configures, and manages the Midnight Network development toolchain \u2014 Compact CLI, compiler version switching, local devnet (node, indexer, proof server), diagnostics, and release notes for all Midnight components.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"

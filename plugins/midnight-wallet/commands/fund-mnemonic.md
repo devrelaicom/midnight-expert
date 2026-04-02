@@ -1,4 +1,5 @@
 ---
+name: midnight-wallet:fund-mnemonic
 description: Derive a wallet from a BIP-39 mnemonic, fund it, and register dust
 argument-hint: <name> "<24-word mnemonic>"
 ---
@@ -9,14 +10,14 @@ Derive a wallet from a BIP-39 mnemonic and set it up for use on the active netwo
 
 1. Call `midnight_wallet_generate` with the provided name and `--mnemonic` flag
 2. Extract the generated wallet's address for the active network from the response
-3. Hand off to the `setup-test-wallets` skill: `/setup-test-wallets <name> <address>`
+3. Hand off to the `setup-test-wallets` skill: `/midnight-wallet:setup-test-wallets <name> <address>`
 
 The setup-test-wallets skill will fund via airdrop (if on undeployed network), register dust, and save the wallet alias.
 
 ## Usage
 
 ```
-/fund-mnemonic alice "word1 word2 word3 ... word24"
+/midnight-wallet:fund-mnemonic alice "word1 word2 word3 ... word24"
 ```
 
 ## Arguments

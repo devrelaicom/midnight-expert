@@ -1,5 +1,5 @@
 ---
-name: compact-standard-library
+name: compact-core:compact-standard-library
 description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, JubjubPoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), deprecated stdlib names (CurvePoint, NativePoint, CoinInfo), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve, jubjubPointX, jubjubPointY, constructJubjubPoint), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library, prevent hallucination of non-existent stdlib functions, or search the Midnight MCP for stdlib source code.
 version: 0.1.0
 ---

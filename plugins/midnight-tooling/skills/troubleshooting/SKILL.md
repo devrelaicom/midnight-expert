@@ -1,6 +1,13 @@
 ---
-name: troubleshooting
-description: This skill should be used when the user encounters errors, installation failures, version mismatches, or unexpected behavior with Midnight Network tools. Covers troubleshooting "ERR_UNSUPPORTED_DIR_IMPORT", "version mismatch", "NixOS installation", "Windows setup", "WSL", "Bun setup", "wrong environment", "incorrect URLs", "connection refused", "proof server not starting", "Docker not running", "OOM", "compact command not found", "bad interpreter", "exec format error", "COMPACT_DIRECTORY", "direnv not working", "mise not working", "port 6300", "ZK parameters not found", "stale terminal", "environment variables not set", "breaking changes after upgrade", "devnet not starting", "node not running", "indexer not syncing", "network start failed", "devnet health check failing", "MCP server not connecting", "midnight-devnet MCP error", or searching Midnight GitHub issues and release notes for known bugs. For wallet initialization failures or funding failures, use the midnight-wallet plugin.
+name: midnight-tooling:troubleshooting
+description: >-
+  This skill should be used when the user encounters errors, installation
+  failures, version mismatches, or unexpected behavior with Midnight Network
+  tools. Covers Node.js import errors, Compact CLI issues, proof server and
+  Docker problems, devnet startup failures, environment and URL misconfiguration,
+  NixOS and Windows/WSL setup, and searching Midnight GitHub issues for known
+  bugs. For wallet initialization or funding failures, use the midnight-wallet
+  plugin.
 ---
 
 # Midnight Troubleshooting

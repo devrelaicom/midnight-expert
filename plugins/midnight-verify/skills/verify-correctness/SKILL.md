@@ -4,7 +4,7 @@ description: >-
   Hub skill for the midnight-verify plugin. Classifies claims by domain,
   routes to the appropriate domain skill, dispatches sub-agents based on the
   domain skill's routing, and synthesizes final verdicts. Loaded by the
-  /verify command — the main thread acts as orchestrator.
+  /midnight-verify:verify command — the main thread acts as orchestrator.
 version: 0.5.0
 ---
 

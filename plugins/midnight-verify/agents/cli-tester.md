@@ -4,7 +4,7 @@ description: >-
   Use this agent to verify Compact CLI tooling claims by running commands
   and observing output. Checks CLI availability, runs compact/compactc
   commands, captures stdout/stderr/exit codes, inspects filesystem changes,
-  and interprets results. Dispatched by the /verify command.
+  and interprets results. Dispatched by the /midnight-verify:verify command.
 
   Example 1: Claim "--skip-zk skips PLONK key generation" — compiles a
   minimal contract with and without --skip-zk, compares output directories

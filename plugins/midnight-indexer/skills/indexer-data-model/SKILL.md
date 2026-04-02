@@ -1,5 +1,5 @@
 ---
-name: indexer-data-model
+name: midnight-indexer:indexer-data-model
 description: This skill should be used when the user asks about the indexer data model, what the indexer indexes, indexer schema, contract actions, unshielded UTXOs, ledger events, DUST generation, Decentralized Unshielded Staking Token, SPO data, blocks table, transactions table, zswap events, indexer database, or the contract action lifecycle. Covers "what tables does the indexer have", "indexer entity relationships", and "what data does the indexer store".
 version: 0.1.0
 ---

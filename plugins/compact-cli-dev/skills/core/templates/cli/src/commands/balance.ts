@@ -2,6 +2,7 @@ import { Args } from "@oclif/core";
 import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
 import * as Rx from "rxjs";
 import { BaseCommand } from "../base-command.js";
+import { DUST_POLL_INTERVAL } from "../lib/constants.js";
 import { buildFacade, getWallet } from "../lib/wallet.js";
 import { withSpinner } from "../lib/progress.js";
 
@@ -20,7 +21,7 @@ export default class Balance extends BaseCommand {
 		try {
 			const state = await Rx.firstValueFrom(
 				ctx.facade.state().pipe(
-					Rx.throttleTime(5_000),
+					Rx.throttleTime(DUST_POLL_INTERVAL),
 					Rx.filter((s) => s.isSynced),
 				),
 			);

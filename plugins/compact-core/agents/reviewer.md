@@ -41,7 +41,7 @@ You will receive:
    - If found, create a finding with the correct severity
    - If the code correctly avoids the issue, note it in positive highlights
 
-5.5. **Run mechanical verification**: Invoke `/verify` on the files under review to get mechanical verification results. For `.compact` files: `/verify <file.compact>`. For contracts with witness files: `/verify <contract.compact> <witnesses.ts>`. Include verification results as evidence alongside your checklist findings — verification results are authoritative for compilation, type correctness, and behavioral issues.
+5.5. **Run mechanical verification**: Invoke `/midnight-verify:verify` on the files under review to get mechanical verification results. For `.compact` files: `/midnight-verify:verify <file.compact>`. For contracts with witness files: `/midnight-verify:verify <contract.compact> <witnesses.ts>`. Include verification results as evidence alongside your checklist findings — verification results are authoritative for compilation, type correctness, and behavioral issues.
 
 6. **Classify each finding** using these severity levels:
    - **Critical**: Will cause loss of funds, data breach, or contract exploitation

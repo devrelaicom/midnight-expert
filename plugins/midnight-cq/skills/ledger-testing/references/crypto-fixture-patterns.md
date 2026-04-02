@@ -19,6 +19,7 @@ everywhere you need a fixture of a specific type.
 ```typescript
 import {
   sampleCoinPublicKey,
+  sampleCoinSecretKey,
   sampleContractAddress,
   sampleRawTokenType,
   sampleSigningKey,

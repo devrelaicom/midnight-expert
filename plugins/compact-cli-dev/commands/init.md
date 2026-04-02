@@ -1,4 +1,5 @@
 ---
+name: compact-cli-dev:init
 description: Initialize a new CLI package for a Midnight Compact contract
 allowed-tools: Bash, Read, AskUserQuestion
 argument-hint: "[directory] [--project-name <name>] [--contract-name <name>] [--contract-path <path>]"

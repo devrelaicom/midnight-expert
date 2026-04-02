@@ -1,5 +1,5 @@
 ---
-name: proof-server-configuration
+name: proof-server:proof-server-configuration
 description: This skill covers proof server CLI flags, environment variables, and tuning guidance. Use it when the user asks about proof server configuration, num-workers, job-capacity, job-timeout, no-fetch-params, how many workers should I use, proof server slow, proof server out of memory, proof server environment variables, proof server Docker configuration, port configuration, verbose mode, memory requirements, startup time, resource planning, or production settings.
 version: 0.1.0
 ---

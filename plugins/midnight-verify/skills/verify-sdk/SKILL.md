@@ -5,14 +5,14 @@ description: >-
   kind of SDK claim is being verified and which verification method applies:
   type-checking (tsc --noEmit), devnet E2E testing, source inspection, or
   package checks. Handles both claims about the SDK API itself and
-  verification of user code that uses the SDK. Loaded by the /verify command
+  verification of user code that uses the SDK. Loaded by the /midnight-verify:verify command
   alongside the hub skill.
 version: 0.4.0
 ---
 
 # SDK Claim Classification
 
-This skill classifies SDK/TypeScript claims and determines which verification method to use. The /verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
+This skill classifies SDK/TypeScript claims and determines which verification method to use. The /midnight-verify:verify command loads this alongside the `midnight-verify:verify-correctness` hub skill.
 
 ## Claim Type → Method Routing
 
@@ -45,7 +45,7 @@ When you receive an SDK-related claim, classify it using this table to determine
 | Import usage patterns | "This file's SDK imports are correct" | @"midnight-verify:type-checker (agent)" |
 | Transaction handling code | "This error handling catches CallTxFailedError" | @"midnight-verify:type-checker (agent)" |
 | E2E integration | "This deploy+call flow works against devnet" | @"midnight-verify:sdk-tester (agent)" |
-| File verification (`.ts` with SDK imports) | `/verify app.ts` | @"midnight-verify:type-checker (agent)" (types) + @"midnight-verify:sdk-tester (agent)" (behavior, if devnet available) |
+| File verification (`.ts` with SDK imports) | `/midnight-verify:verify app.ts` | @"midnight-verify:type-checker (agent)" (types) + @"midnight-verify:sdk-tester (agent)" (behavior, if devnet available) |
 | Cross-domain (types + behavior) | "calling increment changes counter from 0 to 1" | @"midnight-verify:type-checker (agent)" + @"midnight-verify:sdk-tester (agent)" (concurrent) |
 
 ### Routing Rules
@@ -62,9 +62,9 @@ When you receive an SDK-related claim, classify it using this table to determine
 
 Sub-agents may load these skills for context. They are **hints only** — never cite skill content as evidence in the verdict.
 
-- `dapp-development:midnight-sdk` skill — provider setup, component overview
-- `dapp-development:dapp-connector` skill — wallet integration patterns
+- `midnight-dapp-dev:midnight-sdk` skill — provider setup, component overview
+- `midnight-dapp-dev:dapp-connector` skill — wallet integration patterns
 - `compact-core:compact-witness-ts` skill — witness implementation patterns
-- `dapp-development:midnight-sdk` skill — deployment patterns
+- `midnight-dapp-dev:midnight-sdk` skill — deployment patterns
 
 Load only what's relevant to the specific claim.

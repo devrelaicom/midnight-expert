@@ -55,5 +55,5 @@ echo "ERROR: No devnet.yml found. Searched:" >&2
 for path in "${SEARCH_PATHS[@]}"; do
   echo "  - ${path}" >&2
 done
-echo "Run '/devnet generate' to create one, or use '--file <path>' to specify a location." >&2
+echo "Run '/midnight-tooling:devnet generate' to create one, or use '--file <path>' to specify a location." >&2
 exit 1

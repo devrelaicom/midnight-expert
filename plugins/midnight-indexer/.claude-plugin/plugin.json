@@ -1,7 +1,7 @@
 {
   "name": "midnight-indexer",
-  "version": "0.1.0",
-  "description": "Technical reference for the Midnight indexer — architecture, GraphQL API, data model, and operational guidance for querying on-chain state",
+  "version": "0.1.1",
+  "description": "Technical reference for the Midnight indexer \u2014 architecture, GraphQL API, data model, and operational guidance for querying on-chain state",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"
@@ -9,5 +9,13 @@
   "homepage": "https://github.com/devrelaicom/midnight-expert",
   "repository": "https://github.com/devrelaicom/midnight-expert.git",
   "license": "MIT",
-  "keywords": ["midnight", "indexer", "graphql", "api", "queries", "subscriptions", "blockchain"]
+  "keywords": [
+    "midnight",
+    "indexer",
+    "graphql",
+    "api",
+    "queries",
+    "subscriptions",
+    "blockchain"
+  ]
 }

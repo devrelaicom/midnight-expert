@@ -1,5 +1,5 @@
 ---
-name: node-governance
+name: midnight-node:node-governance
 description: Midnight governance, federated authority, Council, TechnicalCommittee, Technical Committee, Substrate, pallet, governance motions, voting, proposals, two-body governance, runtime upgrades, D-parameter, systemParameters_getDParameter, pallet_system_parameters, validator selection balance, membership, Cardano mainchain governance sync, motion lifecycle, approval threshold, 5-day voting window, governance root operations, how does voting work on Midnight, how are governance members selected.
 version: 0.1.0
 ---

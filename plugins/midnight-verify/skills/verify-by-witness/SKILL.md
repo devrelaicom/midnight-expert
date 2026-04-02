@@ -203,7 +203,7 @@ Check `build/compiler/contract-info.json` — circuits with a non-empty `witness
 
 ## Phase 5: Devnet E2E Recommendation
 
-**You cannot dispatch other agents.** Phase 5 is a recommendation to the orchestrator (the /verify command), not something you execute.
+**You cannot dispatch other agents.** Phase 5 is a recommendation to the orchestrator (the /midnight-verify:verify command), not something you execute.
 
 In your report, include a recommendation:
 - If the claim would benefit from a full deploy+call lifecycle test, state: "**Recommend devnet E2E:** The orchestrator should dispatch @"midnight-verify:sdk-tester (agent)" with the compiled contract and witness for full lifecycle verification."

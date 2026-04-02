@@ -25,21 +25,21 @@ Symptoms: `NETWORK_ERROR`, `ECONNREFUSED`, WebSocket connection failures, timeou
 
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
-| `ECONNREFUSED` on node port 9944 | Devnet node not running | Run `/devnet start`, then `/devnet health` |
-| `ECONNREFUSED` on indexer port 8088 | Indexer not running or not yet ready | Run `/devnet health` to wait for indexer readiness |
-| `ECONNREFUSED` on proof server port 6300 | Proof server not running | Run `/devnet health`, or `/devnet restart` if it crashed |
+| `ECONNREFUSED` on node port 9944 | Devnet node not running | Run `/midnight-tooling:devnet start`, then `/midnight-tooling:devnet health` |
+| `ECONNREFUSED` on indexer port 8088 | Indexer not running or not yet ready | Run `/midnight-tooling:devnet health` to wait for indexer readiness |
+| `ECONNREFUSED` on proof server port 6300 | Proof server not running | Run `/midnight-tooling:devnet health`, or `/midnight-tooling:devnet restart` if it crashed |
 | WebSocket timeout from indexer | Indexer starting up | Wait 30 seconds, then retry |
-| Balance query hangs indefinitely | Indexer not synced with node | Run `/devnet logs` and look for indexer errors; restart with `/devnet restart` |
-| `NETWORK_ERROR` on all tools | Devnet fully stopped | Run `/devnet start` and wait for all services |
-| `NETWORK_ERROR` only on proof-dependent tools | Proof server OOM crash | Run `/devnet restart`; check Docker memory limits |
+| Balance query hangs indefinitely | Indexer not synced with node | Run `/midnight-tooling:devnet logs` and look for indexer errors; restart with `/midnight-tooling:devnet restart` |
+| `NETWORK_ERROR` on all tools | Devnet fully stopped | Run `/midnight-tooling:devnet start` and wait for all services |
+| `NETWORK_ERROR` only on proof-dependent tools | Proof server OOM crash | Run `/midnight-tooling:devnet restart`; check Docker memory limits |
 
 ### Devnet diagnostic commands
 
 ```
-/devnet status    ← shows running containers
-/devnet health    ← shows service health checks
-/devnet logs      ← streams recent log output
-/devnet restart   ← stops and restarts all services
+/midnight-tooling:devnet status    ← shows running containers
+/midnight-tooling:devnet health    ← shows service health checks
+/midnight-tooling:devnet logs      ← streams recent log output
+/midnight-tooling:devnet restart   ← stops and restarts all services
 ```
 
 ---
@@ -69,7 +69,7 @@ Symptoms: `DUST_REQUIRED`, `STALE_UTXO`, `INSUFFICIENT_BALANCE`, `TX_REJECTED`, 
 | `DUST_REQUIRED` | Dust not registered for this wallet | Call `midnight_dust_register` before `midnight_transfer`. |
 | `INSUFFICIENT_BALANCE` | Not enough NIGHT | Call `midnight_airdrop` to top up (undeployed only), or receive a transfer. |
 | `STALE_UTXO` | A UTXO was consumed by a concurrent transaction before this one was submitted | Wait 5–10 seconds, then retry. Use `"no-cache": true` on the retry call. |
-| `PROOF_TIMEOUT` | Proof server didn't respond in time | Check proof server with `/devnet health`. Restart with `/devnet restart`. |
+| `PROOF_TIMEOUT` | Proof server didn't respond in time | Check proof server with `/midnight-tooling:devnet health`. Restart with `/midnight-tooling:devnet restart`. |
 | `TX_REJECTED` after airdrop on testnet | Airdrop only works on `undeployed` | Use the testnet faucet: https://faucet.preprod.midnight.network/ or https://faucet.preview.midnight.network/ |
 | Transfer succeeds but balance doesn't update | Indexer lag | Wait a few seconds and call `midnight_balance` again. |
 | Dust registered but transfer still fails with `DUST_REQUIRED` | Stale cache | Call `midnight_cache_clear`, then retry. |
@@ -95,7 +95,7 @@ Symptoms: `unknown config key`, invalid network name, invalid URL format.
 | `Invalid network` | Network name not in enum | Valid values: `undeployed`, `preprod`, `preview`. |
 | `Invalid URL` for endpoint config | Malformed URL string | Ensure URL includes scheme (`http://` or `ws://`) and port. |
 | Wallet-cli connecting to wrong endpoint | Stale config override | Call `midnight_config_unset` to restore auto-detection. |
-| Auto-detection fails | Docker not running or no containers found | Start Docker. Run `/devnet start`. |
+| Auto-detection fails | Docker not running or no containers found | Start Docker. Run `/midnight-tooling:devnet start`. |
 
 ---
 
@@ -105,9 +105,9 @@ If you see Docker port binding errors or container name conflicts:
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `port is already allocated` | Both wallet-cli localnet and devnet skill containers running on same port | Stop one: `/devnet stop` will stop the devnet skill containers. Do NOT use `midnight_localnet_stop` — it targets different container names. |
-| `container name already in use` | Stale container from a previous run | Run `/devnet stop` then `/devnet start`. Do not use `midnight_localnet_clean` without explicit user confirmation. |
-| `midnight_localnet_up` fails immediately | Devnet is already running | Do not use `midnight_localnet_*` lifecycle commands. Use `/devnet` instead. |
+| `port is already allocated` | Both wallet-cli localnet and devnet skill containers running on same port | Stop one: `/midnight-tooling:devnet stop` will stop the devnet skill containers. Do NOT use `midnight_localnet_stop` — it targets different container names. |
+| `container name already in use` | Stale container from a previous run | Run `/midnight-tooling:devnet stop` then `/midnight-tooling:devnet start`. Do not use `midnight_localnet_clean` without explicit user confirmation. |
+| `midnight_localnet_up` fails immediately | Devnet is already running | Do not use `midnight_localnet_*` lifecycle commands. Use `/midnight-tooling:devnet` instead. |
 
 ---
 
@@ -115,11 +115,11 @@ If you see Docker port binding errors or container name conflicts:
 
 When wallet operations fail with unexpected errors:
 
-1. Is the devnet running? → `/devnet status`
-2. Are all services healthy? → `/devnet health`
+1. Is the devnet running? → `/midnight-tooling:devnet status`
+2. Are all services healthy? → `/midnight-tooling:devnet health`
 3. Does the wallet exist? → `midnight_wallet_list`
 4. Is there a NIGHT balance? → `midnight_balance`
 5. Is dust registered? → `midnight_dust_status`
 6. Is the cache stale? → `midnight_cache_clear`, then retry
-7. Are there recent errors in the logs? → `/devnet logs`
+7. Are there recent errors in the logs? → `/midnight-tooling:devnet logs`
 8. Is the network set correctly? → `midnight_config_get { "key": "network" }`
