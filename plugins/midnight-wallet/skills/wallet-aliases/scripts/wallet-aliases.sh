@@ -5,6 +5,11 @@ set -euo pipefail
 # Commands: get, reverse, set, list, remove, path, random-name
 # Exit codes: 0=found/success, 1=not found, 2=invalid args
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed" >&2
+  exit 2
+fi
+
 LOCAL_FILE=".claude/midnight-wallet/wallets.local.json"
 GLOBAL_FILE="$HOME/.claude/midnight-wallet/wallets.json"
 
@@ -14,7 +19,7 @@ ADJECTIVES=(
   grand grave green hardy keen lithe lofty loyal lucky mellow
   mild noble pious plain proud pure quiet rare robust serene
   sharp sleek slim sly smart solid stern stone strong sturdy
-  swift tall tame tidy tough true vast vivid warm wise
+  brisk tall tame tidy tough true vast vivid warm wise
 )
 
 NOUNS=(
@@ -22,7 +27,7 @@ NOUNS=(
   bear wolf fox deer boar lynx moose bison otter seal
   pine oak ash elm birch cedar maple rowan willow beech
   river brook lake pond creek ridge cliff mesa vale glen
-  forge anvil blade shield arrow lance spear torch arrow quill
+  forge anvil blade shield arrow lance spear torch helm quill
   comet star moon dawn dusk frost bloom ember stone pearl
 )
 
@@ -47,15 +52,6 @@ _read_wallets() {
     return
   fi
   jq '.wallets // {}' "$file"
-}
-
-_merge_wallets() {
-  # Merge multiple wallet objects, later ones take precedence
-  local result='{}'
-  for obj in "$@"; do
-    result=$(jq -n --argjson a "$result" --argjson b "$obj" '$a * $b')
-  done
-  echo "$result"
 }
 
 cmd_get() {
