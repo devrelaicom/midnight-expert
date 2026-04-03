@@ -22,47 +22,47 @@ This repository contains 16 plugins organized by domain.
 
 | | Plugin | Description |
 |---|--------|-------------|
-| <img src="plugins/compact-core/assets/mascot.png" width="60" /> | **compact-core** | Compact language reference, patterns, privacy/disclosure, witnesses, tokens, circuit costs, debugging, and code review |
-| <img src="plugins/compact-examples/assets/mascot.png" width="60" /> | **compact-examples** | OpenZeppelin-style reference implementations (access control, tokens, pausable, etc.) |
-| <img src="plugins/compact-cli-dev/assets/mascot.png" width="60" /> | **compact-cli-dev** | Scaffold Oclif CLIs for Compact contracts with wallet management, deployment, and devnet control |
+| <img src="plugins/compact-core/assets/mascot.png" width="60" /> | **[compact-core](plugins/compact-core/)** | Compact language reference, patterns, privacy/disclosure, witnesses, tokens, circuit costs, debugging, and code review |
+| <img src="plugins/compact-examples/assets/mascot.png" width="60" /> | **[compact-examples](plugins/compact-examples/)** | OpenZeppelin-style reference implementations (access control, tokens, pausable, etc.) |
+| <img src="plugins/compact-cli-dev/assets/mascot.png" width="60" /> | **[compact-cli-dev](plugins/compact-cli-dev/)** | Scaffold Oclif CLIs for Compact contracts with wallet management, deployment, and devnet control |
 
 ### DApp Development
 
 | | Plugin | Description |
 |---|--------|-------------|
-| <img src="plugins/midnight-dapp-dev/assets/mascot.png" width="60" /> | **midnight-dapp-dev** | Vite + React 19 DApp scaffolding, SDK reference, DApp Connector API, provider assembly, state management |
+| <img src="plugins/midnight-dapp-dev/assets/mascot.png" width="60" /> | **[midnight-dapp-dev](plugins/midnight-dapp-dev/)** | Vite + React 19 DApp scaffolding, SDK reference, DApp Connector API, provider assembly, state management |
 
 ### Testing & Code Quality
 
 | | Plugin | Description |
 |---|--------|-------------|
-| <img src="plugins/midnight-cq/assets/mascot.png" width="60" /> | **midnight-cq** | Testing skills (contract simulator, DApp integration, DApp Connector, ledger, wallet) and code quality setup (Biome, Vitest, Playwright, CI) |
-| <img src="plugins/midnight-verify/assets/mascot.png" width="60" /> | **midnight-verify** | Mechanical verification of Compact claims via compilation, execution, source inspection, type-checking, and ZKIR analysis |
-| <img src="plugins/midnight-fact-check/assets/mascot.png" width="60" /> | **midnight-fact-check** | Fact-check documentation against the Midnight ecosystem — extract claims, classify by domain, verify, and report |
+| <img src="plugins/midnight-cq/assets/mascot.png" width="60" /> | **[midnight-cq](plugins/midnight-cq/)** | Testing skills (contract simulator, DApp integration, DApp Connector, ledger, wallet) and code quality setup (Biome, Vitest, Playwright, CI) |
+| <img src="plugins/midnight-verify/assets/mascot.png" width="60" /> | **[midnight-verify](plugins/midnight-verify/)** | Mechanical verification of Compact claims via compilation, execution, source inspection, type-checking, and ZKIR analysis |
+| <img src="plugins/midnight-fact-check/assets/mascot.png" width="60" /> | **[midnight-fact-check](plugins/midnight-fact-check/)** | Fact-check documentation against the Midnight ecosystem — extract claims, classify by domain, verify, and report |
 
 ### Toolchain & Infrastructure
 
 | | Plugin | Description |
 |---|--------|-------------|
-| <img src="plugins/midnight-tooling/assets/mascot.png" width="60" /> | **midnight-tooling** | Compact CLI management, local devnet lifecycle, proof server, release notes, troubleshooting |
-| <img src="plugins/midnight-wallet/assets/mascot.png" width="60" /> | **midnight-wallet** | Wallet CLI (MCP tools), test wallet setup, aliases, funding, dust registration |
-| <img src="plugins/midnight-mcp/assets/mascot.png" width="60" /> | **midnight-mcp** | MCP server skills for compilation, simulation, search, and health checks |
+| <img src="plugins/midnight-tooling/assets/mascot.png" width="60" /> | **[midnight-tooling](plugins/midnight-tooling/)** | Compact CLI management, local devnet lifecycle, proof server, release notes, troubleshooting |
+| <img src="plugins/midnight-wallet/assets/mascot.png" width="60" /> | **[midnight-wallet](plugins/midnight-wallet/)** | Wallet CLI (MCP tools), test wallet setup, aliases, funding, dust registration |
+| <img src="plugins/midnight-mcp/assets/mascot.png" width="60" /> | **[midnight-mcp](plugins/midnight-mcp/)** | MCP server skills for compilation, simulation, search, and health checks |
 
 ### Knowledge & Education
 
 | | Plugin | Description |
 |---|--------|-------------|
-| <img src="plugins/core-concepts/assets/mascot.png" width="60" /> | **core-concepts** | Architecture, data models, privacy patterns, protocols, tokenomics, zero-knowledge proofs |
-| <img src="plugins/midnight-node/assets/mascot.png" width="60" /> | **midnight-node** | Node architecture, configuration, governance, operations, RPC API |
-| <img src="plugins/midnight-indexer/assets/mascot.png" width="60" /> | **midnight-indexer** | Indexer architecture, data model, GraphQL API |
-| <img src="plugins/proof-server/assets/mascot.png" width="60" /> | **proof-server** | Proof server architecture, configuration, API, operations |
+| <img src="plugins/core-concepts/assets/mascot.png" width="60" /> | **[core-concepts](plugins/core-concepts/)** | Architecture, data models, privacy patterns, protocols, tokenomics, zero-knowledge proofs |
+| <img src="plugins/midnight-node/assets/mascot.png" width="60" /> | **[midnight-node](plugins/midnight-node/)** | Node architecture, configuration, governance, operations, RPC API |
+| <img src="plugins/midnight-indexer/assets/mascot.png" width="60" /> | **[midnight-indexer](plugins/midnight-indexer/)** | Indexer architecture, data model, GraphQL API |
+| <img src="plugins/proof-server/assets/mascot.png" width="60" /> | **[proof-server](plugins/proof-server/)** | Proof server architecture, configuration, API, operations |
 
 ### Meta
 
 | | Plugin | Description |
 |---|--------|-------------|
-| <img src="plugins/midnight-expert/assets/mascot.png" width="60" /> | **midnight-expert** | Ecosystem diagnostics — plugin health, MCP servers, external tools, cross-plugin references |
-| <img src="plugins/midnight-plugin-utils/assets/mascot.png" width="60" /> | **midnight-plugin-utils** | Plugin infrastructure — dependency checking, scanning, root resolution |
+| <img src="plugins/midnight-expert/assets/mascot.png" width="60" /> | **[midnight-expert](plugins/midnight-expert/)** | Ecosystem diagnostics — plugin health, MCP servers, external tools, cross-plugin references |
+| <img src="plugins/midnight-plugin-utils/assets/mascot.png" width="60" /> | **[midnight-plugin-utils](plugins/midnight-plugin-utils/)** | Plugin infrastructure — dependency checking, scanning, root resolution |
 
 ## Quick Examples
 
