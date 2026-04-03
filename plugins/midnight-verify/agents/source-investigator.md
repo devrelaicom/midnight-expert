@@ -1,5 +1,6 @@
 ---
 name: source-investigator
+memory: project
 description: >-
   Use this agent to verify Compact or Midnight claims by inspecting the actual
   source code of the compiler, ledger, runtime, or related repositories.

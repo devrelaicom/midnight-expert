@@ -1,5 +1,6 @@
 ---
 name: concept-explainer
+memory: project
 description: >-
   Use this agent when the user asks complex questions about Midnight that span
   multiple concept domains, or when they need a synthesized explanation

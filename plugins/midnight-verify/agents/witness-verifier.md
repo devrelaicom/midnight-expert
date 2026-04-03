@@ -1,5 +1,6 @@
 ---
 name: witness-verifier
+memory: project
 description: >-
   Use this agent to verify that TypeScript witness implementations correctly
   match Compact contract declarations. Compiles the contract, type-checks the

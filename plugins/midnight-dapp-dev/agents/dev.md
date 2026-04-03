@@ -1,5 +1,6 @@
 ---
 name: dev
+memory: project
 description: >-
   Use this agent when building or modifying a Midnight DApp frontend —
   scaffolding UI/API packages, wiring contracts to the browser, building

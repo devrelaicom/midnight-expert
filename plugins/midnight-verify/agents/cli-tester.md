@@ -1,5 +1,6 @@
 ---
 name: cli-tester
+memory: project
 description: >-
   Use this agent to verify Compact CLI tooling claims by running commands
   and observing output. Checks CLI availability, runs compact/compactc

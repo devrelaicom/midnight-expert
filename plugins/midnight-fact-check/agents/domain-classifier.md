@@ -1,5 +1,6 @@
 ---
 name: domain-classifier
+memory: project
 description: >-
   Use this agent to classify claims by domain. Dispatched by the
   /midnight-fact-check:check command in Stage 2, one instance per domain

@@ -1,5 +1,6 @@
 ---
 name: cq-reviewer
+memory: project
 description: >-
   Use this agent to audit a Midnight project's code quality setup and produce
   a detailed report with recommendations. Checks Biome configuration, Vitest
