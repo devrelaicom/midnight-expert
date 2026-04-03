@@ -16,9 +16,9 @@ Covers Midnight network architecture, transaction structure, guaranteed vs falli
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| cryptographic-binding.md | How cryptographic binding ensures transaction integrity and atomic execution | When explaining how transaction components are linked and protected against tampering |
-| state-management.md | Global ledger state structure covering Zswap state and the contract map | When explaining how on-chain state is organized and managed |
-| transaction-deep-dive.md | Complete transaction anatomy including Zswap offers, contract calls, and binding randomness | When a deep understanding of transaction internals is needed |
+| [cryptographic-binding.md](skills/architecture/references/cryptographic-binding.md) | How cryptographic binding ensures transaction integrity and atomic execution | When explaining how transaction components are linked and protected against tampering |
+| [state-management.md](skills/architecture/references/state-management.md) | Global ledger state structure covering Zswap state and the contract map | When explaining how on-chain state is organized and managed |
+| [transaction-deep-dive.md](skills/architecture/references/transaction-deep-dive.md) | Complete transaction anatomy including Zswap offers, contract calls, and binding randomness | When a deep understanding of transaction internals is needed |
 
 ### core-concepts:data-models
 
@@ -28,8 +28,8 @@ Covers UTXO vs account models, ledger tokens, shielded/unshielded tokens, nullif
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| ledger-structure.md | Overview of the two main ledger components: Zswap state and the contract map | When explaining how the ledger is organized at a structural level |
-| utxo-mechanics.md | UTXO lifecycle from creation through consumption and reuse prevention | When explaining UTXO creation, spending, and double-spend prevention in detail |
+| [ledger-structure.md](skills/data-models/references/ledger-structure.md) | Overview of the two main ledger components: Zswap state and the contract map | When explaining how the ledger is organized at a structural level |
+| [utxo-mechanics.md](skills/data-models/references/utxo-mechanics.md) | UTXO lifecycle from creation through consumption and reuse prevention | When explaining UTXO creation, spending, and double-spend prevention in detail |
 
 ### core-concepts:privacy-patterns
 
@@ -39,8 +39,8 @@ Covers privacy-preserving design patterns including commitment schemes, nullifie
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| commitment-schemes.md | Detailed reference for Compact's hash-based commitment primitives and their correct usage | When explaining how commitments work in Compact vs Zswap's Pedersen commitments |
-| merkle-tree-usage.md | Reference for MerkleTree, HistoricMerkleTree, membership proofs, and MerkleTreePath | When explaining Merkle tree types, membership proofs, and proof invalidation behavior |
+| [commitment-schemes.md](skills/privacy-patterns/references/commitment-schemes.md) | Detailed reference for Compact's hash-based commitment primitives and their correct usage | When explaining how commitments work in Compact vs Zswap's Pedersen commitments |
+| [merkle-tree-usage.md](skills/privacy-patterns/references/merkle-tree-usage.md) | Reference for MerkleTree, HistoricMerkleTree, membership proofs, and MerkleTreePath | When explaining Merkle tree types, membership proofs, and proof invalidation behavior |
 
 ### core-concepts:protocols
 
@@ -50,8 +50,8 @@ Covers the Kachina smart contract protocol, Zswap token transfers, atomic swaps,
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| kachina-deep-dive.md | Formal definition of Kachina, its security model, and confidential computation design | When explaining the Kachina protocol's theoretical foundations and guarantees |
-| zswap-internals.md | Zswap's extension of Zerocash with native multi-asset support and atomic swaps | When explaining how Zswap works internally and integrates with Kachina |
+| [kachina-deep-dive.md](skills/protocols/references/kachina-deep-dive.md) | Formal definition of Kachina, its security model, and confidential computation design | When explaining the Kachina protocol's theoretical foundations and guarantees |
+| [zswap-internals.md](skills/protocols/references/zswap-internals.md) | Zswap's extension of Zerocash with native multi-asset support and atomic swaps | When explaining how Zswap works internally and integrates with Kachina |
 
 ### core-concepts:tokenomics
 
@@ -65,8 +65,8 @@ Covers zero-knowledge proofs, ZK SNARKs, witness data, prover/verifier roles, co
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| circuit-construction.md | The compilation pipeline from Compact source code to ZK circuits | When explaining how Compact contracts are compiled into provable circuits |
-| snark-internals.md | PLONK proving system internals including gate-based arithmetization and polynomial commitments | When explaining the underlying cryptographic proving system used by Midnight |
+| [circuit-construction.md](skills/zero-knowledge/references/circuit-construction.md) | The compilation pipeline from Compact source code to ZK circuits | When explaining how Compact contracts are compiled into provable circuits |
+| [snark-internals.md](skills/zero-knowledge/references/snark-internals.md) | PLONK proving system internals including gate-based arithmetization and polynomial commitments | When explaining the underlying cryptographic proving system used by Midnight |
 
 ## Agents
 

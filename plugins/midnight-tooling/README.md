@@ -16,11 +16,11 @@ Manages the Compact CLI tool for Midnight Network smart contract development, in
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| installation.md | Prerequisites and steps for installing the Compact CLI | Setting up the Compact toolchain on a new machine |
-| version-management.md | Installing, listing, switching, and pinning compiler versions | Managing multiple compiler versions side-by-side |
-| self-management.md | CLI binary self-update and management commands | Checking for and applying CLI updates |
-| compile-format-fixup.md | Compiling contracts, formatting code, and running fixup transformations | Building contracts or formatting Compact source files |
-| troubleshooting.md | Exit codes, common errors, and resolution steps for the CLI | Diagnosing CLI failures or unexpected compiler behavior |
+| [installation.md](skills/compact-cli/references/installation.md) | Prerequisites and steps for installing the Compact CLI | Setting up the Compact toolchain on a new machine |
+| [version-management.md](skills/compact-cli/references/version-management.md) | Installing, listing, switching, and pinning compiler versions | Managing multiple compiler versions side-by-side |
+| [self-management.md](skills/compact-cli/references/self-management.md) | CLI binary self-update and management commands | Checking for and applying CLI updates |
+| [compile-format-fixup.md](skills/compact-cli/references/compile-format-fixup.md) | Compiling contracts, formatting code, and running fixup transformations | Building contracts or formatting Compact source files |
+| [troubleshooting.md](skills/compact-cli/references/troubleshooting.md) | Exit codes, common errors, and resolution steps for the CLI | Diagnosing CLI failures or unexpected compiler behavior |
 
 ### midnight-tooling:devnet
 
@@ -30,10 +30,10 @@ Covers the local 3-service development network (node, indexer, proof server) lif
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| compose-structure.md | Anatomy of every field in the generated devnet.yml file | Understanding or debugging the Docker Compose configuration |
-| docker-setup.md | Docker Desktop installation and resource configuration for the devnet | Setting up Docker before first devnet start |
-| network-lifecycle.md | Generating, starting, stopping, and monitoring the devnet via Docker Compose | Managing the devnet through its full lifecycle |
-| version-resolution.md | How Docker image versions are resolved and checked for compatibility | Resolving version conflicts or selecting specific component versions |
+| [compose-structure.md](skills/devnet/references/compose-structure.md) | Anatomy of every field in the generated devnet.yml file | Understanding or debugging the Docker Compose configuration |
+| [docker-setup.md](skills/devnet/references/docker-setup.md) | Docker Desktop installation and resource configuration for the devnet | Setting up Docker before first devnet start |
+| [network-lifecycle.md](skills/devnet/references/network-lifecycle.md) | Generating, starting, stopping, and monitoring the devnet via Docker Compose | Managing the devnet through its full lifecycle |
+| [version-resolution.md](skills/devnet/references/version-resolution.md) | How Docker image versions are resolved and checked for compatibility | Resolving version conflicts or selecting specific component versions |
 
 ### midnight-tooling:proof-server
 
@@ -43,7 +43,7 @@ Covers working with the Midnight proof server in any context -- local developmen
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| docker-setup.md | Docker prerequisites for running the proof server | Setting up Docker for standalone proof server usage (delegates to devnet docker-setup) |
+| [docker-setup.md](skills/proof-server/references/docker-setup.md) | Docker prerequisites for running the proof server | Setting up Docker for standalone proof server usage (delegates to devnet docker-setup) |
 
 ### midnight-tooling:release-notes
 
@@ -53,7 +53,7 @@ View and search release notes for all Midnight Network components from the offic
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| component-map.md | Maps component names and aliases to their release notes paths | Resolving user-provided component names to the correct release notes files |
+| [component-map.md](skills/release-notes/references/component-map.md) | Maps component names and aliases to their release notes paths | Resolving user-provided component names to the correct release notes files |
 
 ### midnight-tooling:troubleshooting
 
@@ -63,18 +63,18 @@ Systematic diagnosis and resolution of common issues with Midnight Network tools
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| bun-setup.md | Configuring the Bun runtime for Midnight development | Setting up Bun as an alternative runtime |
-| checking-release-notes.md | Using release notes to identify known bugs and fixes | Checking if a problem is a known issue fixed in a newer version |
-| compact-cli-issues.md | Resolving Compact CLI installation and execution problems | Troubleshooting `compact: command not found` or CLI failures |
-| devnet-issues.md | Diagnosing devnet startup, indexer sync, and MCP connectivity issues | Fixing local network startup failures or service connectivity |
-| environment-tooling.md | Resolving direnv, mise, dotenv-cli, and COMPACT_DIRECTORY misconfiguration | Fixing environment variable and tooling configuration problems |
-| environment-urls.md | Fixing incorrect endpoint URLs or wrong network environment connections | Resolving connection failures caused by wrong URLs |
-| err-unsupported-dir-import.md | Resolving the Node.js ERR_UNSUPPORTED_DIR_IMPORT error | Fixing ESM import errors in Midnight projects |
-| nixos-installation.md | Resolving installation issues on NixOS | Installing Midnight tools on NixOS |
-| proof-server-issues.md | Diagnosing proof server connectivity and runtime problems | Fixing proof server failures in devnet or standalone contexts |
-| searching-issues.md | Searching open GitHub issues in the midnightntwrk organization | Finding known problems, workarounds, and ongoing discussions |
-| version-mismatch.md | Diagnosing and resolving version incompatibilities across components | Fixing errors caused by mismatched component versions |
-| windows-setup.md | Resolving Windows-specific setup issues via WSL | Setting up Midnight development on Windows |
+| [bun-setup.md](skills/troubleshooting/references/bun-setup.md) | Configuring the Bun runtime for Midnight development | Setting up Bun as an alternative runtime |
+| [checking-release-notes.md](skills/troubleshooting/references/checking-release-notes.md) | Using release notes to identify known bugs and fixes | Checking if a problem is a known issue fixed in a newer version |
+| [compact-cli-issues.md](skills/troubleshooting/references/compact-cli-issues.md) | Resolving Compact CLI installation and execution problems | Troubleshooting `compact: command not found` or CLI failures |
+| [devnet-issues.md](skills/troubleshooting/references/devnet-issues.md) | Diagnosing devnet startup, indexer sync, and MCP connectivity issues | Fixing local network startup failures or service connectivity |
+| [environment-tooling.md](skills/troubleshooting/references/environment-tooling.md) | Resolving direnv, mise, dotenv-cli, and COMPACT_DIRECTORY misconfiguration | Fixing environment variable and tooling configuration problems |
+| [environment-urls.md](skills/troubleshooting/references/environment-urls.md) | Fixing incorrect endpoint URLs or wrong network environment connections | Resolving connection failures caused by wrong URLs |
+| [err-unsupported-dir-import.md](skills/troubleshooting/references/err-unsupported-dir-import.md) | Resolving the Node.js ERR_UNSUPPORTED_DIR_IMPORT error | Fixing ESM import errors in Midnight projects |
+| [nixos-installation.md](skills/troubleshooting/references/nixos-installation.md) | Resolving installation issues on NixOS | Installing Midnight tools on NixOS |
+| [proof-server-issues.md](skills/troubleshooting/references/proof-server-issues.md) | Diagnosing proof server connectivity and runtime problems | Fixing proof server failures in devnet or standalone contexts |
+| [searching-issues.md](skills/troubleshooting/references/searching-issues.md) | Searching open GitHub issues in the midnightntwrk organization | Finding known problems, workarounds, and ongoing discussions |
+| [version-mismatch.md](skills/troubleshooting/references/version-mismatch.md) | Diagnosing and resolving version incompatibilities across components | Fixing errors caused by mismatched component versions |
+| [windows-setup.md](skills/troubleshooting/references/windows-setup.md) | Resolving Windows-specific setup issues via WSL | Setting up Midnight development on Windows |
 
 ## Commands
 

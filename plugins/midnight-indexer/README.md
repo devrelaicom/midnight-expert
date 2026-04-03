@@ -24,13 +24,13 @@ Covers the GraphQL API for querying on-chain state, managing wallet sessions, an
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| error-handling.md | Common error responses from the GraphQL API and how to resolve them | When troubleshooting complexity limit, depth limit, or request size errors |
-| graphql-types.md | Key types returned by the indexer GraphQL API (Block, Transaction, etc.) | When constructing queries or understanding the shape of API responses |
-| pagination-and-offsets.md | Offset-based addressing for queries and subscriptions using BlockOffset and other offset types | When paginating results or specifying starting points for subscriptions |
+| [error-handling.md](skills/indexer-graphql-api/references/error-handling.md) | Common error responses from the GraphQL API and how to resolve them | When troubleshooting complexity limit, depth limit, or request size errors |
+| [graphql-types.md](skills/indexer-graphql-api/references/graphql-types.md) | Key types returned by the indexer GraphQL API (Block, Transaction, etc.) | When constructing queries or understanding the shape of API responses |
+| [pagination-and-offsets.md](skills/indexer-graphql-api/references/pagination-and-offsets.md) | Offset-based addressing for queries and subscriptions using BlockOffset and other offset types | When paginating results or specifying starting points for subscriptions |
 
 #### Examples
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| http-requests.md | Complete curl examples for the indexer GraphQL HTTP endpoint | When making HTTP POST queries against the indexer |
-| websocket-subscriptions.md | TypeScript examples using graphql-ws for real-time subscriptions | When setting up WebSocket subscriptions to indexer events |
+| [http-requests.md](skills/indexer-graphql-api/examples/http-requests.md) | Complete curl examples for the indexer GraphQL HTTP endpoint | When making HTTP POST queries against the indexer |
+| [websocket-subscriptions.md](skills/indexer-graphql-api/examples/websocket-subscriptions.md) | TypeScript examples using graphql-ws for real-time subscriptions | When setting up WebSocket subscriptions to indexer events |

@@ -16,11 +16,11 @@ Core skill for the midnight-wallet-cli MCP tools covering wallet generation, bal
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| devnet-integration.md | How the wallet CLI integrates with the local devnet managed by midnight-tooling | Working with wallets on the local development network |
-| mcp-tools.md | Complete reference for all 25 MCP tools exposed by the midnight-wallet-mcp server | Looking up tool names, parameters, and return values |
-| transactions.md | Balance checking, token transfers, airdrops, dust registration, and error handling | Performing token operations or diagnosing transaction failures |
-| troubleshooting.md | Error codes, exit codes, and diagnostic steps for wallet CLI failures | Resolving wallet operation errors |
-| wallet-management.md | Wallet generation, listing, selection, inspection, and removal | Managing wallets through their lifecycle |
+| [devnet-integration.md](skills/wallet-cli/references/devnet-integration.md) | How the wallet CLI integrates with the local devnet managed by midnight-tooling | Working with wallets on the local development network |
+| [mcp-tools.md](skills/wallet-cli/references/mcp-tools.md) | Complete reference for all 25 MCP tools exposed by the midnight-wallet-mcp server | Looking up tool names, parameters, and return values |
+| [transactions.md](skills/wallet-cli/references/transactions.md) | Balance checking, token transfers, airdrops, dust registration, and error handling | Performing token operations or diagnosing transaction failures |
+| [troubleshooting.md](skills/wallet-cli/references/troubleshooting.md) | Error codes, exit codes, and diagnostic steps for wallet CLI failures | Resolving wallet operation errors |
+| [wallet-management.md](skills/wallet-cli/references/wallet-management.md) | Wallet generation, listing, selection, inspection, and removal | Managing wallets through their lifecycle |
 
 ### midnight-wallet:setup-test-wallets
 

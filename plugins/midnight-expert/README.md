@@ -16,4 +16,4 @@ Runs comprehensive diagnostics across the midnight-expert ecosystem. Launches fi
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| fix-table.md | Maps diagnostic output to actionable fixes, including auto-fix classification for silent vs prompted resolution | When interpreting doctor results and determining how to resolve detected issues |
+| [fix-table.md](skills/doctor/references/fix-table.md) | Maps diagnostic output to actionable fixes, including auto-fix classification for silent vs prompted resolution | When interpreting doctor results and determining how to resolve detected issues |
