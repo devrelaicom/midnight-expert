@@ -1,5 +1,9 @@
 # midnight-cq
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-cq mascot" width="200" />
+</p>
+
 Code quality tooling for Midnight Network projects -- linting, formatting, type checking, testing, Git hooks, and CI workflows.
 
 ## Skills

@@ -1,5 +1,9 @@
 # compact-core
 
+<p align="center">
+  <img src="assets/mascot.png" alt="compact-core mascot" width="200" />
+</p>
+
 Core knowledge for writing Midnight Compact smart contracts -- contract structure, data types, ledger declarations, circuits, witnesses, and common patterns.
 
 ## Skills

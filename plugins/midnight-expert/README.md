@@ -1,5 +1,9 @@
 # midnight-expert
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-expert mascot" width="200" />
+</p>
+
 Meta-plugin for the midnight-expert marketplace. Provides comprehensive diagnostics and health reporting for the entire midnight-expert ecosystem -- plugin installation, MCP server connectivity, external CLI tools, cross-plugin references, and NPM registry access.
 
 ## Skills

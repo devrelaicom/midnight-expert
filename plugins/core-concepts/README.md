@@ -1,5 +1,9 @@
 # core-concepts
 
+<p align="center">
+  <img src="assets/mascot.png" alt="core-concepts mascot" width="200" />
+</p>
+
 Conceptual foundations for understanding the Midnight Network: architecture, data models, privacy patterns, protocols, tokenomics, and zero-knowledge proofs.
 
 ## Skills

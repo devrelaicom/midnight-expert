@@ -1,5 +1,9 @@
 # midnight-wallet
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-wallet mascot" width="200" />
+</p>
+
 Wallet management, token operations, and test wallet workflows for Midnight Network development -- wraps the midnight-wallet-cli MCP server for balance checking, transfers, airdrop, dust registration, and multi-wallet test setups.
 
 ## Skills

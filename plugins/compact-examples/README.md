@@ -1,5 +1,9 @@
 # compact-examples
 
+<p align="center">
+  <img src="assets/mascot.png" alt="compact-examples mascot" width="200" />
+</p>
+
 Handpicked examples of Compact smart contracts -- curated library implementations, patterns, and usage guides for building on Midnight.
 
 ## Skills

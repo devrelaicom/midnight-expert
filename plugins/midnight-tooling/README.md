@@ -1,5 +1,9 @@
 # midnight-tooling
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-tooling mascot" width="200" />
+</p>
+
 Installs, configures, and manages the Midnight Network development toolchain -- Compact CLI, compiler version switching, local devnet (node, indexer, proof server), diagnostics, and release notes for all Midnight components.
 
 ## Skills

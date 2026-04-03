@@ -1,5 +1,9 @@
 # compact-cli-dev
 
+<p align="center">
+  <img src="assets/mascot.png" alt="compact-cli-dev mascot" width="200" />
+</p>
+
 Scaffold and develop Oclif CLIs for Midnight Compact smart contracts. Includes a complete CLI template with wallet management, contract deployment, devnet control, and an AI agent for ongoing development.
 
 ## Skills

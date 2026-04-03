@@ -1,5 +1,9 @@
 # midnight-verify
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-verify mascot" width="200" />
+</p>
+
 Verification framework for Midnight claims -- verifies Compact code by compiling and executing test contracts, SDK/TypeScript claims by type-checking and devnet E2E testing, ZKIR circuits by running through the WASM checker and inspecting compiled structure, witness implementations by cross-domain type-checking and execution against compiled contracts, and ledger/protocol claims by Rust source inspection. Multi-agent pipeline with explicit /verify and /fast-verify commands.
 
 ## Skills

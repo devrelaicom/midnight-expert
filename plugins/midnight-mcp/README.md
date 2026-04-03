@@ -1,5 +1,9 @@
 # midnight-mcp
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-mcp mascot" width="200" />
+</p>
+
 Skills for effective use of the Midnight MCP server -- search strategies, contract analysis and compilation workflows, simulation, repository access, and troubleshooting.
 
 ## Skills

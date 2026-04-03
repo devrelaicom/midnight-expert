@@ -1,5 +1,9 @@
 # midnight-node
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-node mascot" width="200" />
+</p>
+
 Technical reference for the Midnight node -- Substrate-based architecture, runtime pallets, RPC interface, configuration, operations, and governance.
 
 ## Skills

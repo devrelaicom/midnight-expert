@@ -1,5 +1,9 @@
 # midnight-plugin-utils
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-plugin-utils mascot" width="200" />
+</p>
+
 Audits and resolves Claude plugin dependencies -- validates installed plugins against extends-plugin.json declarations, scans plugin files for undeclared dependencies, and resolves installation paths with fuzzy matching.
 
 ## Skills

@@ -1,5 +1,9 @@
 # midnight-fact-check
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-fact-check mascot" width="200" />
+</p>
+
 Fact-checking pipeline for Midnight content -- extracts testable claims from any source (markdown, code, PDFs, URLs, GitHub repos), classifies them by domain (Compact, SDK, ZKIR, Witness), and verifies each claim using the midnight-verify framework. Produces structured JSON artifacts and human-readable reports.
 
 ## Skills

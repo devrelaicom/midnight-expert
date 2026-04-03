@@ -1,5 +1,9 @@
 # midnight-indexer
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-indexer mascot" width="200" />
+</p>
+
 Technical reference for the Midnight indexer -- architecture, GraphQL API, data model, and operational guidance for querying on-chain state.
 
 ## Skills

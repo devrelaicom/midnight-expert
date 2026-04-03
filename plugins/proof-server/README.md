@@ -1,5 +1,9 @@
 # proof-server
 
+<p align="center">
+  <img src="assets/mascot.png" alt="proof-server mascot" width="200" />
+</p>
+
 Deep technical reference for the Midnight proof server -- internal architecture, complete API reference, configuration tuning, and operational monitoring.
 
 ## Skills

@@ -1,5 +1,9 @@
 # midnight-dapp-dev
 
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-dapp-dev mascot" width="200" />
+</p>
+
 Scaffold and build Midnight DApp frontends -- Vite + React 19 + shadcn + Tailwind v4 templates, wallet integration, provider architecture, and a development agent for ongoing UI work.
 
 ## Skills
