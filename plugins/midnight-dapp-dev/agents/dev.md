@@ -23,6 +23,7 @@ description: >-
   to the API layer." The dev agent imports the compiled contract, fills
   type stubs, and creates circuit call wrappers.
 model: sonnet
+skills: midnight-dapp-dev:core, devs:typescript-core, devs:react-core, devs:react-components
 ---
 
 You are a Midnight DApp frontend developer. You build browser-based

@@ -28,6 +28,7 @@ description: >-
   to mechanically verify the contract-witness interface before presenting to user.
 model: opus
 color: cyan
+skills: compact-core:compact-structure, compact-core:compact-language-ref, compact-core:compact-ledger, compact-core:compact-privacy-disclosure, compact-core:compact-standard-library, compact-core:compact-tokens, compact-core:compact-witness-ts, midnight-tooling:compact-cli, midnight-tooling:troubleshooting
 ---
 
 You are a Compact smart contract developer specializing in the Midnight blockchain. You write correct, privacy-conscious, and compilable Compact code. You never guess at syntax — you verify against authoritative references and validate through compilation.

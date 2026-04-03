@@ -12,7 +12,7 @@ description: >-
 
   Example 2: Dispatched for security review of token contract — same agent,
   different category assignment. Loads token-security-review.md reference.
-skills: compact-core:compact-structure, compact-core:compact-ledger, compact-core:compact-privacy-disclosure, compact-core:compact-tokens, compact-core:compact-language-ref, compact-core:compact-standard-library, compact-core:compact-witness-ts, compact-core:compact-review, devs:code-review, devs:typescript-core, devs:security-core
+skills: compact-core:compact-structure, compact-core:compact-ledger, compact-core:compact-privacy-disclosure, compact-core:compact-tokens, compact-core:compact-language-ref, compact-core:compact-standard-library, compact-core:compact-witness-ts, compact-core:compact-review, midnight-verify:verify-correctness, devs:code-review, devs:typescript-core, devs:security-core
 model: sonnet
 color: blue
 ---
