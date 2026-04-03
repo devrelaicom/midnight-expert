@@ -1,112 +1,134 @@
-# midnight-expert
+<p align="center">
+  <img src="assets/banner.png" alt="midnight expert" width="100%" />
+</p>
 
 AI-powered development tools for the [Midnight](https://midnight.network/) blockchain — a suite of [Claude Code plugins](https://docs.anthropic.com/en/docs/claude-code/plugins) that help you write, test, deploy, and review smart contracts in the Compact language.
 
-This project extends the Midnight Network with additional developer tooling.
+**[midnightntwrk.expert](https://midnightntwrk.expert/)** — documentation, guides, and resources for Midnight developers.
+
+## Install
+
+```bash
+curl -fsSL midnightntwrk.expert/me-install.sh | bash
+```
+
+Once installed, skills activate automatically based on what you're working on. Ask Claude to write a Compact contract, review existing code, set up a devnet, or explain a privacy pattern — the relevant skills engage on their own.
 
 ## Plugins
 
-This repository contains five interconnected plugins, each installable independently from the Claude Code marketplace.
+This repository contains 16 plugins organized by domain.
 
-### compact-core
+### Smart Contract Development
 
-The primary plugin. Provides 18 skills, 2 agents, and a review command covering the full Compact development lifecycle:
+| Plugin | Description |
+|--------|-------------|
+| **compact-core** | Compact language reference, patterns, privacy/disclosure, witnesses, tokens, circuit costs, debugging, and code review |
+| **compact-examples** | OpenZeppelin-style reference implementations (access control, tokens, pausable, etc.) |
+| **compact-cli-dev** | Scaffold Oclif CLIs for Compact contracts with wallet management, deployment, and devnet control |
 
-- **Write contracts** — structure, types, ledger declarations, circuits, witnesses, constructors
-- **Apply patterns** — 18 reusable designs including access control, governance, escrow, tokens, commit-reveal, multi-sig
-- **Understand privacy** — disclosure rules, nullifiers, commitments, Merkle membership proofs, unlinkable actions
-- **Implement witnesses** — TypeScript witness functions with correct type mappings and WitnessContext
-- **Manage tokens** — shielded/unshielded flows, mint/send/receive, zswap protocol, NIGHT/DUST model
-- **Optimize** — circuit costs, gate counts, gas model, proving time tradeoffs
-- **Compile and deploy** — compiler pipeline, artifacts, provider config, wallet setup, network connections
-- **Test** — Vitest with the Simulator pattern, createCircuitContext, multi-user test scenarios
-- **Review** — 10-category code review across privacy, security, tokens, concurrency, performance, and more
+### DApp Development
 
-```
-/install-plugin compact-core
-```
+| Plugin | Description |
+|--------|-------------|
+| **midnight-dapp-dev** | Vite + React 19 DApp scaffolding, SDK reference, DApp Connector API, provider assembly, state management |
 
-### compact-examples
+### Testing & Code Quality
 
-Curated library of reference Compact contracts — OpenZeppelin-style implementations of fungible tokens, NFTs, access control, pausable patterns, and more.
+| Plugin | Description |
+|--------|-------------|
+| **midnight-cq** | Testing skills (contract simulator, DApp integration, DApp Connector, ledger, wallet) and code quality setup (Biome, Vitest, Playwright, CI) |
+| **midnight-verify** | Mechanical verification of Compact claims via compilation, execution, source inspection, type-checking, and ZKIR analysis |
+| **midnight-fact-check** | Fact-check documentation against the Midnight ecosystem — extract claims, classify by domain, verify, and report |
 
-```
-/install-plugin compact-examples
-```
+### Toolchain & Infrastructure
 
-### core-concepts
+| Plugin | Description |
+|--------|-------------|
+| **midnight-tooling** | Compact CLI management, local devnet lifecycle, proof server, release notes, troubleshooting |
+| **midnight-wallet** | Wallet CLI (MCP tools), test wallet setup, aliases, funding, dust registration |
+| **midnight-mcp** | MCP server skills for compilation, simulation, search, and health checks |
 
-Educational foundation covering Midnight's architecture, data models, privacy patterns, cryptographic protocols, smart contract principles, and zero-knowledge proofs. Includes a `concept-explainer` agent.
+### Knowledge & Education
 
-```
-/install-plugin core-concepts
-```
+| Plugin | Description |
+|--------|-------------|
+| **core-concepts** | Architecture, data models, privacy patterns, protocols, tokenomics, zero-knowledge proofs |
+| **midnight-node** | Node architecture, configuration, governance, operations, RPC API |
+| **midnight-indexer** | Indexer architecture, data model, GraphQL API |
+| **proof-server** | Proof server architecture, configuration, API, operations |
 
-### midnight-tooling
+### Meta
 
-Development environment management — Compact CLI installation, local devnet lifecycle (node, indexer, proof server via Docker), account funding, diagnostics, troubleshooting, and release notes. Includes status bar integration with 7 themes.
+| Plugin | Description |
+|--------|-------------|
+| **midnight-expert** | Ecosystem diagnostics — plugin health, MCP servers, external tools, cross-plugin references |
+| **midnight-plugin-utils** | Plugin infrastructure — dependency checking, scanning, root resolution |
 
-```
-/install-plugin midnight-tooling
-```
+## Quick Examples
 
-### midnight-plugin-utils
-
-Infrastructure utilities for the plugin ecosystem — dependency checking, dependency scanning, and plugin root resolution.
-
-```
-/install-plugin midnight-plugin-utils
-```
-
-## Getting Started
-
-### Prerequisites
-
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed
-- [Compact CLI](https://docs.midnight.network/) for compiling contracts
-- Node.js for TypeScript witness development and testing
-- Docker for local devnet (optional)
-
-### Install the plugins
-
-Install the plugins you need from within Claude Code:
-
-```
-/install-plugin compact-core
-/install-plugin core-concepts
-/install-plugin midnight-tooling
-```
-
-Once installed, the skills activate automatically based on what you're working on. Ask Claude to write a Compact contract, review existing code, set up a devnet, or explain a privacy pattern — the relevant skills engage on their own.
-
-### Quick examples
-
-**Scaffold a new project:**
-> "Create a new Midnight project with a fungible token contract"
+**Write a contract:**
+> "Create a Compact contract for a simple voting system"
 
 **Review a contract:**
 ```
 /compact-core:review-compact contracts/MyToken.compact
 ```
 
-**Get a concept explained:**
-> "How do nullifiers prevent double-spending in Midnight?"
+**Verify a claim:**
+```
+/midnight-verify:verify "Compact tuples are 0-indexed"
+```
 
 **Set up local devnet:**
-> "Start a local Midnight devnet and fund a test account"
+```
+/midnight-tooling:devnet generate
+/midnight-tooling:devnet start
+```
+
+**Set up test wallets:**
+```
+/midnight-wallet:setup-test-wallets alice bob charlie
+```
+
+**Scaffold a DApp frontend:**
+```
+/midnight-dapp-dev:init
+```
+
+**Run diagnostics:**
+```
+/midnight-expert:doctor
+```
+
+## Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed
+- [Compact CLI](https://docs.midnight.network/) for compiling contracts
+- Node.js for TypeScript witness development and testing
+- Docker for local devnet (optional)
 
 ## Repository Structure
 
 ```
 plugins/
-├── compact-core/          # Smart contract development (18 skills, 2 agents, 1 command)
-├── compact-examples/      # Reference contract implementations
-├── core-concepts/         # Blockchain and privacy education (6 skills, 1 agent)
-├── midnight-tooling/      # Toolchain management (5 skills, 4 commands)
-└── midnight-plugin-utils/ # Plugin infrastructure utilities (3 skills)
-contracts/                 # Reference Compact contracts for testing and examples
-scripts/                   # Validation and CI automation
-.github/workflows/         # GitHub Actions for plugin validation
+  compact-core/          Smart contract development
+  compact-examples/      Reference contract implementations
+  compact-cli-dev/       CLI scaffolding for Compact contracts
+  midnight-dapp-dev/     DApp frontend development
+  midnight-cq/           Testing and code quality
+  midnight-verify/       Mechanical verification
+  midnight-fact-check/   Documentation fact-checking
+  midnight-tooling/      Toolchain management
+  midnight-wallet/       Wallet CLI and test wallets
+  midnight-mcp/          MCP server skills
+  core-concepts/         Blockchain and privacy education
+  midnight-node/         Node operations and API
+  midnight-indexer/      Indexer and GraphQL
+  proof-server/          Proof server management
+  midnight-expert/       Ecosystem diagnostics
+  midnight-plugin-utils/ Plugin infrastructure
+scripts/                 Validation and CI automation
+.github/workflows/       GitHub Actions
 ```
 
 ## Development
@@ -138,7 +160,7 @@ Contributions are welcome. When submitting changes:
 1. Run `bash scripts/validate-plugin.sh` to ensure all plugins pass validation
 2. Run `bash scripts/validate-marketplace.sh` to verify marketplace configuration
 3. Follow the existing skill structure and naming conventions within each plugin
-4. Include accurate technical claims — this project maintains a verification ledger for fact-checking
+4. Include accurate technical claims — this project maintains a verification pipeline for fact-checking
 
 ## License
 
