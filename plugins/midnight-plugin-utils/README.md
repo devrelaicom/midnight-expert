@@ -1,69 +1,39 @@
-# Utils Plugin
+# midnight-plugin-utils
 
-Utility skills for plugin management and diagnostics including dependency checking, scanning, and plugin root resolution.
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-plugin-utils mascot" width="200" />
+</p>
+
+Audits and resolves Claude plugin dependencies -- validates installed plugins against extends-plugin.json declarations, scans plugin files for undeclared dependencies, and resolves installation paths with fuzzy matching.
 
 ## Skills
 
-### find-claude-plugin-root
+### midnight-plugin-utils:find-claude-plugin-root
 
-Resolves the root directory of a Claude plugin by traversing up the directory tree to find the `.claude-plugin` folder.
+Generates a Python resolver script at /tmp/cpr.py that locates a plugin's installation path by reading installed_plugins.json. Works around the known issue where `${CLAUDE_PLUGIN_ROOT}` does not expand in markdown files.
 
-**Use cases:**
-- Determine the plugin root from any nested directory
-- Validate that a directory is within a valid plugin structure
-- Get the path to plugin configuration files
+#### References
 
-### dependency-checker
+None. This skill is self-contained.
 
-Validates that all declared plugin dependencies are satisfied and installed.
+### midnight-plugin-utils:dependency-checker
 
-**Use cases:**
-- Verify a plugin's dependencies are available before use
-- Check for missing or incompatible plugin versions
-- Debug dependency resolution issues
+Validates dependencies declared in extends-plugin.json files against the current environment. Checks whether required plugins are installed and enabled, whether system tools are available, and whether version constraints are satisfied. Companion scripts render ASCII tables and generate resolution steps.
 
-### dependency-scanner
+#### References
 
-Scans plugin files for patterns indicating dependencies on other plugins or system tools, then builds an `extends-plugin.json` manifest through interactive confirmation.
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [checker-output-schema.md](skills/dependency-checker/references/checker-output-schema.md) | JSON schema for the dependency-checker.py output covering all four dependency categories | When parsing or interpreting checker output programmatically |
+| [extends-plugin-format.md](skills/dependency-checker/references/extends-plugin-format.md) | Format specification for extends-plugin.json from a validation perspective | When understanding how the checker reads and validates dependency declarations |
 
-**Use cases:**
-- Generate an `extends-plugin.json` manifest for a plugin
-- Audit what external skills, plugins, and CLI tools a plugin references
-- Discover undeclared dependencies before distribution
+### midnight-plugin-utils:dependency-scanner
 
-## Plugin Dependencies Format
+Scans plugin files for regex patterns indicating dependencies on other plugins or system tools, then builds an extends-plugin.json manifest through interactive confirmation. Outputs raw matches as JSON for LLM interpretation and user review.
 
-Plugins can declare dependencies on other plugins using an `extends-plugin.json` file in their `.claude-plugin` directory.
+#### References
 
-### extends-plugin.json
-
-```json
-{
-  "dependencies": {
-    "plugin-name": ">=1.0.0",
-    "another-plugin": "^2.0.0"
-  }
-}
-```
-
-### Version Constraints
-
-The following version constraint formats are supported:
-
-- **Exact version**: `"1.0.0"` - Requires exactly version 1.0.0
-- **Greater than or equal**: `">=1.0.0"` - Requires version 1.0.0 or higher
-- **Caret range**: `"^1.0.0"` - Requires version compatible with 1.0.0 (same major version)
-- **Tilde range**: `"~1.0.0"` - Requires version reasonably close to 1.0.0 (same major.minor version)
-- **Any version**: `"*"` - Accepts any version
-
-## Installation
-
-This plugin is part of the aaronbassett-marketplace. Install it via:
-
-```bash
-claude plugin install utils
-```
-
-## License
-
-MIT
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [extends-plugin-schema.md](skills/dependency-scanner/references/extends-plugin-schema.md) | Schema for the extends-plugin.json file produced by the scanner workflow | When understanding the output format of the scanning process |
+| [scanner-output-format.md](skills/dependency-scanner/references/scanner-output-format.md) | JSON schema for each pattern match element in the scanner output array | When parsing or interpreting raw scanner output |

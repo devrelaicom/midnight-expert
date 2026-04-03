@@ -1,168 +1,132 @@
 # midnight-tooling
 
-Installation, configuration, and management of Midnight Network development tools.
+<p align="center">
+  <img src="assets/mascot.png" alt="midnight-tooling mascot" width="200" />
+</p>
 
-A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) that provides skills, commands, and a status bar integration for working with the Compact CLI, local devnet (node, indexer, proof server), compiler versions, and release notes. For wallet management and account funding, see the `midnight-wallet` plugin.
-
-## Features
-
-- Install and manage the Compact CLI and compiler versions
-- Start, stop, and monitor the local devnet (node, indexer, proof server)
-- Run diagnostics on your entire Midnight toolchain
-- View release notes for any Midnight component
-- Troubleshoot common development environment issues
-- Status bar showing proof server and compiler status
-
-## Prerequisites
-
-- Unix-like environment (macOS, Linux, WSL)
-- `curl` for installation and health checks
-- `jq` recommended for JSON parsing (falls back to grep/sed)
-- `docker` for the local devnet and standalone proof server
-
-## Installation
-
-Install via the Claude Code plugin marketplace:
-
-```
-/install-plugin midnight-tooling
-```
-
-Or add the plugin manually by cloning it into your Claude Code plugins directory.
-
-## Commands
-
-### `/midnight-tooling:doctor`
-
-Comprehensive diagnostic for the Compact CLI installation and local devnet. Checks the CLI binary, compiler versions, PATH configuration, update availability, devnet services (node, indexer, proof server), and custom directory setup. Presents a health report with severity indicators and offers to fix issues.
-
-```
-/midnight-tooling:doctor
-/midnight-tooling:doctor --auto-fix
-```
-
-### `/midnight-tooling:install-cli`
-
-Install, update, or configure the Compact CLI tool. Supports global installation and per-project configuration with automatic environment setup (direnv, mise, dotenv-cli, Claude Code settings).
-
-```
-/midnight-tooling:install-cli
-/midnight-tooling:install-cli install for this project
-/midnight-tooling:install-cli update
-```
-
-### `/midnight-tooling:devnet`
-
-Manage the local Midnight development network (node, indexer, proof server). Delegates to the `@aaronbassett/midnight-local-devnet` MCP server. For wallet management and account funding, use the `midnight-wallet` plugin.
-
-```
-/midnight-tooling:devnet start
-/midnight-tooling:devnet stop
-/midnight-tooling:devnet status
-/midnight-tooling:devnet health
-/midnight-tooling:devnet logs --service node
-/midnight-tooling:devnet config
-```
-
-### `/midnight-tooling:view-release-notes`
-
-View release notes for any Midnight Network component, fetched from the official documentation repository.
-
-```
-/midnight-tooling:view-release-notes
-/midnight-tooling:view-release-notes compact
-/midnight-tooling:view-release-notes ledger --version 1.x
-```
-
-### `/midnight-tooling:install-statusline-script`
-
-Install the Midnight statusline script, which displays proof server and Compact CLI status in the Claude Code status bar. Chains with any existing statusLine configuration rather than replacing it.
-
-```
-/midnight-tooling:install-statusline-script
-/midnight-tooling:install-statusline-script --update
-/midnight-tooling:install-statusline-script --uninstall
-/midnight-tooling:install-statusline-script --theme tokyo --style capsule
-```
+Installs, configures, and manages the Midnight Network development toolchain -- Compact CLI, compiler version switching, local devnet (node, indexer, proof server), diagnostics, and release notes for all Midnight components.
 
 ## Skills
 
-### compact-cli
+### midnight-tooling:compact-cli
 
-Manages the Compact CLI tool for Midnight Network development. Covers installation, compiler version management, code formatting, custom directory configuration, and troubleshooting.
+Manages the Compact CLI tool for Midnight Network smart contract development, including installation, compiler version switching, code formatting and fixup, custom directory configuration, and troubleshooting CLI errors.
 
-**Triggers on**: installing Compact, updating compiler versions, formatting Compact files, configuring `COMPACT_DIRECTORY`, resolving `compact: command not found`
+#### References
 
-### devnet
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [installation.md](skills/compact-cli/references/installation.md) | Prerequisites and steps for installing the Compact CLI | Setting up the Compact toolchain on a new machine |
+| [version-management.md](skills/compact-cli/references/version-management.md) | Installing, listing, switching, and pinning compiler versions | Managing multiple compiler versions side-by-side |
+| [self-management.md](skills/compact-cli/references/self-management.md) | CLI binary self-update and management commands | Checking for and applying CLI updates |
+| [compile-format-fixup.md](skills/compact-cli/references/compile-format-fixup.md) | Compiling contracts, formatting code, and running fixup transformations | Building contracts or formatting Compact source files |
+| [troubleshooting.md](skills/compact-cli/references/troubleshooting.md) | Exit codes, common errors, and resolution steps for the CLI | Diagnosing CLI failures or unexpected compiler behavior |
 
-Covers the local development network lifecycle — starting, stopping, restarting, checking status and health, viewing logs, and getting endpoint configuration for all 3 services (node, indexer, proof server).
+### midnight-tooling:devnet
 
-**Triggers on**: starting/stopping the devnet, local network, node/indexer/proof server containers, port 9944/8088/6300 issues, network health
+Covers the local 3-service development network (node, indexer, proof server) lifecycle -- generating compose files, starting, stopping, restarting, checking status and health, viewing logs, and getting endpoint configuration.
 
-### proof-server
+#### References
 
-Covers working with proof servers in general — local (via devnet) and remote (testnet/mainnet). Includes API endpoints, version selection, Docker setup for standalone instances, and looking up environment endpoints.
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [compose-structure.md](skills/devnet/references/compose-structure.md) | Anatomy of every field in the generated devnet.yml file | Understanding or debugging the Docker Compose configuration |
+| [docker-setup.md](skills/devnet/references/docker-setup.md) | Docker Desktop installation and resource configuration for the devnet | Setting up Docker before first devnet start |
+| [network-lifecycle.md](skills/devnet/references/network-lifecycle.md) | Generating, starting, stopping, and monitoring the devnet via Docker Compose | Managing the devnet through its full lifecycle |
+| [version-resolution.md](skills/devnet/references/version-resolution.md) | How Docker image versions are resolved and checked for compatibility | Resolving version conflicts or selecting specific component versions |
 
-**Triggers on**: proof server health, proof server version, proof server API endpoints, standalone proof server Docker setup
+### midnight-tooling:proof-server
 
-### troubleshooting
+Covers working with the Midnight proof server in any context -- local development via devnet, standalone Docker instances, and remote servers on testnet/mainnet. Includes API endpoints, version selection, and environment endpoint lookup.
 
-Systematic diagnosis and resolution of common issues with Midnight Network tools including `ERR_UNSUPPORTED_DIR_IMPORT`, version mismatches, NixOS/Windows/Bun setup, environment URLs, proof server connectivity, and devnet issues.
+#### References
 
-**Triggers on**: errors, installation failures, version mismatches, unexpected behavior with Midnight tools, devnet not starting, MCP server connectivity
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [docker-setup.md](skills/proof-server/references/docker-setup.md) | Docker prerequisites for running the proof server | Setting up Docker for standalone proof server usage (delegates to devnet docker-setup) |
 
-### release-notes
+### midnight-tooling:release-notes
 
-View and search release notes for all Midnight Network components from the official documentation repository.
+View and search release notes for all Midnight Network components from the official documentation repository. Covers component discovery, version listing, and batch retrieval via octocode MCP tools.
 
-**Triggers on**: what changed in a version, latest release, changelog, component update details
+#### References
 
-## StatusLine
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [component-map.md](skills/release-notes/references/component-map.md) | Maps component names and aliases to their release notes paths | Resolving user-provided component names to the correct release notes files |
 
-The plugin includes a status bar integration that shows Midnight Network project status directly in Claude Code. It activates automatically for Midnight projects (detected by `.compact` files, `@midnight-ntwrk` packages, a `.compact/` directory, or Docker files referencing `midnightntwrk` images).
+### midnight-tooling:troubleshooting
 
-The statusline composes with any existing statusLine configuration -- it chains the original command and appends Midnight-specific segments after it.
+Systematic diagnosis and resolution of common issues with Midnight Network tools, including Node.js import errors, Compact CLI problems, proof server and Docker failures, devnet startup issues, and platform-specific setup.
 
-### Segments
+#### References
 
-- **Brand**: `Midnight` -- always shown for Midnight projects
-- **Proof server**: `Proof: ready` / `Proof: busy (3/5)` / `Proof: off` -- checks `localhost:6300` with Docker fallback for alternate ports
-- **Compact CLI**: `compactc v0.29.0` / `compactc v0.29.0 ->` -- shows compiler version and update indicator
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [bun-setup.md](skills/troubleshooting/references/bun-setup.md) | Configuring the Bun runtime for Midnight development | Setting up Bun as an alternative runtime |
+| [checking-release-notes.md](skills/troubleshooting/references/checking-release-notes.md) | Using release notes to identify known bugs and fixes | Checking if a problem is a known issue fixed in a newer version |
+| [compact-cli-issues.md](skills/troubleshooting/references/compact-cli-issues.md) | Resolving Compact CLI installation and execution problems | Troubleshooting `compact: command not found` or CLI failures |
+| [devnet-issues.md](skills/troubleshooting/references/devnet-issues.md) | Diagnosing devnet startup, indexer sync, and MCP connectivity issues | Fixing local network startup failures or service connectivity |
+| [environment-tooling.md](skills/troubleshooting/references/environment-tooling.md) | Resolving direnv, mise, dotenv-cli, and COMPACT_DIRECTORY misconfiguration | Fixing environment variable and tooling configuration problems |
+| [environment-urls.md](skills/troubleshooting/references/environment-urls.md) | Fixing incorrect endpoint URLs or wrong network environment connections | Resolving connection failures caused by wrong URLs |
+| [err-unsupported-dir-import.md](skills/troubleshooting/references/err-unsupported-dir-import.md) | Resolving the Node.js ERR_UNSUPPORTED_DIR_IMPORT error | Fixing ESM import errors in Midnight projects |
+| [nixos-installation.md](skills/troubleshooting/references/nixos-installation.md) | Resolving installation issues on NixOS | Installing Midnight tools on NixOS |
+| [proof-server-issues.md](skills/troubleshooting/references/proof-server-issues.md) | Diagnosing proof server connectivity and runtime problems | Fixing proof server failures in devnet or standalone contexts |
+| [searching-issues.md](skills/troubleshooting/references/searching-issues.md) | Searching open GitHub issues in the midnightntwrk organization | Finding known problems, workarounds, and ongoing discussions |
+| [version-mismatch.md](skills/troubleshooting/references/version-mismatch.md) | Diagnosing and resolving version incompatibilities across components | Fixing errors caused by mismatched component versions |
+| [windows-setup.md](skills/troubleshooting/references/windows-setup.md) | Resolving Windows-specific setup issues via WSL | Setting up Midnight development on Windows |
 
-### Themes
+## Commands
 
-Set via `MIDNIGHT_TOOLING_STATUSLINE_THEME` environment variable. Default: `marrakech`.
+### midnight-tooling:devnet
 
-| Theme | Description |
-|-------|-------------|
-| `dark` | Deep blues and purples |
-| `light` | Light backgrounds, vivid accents |
-| `neutral` | Balanced greys with color accents |
-| `tokyo` | Tokyo Night inspired palette |
-| `miami` | Neon pinks and cyans |
-| `marrakech` | Warm earth tones (default) |
-| `reykjavik` | Cool Nordic blues |
-| `cartagena` | Rich purples and warm oranges |
-| `berlin` | Industrial greys with muted accents |
+Manage a local Midnight devnet -- generate compose files, start/stop the network, check status and health, view logs and configuration.
 
-### Styles
+#### Output
 
-Set via `MIDNIGHT_TOOLING_STATUSLINE_STYLE` environment variable. Default: `powerline`.
+A status report of the requested devnet operation (e.g., services started, health check results, log output, or current configuration).
 
-| Style | Description |
-|-------|-------------|
-| `powerline` | Seamless flow with arrow separators (default) |
-| `minimal` | Rectangular bracketed segments |
-| `capsule` | Rounded pill-shaped segments |
+#### Invokes
 
-### Environment Variables
+- midnight-tooling:devnet (skill)
+- midnight-tooling:troubleshooting (skill, on error)
 
-| Variable | Description |
-|----------|-------------|
-| `MIDNIGHT_TOOLING_STATUSLINE_THEME` | Override theme (case-insensitive) |
-| `MIDNIGHT_TOOLING_STATUSLINE_STYLE` | Override style (case-insensitive) |
-| `MIDNIGHT_TOOLING_STATUSLINE_ACTIVE` | Set to `1` to force statusline display (skip project detection) |
+### midnight-tooling:doctor
 
-## License
+Comprehensive diagnostic and health report for the Compact CLI installation, compiler versions, PATH configuration, custom directory setup, proof server status, and plugin dependencies.
 
-[MIT](LICENSE)
+#### Output
+
+A formatted health report with severity indicators (pass, warn, critical, info) for each diagnostic check, with optional auto-fix for detected issues.
+
+#### Invokes
+
+- midnight-plugin-utils:find-claude-plugin-root (skill)
+
+### midnight-tooling:install-cli
+
+Install, update, or configure the Compact CLI tool. Supports global installation and per-project configuration with automatic environment setup.
+
+#### Output
+
+Confirmation of CLI installation or update, with version information and any environment configuration changes applied.
+
+### midnight-tooling:install-statusline-script
+
+Install, update, or uninstall the Midnight statusline script that displays proof server and Compact CLI status in the Claude Code status bar.
+
+#### Output
+
+Confirmation of statusline script installation, update, or removal, including the selected theme and style.
+
+### midnight-tooling:view-release-notes
+
+View Midnight component release notes from the official documentation repository.
+
+#### Output
+
+Formatted release notes for the requested component and version range, fetched from the midnightntwrk/midnight-docs repository.
+
+#### Invokes
+
+- midnight-tooling:release-notes (skill)
