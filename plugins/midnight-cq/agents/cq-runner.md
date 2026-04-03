@@ -1,5 +1,6 @@
 ---
 name: cq-runner
+memory: project
 description: >-
   Use this agent to run all code quality checks on a Midnight project and
   produce a structured report interpreting the results. Executes Biome linting,

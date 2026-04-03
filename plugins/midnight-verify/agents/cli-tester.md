@@ -1,5 +1,6 @@
 ---
 name: cli-tester
+memory: project
 description: >-
   Use this agent to verify Compact CLI tooling claims by running commands
   and observing output. Checks CLI availability, runs compact/compactc
@@ -17,7 +18,7 @@ description: >-
   Example 3: Claim "compactc rejects undeclared variables with exit code 1"
   — writes a contract with an undeclared variable, compiles with compactc,
   checks exit code is non-zero and stderr contains the expected error.
-skills: midnight-verify:verify-by-cli-execution
+skills: midnight-verify:verify-by-cli-execution, midnight-tooling:compact-cli
 model: sonnet
 color: orange
 ---

@@ -1,5 +1,6 @@
 ---
 name: sdk-tester
+memory: project
 description: >-
   Use this agent to verify SDK behavioral claims by running E2E scripts
   against a local Midnight devnet. Checks devnet health first, then writes

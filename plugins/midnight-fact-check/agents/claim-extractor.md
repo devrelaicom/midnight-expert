@@ -1,5 +1,6 @@
 ---
 name: claim-extractor
+memory: project
 description: >-
   Use this agent to extract testable claims from a chunk of Midnight-related
   content. Dispatched by the /midnight-fact-check:check command in Stage 1,

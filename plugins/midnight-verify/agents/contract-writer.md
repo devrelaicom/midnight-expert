@@ -1,5 +1,6 @@
 ---
 name: contract-writer
+memory: project
 description: >-
   Use this agent to verify Compact claims by writing and executing test contracts.
   Translates a claim into a minimal Compact contract, compiles it with the Compact
@@ -15,7 +16,7 @@ description: >-
 
   Example 3: Claim "disclose() is required for ledger writes" — writes a contract
   that does a ledger write without disclose(), confirms the compiler rejects it.
-skills: midnight-verify:verify-by-execution
+skills: midnight-verify:verify-by-execution, compact-core:compact-structure, compact-core:compact-language-ref
 model: opus
 color: cyan
 ---

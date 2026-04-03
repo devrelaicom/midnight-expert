@@ -1,5 +1,6 @@
 ---
 name: witness-verifier
+memory: project
 description: >-
   Use this agent to verify that TypeScript witness implementations correctly
   match Compact contract declarations. Compiles the contract, type-checks the
@@ -19,7 +20,7 @@ description: >-
   Example 3: Claim "This contract + witness produces a valid ZK proof" —
   the agent compiles without --skip-zk, runs its pipeline, and reports the
   build output path so the zkir-checker can run PLONK verification.
-skills: midnight-verify:verify-by-witness
+skills: midnight-verify:verify-by-witness, compact-core:compact-witness-ts
 model: opus
 color: orange
 ---

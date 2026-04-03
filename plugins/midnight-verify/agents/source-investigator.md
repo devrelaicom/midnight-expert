@@ -1,5 +1,6 @@
 ---
 name: source-investigator
+memory: project
 description: >-
   Use this agent to verify Compact or Midnight claims by inspecting the actual
   source code of the compiler, ledger, runtime, or related repositories.
@@ -29,6 +30,7 @@ description: >-
   extensions and directory structure. Uses the general verify-by-source
   skill (tooling source claims route to existing repos).
 skills: midnight-verify:verify-by-source, midnight-verify:verify-by-wallet-source, midnight-verify:verify-by-ledger-source
+mcpServers: octocode-mcp
 model: sonnet
 color: blue
 ---

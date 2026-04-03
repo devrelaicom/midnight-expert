@@ -1,5 +1,6 @@
 ---
 name: zkir-checker
+memory: project
 description: >-
   Use this agent to verify ZKIR-level claims by running circuits through the
   @midnight-ntwrk/zkir-v2 WASM checker or inspecting compiled circuit structure.
@@ -20,7 +21,7 @@ description: >-
   Example 4: Claim "this circuit uses persistent_hash for authority" — compiles
   a guarded counter, extracts .zkir, searches for persistent_hash opcode in
   instruction list.
-skills: midnight-verify:verify-by-zkir-checker, midnight-verify:verify-by-zkir-inspection
+skills: midnight-verify:verify-by-zkir-checker, midnight-verify:verify-by-zkir-inspection, compact-core:compact-structure, compact-core:compact-language-ref
 model: opus
 color: red
 ---
