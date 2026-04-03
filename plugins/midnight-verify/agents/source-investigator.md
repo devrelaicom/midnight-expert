@@ -30,6 +30,7 @@ description: >-
   extensions and directory structure. Uses the general verify-by-source
   skill (tooling source claims route to existing repos).
 skills: midnight-verify:verify-by-source, midnight-verify:verify-by-wallet-source, midnight-verify:verify-by-ledger-source
+mcpServers: octocode-mcp
 model: sonnet
 color: blue
 ---
