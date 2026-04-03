@@ -1,154 +1,258 @@
 # compact-core
 
-Core knowledge for writing Midnight Compact smart contracts.
+Core knowledge for writing Midnight Compact smart contracts -- contract structure, data types, ledger declarations, circuits, witnesses, and common patterns.
 
-A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code/plugins) that provides skills, commands, and agents for developing smart contracts in the Compact language on the Midnight blockchain. Covers contract structure, data types, ledger declarations, circuits, witnesses, privacy patterns, deployment, testing, and code review.
+## Skills
 
-## Features
+### compact-core:compact-structure
 
-- Write and scaffold Compact smart contracts with correct structure
-- Understand Compact's type system, control flow, and module system
-- Design ledger state with the right ADT types (Counter, Map, Set, MerkleTree)
-- Implement TypeScript witness functions with correct type mappings
-- Apply 18 reusable contract patterns (access control, governance, privacy, tokens)
-- Use shielded and unshielded tokens with the zswap protocol
-- Understand circuit costs, compiler output, and optimization strategies
-- Deploy contracts to Midnight networks with provider and wallet setup
-- Write unit tests with Vitest and the Simulator pattern
-- Review contracts across 10 security and correctness categories
-- Initialize new projects with `create-mn-app`
+Covers Compact smart contract anatomy: pragma and imports, ledger declarations (including sealed ledger), data types, circuits, witnesses, constructors, export patterns, and disclosure rules.
 
-## Prerequisites
+#### References
 
-- [Compact CLI](https://docs.midnight.network/) installed
-- Node.js for TypeScript witness development and testing
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| data-types | All data types, operations, and casting rules | When working with Field, Bytes, Uint, enums, structs, or type conversions |
+| ledger-declarations | Ledger modifiers and ADT operations (Counter, Map, Set, etc.) | When declaring or interacting with on-chain state |
+| circuits-and-witnesses | Circuit types, witness declarations, constructors, and pure circuits | When defining circuits, witnesses, or constructors |
+| common-mistakes | Common syntax mistakes with explanations | When troubleshooting contract structure issues |
+| patterns | Authentication, commit-reveal, Merkle trees, and disclosure patterns | When implementing common contract patterns |
 
-## Installation
+### compact-core:compact-language-ref
 
-Install via the Claude Code plugin marketplace:
+Covers Compact language mechanics: types, operators, arithmetic, type casting, control flow, for loops, modules, imports, and standard library functions.
 
-```
-/install-plugin compact-core
-```
+#### References
 
-Or add the plugin manually by cloning it into your Claude Code plugins directory.
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| types-and-values | Primitives, opaque, collections, custom types, defaults, subtyping, and TypeScript mappings | When working with the Compact type system |
+| operators-and-expressions | Arithmetic, comparison, boolean operators, cast paths, conditionals, and lambdas | When writing expressions or performing type casts |
+| control-flow | Variable declarations, if/else, for loops, return, blocks, and destructuring | When writing control flow logic |
+| modules-and-imports | Pragma, include, modules, import forms, exports, and file organization | When organizing code across files and modules |
+| stdlib-functions | persistentHash, transientHash, persistentCommit, transientCommit, pad, disclose, assert, default | When using standard library functions |
+| troubleshooting | Compiler error reference, wrong-to-correct syntax, and debugging strategies | When diagnosing compilation errors |
+
+### compact-core:compact-ledger
+
+Covers on-chain state: ledger declarations, modifiers (export, sealed), ADT types (Counter, Map, Set, List, MerkleTree, HistoricMerkleTree), constructor initialization, state design, on-chain visibility, and the Kernel ledger.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| types-and-operations | Complete ADT operations tables, parameters, return types, nested composition, and Kernel API | When using ADT methods or the Kernel |
+| state-design | Choosing the right type, decision matrix, constructor patterns, nested ADT strategies, and state machines | When designing contract state |
+| privacy-and-visibility | Per-operation visibility, MerkleTree vs Set privacy, disclosure rules, and privacy design | When reasoning about what is visible on-chain |
+
+### compact-core:compact-standard-library
+
+Authoritative index of everything `import CompactStandardLibrary;` provides -- types, constructors, hashing/commitment circuits, elliptic curve functions, Merkle tree path verification, block time circuits, coin management, and ledger ADTs. Includes a verification protocol to prevent hallucinated functions.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| types-and-constructors | Stdlib types (Maybe, Either, JubjubPoint, address types) and constructor circuits (some, none, left, right) | When using stdlib types or constructors |
+| cryptographic-functions | Elliptic curve functions, Merkle tree path functions, and hashing/commitment summary | When using EC operations or Merkle tree verification |
+| cross-reference-index | Alphabetical index of every stdlib export with authoritative documentation location | When verifying whether a function exists in the standard library |
+
+### compact-core:compact-tokens
+
+Covers tokens on Midnight: shielded vs unshielded approaches, mint/send/receive functions, token colors and domain separators, the NIGHT/DUST model, and standard token contract patterns.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| token-architecture | Shielded vs unshielded deep dive, UTXO vs account model | When choosing a token approach |
+| token-operations | Complete function signatures, parameters, nonce management, and merge strategies | When implementing token operations |
+| token-patterns | OpenZeppelin FungibleToken, NonFungibleToken, and MultiToken patterns | When building ERC-20/721/1155 style token contracts |
+
+#### Examples
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| FungibleToken.compact | ERC-20 style fungible token (requires OpenZeppelin compact-contracts) | When building a basic fungible token contract |
+| NonFungibleToken.compact | Non-fungible token with ownership tracking (requires OpenZeppelin compact-contracts) | When building an NFT contract |
+| MultiToken.compact | Multi-token collection with mint/burn per ID (requires OpenZeppelin compact-contracts) | When building a multi-token contract |
+| ShieldedFungibleToken.compact | Shielded fungible token using zswap coin infrastructure (requires OpenZeppelin midnight-apps) | When building a privacy-preserving fungible token |
+
+### compact-core:compact-privacy-disclosure
+
+Covers Midnight's privacy model: disclose() rules, privacy-by-default design, the Witness Protection Program, commitment schemes, nullifier patterns, Merkle membership proofs, unlinkable actions, selective disclosure, and debugging disclosure errors.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| disclosure-mechanics | How disclose() works, Witness Protection Program, safe routines, placement best practices | When understanding or applying disclosure rules |
+| privacy-patterns | Commitments, nullifiers, MerkleTree auth, unlinkability, threat model, and anti-patterns | When implementing privacy-preserving patterns |
+| debugging-disclosure | Fixing disclosure compiler errors step-by-step and common error patterns | When debugging "potential witness-value disclosure" errors |
+
+#### Examples
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| CommitRevealScheme.compact | Two-phase commit-reveal with salt-based commitments | When implementing a commit-reveal pattern |
+| NullifierDoubleSpend.compact | Single-use tokens with commitment and nullifier | When preventing double-spend with nullifiers |
+| PrivateVoting.compact | Anonymous voting with Merkle proofs and commit-reveal | When building a private voting system |
+| UnlinkableAuth.compact | Round-based key rotation for unlinkable actions | When implementing unlinkable authentication |
+| SelectiveDisclosure.compact | Proving properties without revealing values | When disclosing boolean results instead of raw data |
+| ShieldedAuction.compact | Sealed-bid auction with time constraints | When building a private auction |
+
+### compact-core:compact-witness-ts
+
+Covers TypeScript witness implementation: WitnessContext pattern, private state management, Compact-to-TypeScript type mappings, compiler-generated .d.ts files, the Contract class, pure circuits, and the compact runtime.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| type-mappings | Complete type mapping table, CompactType<T>, runtime validation, and casting rules | When mapping Compact types to TypeScript |
+| witness-implementation | WitnessContext API, return tuples, common patterns, and state transitions | When implementing witness functions |
+| contract-runtime | Contract class, circuits vs impureCircuits, pureCircuits, and ledger() | When using the compiler-generated Contract class |
+
+### compact-core:compact-patterns
+
+Catalog of 18 reusable contract design patterns covering access control, state management, commitment schemes, value handling, governance, identity/membership, and privacy.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| access-control-patterns | Owner-Only, RBAC, Pausable, and Initializable patterns | When implementing access control |
+| state-management-patterns | State Machine and Time-Locked Operations patterns | When managing multi-phase protocols or deadlines |
+| commitment-patterns | Commit-Reveal and Sealed-Bid Auction patterns | When hiding values for later revelation |
+| value-handling-patterns | Escrow and Treasury / Pot Management patterns | When holding or managing pooled funds |
+| governance-patterns | Multi-Party Auth (Multi-Sig) and Voting / Governance patterns | When implementing multi-party decisions |
+| identity-membership-patterns | Registry, Credential Verification, Domain-Separated Identity, and Anonymous Membership patterns | When managing identity or membership |
+| privacy-patterns | Round-Based Unlinkability and Selective Disclosure patterns | When breaking transaction linkability or proving properties privately |
+
+### compact-core:compact-transaction-model
+
+Covers transaction execution: guaranteed vs fallible phases, kernel.checkpoint(), transaction composition, merging for atomic swaps, the state model, concurrency and conflicts, fees/gas, and proof verification.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| execution-phases | Three execution stages, phase semantics, state lifecycle, weak vs strong values | When understanding how circuits map to on-chain execution |
+| state-and-conflicts | Contract state model, concurrency, conflict minimization, and append-only patterns | When designing for concurrent transaction safety |
+| fees-and-gas | DUST generation, SyntheticCost dimensions, gas-to-fee conversion, and dynamic pricing | When reasoning about transaction costs |
+| zswap-and-offers | Zswap offers, inputs/outputs, balance vectors, transaction merging, and Pedersen binding | When implementing atomic swaps or understanding the Zswap protocol |
+
+#### Examples
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| CheckpointUsage.compact | Guaranteed/fallible split with kernel.checkpoint() | When learning how to use checkpoint for phase separation |
+| TransactionComposition.compact | Multi-call transaction composition | When composing multiple contract calls in one transaction |
+| FeeAwareContract.compact | Fee-aware contract with gas considerations | When designing circuits mindful of gas costs |
+| AtomicSwap.compact | Atomic swap via transaction merging | When implementing trustless token exchanges |
+
+### compact-core:compact-circuit-costs
+
+Covers the three-dimensional cost model for Compact contracts: circuit/proving costs (gate counts, hash tradeoffs, loop unrolling, pure circuits), runtime gas costs (readTime, computeTime, bytesWritten, bytesDeleted), and state costs (ledger type comparisons, privacy-cost tradeoffs).
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| circuit-proving-costs | Gate counts, loop unrolling, hash costs, pure circuits, vector ops, compiler passes, and proving benchmarks | When optimizing proof generation time |
+| runtime-gas-costs | Gas model dimensions, RunningCost, CostModel, gas limits, and cost-efficient patterns | When reducing transaction fees |
+| state-costs | Ledger type cost comparison, privacy-cost tradeoffs, sealed fields, and nested ADTs | When choosing ledger types for cost efficiency |
+
+### compact-core:compact-init-project
+
+Guides creation of new Midnight projects using create-mn-app, covering template selection (hello-world, counter), environment checks, scaffolding, proof server setup, and compilation.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| create-mn-app-workflow | Step-by-step workflow for scaffolding a new project | When creating a new Midnight project from scratch |
+| project-structure | Project layouts, SDK versions, and network URLs | When understanding the generated project structure |
+| troubleshooting | Common init failures and fixes | When scaffolding fails or produces errors |
+
+### compact-core:compact-review
+
+Review checklists for 10 categories of Compact smart contract review. Each reference file provides a focused checklist for one review dimension.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| privacy-review | disclose() usage, witness data leaks, Set vs MerkleTree, salt reuse | When reviewing privacy and disclosure correctness |
+| security-review | Access control, hash/commit usage, domain separation, nullifiers, error leakage | When reviewing security and cryptographic correctness |
+| token-security-review | Double-spend, overflow, unsafe transfers, missing receiveShielded | When reviewing token and economic security |
+| concurrency-review | Read-then-write patterns, Counter ops, transaction conflicts | When reviewing for concurrency issues |
+| compilation-review | Deprecated syntax, return types, disclosure errors, casts, generics | When reviewing compilation and type safety |
+| performance-review | Proof cost, ledger reads, MerkleTree depth, redundant computation, loops | When reviewing performance and circuit efficiency |
+| architecture-review | ADT selection, depth planning, visibility, modules, decomposition | When reviewing architecture and state design |
+| code-quality-review | Naming, complexity, dead code, stdlib hallucinations, idioms | When reviewing code quality and best practices |
+| testing-review | Edge cases, negative tests, private state testing, witness mocks | When reviewing testing adequacy |
+| documentation-review | Circuit docs, witness contracts, ledger semantics | When reviewing documentation completeness |
+
+### compact-core:compact-debugging
+
+Process orchestration for debugging Compact smart contract errors. Routes to domain-specific compact-core skills based on symptom-driven triage, tracks fix attempts, and triggers escalation when consecutive fixes reveal deeper problems.
+
+#### Examples
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| debugging-session.md | Walkthrough of a debugging session with triage and fix tracking | When learning the debugging methodology |
 
 ## Commands
 
-### `/compact-core:review-compact`
+### compact-core:debug-contract
 
-Comprehensive review of Compact smart contract code covering 10 categories including privacy, security, tokens, concurrency, performance, and more. Supports parallel execution via reviewer agents.
+Systematic debugging for Compact smart contracts -- analyzes errors, investigates root causes, and guides fixes.
 
-```
-/compact-core:review-compact path/to/contract.compact
-/compact-core:review-compact contracts/
-```
+#### Output
 
-### `/compact-core:debug-contract`
+A consolidated analysis report with categorized errors, warnings, and compiler output, followed by an interactive investigation using the compact-debugging methodology.
 
-Interactive debugging workflow for Compact smart contract errors. Uses symptom-driven triage to route to the appropriate domain-specific skill.
+#### Invokes
 
-```
-/compact-core:debug-contract
-```
+- `compact-core:compact-debugging` skill (for systematic investigation after initial analysis)
+- `/midnight-verify:verify` (for mechanical verification baseline)
+
+### compact-core:review-compact
+
+Comprehensive review of Compact smart contract code covering 10 categories including privacy, security, tokens, concurrency, performance, and more, with mechanical verification via /midnight-verify:verify.
+
+#### Output
+
+A consolidated review report with findings grouped by category (Privacy always first), severity-sorted (Critical through Suggestions), a summary table, mechanical verification results, and positive highlights.
+
+#### Invokes
+
+- `compact-core:compact-review` skill (loaded by each reviewer agent for category checklists)
+- `compact-core:reviewer` agent (10 instances, one per review category)
+- `/midnight-verify:verify` (for mechanical verification)
 
 ## Agents
 
 ### compact-dev
 
-Write, generate, review, or fix Compact smart contract code. Use for creating new contracts, modifying existing ones, fixing compilation errors, implementing privacy patterns, or answering questions about Compact syntax and semantics.
+Compact smart contract developer agent that writes, generates, reviews, and fixes Compact code for the Midnight blockchain.
+
+#### When to use
+
+When you need to create new contracts, modify existing ones, fix compilation errors, implement privacy patterns, work with shielded tokens, or answer questions about Compact syntax and semantics. Follows a mandatory workflow: gather syntax reference, load skills, research patterns, write code, pre-check, compile, verify, and review.
 
 ### reviewer
 
-Focused single-category reviewer dispatched by the `review-compact` command. Not intended for direct invocation.
+Focused single-category reviewer agent for Compact smart contract code. Dispatched by the review-compact command with a specific category assignment.
 
-## Skills
+#### When to use
 
-### compact-structure
+Not intended for direct user invocation. Automatically dispatched by the review-compact command to review one of 10 categories (privacy, security, tokens, concurrency, compilation, performance, architecture, code quality, testing, documentation) in parallel.
 
-Contract anatomy — pragma, imports, ledger declarations, sealed ledger, circuits, witnesses, constructors, export patterns, and disclosure rules.
+## Hooks
 
-**Triggers on**: writing or scaffolding a Compact contract, contract anatomy, pragma, circuit definitions
+### SessionStart
 
-### compact-language-ref
-
-Language mechanics — types (Field, Bytes, Uint, Boolean, Vector, Maybe, Either, enums, structs), operators, control flow, for loops, modules, imports, and stdlib functions.
-
-**Triggers on**: Compact syntax, type casting, compiler errors, wrong syntax patterns
-
-### compact-ledger
-
-On-chain state — ledger declarations, modifiers (export, sealed), ADT types and operations, constructor initialization, state design choices, privacy of state operations, Kernel ledger, and the token/coin system.
-
-**Triggers on**: ledger fields, Map vs Set vs MerkleTree, Counter, on-chain visibility, kernel.self()
-
-### compact-standard-library
-
-Authoritative index of everything `import CompactStandardLibrary;` provides — types, constructors, elliptic curve functions, Merkle tree verification, and a verification protocol to prevent hallucinated functions.
-
-**Triggers on**: stdlib types, Maybe/Either, ecAdd/ecMul, merkleTreePathRoot, verifying function existence
-
-### compact-tokens
-
-Tokens on Midnight — shielded vs unshielded approaches, mint/send/receive functions, token colors, domain separators, NIGHT/DUST model, and standard token contract patterns.
-
-**Triggers on**: minting, burning, transfers, ShieldedCoinInfo, FungibleToken, NFT, zswap
-
-### compact-privacy-disclosure
-
-Privacy model — disclose() rules, privacy-by-default design, commitment schemes, nullifier patterns, Merkle membership proofs, unlinkable actions, selective disclosure, and debugging disclosure errors.
-
-**Triggers on**: disclose, witness protection, commitments, nullifiers, anonymous auth, "potential witness-value disclosure" errors
-
-### compact-witness-ts
-
-TypeScript witness implementation — WitnessContext, private state, Compact-to-TypeScript type mappings, compiler-generated .d.ts files, Contract class, and the runtime.
-
-**Triggers on**: witness functions in TypeScript, WitnessContext, type mappings, contract.circuits, pure circuits
-
-### compact-patterns
-
-18 reusable contract design patterns — access control (owner-only, RBAC, multi-sig), pausable, initializable, state machine, time-lock, commit-reveal, auction, escrow, treasury, voting, governance, registry, allowlist, credential, and anonymous membership.
-
-**Triggers on**: design patterns, access control, governance, escrow, multi-sig, pattern combinations
-
-### compact-transaction-model
-
-Transaction execution — guaranteed vs fallible phases, kernel.checkpoint(), transaction composition, state conflicts, DUST fees, gas limits, proof verification, and atomic swaps via transaction merging.
-
-**Triggers on**: transaction semantics, fallible/guaranteed phase, checkpoint, fees, gas, atomic swap
-
-### compact-circuit-costs
-
-Cost model across three dimensions: circuit/proving costs (gate counts, hash tradeoffs), runtime gas (readTime, computeTime, bytesWritten), and state costs. Covers optimization strategies.
-
-**Triggers on**: gate count, proving time, gas costs, transientHash vs persistentHash, loop unrolling, optimization
-
-### compact-init-project
-
-Project scaffolding with `create-mn-app` — templates, project structure, and first-time setup.
-
-**Triggers on**: new project, create-mn-app, scaffold, hello-world, counter template
-
-### compact-review
-
-Review checklists for 10 categories of Compact contract review — privacy, security, cryptographic correctness, token economics, concurrency, compilation, performance, architecture, code quality, testing, and documentation.
-
-**Triggers on**: code review, security review, privacy review
-
-### compact-debugging
-
-Interactive debugging process — symptom-driven triage, fix tracking, and escalation for compiler failures, proof generation issues, witness mismatches, and compatibility problems.
-
-**Triggers on**: debugging errors, compiler failures, "won't compile", proof generation issues, version mismatches
-
-## Companion Plugins
-
-Some features reference skills from companion plugins:
-
-- **midnight-tooling** — CLI installation, proof server management, devnet, release notes
-- **devs** — General code review, TypeScript, and security skills used by the reviewer agent
-
-## License
-
-[MIT](LICENSE)
+Runs a shell script on session start that checks Compact CLI availability, compiler version, and language version. Injects context about the current compiler state and reminds the agent about Midnight ecosystem practices (public npm packages, version checking commands). Falls back to static context if the compact CLI is not installed.

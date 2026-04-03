@@ -1,51 +1,66 @@
 # midnight-fact-check
 
-Fact-checking pipeline for Midnight content. Extracts testable claims from any source, classifies them by domain, verifies each claim using the [midnight-verify](../midnight-verify/) framework, and produces a structured report.
+Fact-checking pipeline for Midnight content -- extracts testable claims from any source (markdown, code, PDFs, URLs, GitHub repos), classifies them by domain (Compact, SDK, ZKIR, Witness), and verifies each claim using the midnight-verify framework. Produces structured JSON artifacts and human-readable reports.
 
-## Usage
+## Skills
 
-```
-/midnight-fact-check:check <target> [<target2> ...]
-```
+### midnight-fact-check:fact-check-extraction
 
-### Supported Inputs
+Defines what constitutes a testable claim in Midnight content and how to extract them. Covers identification of verifiable statements about Compact syntax, types, APIs, compiler behavior, and runtime errors, with a JSON output schema for structured claim lists.
 
-| Input | Example |
-|-------|---------|
-| Local file | `/midnight-fact-check:check ./skills/compact-language-ref/SKILL.md` |
-| Directory | `/midnight-fact-check:check ./plugins/compact-core/` |
-| Plugin directory | `/midnight-fact-check:check ./plugins/compact-core/` (auto-detected via plugin.json) |
-| URL(s) | `/midnight-fact-check:check https://docs.midnight.network/develop/tutorial/building` |
-| GitHub file | `/midnight-fact-check:check https://github.com/user/repo/blob/main/README.md` |
-| GitHub directory | `/midnight-fact-check:check https://github.com/user/repo/tree/main/docs/` |
-| Glob pattern | `/midnight-fact-check:check "./plugins/*/skills/**/*.md"` |
+### midnight-fact-check:fact-check-classification
 
-### Pipeline
+Defines the four verification domains (Compact, SDK, ZKIR, Witness) and how to tag claims with their domain. Covers domain boundaries, classification confidence, cross-domain claims, and boundary case resolution.
 
-1. **Preflight** — Verifies midnight-verify plugin is installed
-2. **Input Resolution** — Resolves targets to readable content
-3. **Extraction** — Parallel agents extract testable claims
-4. **Classification** — Domain-specialist agents tag claims (compact, sdk, zkir, witness)
-5. **Verification** — Dispatches midnight-verify agents directly to verify each claim
-6. **Report** — Markdown report + terminal summary
-7. **GitHub Issues** — Optional issue creation for refuted claims (GitHub sources only)
+### midnight-fact-check:fact-check-reporting
 
-### Run Artifacts
+Defines the markdown report template, terminal summary format, and GitHub issue templates for fact-check results. Covers executive summaries, per-domain result tables, refuted claim details, and issue creation for per-claim, per-file, and summary reports.
 
-Each run produces a directory under `.midnight-expert/fact-checker/`:
+## Commands
 
-```
-.midnight-expert/fact-checker/03-26/compact-core-plugin-a3Kf/
-├── run-metadata.json
-├── resolved-content.json
-├── extracted-claims.json
-├── classified-claims.json
-├── verification-results.json
-└── report.md
-```
+### midnight-fact-check:check
 
-## Dependencies
+Fact-check content against the Midnight ecosystem through a full staged pipeline: extract claims, classify by domain, verify via midnight-verify, and produce a report.
 
-- **midnight-verify** plugin (required — checked at preflight)
-- **@aaronbassett/midnight-fact-checker-utils** npm package (used via npx)
-- **gh** CLI (optional — for GitHub issue creation)
+#### Output
+
+A markdown report with an executive summary, results grouped by domain, and a detailed table of refuted claims. Also produces structured JSON artifacts (extracted claims, classified claims, verification results) in a timestamped run directory.
+
+#### Invokes
+
+- midnight-fact-check:fact-check-extraction (skill, via claim-extractor agent)
+- midnight-fact-check:fact-check-classification (skill, via domain-classifier agent)
+- midnight-fact-check:fact-check-reporting (skill)
+- midnight-verify:verify-correctness (skill, from midnight-verify plugin)
+
+### midnight-fact-check:fast-check
+
+Fast fact-check content against the Midnight ecosystem using a streamlined pipeline that skips domain classification and execution-based verification, relying on source inspection only.
+
+#### Output
+
+A markdown report with verification results and a terminal summary. Faster and cheaper than the full check command but may miss claims that require compilation or execution to verify.
+
+#### Invokes
+
+- midnight-fact-check:fact-check-extraction (skill, via claim-extractor agent)
+- midnight-fact-check:fact-check-reporting (skill)
+- midnight-verify:verify-correctness (skill, from midnight-verify plugin)
+
+## Agents
+
+### claim-extractor
+
+Extracts testable claims from a chunk of Midnight-related content. Reads assigned content files, identifies all verifiable statements, and returns them as a structured JSON array.
+
+#### When to use
+
+Dispatched by the /midnight-fact-check:check command in Stage 1, one instance per content chunk, running in parallel.
+
+### domain-classifier
+
+Classifies extracted claims by verification domain (compact, sdk, zkir, or witness). Reads the claims file, tags claims belonging to its assigned domain, and writes the updated file.
+
+#### When to use
+
+Dispatched by the /midnight-fact-check:check command in Stage 2, one instance per domain, running in parallel.
