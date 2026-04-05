@@ -1,0 +1,148 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (structs/Queue.compact)
+
+pragma language_version >= 0.22;
+
+/**
+ * @module Queue
+ * @description A simple queue implementation in Compact, using a
+ * Map to store elements with Uint<64> keys.
+ *
+ * # Compact Limitations and Design Choices
+ * This queue implementation reflects several constraints and
+ * design decisions driven by Compact's language features:
+ *
+ * ## Why Map Instead of Vector?
+ * - Vector Limitation: In Compact, `Vector<N, T>` only
+ *   supports constant indices (e.g., `vector[0]`), not variable
+ *   indices (e.g., `vector[i]`). This prevents dynamic access
+ *   or resizing, making it unsuitable for a queue where
+ *   elements are added and removed at runtime. Checkout
+ *   Queue Vector impl archive, src/archive/Queue.compact.archive.
+ *
+ * - Map Advantage: `Map<Uint<64>, T>` allows dynamic
+ *   key-value pairs with `insert`, `lookup`, and `remove`
+ *   operations, providing the flexibility needed for a queue.
+ *   It supports sparse storage, unlike `Vector`’s fixed-size,
+ *   contiguous requirement.
+ *
+ * ## Why No Shifting?
+ * - Lack of Iteration: Compact (v0.14.0) doesn’t support
+ *   loops with variable bounds (e.g., `for (i of start..end)`),
+ *   only constant ranges (e.g., `0..1023`). Shifting requires
+ *   iterating over keys from `head + 1` to `tail - 1`, which
+ *   isn’t possible without manual unrolling for a fixed size.
+ *
+ * - No Bulk Updates: There’s no mechanism to shift
+ *   multiple `Map` entries in one operation, requiring
+ *   individual `lookup`, `insert`, and `remove` calls for each
+ *   key, which can’t be generalized without iteration.
+ *
+ * ## Consequences of No Shifting
+ * - Sparse Keys: Without shifting, keys grow indefinitely
+ *   as `head` and `tail` increment (e.g., `{100: item}` after
+ *   100 dequeues), rather than staying contiguous (e.g.,
+ *   `{0: item}`). This deviates from traditional queue
+ *   behavior but remains functional as a FIFO structure.
+ *
+ * - Memory Usage: The `Map` remains sparse, potentially
+ *   increasing key storage overhead.
+ *
+ * ## Algorithm Analysis
+ * - Current Approach: Uses `head` and `tail` as `Counter`
+ *   ADTs to track the front and back. Enqueue adds at `tail`
+ *   and increments it; dequeue removes at `head` and
+ *   increments it, returning the value via `Maybe<T>`.
+ *
+ * - Time Complexity:
+ *   - Enqueue: O(1) for `Map.insert`.
+ *   - Dequeue: O(1) for `Map.lookup` and `Map.remove` (no
+ *     shifting).
+ *
+ * - Space Complexity: O(n) where n is the number of
+ *   elements, but keys can grow up to `Uint<64>`’s limit
+ *   (2^64 - 1), far exceeding practical queue sizes.
+ *
+ * - Trade-offs: Sacrifices contiguous keys for simplicity
+ *   and feasibility within Compact’s constraints. Still
+ *   preserves FIFO order, making it a valid queue despite
+ *   unconventional key usage.
+ *
+ * This design prioritizes functionality over traditional
+ * queue aesthetics, leveraging `Map`’s strengths while
+ * working around Compact’s lack of dynamic iteration.
+ *
+ * @template T - The type of elements stored in the queue.
+ */
+module Queue<T> {
+
+  import { Map, Counter, Either, Maybe, some, none } from CompactStandardLibrary;
+
+  /** @type {Map<Uint<64>, T>} The queue’s storage, mapping
+   * positions to elements.
+   */
+  export ledger state: Map<Uint<64>, T>;
+
+  /** @type {Counter} The position of the front element
+   * (head).
+   */
+  export ledger head: Counter;
+
+  /** @type {Counter} The position where the next element
+   * will be added (tail).
+   */
+  export ledger tail: Counter;
+
+  /**
+   * @description Adds an element to the back of the queue.
+   * @param item - The element to enqueue.
+   * @remarks Inserts the item at the current `tail` position
+   * and increments `tail`. Time complexity: O(1).
+   */
+  export circuit enqueue(item: T): [] {
+    // TODO: test tail overflow, currently that will be an infeasible test.
+    // Because of the limit of increment(steps: Uint<16>)
+    const MAX_UINT64 = 18446744073709551615;
+    assert(tail != MAX_UINT64, "Queue: tail counter reached maximum capacity.");
+    state.insert(tail, disclose(item));
+    tail.increment(1);
+  }
+
+  /**
+   * @description Removes and returns the element at the
+   * front of the queue.
+   * @returns {Maybe<T>} The dequeued element wrapped in
+   * `Maybe`, or `none<T>` if the queue is empty.
+   * @remarks Removes the element at `head`, increments
+   * `head`, and returns the value. Shifting is omitted due
+   * to Compact’s lack of iteration; keys remain sparse.
+   * Time complexity: O(1) without shifting.
+   */
+  export circuit dequeue(): Maybe<T> {
+    if (isEmpty()) {
+      return none<T>(); // Queue is empty
+    } else {
+      const MAX_UINT64 = 18446744073709551615;
+      assert(head != MAX_UINT64, "Queue: head counter reached maximum capacity.");
+      const value = state.lookup(head);
+      state.remove(head);
+      head.increment(1);
+      // Shifting would require re-inserting all elements
+      // with new keys, but Compact lacks iteration or bulk
+      // updates, so we stop here
+      // shift();
+      return some<T>(value);
+    }
+  }
+
+  /**
+   * @description Checks if the queue is empty.
+   * @returns {Boolean} True if the queue is empty (head ==
+   * tail), false otherwise.
+   * @remarks Relies on comparing `head` and `tail` counters.
+   * Time complexity: O(1).
+   */
+  export circuit isEmpty(): Boolean {
+    return head == tail;
+  }
+}

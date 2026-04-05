@@ -1,0 +1,108 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/openzeppelin/Utils.compact)
+
+pragma language_version >= 0.22;
+
+module Utils {
+  import CompactStandardLibrary;
+
+  /**
+   * @description Returns whether `keyOrAddress` is the zero address.
+   *
+   * @param {keyOrAddress} - The target value to check, either a ZswapCoinPublicKey or a ContractAddress.
+   * @return {Boolean} - Returns true if `keyOrAddress` is zero.
+   */
+  export pure circuit isKeyOrAddressZero(
+                        keyOrAddress: Either<ZswapCoinPublicKey, ContractAddress>
+                        ): Boolean {
+    if (keyOrAddress.is_left) {
+      return keyOrAddress == eitherZeroZPK();
+    } else {
+      return keyOrAddress == eitherZeroContractAddress();
+    }
+  }
+
+  /**
+   * @description Returns a zero-filled 32-byte array.
+   *
+   * @return {Bytes<32>} - A 32-byte array filled with zeros.
+   */
+  export pure circuit zeroBytes(): Bytes<32> {
+    return pad(32, "");
+  }
+
+  /**
+   * @description Returns a zero Zswap coin public key.
+   *
+   * @return {ZswapCoinPublicKey} - A ZswapCoinPublicKey with all bytes set to zero.
+   */
+  export pure circuit zeroZPK(): ZswapCoinPublicKey {
+    return ZswapCoinPublicKey { bytes: zeroBytes() };
+  }
+
+  /**
+   * @description Returns the caller's Zswap coin public key.
+   *
+   * @return {ZswapCoinPublicKey} - The public key of the caller.
+   */
+  export circuit callerZPK(): ZswapCoinPublicKey {
+    return ownPublicKey();
+  }
+
+  /**
+   * @description Returns the current contract's address.
+   *
+   * @return {ContractAddress} - The address of this contract.
+   */
+  export circuit thisAddress(): ContractAddress {
+    return kernel.self();
+  }
+
+  /**
+   * @description Returns the sender's public key as the left variant of an Either type, representing
+   * a ZswapCoinPublicKey.
+   *
+   * @returns Either<ZswapCoinPublicKey, ContractAddress> The sender’s public key as the left variant.
+   */
+  export circuit eitherCaller(): Either<ZswapCoinPublicKey, ContractAddress> {
+    return left<ZswapCoinPublicKey, ContractAddress>(callerZPK());
+  }
+
+  /**
+   * @description Returns a zero Zswap coin public key as the left variant of an Either type.
+   *
+   * @return {Either<ZswapCoinPublicKey, ContractAddress>} - Zero ZswapCoinPublicKey as the left variant.
+   */
+  export pure circuit eitherZeroZPK(): Either<ZswapCoinPublicKey, ContractAddress> {
+    return left<ZswapCoinPublicKey, ContractAddress>(zeroZPK());
+  }
+
+  /**
+   * @description Returns a zero contract address as the right variant of an Either type.
+   *
+   * @return {Either<ZswapCoinPublicKey, ContractAddress>} - Zero ContractAddress as the right variant.
+   */
+  export pure circuit eitherZeroContractAddress(): Either<ZswapCoinPublicKey, ContractAddress> {
+    return right<ZswapCoinPublicKey, ContractAddress>(ContractAddress { zeroBytes() });
+  }
+
+  /**
+   * @description Wraps a Zswap coin public key as the left variant of an Either type.
+   *
+   * @param {pk} - The Zswap coin public key to wrap.
+   * @return {Either<ZswapCoinPublicKey, ContractAddress>} - The public key as the left variant.
+   */
+  export circuit eitherZPK(pk: ZswapCoinPublicKey): Either<ZswapCoinPublicKey, ContractAddress> {
+    return left<ZswapCoinPublicKey, ContractAddress>(pk);
+  }
+
+  /**
+   * @description Returns the contract’s address as the right variant of an Either type, representing
+   * a ContractAddress.
+   *
+   * @returns Either<ZswapCoinPublicKey, ContractAddress> The contract’s address as the right variant.
+   */
+  export circuit eitherThisAddress(): Either<ZswapCoinPublicKey, ContractAddress> {
+    return right<ZswapCoinPublicKey, ContractAddress>(thisAddress());
+  }
+}
