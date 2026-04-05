@@ -1,0 +1,52 @@
+// Copyright 2025 Brick Towers
+pragma language_version >= 0.22;
+
+module PassportIdentity {
+  import CompactStandardLibrary;
+  import Crypto;
+
+  /**
+  * Line 1:
+  * Positions 1–2 → Document code (e.g., "PO" for ordinary passport, "PD" for diplomatic, "PV" for visa-related; first character is type "P" for passport, second is subtype or "O" for ordinary)
+  * Positions 3–5 → Issuing State/organization (3-letter ICAO code, e.g., "GBR", "USA", "D<<")
+  * Positions 6–44 → Name of holder: Surname(s)<<Given name(s), with << separating surname from given names, single < replacing spaces within parts, and trailing < as fillers (e.g., "MUSTERMANN<<ERIKA<MAX<MARIA<<<<<<<<<<")
+  *
+  * Line 2:
+  * Positions 1–9 — Document number (alphanumeric, right-padded with < if <9 characters)
+  * Position 10 — Check digit over positions 1–9 (modulo 10, weights 7-3-1 repeating; < counts as 0)
+  * Positions 11–13 — Nationality (3-letter ICAO code)
+  * Positions 14–19 — Date of birth (YYMMDD format; padded with 000000 if unknown, but normally valid)
+  * Position 20 — Check digit over positions 14–19
+  * Position 21 — Sex/gender (M, F, or < for unspecified)
+  * Positions 22–27 — Date of expiry or "valid until" (YYMMDD format)
+  * Position 28 — Check digit over positions 22–27
+  * Positions 29–42 — Optional data / personal data elements (issuing States use this for personal ID number, driver's license code, etc.; otherwise filled with <)
+  * Position 43 — Check digit over positions 29–42 (even if all <)
+  * Position 44 — Composite check digit (calculated over: document number (1–9 + pos.10) + DOB (14–19 + pos.20) + expiry (22–27 + pos.28) + optional (29–42 + pos.43); same 7-3-1 weighting)
+  **/
+  export struct PassportData {
+    documentCode: Field; // 2 bytes
+    issuingOrganization: Field; // 3 bytes
+    holderName: Field; // 39 bytes
+    documentNumber: Field; // 9 bytes
+    documentNumberCheckDigit: Field; // 1 byte
+    nationality: Field; // 3 bytes
+    dateOfBirth: Field; // 6 bytes
+    dateOfBirthCheckDigit: Field; // 1 byte
+    sex: Field; // 1 byte
+    expiryDate: Field; // 6 bytes
+    expiryDateCheckDigit: Field; // 1 byte
+    optionalData: Field; // 14 bytes
+    optionalDataCheckDigit: Field; // 1 byte
+    compositeCheckDigit: Field; // 1 byte
+  }
+
+  export pure circuit computeChallengeForCredential(r: JubjubPoint, pk: JubjubPoint, credential: PassportData): Field {
+    return computeChallenge<PassportData>(r, pk, credential);
+  }
+
+  export pure circuit generateDeterministicK(sk: Field, credential: PassportData): Field {
+    const nonce: Nonce<PassportData> = Nonce<PassportData> { sk: sk, credential: credential };
+    return deterministicK<PassportData>(nonce);
+  }
+}

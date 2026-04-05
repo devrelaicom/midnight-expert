@@ -1,0 +1,425 @@
+/**
+ * @file CryptoKitties-like NFT Implementation in Compact
+ * @author Ricardo Rius
+ * @license GPL-3.0
+ *
+ * Copyright (C) 2025 Ricardo Rius
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * DISCLAIMER: This software is provided "as is" without any warranty.
+ * Use at your own risk. The author assumes no responsibility for any
+ * damages or losses arising from the use of this software.
+ */
+
+pragma language_version >= 0.22;
+
+import CompactStandardLibrary;
+import "./Nft";
+
+// Export selected circuits from the NFT module for standard NFT operations.
+export {
+  balanceOf,
+  ownerOf,
+  approve,
+  getApproved,
+  setApprovalForAll,
+  isApprovedForAll
+};
+
+// =====================
+// CryptoKitties-specific data structures
+// =====================
+
+// Enum representing the gender of a kitty.
+export enum Gender {
+  Male,
+  Female
+}
+
+// Struct holding all attributes for a kitty.
+export struct Kitty {
+  dna: Field,                // Unique DNA for the kitty
+  gender: Gender,            // Gender of the kitty
+  owner: ZswapCoinPublicKey, // Owner's public key
+  price: Uint<64>,           // Sale price (0 if not for sale)
+  forSale: Boolean,          // Whether the kitty is for sale
+  generation: Uint<32>       // Generation number (0 for original, increments with breeding)
+}
+
+export struct Offer {
+  kittyId: Uint<64>,
+  buyer: ZswapCoinPublicKey,
+  price: Uint<64>
+}
+
+// Mapping from kitty ID to kitty data.
+export ledger kitties: Map<Uint<64>, Kitty>;
+
+// Counter to track the total number of kitties created.
+export ledger allKittiesCount: Counter;
+
+// Boolean used to alternate gender assignment for new kitties.
+export ledger genderSelector: Boolean;
+
+// Mapping for kitty ID to Account to offer data.
+export ledger buyOffers: Map<Uint<64>, Map<ZswapCoinPublicKey, Offer>>;
+
+// Witness function to retrieve a random number (for DNA generation and breeding).
+// WARNING: This is a witness, meaning the value is injected from outside the circuit
+// and cannot be fully trusted.
+witness createRandomNumber(): Bytes<32>;
+
+// =====================
+// Contract Initialization
+// =====================
+
+// Contract constructor: initializes the kitty counter.
+constructor() {
+  allKittiesCount.increment(0);
+}
+
+// =====================
+// Kitty DNA and Gender Generation
+// =====================
+
+// Generates unique DNA for a kitty.
+circuit generateDNA(minter: ZswapCoinPublicKey, kittyId: Uint<64>): Field {
+  // In a production implementation, this would use a more secure randomness.
+  // Here, we use a hash of the KittyId, minter, contract address, and a witness random number.
+  const payload = [kittyId, minter.bytes, kernel.self().bytes,  createRandomNumber()];
+  return transientHash<[Uint<64>, Bytes<32>, Bytes<32>, Bytes<32>]>(payload);
+}
+
+// Determines the gender of a new kitty based on the genderSelector flag.
+circuit generateGender(): Gender {
+  // Alternate gender for each new kitty.
+  if (genderSelector) {
+    return Gender.Male;
+  } else {
+    return Gender.Female;
+  }
+}
+
+// =====================
+// Kitty Lifecycle Operations
+// =====================
+
+// Creates a new unique kitty and mints the corresponding NFT.
+export circuit createKitty(): [] {
+  const sender = ownPublicKey();
+  const kittyId = (allKittiesCount.read() + 1) as Uint<64>;
+  const kittyDna = generateDNA(sender, kittyId);
+
+  // Ensure the kitty does not already exist.
+  assert(!tokenExists(kittyId), "Kitty already exists");
+
+  // Create the new kitty struct.
+  const newKitty = Kitty {
+    dna: kittyDna,
+    gender: generateGender(),
+    owner: sender,
+    price: 0,
+    forSale: false,
+    generation: 0
+  };
+
+  // Store the kitty data in the ledger.
+  kitties.insert(disclose(kittyId), disclose(newKitty));
+
+  // Mint the NFT using the imported NFT module.
+  mint(sender, kittyId);
+
+  // Increment the total kitty counter.
+  allKittiesCount.increment(1);
+  // Alternate the gender for the next kitty.
+  genderSelector = !genderSelector;
+}
+
+// Transfers a kitty to another account and resets its sale status.
+export circuit transferKitty(to: ZswapCoinPublicKey, kittyId: Uint<64>): [] {
+  // const sender = ownPublicKey();
+
+  // Ensure the kitty exists.
+  assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
+
+  // Retrieve the kitty data.
+  const kitty = kitties.lookup(disclose(kittyId));
+
+  // Update the kitty's owner and reset sale status.
+  const updatedKitty = Kitty {
+    dna: kitty.dna,
+    gender: kitty.gender,
+    owner: to,
+    price: 0,
+    forSale: false,
+    generation: kitty.generation
+  };
+
+  kitties.insert(disclose(kittyId), disclose(updatedKitty));
+
+  // Transfering token resets offers if the kitty was but on sale before.
+  if (buyOffers.member(disclose(kittyId))) {
+    // Note: In a real implementation, currency reimbursment would occur here.
+    // The currency transfer would be the bidPrice from the offer.
+    // For now, only clear offers.
+
+    // Empty the kitty offers.
+    buyOffers.remove(disclose(kittyId));
+
+  }
+
+  // Transfer the NFT using the imported NFT module.
+  transfer(to, kittyId);
+}
+
+// Transfers a kitty to another account and resets its sale status.
+export circuit transferKittyFrom(fromAddress: ZswapCoinPublicKey, to: ZswapCoinPublicKey, kittyId: Uint<64>): [] {
+  // const sender = ownPublicKey();
+
+  // Ensure the kitty exists.
+  assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
+
+  // Retrieve the kitty data.
+  const kitty = kitties.lookup(disclose(kittyId));
+
+  // Update the kitty's owner and reset sale status.
+  const updatedKitty = Kitty {
+    dna: kitty.dna,
+    gender: kitty.gender,
+    owner: to,
+    price: 0,
+    forSale: false,
+    generation: kitty.generation
+  };
+
+  kitties.insert(disclose(kittyId), disclose(updatedKitty));
+
+  // Transfering token resets offers if the kitty was but on sale before.
+  if (buyOffers.member(disclose(kittyId))) {
+    // Note: In a real implementation, currency reimbursment would occur here.
+    // The currency transfer would be the bidPrice from the offer.
+    // For now, only clear offers.
+
+    // Empty the kitty offers.
+    buyOffers.remove(disclose(kittyId));
+  }
+
+  // Transfer the NFT using the imported NFT module.
+  transferFrom(fromAddress, to, kittyId);
+}
+
+// Sets the price for a kitty and marks it as for sale if price > 0.
+export circuit setPrice(kittyId: Uint<64>, price: Uint<64>): [] {
+  const sender = ownPublicKey();
+
+  // Ensure the kitty exists.
+  assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
+
+  // Ensure the sender is the owner.
+  assert(ownerOf(kittyId) == sender, "Not the owner of this kitty");
+
+  // Retrieve the kitty data.
+  const kitty = kitties.lookup(disclose(kittyId));
+
+  // Update the kitty's price and sale status.
+  const updatedKitty = Kitty {
+    dna: kitty.dna,
+    gender: kitty.gender,
+    owner: kitty.owner,
+    price: price,
+    forSale: price > 0,
+    generation: kitty.generation
+  };
+
+  kitties.insert(disclose(kittyId), disclose(updatedKitty));
+}
+
+// Allows a user to create an offer to buy a kitty that is for sale.
+export circuit createBuyOffer(kittyId: Uint<64>, bidPrice: Uint<64>): [] {
+  const buyer = ownPublicKey();
+
+  // Ensure the kitty exists.
+  assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
+
+  // Retrieve the kitty data.
+  const kitty = kitties.lookup(disclose(kittyId));
+
+  // Ensure the buyer is not the current owner.
+  assert(buyer != kitty.owner, "Cannot buy your own kitty");
+
+  // Ensure the kitty is for sale.
+  assert(kitty.forSale, "Kitty is not for sale");
+
+  // Ensure the bid price is sufficient.
+  assert(bidPrice >= kitty.price, "Bid price too low");
+
+  // Note: In a real implementation, currency transfer would occur here.
+  // For now, only create the offer.
+
+  const newOffer = Offer {
+    kittyId: kittyId,
+    buyer: buyer,
+    price: bidPrice
+  };
+
+  // Initialize the inner map if it doesn't exist.
+  if (!buyOffers.member(disclose(kittyId))) {
+    buyOffers.insert(disclose(kittyId), default<Map<ZswapCoinPublicKey, Offer>>);
+  }
+
+  buyOffers.lookup(disclose(kittyId)).insert(disclose(buyer), disclose(newOffer));
+}
+
+// Approves a pending offer for a kitty, transferring ownership to the buyer.
+// Only the current owner can approve an offer.
+// Note: Currency transfer is not implemented here; only ownership is transferred.
+export circuit approveOffer(kittyId: Uint<64>, buyer: ZswapCoinPublicKey): [] {
+  assert(ownPublicKey() == ownerOf(disclose(kittyId)), "Only owner can sell.");
+
+  // Retrieve the kitty's current data.
+  const kitty = kitties.lookup(disclose(kittyId));
+
+  // Get the offer details from the buyer.
+  const selectedOffer = getOffer(kittyId, buyer);
+
+  // Ensure the offer is valid (not default).
+  assert(selectedOffer != default<Offer>, "Invalid offer.");
+
+  // Empty the kitty offers.
+  buyOffers.remove(disclose(kittyId));
+
+  // Prepare the updated kitty struct with new owner and reset sale info.
+  const updatedKitty = Kitty {
+    dna: kitty.dna,
+    gender: kitty.gender,
+    owner: buyer,
+    price: 0,
+    forSale: false,
+    generation: kitty.generation
+  };
+
+  // Store the updated kitty data in the ledger.
+  kitties.insert(disclose(kittyId), disclose(updatedKitty));
+
+  // Note: In a real implementation, currency transfer would occur here.
+  // The currency transfer would be the bidPrice from the offer.
+  // For now, only transfer the kitty ownership.
+
+  // Transfer the NFT to the buyer using the imported NFT module.
+  transfer(buyer, kittyId);
+}
+
+// Breeds two kitties to create a new offspring with combined DNA.
+// Warning: The DNA combination uses a random seed from a witness.
+// The offspring's generation is set to max(parent generations) + 1.
+export circuit breedKitty(kittyId1: Uint<64>, kittyId2: Uint<64>): [] {
+  const sender = ownPublicKey();
+
+  // Ensure both parent kitties exist.
+  assert(tokenExists(disclose(kittyId1)), "Parent kitty 1 does not exist");
+  assert(tokenExists(disclose(kittyId2)), "Parent kitty 2 does not exist");
+
+  // Ensure the kitties are different (can't breed with itself).
+  assert(kittyId1 != kittyId2, "Cannot breed a kitty with itself");
+
+  // Ensure the sender owns at least one of the parent kitties.
+  assert(
+    ownerOf(kittyId1) == sender || ownerOf(kittyId2) == sender,
+    "Must own at least one parent kitty"
+  );
+
+  // Generate new kitty ID.
+  const newKittyId = (allKittiesCount.read() + 1) as Uint<64>;
+
+  // Ensure the new kitty doesn't already exist.
+  assert(!tokenExists(newKittyId), "New kitty already exists");
+
+  // Generate random seed for breeding (witness, not fully trustable).
+  const breedingSeed = createRandomNumber();
+
+  // Retrieve parent kitty data.
+  const kitty1 = kitties.lookup(disclose(kittyId1));
+  const kitty2 = kitties.lookup(disclose(kittyId2));
+
+  // Combine DNA from both parents using the breeding seed.
+  const combinedDNA = breedDNA(kitty1.dna, kitty2.dna, breedingSeed, newKittyId);
+
+  // Determine the generation (max of parents + 1).
+  const newGeneration = (getMaxGeneration(kitty1.generation, kitty2.generation) + 1) as Uint<32>;
+
+  // Create the new offspring kitty.
+  const newKitty = Kitty {
+    dna: combinedDNA,
+    gender: generateGender(),
+    owner: sender,
+    price: 0,
+    forSale: false,
+    generation: newGeneration
+  };
+
+  // Store the new kitty data.
+  kitties.insert(disclose(newKittyId), disclose(newKitty));
+
+  // Mint the NFT for the new kitty.
+  mint(sender, newKittyId);
+
+  // Increment the total kitty counter.
+  allKittiesCount.increment(1);
+  // Alternate the gender for the next kitty.
+  genderSelector = !genderSelector;
+}
+
+// Retrieves and returns information about a specific kitty by its ID.
+// Throws an error if the kitty does not exist.
+export circuit getKitty(kittyId: Uint<64>): Kitty {
+  // Ensure the kitty exists in the ledger.
+  assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
+  return kitties.lookup(disclose(kittyId));
+}
+
+// Returns the total number of kitties created.
+export circuit getAllKittiesCount(): Uint<64> {
+  return allKittiesCount;
+}
+
+// Helper function to get the Offer from map.
+export circuit getOffer(kittyId: Uint<64>, offerFrom: ZswapCoinPublicKey): Offer {
+  if (
+    buyOffers.member(disclose(kittyId)) &&
+    buyOffers.lookup(disclose(kittyId)).member(disclose(offerFrom))
+  ) {
+    return buyOffers.lookup(disclose(kittyId)).lookup(disclose(offerFrom));
+  } else {
+    return default<Offer>;
+  }
+}
+
+// Helper function to combine DNA from two parent kitties using a random seed.
+// This is a simplified approach: hashes both DNAs and the seed together.
+circuit breedDNA(dna1: Field, dna2: Field, seed: Bytes<32>, newKittyId: Uint<64>): Field {
+  // Create payload for final DNA combination.
+  // In a simplified approach, we'll hash the combination of both DNAs with the seed.
+  const combinedPayload = [dna1, dna2, seed, newKittyId];
+  return transientHash<[Field, Field, Bytes<32>, Uint<64>]>(combinedPayload);
+}
+
+// Helper function to get the maximum of two generation values.
+circuit getMaxGeneration(gen1: Uint<32>, gen2: Uint<32>): Uint<32> {
+  if (gen1 > gen2) {
+    return gen1;
+  } else {
+    return gen2;
+  }
+}
