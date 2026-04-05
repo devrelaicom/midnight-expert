@@ -4,7 +4,7 @@
 
 **Goal:** Reorganize the compact-examples plugin from a single author-based skill (`openzeppelin`) to a single routing skill (`code-examples`) with topic-based reference files and compiled examples from 8 repositories, all at `pragma language_version >= 0.22`.
 
-**Architecture:** One skill with a SKILL.md routing table pointing to 5 reference files (`getting-started.md`, `modules.md`, `tokens.md`, `privacy-and-cryptography.md`, `applications.md`). Each reference file catalogues examples in its domain with file paths. Examples organized in `examples/` subdirectories by capability domain. All `.compact` files must pass `compact build` with full proof generation.
+**Architecture:** One skill with a SKILL.md routing table pointing to 5 reference files (`getting-started.md`, `modules.md`, `tokens.md`, `privacy-and-cryptography.md`, `applications.md`). Each reference file catalogues examples in its domain with file paths. Examples organized in `examples/` subdirectories by capability domain. All `.compact` files must pass `compact compile` with full proof generation.
 
 **Tech Stack:** Compact smart contracts, TypeScript witnesses/tests, Vitest, compact compiler v0.30.0+
 
@@ -27,6 +27,19 @@
 | midnight-rwa | 0.18 | Medium — 4 versions behind |
 
 **Plugin root:** `plugins/compact-examples/`
+
+**Compilation command:** `compact compile -- <source>.compact <output-dir>`
+- Two positional args after `--`: source file path and target directory (e.g., `build`)
+- Full proof generation happens by default (produces `keys/`, `zkir/`, `contract/` in output dir)
+- Use `--skip-zk` flag to skip proof generation (NOT acceptable for this project)
+- Clean up `build/` directories after verification — only source files go in the plugin
+
+**Common migration issues (from practice run):**
+- `from` is a reserved keyword in 0.22+ — rename to `fromAddress` in all `.compact` files
+- `Counter.increment()` takes `Uint<16>`, not `Uint<64>`
+- Module files must have `import` statements inside the `module {}` block, not at file top level
+- Disclosure requirements are stricter — witness values passed to ledger operations need `disclose()`
+- The 0.16 → 0.22 jump (tested with kitties) was only 2 changes: pragma bump + `from` rename
 
 ---
 
@@ -135,7 +148,7 @@ Change `pragma language_version >= 0.20;` to `pragma language_version >= 0.22;`
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/getting-started/counter
-compact build counter.compact
+compact compile -- counter.compact build
 ```
 
 Expected: Successful compilation with proof keys generated. If it fails, fix the errors (likely minor syntax changes between 0.20 and 0.22) and re-run.
@@ -144,14 +157,14 @@ Expected: Successful compilation with proof keys generated. If it fails, fix the
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/getting-started/bboard
-compact build bboard.compact
+compact compile -- bboard.compact build
 ```
 
 Expected: Successful compilation with proof keys generated. Fix any errors and re-run.
 
 - [ ] **Step 6: Clean up build artifacts**
 
-Remove any `build/` or output directories created by `compact build` — we only keep source files in the plugin.
+Remove any `build/` or output directories created by `compact compile` — we only keep source files in the plugin.
 
 ```bash
 rm -rf plugins/compact-examples/skills/code-examples/examples/getting-started/counter/build
@@ -240,9 +253,9 @@ Modules cannot be compiled standalone — they must be compiled via a contract t
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/modules/access/test/mocks
-compact build MockOwnable.compact
-compact build MockZOwnablePK.compact
-compact build MockAccessControl.compact
+compact compile -- MockOwnable.compact build
+compact compile -- MockZOwnablePK.compact build
+compact compile -- MockAccessControl.compact build
 ```
 
 Fix any compilation errors. The mock contracts import the module files, so successful mock compilation proves both the module and mock are valid.
@@ -305,8 +318,8 @@ Mock contracts reference relative paths to their module files. Update paths to m
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/modules/security/test/mocks
-compact build MockInitializable.compact
-compact build MockPausable.compact
+compact compile -- MockInitializable.compact build
+compact compile -- MockPausable.compact build
 ```
 
 - [ ] **Step 6: Clean up build artifacts**
@@ -387,9 +400,9 @@ The Nft/NftZk modules were originally imported from different relative paths. Th
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/modules/token/test/mocks
-compact build MockFungibleToken.compact
-compact build MockNonFungibleToken.compact
-compact build MockMultiToken.compact
+compact compile -- MockFungibleToken.compact build
+compact compile -- MockNonFungibleToken.compact build
+compact compile -- MockMultiToken.compact build
 ```
 
 Note: Nft and NftZk are module files without their own mocks in the source repo. They will be compiled when used by the token contracts in Task 8 (`nft.compact`, `nft-zk.compact`).
@@ -472,13 +485,13 @@ Math modules use parametric types and complex arithmetic. Check for:
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/modules/math/test/mocks
-compact build Uint64.mock.compact
-compact build Uint128.mock.compact
-compact build Uint256.mock.compact
-compact build Bytes8.mock.compact
-compact build Bytes32.mock.compact
-compact build Field255.mock.compact
-compact build Pack.mock.compact
+compact compile -- Uint64.mock.compact build
+compact compile -- Uint128.mock.compact build
+compact compile -- Uint256.mock.compact build
+compact compile -- Bytes8.mock.compact build
+compact compile -- Bytes32.mock.compact build
+compact compile -- Field255.mock.compact build
+compact compile -- Pack.mock.compact build
 ```
 
 These are large modules. Full proof generation may take significant time per file. If a module fails compilation, diagnose and fix before proceeding.
@@ -582,11 +595,11 @@ Modules (schnorr, crypto, passportidentity, Queue, Utils, ShieldedUtils) cannot 
 ```bash
 # Queue mock
 cd plugins/compact-examples/skills/code-examples/examples/modules/data-structures/test/mocks
-compact build Queue.mock.compact
+compact compile -- Queue.mock.compact build
 
 # Utils mock
 cd plugins/compact-examples/skills/code-examples/examples/modules/utils/test/mocks
-compact build MockUtils.compact
+compact compile -- MockUtils.compact build
 ```
 
 For modules without mocks (crypto, schnorr, identity, ShieldedUtils): these will be validated when the application contracts that import them are compiled in Tasks 8 and 9.
@@ -701,14 +714,14 @@ The 0.16.0 files (nft, nft-zk) will likely need significant changes. Common issu
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/tokens
-compact build AccessControlledToken.compact
-compact build FungibleTokenMintablePausableOwnable.compact
-compact build SimpleNonFungibleToken.compact
-compact build MultiTokenTwoTypes.compact
-compact build ShieldedFungibleToken.compact
-compact build nft.compact
-compact build nft-zk.compact
-compact build tbtc.compact
+compact compile -- AccessControlledToken.compact build
+compact compile -- FungibleTokenMintablePausableOwnable.compact build
+compact compile -- SimpleNonFungibleToken.compact build
+compact compile -- MultiTokenTwoTypes.compact build
+compact compile -- ShieldedFungibleToken.compact build
+compact compile -- nft.compact build
+compact compile -- nft-zk.compact build
+compact compile -- tbtc.compact build
 ```
 
 Note: ShieldedERC20 is a module, not a contract — it will be compiled via ShieldedFungibleToken which imports it.
@@ -820,16 +833,16 @@ zkloan at 0.21 is close to 0.22. Likely just `from` keyword and minor fixes.
 
 ```bash
 cd plugins/compact-examples/skills/code-examples/examples/applications/kitties
-compact build kitties.compact
+compact compile -- kitties.compact build
 
 cd ../zkloan
-compact build zkloan-credit-scorer.compact
+compact compile -- zkloan-credit-scorer.compact build
 
 cd ../midnight-rwa
-compact build midnight-rwa.compact
+compact compile -- midnight-rwa.compact build
 
 cd ../tbtc
-compact build tbtc.compact
+compact compile -- tbtc.compact build
 ```
 
 Fix errors iteratively. The kitties and midnight-rwa compilations may require multiple rounds of fixes.
@@ -865,7 +878,7 @@ description: Use this skill when an agent needs real, compilable examples of Com
 
 # Compact Code Examples
 
-Compilable Compact smart contracts, TypeScript witnesses, and tests sourced from 8 repositories. All code uses `pragma language_version >= 0.22` and passes `compact build` with full proof generation.
+Compilable Compact smart contracts, TypeScript witnesses, and tests sourced from 8 repositories. All code uses `pragma language_version >= 0.22` and passes `compact compile` with full proof generation.
 
 ## How to use this skill
 
@@ -1196,24 +1209,24 @@ git commit -m "docs(compact-examples): update README for reorganized plugin stru
 
 - [ ] **Step 1: Spot-check compilation of one contract per category**
 
-Pick one contract from each category and re-run `compact build` to confirm they still compile:
+Pick one contract from each category and re-run `compact compile` to confirm they still compile:
 
 ```bash
 # Getting started
 cd plugins/compact-examples/skills/code-examples/examples/getting-started/counter
-compact build counter.compact
+compact compile -- counter.compact build
 
 # Modules (via mock)
 cd ../../modules/access/test/mocks
-compact build MockOwnable.compact
+compact compile -- MockOwnable.compact build
 
 # Tokens
 cd ../../../../tokens
-compact build nft.compact
+compact compile -- nft.compact build
 
 # Applications
 cd ../applications/kitties
-compact build kitties.compact
+compact compile -- kitties.compact build
 ```
 
 All must pass. If any fail, investigate and fix.

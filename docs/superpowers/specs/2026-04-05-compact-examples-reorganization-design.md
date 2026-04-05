@@ -258,10 +258,10 @@ Most source repos are 1-2 versions behind. Every file must be updated to compile
 Every example must pass a **full compile including proof generation** — not just syntax checking or `--skip-zk`:
 
 ```bash
-compact build <contract>.compact
+compact compile -- <contract>.compact <output-dir>
 ```
 
-This produces the complete output including circuit keys. A contract that compiles with `--skip-zk` but fails full proof generation is **not accepted**.
+This produces the complete output including circuit keys (`keys/`, `zkir/`, `contract/` directories). A contract that compiles with `--skip-zk` but fails full proof generation is **not accepted**.
 
 ### Compilation is necessary but not sufficient
 
