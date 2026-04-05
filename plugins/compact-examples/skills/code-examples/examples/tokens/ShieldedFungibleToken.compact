@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/ShieldedFungibleToken.compact)
+
+pragma language_version >= 0.22.0;
+
+import
+  { ShieldedCoinInfo, ShieldedSendResult, ZswapCoinPublicKey, ContractAddress, Either }
+  from CompactStandardLibrary;
+
+import "./ShieldedERC20" prefix ShieldedFungibleToken_;
+
+export { ShieldedFungibleToken__nonce, ShieldedFungibleToken__domain, };
+
+export { ShieldedCoinInfo, ShieldedSendResult, ZswapCoinPublicKey, ContractAddress, Either };
+
+constructor(nonce_: Bytes<32>,
+            name_: Opaque<"string">,
+            symbol_: Opaque<"string">,
+            domain_: Bytes<32>
+            ) {
+  const decimals = 18;
+  ShieldedFungibleToken_initialize(nonce_, name_, symbol_, decimals, domain_);
+}
+
+export circuit name(): Opaque<"string"> {
+  return ShieldedFungibleToken_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return ShieldedFungibleToken_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return ShieldedFungibleToken_decimals();
+}
+
+export circuit totalSupply(): Uint<128> {
+  return ShieldedFungibleToken_totalSupply();
+}
+
+export circuit tokenType(): Bytes<32> {
+  return ShieldedFungibleToken_tokenType();
+}
+
+export circuit mint(recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+                    amount: Uint<64>
+                    ): ShieldedCoinInfo {
+  return ShieldedFungibleToken_mint(recipient, amount);
+}
+
+export circuit burn(coin: ShieldedCoinInfo, amount: Uint<128>): ShieldedSendResult {
+  return ShieldedFungibleToken_burn(coin, amount);
+}

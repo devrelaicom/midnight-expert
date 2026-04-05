@@ -1,7 +1,7 @@
 {
   "name": "compact-examples",
-  "version": "0.1.1",
-  "description": "Handpicked examples of Compact smart contracts \u2014 curated library implementations, patterns, and usage guides for building on Midnight.",
+  "version": "0.2.0",
+  "description": "Compilable Compact smart contract examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests. All code at pragma language_version >= 0.22.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"
@@ -14,16 +14,28 @@
     "compact",
     "smart-contracts",
     "examples",
-    "openzeppelin",
+    "witnesses",
+    "testing",
+    "counter",
+    "bulletin-board",
     "ownable",
     "access-control",
     "pausable",
+    "initializable",
     "fungible-token",
     "non-fungible-token",
     "multi-token",
-    "initializable",
-    "testing",
+    "shielded-token",
+    "nft",
+    "math",
+    "cryptography",
+    "schnorr",
+    "queue",
+    "identity",
     "modules",
-    "witnesses"
+    "kitties",
+    "zkloan",
+    "rwa",
+    "tbtc"
   ]
 }

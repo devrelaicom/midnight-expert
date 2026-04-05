@@ -1,0 +1,63 @@
+// MultiTokenTwoTypes.compact
+// A multi-token contract with both fungible and non-fungible token types.
+//
+// PREREQUISITE: This file must be placed in a project where `compact-contracts`
+// has been cloned as a submodule and `npm install` (or `yarn`) has been run
+// inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
+// See: https://github.com/OpenZeppelin/compact-contracts
+
+pragma language_version >= 0.22.0;
+
+import CompactStandardLibrary;
+import "../modules/token/MultiToken"
+  prefix MultiToken_;
+
+constructor(
+  _uri: Opaque<"string">,
+  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+  fungibleFixedSupply: Uint<128>,
+) {
+  MultiToken_initialize(_uri);
+
+  // Token id 123 is a fungible token (with a fixed supply)
+  const fungibleTokenId = 123;
+  MultiToken__mint(recipient, fungibleTokenId, fungibleFixedSupply);
+
+  // Token id 987 is a non-fungible token (supply of 1)
+  const nonFungibleTokenId = 987;
+  MultiToken__mint(recipient, nonFungibleTokenId, 1);
+}
+
+export circuit uri(id: Uint<128>): Opaque<"string"> {
+  return MultiToken_uri(id);
+}
+
+export circuit balanceOf(
+  account: Either<ZswapCoinPublicKey, ContractAddress>,
+  id: Uint<128>
+): Uint<128> {
+  return MultiToken_balanceOf(account, id);
+}
+
+export circuit setApprovalForAll(
+  operator: Either<ZswapCoinPublicKey, ContractAddress>,
+  approved: Boolean
+): [] {
+  return MultiToken_setApprovalForAll(operator, approved);
+}
+
+export circuit isApprovedForAll(
+  account: Either<ZswapCoinPublicKey, ContractAddress>,
+  operator: Either<ZswapCoinPublicKey, ContractAddress>
+): Boolean {
+  return MultiToken_isApprovedForAll(account, operator);
+}
+
+export circuit transferFrom(
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
+  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  id: Uint<128>,
+  value: Uint<128>,
+): [] {
+  return MultiToken_transferFrom(fromAddress, to, id, value);
+}

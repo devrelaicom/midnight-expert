@@ -1,0 +1,22 @@
+pragma language_version >= 0.22.0;
+
+import CompactStandardLibrary;
+
+export { ShieldedCoinInfo };
+
+export ledger counter: Counter;
+export ledger nonce: Bytes<32>;
+export ledger mintedAmount: Uint<64>;
+
+constructor(initNonce: Bytes<32>) {
+  nonce = disclose(initNonce);
+}
+
+export circuit mint(): [] {
+  counter.increment(1);
+  const newNonce = evolveNonce(counter, nonce);
+  const amount = 1000;
+  mintedAmount = mintedAmount + amount as Uint<64>;
+  mintShieldedToken(pad(32, "brick-towers:coin:tbtc"), amount, newNonce, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+  nonce = newNonce;
+}

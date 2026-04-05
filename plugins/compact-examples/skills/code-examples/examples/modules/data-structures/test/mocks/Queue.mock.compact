@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (structs/test/Queue.mock.compact)
+
+pragma language_version >= 0.22;
+
+import { Map, Counter, Either, Maybe, some, none } from CompactStandardLibrary;
+
+import "../../Queue"<Uint<16>> prefix Queue_;
+
+// Export Public state
+export { Queue_state, Queue_tail, Queue_head }
+
+export circuit enqueue(item: Uint<16>): [] {
+  return Queue_enqueue(item);
+}
+
+export circuit dequeue(): Maybe<Uint<16>> {
+  return Queue_dequeue();
+}
+
+export circuit isEmpty(): Boolean {
+  return Queue_isEmpty();
+}

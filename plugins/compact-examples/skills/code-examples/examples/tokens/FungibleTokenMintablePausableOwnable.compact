@@ -1,0 +1,128 @@
+// FungibleTokenMintablePausableOwnable.compact
+// A complete ERC-20 style token with minting, pausing, and ownership.
+//
+// PREREQUISITE: This file must be placed in a project where `compact-contracts`
+// has been cloned as a submodule and `npm install` (or `yarn`) has been run
+// inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
+// See: https://github.com/OpenZeppelin/compact-contracts
+
+pragma language_version >= 0.22.0;
+
+import CompactStandardLibrary;
+import "../modules/access/Ownable"
+  prefix Ownable_;
+import "../modules/security/Pausable"
+  prefix Pausable_;
+import "../modules/token/FungibleToken"
+  prefix FungibleToken_;
+
+constructor(
+  _name: Opaque<"string">,
+  _symbol: Opaque<"string">,
+  _decimals: Uint<8>,
+  _owner: Either<ZswapCoinPublicKey, ContractAddress>
+) {
+  FungibleToken_initialize(_name, _symbol, _decimals);
+  Ownable_initialize(_owner);
+}
+
+/** IFungibleTokenMetadata */
+
+export circuit name(): Opaque<"string"> {
+  return FungibleToken_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return FungibleToken_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return FungibleToken_decimals();
+}
+
+/** IFungibleToken */
+
+export circuit totalSupply(): Uint<128> {
+  return FungibleToken_totalSupply();
+}
+
+export circuit balanceOf(
+  account: Either<ZswapCoinPublicKey, ContractAddress>
+): Uint<128> {
+  return FungibleToken_balanceOf(account);
+}
+
+export circuit allowance(
+  owner: Either<ZswapCoinPublicKey, ContractAddress>,
+  spender: Either<ZswapCoinPublicKey, ContractAddress>
+): Uint<128> {
+  return FungibleToken_allowance(owner, spender);
+}
+
+export circuit transfer(
+  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  value: Uint<128>
+): Boolean {
+  Pausable_assertNotPaused();
+  return FungibleToken_transfer(to, value);
+}
+
+export circuit transferFrom(
+  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
+  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  value: Uint<128>
+): Boolean {
+  Pausable_assertNotPaused();
+  return FungibleToken_transferFrom(fromAddress, to, value);
+}
+
+export circuit approve(
+  spender: Either<ZswapCoinPublicKey, ContractAddress>,
+  value: Uint<128>
+): Boolean {
+  Pausable_assertNotPaused();
+  return FungibleToken_approve(spender, value);
+}
+
+/** IMintable */
+
+export circuit mint(
+  account: Either<ZswapCoinPublicKey, ContractAddress>,
+  value: Uint<128>
+): [] {
+  Pausable_assertNotPaused();
+  Ownable_assertOnlyOwner();
+  FungibleToken__mint(account, value);
+}
+
+/** IPausable */
+
+export circuit isPaused(): Boolean {
+  return Pausable_isPaused();
+}
+
+export circuit pause(): [] {
+  Ownable_assertOnlyOwner();
+  Pausable__pause();
+}
+
+export circuit unpause(): [] {
+  Ownable_assertOnlyOwner();
+  Pausable__unpause();
+}
+
+/** IOwnable */
+
+export circuit owner(): Either<ZswapCoinPublicKey, ContractAddress> {
+  return Ownable_owner();
+}
+
+export circuit transferOwnership(
+  newOwner: Either<ZswapCoinPublicKey, ContractAddress>
+): [] {
+  Ownable_transferOwnership(newOwner);
+}
+
+export circuit renounceOwnership(): [] {
+  Ownable_renounceOwnership();
+}

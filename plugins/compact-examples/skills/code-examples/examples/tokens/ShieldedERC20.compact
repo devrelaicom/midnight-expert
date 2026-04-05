@@ -1,0 +1,213 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Midnight Apps Contracts v0.0.1-alpha.0 (shielded-token/openzeppelin/ShieldedERC20.compact)
+
+pragma language_version >= 0.22.0;
+
+/**
+ * @module ShieldedToken (archived until further notice, DO NOT USE IN PRODUCTION)
+ * @description A shielded token module.
+ *
+ * @notice This module utilizes the existing coin infrastructure of Midnight.
+ * Due to the current limitations of the network, this module should NOT be used.
+ *
+ * Some of the limitations include:
+ *
+ * - No custom spend logic. Once users receive tokens, there's no mechanism to
+ * enforce any token behaviors. This is a big issue with stable coins, for instance.
+ * Most stable coins want the ability to pause functionality and/or freeze assets from
+ * specific addresses. This is currently not possible.
+ *
+ * - Cannot guarantee proper total supply accounting. The total supply of a given token
+ * is stored in the contract state. There's nothing to prevent users from burning
+ * tokens manually by directly sending them to the burn address. This breaks the
+ * total supply accounting (and potentially many other mechanisms).
+ *
+ * @notice This module will be revisited when the Midnight network can offer solutions to these
+ * issues. Until then, the recommendation is to use unshielded tokens.
+ *
+ * @dev Future ideas to consider:
+ *
+ * - Provide a self-minting mechanism.
+ * - Enable the Shielded contract itself to transfer.
+ * - Should this be a part of the Shielded module itself or as an extension?
+ */
+module ShieldedERC20 { // DO NOT USE IN PRODUCTION!
+  import
+    { ShieldedCoinInfo,
+      ShieldedSendResult,
+      sendImmediateShielded,
+      mintShieldedToken,
+      shieldedBurnAddress,
+      ZswapCoinPublicKey,
+      ContractAddress,
+      Either,
+      left,
+      ownPublicKey,
+      receiveShielded,
+      evolveNonce,
+      upgradeFromTransient,
+      Counter }
+    from CompactStandardLibrary;
+  import { isKeyOrAddressZero } from "../modules/utils/Utils";
+
+  // Public state
+  export ledger _counter: Counter;
+  export ledger _nonce: Bytes<32>;
+  export ledger _totalSupply: Uint<128>;
+  export sealed ledger _domain: Bytes<32>;
+  export sealed ledger _name: Opaque<"string">;
+  export sealed ledger _symbol: Opaque<"string">;
+  export sealed ledger _decimals: Uint<8>;
+  export ledger _type: Bytes<32>;
+
+  /**
+   * @description Initializes the contract by setting the initial nonce
+   * and the metadata.
+   *
+   * @return {[]} - None.
+   */
+  export circuit initialize(
+                   initNonce: Bytes<32>,
+                   name_: Opaque<"string">,
+                   symbol_: Opaque<"string">,
+                   decimals_: Uint<8>,
+                   domain_: Bytes<32>
+                   ): [] {
+    _nonce = disclose(initNonce);
+    _domain = disclose(domain_);
+    _name = disclose(name_);
+    _symbol = disclose(symbol_);
+    _decimals = disclose(decimals_);
+  }
+
+  /**
+   * @description Returns the token name.
+   *
+   * @return {Maybe<Opaque<"string">>} - The token name.
+   */
+  export circuit name(): Opaque<"string"> {
+    return _name;
+  }
+
+  /**
+   * @description Returns the symbol of the token.
+   *
+   * @return {Maybe<Opaque<"string">>} - The token name.
+   */
+  export circuit symbol(): Opaque<"string"> {
+    return _symbol;
+  }
+
+  /**
+   * @description Returns the number of decimals used to get its user representation.
+   *
+   * @return {Uint<8>} - The account's token balance.
+   */
+  export circuit decimals(): Uint<8> {
+    return _decimals;
+  }
+
+  /**
+   * @description Returns the type of the token.
+   *
+   * @return {Bytes<32>} - The type of the token.
+   */
+  export circuit tokenType(): Bytes<32> {
+    return _type;
+  }
+
+  /**
+   * @description Returns the value of tokens in existence.
+   * @notice The total supply accounting mechanism cannot be guaranteed to be accurate.
+   * There is nothing to prevent users from directly sending tokens to the burn
+   * address without going through the contract; thus, tokens will be burned
+   * but the accounted supply will not change.
+   *
+   * @return {Uint<64>} - The total supply of tokens.
+   */
+  export circuit totalSupply(): Uint<128> {
+    return _totalSupply;
+  }
+
+  /**
+   * @description Mints `amount` of tokens to `recipient`.
+   * @dev This circuit does not include access control meaning anyone can call it.
+   *
+   * @param {recipient} - The ZswapCoinPublicKey or ContractAddress that receives the minted tokens.
+   * @param {amount} - The value of tokens minted.
+   * @return {ShieldedCoinInfo} - The description of the newly created coin.
+   */
+  // TODO: if we use Uint<128> we get this compilation error:
+  // no compatible function named mintToken is in scope at this call
+  //   one function is incompatible with the supplied argument types
+  //     supplied argument types:
+  //       (Bytes<32>, Uint<128>, Bytes<32>, struct Either<is_left: Boolean, left: struct
+  //       ZswapCoinPublicKey<bytes: Bytes<32>>, right: struct ContractAddress<bytes:
+  //       Bytes<32>>>)
+  //     declared argument types for function at <standard library>:
+  //       (Bytes<32>, Uint<64>, Bytes<32>, struct Either<is_left: Boolean, left: struct
+  //       ZswapCoinPublicKey<bytes: Bytes<32>>, right: struct ContractAddress<bytes:
+  //       Bytes<32>>>)
+  export circuit mint(recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+                      amount: Uint<64>
+                      ): ShieldedCoinInfo {
+    assert(!isKeyOrAddressZero(recipient), "ShieldedToken: invalid recipient");
+
+    // TODO: Is that correct here? Do we need to increment after minting? not before?
+    _counter.increment(1);
+    const newNonce = evolveNonce(_counter, _nonce);
+    _nonce = newNonce;
+    // TODO: had to add disclose here, what does that mean?
+    const ret = mintShieldedToken(_domain, disclose(amount), _nonce, disclose(recipient));
+    // TODO: find a better solution for detecting the type
+    if (isZero(_type)) {
+      _type = ret.color;
+    }
+    _totalSupply = _totalSupply + disclose(amount) as Uint<128>;
+    return ret;
+  }
+
+  /**
+   * @title isZero circuit
+   * @description Checks if a Bytes<32> is zero.
+   *
+   * @remarks
+   * This function performs a direct comparison of the bytes with zero.
+   *
+   * @param {Bytes<32>} a - The bytes value to check.
+   *
+   * @returns {Boolean} - True if the bytes are zero, false otherwise.
+   */
+  circuit isZero(a: Bytes<32>): Boolean {
+    return a == pad(32, '');
+  }
+
+  /**
+   * @description Destroys `amount` of `coin` by sending it to the burn address.
+   * @dev This circuit does not include access control meaning anyone can call it.
+   * @throws Will throw if `coin` color is not this contract's token type.
+   * @throws Will throw if `amount` is less than `coin` value.
+   *
+   * @param {coin} - The coin description that will be burned.
+   * @param {amount} - The value of `coin` that will be burned.
+   * @return {SendResult} - The output of sending tokens to the burn address. This may include change from
+   * spending the output if available.
+   */
+  export circuit burn(coin: ShieldedCoinInfo, amount: Uint<128>): ShieldedSendResult {
+    assert(coin.color == _type, "ShieldedToken: token not created from this contract");
+    assert(coin.value >= amount, "ShieldedToken: insufficient token amount to burn");
+
+    receiveShielded(disclose(coin));
+    _totalSupply = _totalSupply - disclose(amount);
+
+    const sendRes = sendImmediateShielded(disclose(coin), shieldedBurnAddress(), disclose(amount));
+    if (sendRes.change.is_some) {
+      // tmp for only zswap because we should be able to handle contracts burning tokens
+      // and returning change.
+      const caller = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
+      sendImmediateShielded(sendRes.change.value, caller, sendRes.change.value.value);
+    }
+
+    return sendRes;
+  }
+}

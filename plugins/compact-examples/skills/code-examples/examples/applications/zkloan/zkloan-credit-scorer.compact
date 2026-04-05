@@ -1,0 +1,241 @@
+// This file is part of midnightntwrk/example-counter.
+// Copyright (C) 2025 Midnight Foundation
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 (the "License");
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+pragma language_version >= 0.22;
+import CompactStandardLibrary;
+import "schnorr" prefix Schnorr_;
+
+export { Schnorr_SchnorrSignature };
+export enum LoanStatus {
+    Approved,
+    Rejected,
+    Proposed,
+    NotAccepted,
+}
+export struct LoanApplication {
+    authorizedAmount: Uint<16>;
+    status: LoanStatus;
+}
+struct Applicant {
+    creditScore: Uint<16>;
+    monthlyIncome: Uint<16>;
+    monthsAsCustomer: Uint<16>;
+}
+
+constructor() {
+    admin = ownPublicKey();
+}
+
+export ledger blacklist: Set<ZswapCoinPublicKey>;
+export ledger loans: Map<Bytes<32>, Map<Uint<16>, LoanApplication>>;
+export ledger onGoingPinMigration: Map<Bytes<32>, Uint<16>>;
+export ledger admin: ZswapCoinPublicKey;
+export ledger providers: Map<Uint<16>, JubjubPoint>;
+
+witness getAttestedScoringWitness(): [Applicant, Schnorr_SchnorrSignature, Uint<16>];
+
+export circuit requestLoan(amountRequested:Uint<16>, secretPin: Uint<16>):[] {
+    assert(amountRequested > 0, "Loan amount must be greater than zero");
+    const zwapPublicKey = ownPublicKey();
+    const requesterPubKey = publicKey(zwapPublicKey.bytes, secretPin);
+    assert(!blacklist.member(zwapPublicKey), "Requester is blacklisted");
+    assert (!onGoingPinMigration.member(disclose(requesterPubKey)), "PIN migration is in progress for this user");
+    const userPubKeyHash = transientHash<Bytes<32>>(requesterPubKey);
+    const [topTierAmount, status] = evaluateApplicant(userPubKeyHash);
+    const disclosedTopTierAmount = disclose(topTierAmount);
+    const disclosedStatus = disclose(status);
+    createLoan(disclose(requesterPubKey), amountRequested, disclosedTopTierAmount, disclosedStatus);
+
+    return [];
+}
+
+export circuit respondToLoan(loanId: Uint<16>, secretPin: Uint<16>, accept: Boolean): [] {
+    const zwapPublicKey = ownPublicKey();
+    const requesterPubKey = publicKey(zwapPublicKey.bytes, secretPin);
+    const disclosedPubKey = disclose(requesterPubKey);
+    const disclosedLoanId = disclose(loanId);
+
+    assert(!blacklist.member(zwapPublicKey), "User is blacklisted");
+    assert(loans.member(disclosedPubKey), "No loans found for this user");
+    assert(loans.lookup(disclosedPubKey).member(disclosedLoanId), "Loan not found");
+
+    const existingLoan = loans.lookup(disclosedPubKey).lookup(disclosedLoanId);
+    assert(existingLoan.status == LoanStatus.Proposed, "Loan is not in Proposed status");
+
+    const updatedLoan = accept
+        ? LoanApplication { authorizedAmount: existingLoan.authorizedAmount, status: LoanStatus.Approved }
+        : LoanApplication { authorizedAmount: 0, status: LoanStatus.NotAccepted };
+
+    loans.lookup(disclosedPubKey).insert(disclosedLoanId, disclose(updatedLoan));
+    return [];
+}
+
+circuit evaluateApplicant(userPubKeyHash: Field): [Uint<16>, LoanStatus] {
+    const [profile, signature, providerId] = getAttestedScoringWitness();
+
+    // Verify provider is registered
+    assert(providers.member(disclose(providerId)), "Attestation provider not registered");
+    const providerPk = providers.lookup(disclose(providerId));
+
+    // Build signed message: [creditScore, monthlyIncome, monthsAsCustomer, userPubKeyHash]
+    const msg: Vector<4, Field> = [
+        profile.creditScore as Field,
+        profile.monthlyIncome as Field,
+        profile.monthsAsCustomer as Field,
+        userPubKeyHash
+    ];
+
+    // Verify attestation signature
+    Schnorr_schnorrVerify<4>(msg, signature, providerPk);
+
+    // Tier 1: Best applicants
+    if (profile.creditScore >= 700 && profile.monthlyIncome >= 2000 && profile.monthsAsCustomer >= 24) {
+        return [10000, LoanStatus.Approved];
+    }
+    // Tier 2: Good applicants
+    else if (profile.creditScore >= 600 && profile.monthlyIncome >= 1500) {
+        return [7000, LoanStatus.Approved];
+    }
+    // Tier 3: Basic eligibility
+    else if (profile.creditScore >= 580) {
+        return [3000, LoanStatus.Approved];
+    }
+    // If none of the above conditions were met, the applicant is rejected.
+    else {
+        return [0, LoanStatus.Rejected];
+    }
+}
+
+circuit createLoan(requester: Bytes<32>, amountRequested: Uint<16>, topTierAmount: Uint<16>, status: LoanStatus): [] {
+    const authorizedAmount = amountRequested > topTierAmount ? topTierAmount : amountRequested;
+
+    // Determine final status:
+    // - If rejected (not eligible), keep as Rejected
+    // - If approved and requested <= eligible, keep as Approved
+    // - If approved but requested > eligible, set to Proposed (user must accept the lower amount)
+    const finalStatus = status == LoanStatus.Rejected
+        ? LoanStatus.Rejected
+        : (amountRequested > topTierAmount ? LoanStatus.Proposed : LoanStatus.Approved);
+
+    const loan = LoanApplication {
+       authorizedAmount: authorizedAmount,
+        status: finalStatus,
+    };
+    if(!loans.member(requester)) {
+        loans.insert(requester, default<Map<Uint<16>, LoanApplication>>);
+    }
+    const totalLoans = loans.lookup(requester).size();
+    assert(totalLoans < 65535, "Maximum number of loans reached");
+    const loanNumber = (totalLoans + 1) as Uint<16>;
+    loans.lookup(requester).insert(loanNumber, disclose(loan));
+    return [];
+}
+
+export circuit blacklistUser(account: ZswapCoinPublicKey): [] {
+    assert(ownPublicKey() == admin, "Only admin can blacklist users");
+    blacklist.insert(disclose(account));
+    return [];
+}
+
+export circuit removeBlacklistUser(account: ZswapCoinPublicKey): [] {
+    assert(ownPublicKey() == admin, "Only admin can remove from blacklist");
+    blacklist.remove(disclose(account));
+    return [];
+}
+
+export circuit registerProvider(providerId: Uint<16>, providerPk: JubjubPoint): [] {
+    assert(ownPublicKey() == admin, "Only admin can register providers");
+    providers.insert(disclose(providerId), disclose(providerPk));
+    return [];
+}
+
+export circuit removeProvider(providerId: Uint<16>): [] {
+    assert(ownPublicKey() == admin, "Only admin can remove providers");
+    assert(providers.member(disclose(providerId)), "Provider not found");
+    providers.remove(disclose(providerId));
+    return [];
+}
+
+export circuit transferAdmin(newAdmin: ZswapCoinPublicKey): [] {
+    assert(ownPublicKey() == admin, "Only admin can transfer admin role");
+    admin = disclose(newAdmin);
+    return [];
+}
+
+export circuit changePin(oldPin: Uint<16>, newPin: Uint<16>): [] {
+    const zwapPublicKey = ownPublicKey();
+    assert(!blacklist.member(zwapPublicKey), "User is blacklisted");
+    assert(oldPin != newPin, "New PIN must be different from old PIN");
+
+    const oldPk = publicKey(zwapPublicKey.bytes, oldPin);
+    const newPk = publicKey(zwapPublicKey.bytes, newPin);
+
+    const disclosedOldPk = disclose(oldPk);
+    const disclosedNewPk = disclose(newPk);
+
+    assert(loans.member(disclosedOldPk), "Old PIN does not match any user");
+
+    if (!onGoingPinMigration.member(disclosedOldPk)) {
+        onGoingPinMigration.insert(disclosedOldPk, 0);
+    }
+    if (!loans.member(disclosedNewPk)) {
+        loans.insert(disclosedNewPk, default<Map<Uint<16>, LoanApplication>>);
+    }
+
+    const lastMigratedSourceId: Uint<16> = onGoingPinMigration.lookup(disclosedOldPk);
+    const lastDestinationId: Uint<16> = loans.lookup(disclosedNewPk).size() as Uint<16>;
+
+    // Process up to 5 loans per transaction (fixed iteration for ZK circuits)
+    for (const i of 0..5) {
+        // Check if migration is still in progress (may have completed in earlier iteration)
+        if (onGoingPinMigration.member(disclosedOldPk)) {
+            const sourceId = (lastMigratedSourceId + i + 1) as Uint<16>;
+            const destinationId = (lastDestinationId + i + 1) as Uint<16>;
+
+            if (loans.lookup(disclosedOldPk).member(sourceId)) {
+                // Migrate loan to new public key
+                const loan = loans.lookup(disclosedOldPk).lookup(sourceId);
+                loans.lookup(disclosedNewPk).insert(destinationId, disclose(loan));
+                loans.lookup(disclosedOldPk).remove(sourceId);
+                onGoingPinMigration.insert(disclosedOldPk, sourceId);
+            } else {
+                // No more loans - clean up migration state
+                onGoingPinMigration.remove(disclosedOldPk);
+                if (loans.lookup(disclosedOldPk).size() == 0) {
+                    loans.remove(disclosedOldPk);
+                }
+            }
+        }
+    }
+
+    return [];
+}
+
+
+export circuit publicKey(sk: Bytes<32>, pin: Uint<16>): Bytes<32> {
+    const pinBytes = persistentHash<Uint<16>>(pin);
+    return persistentHash<Vector<3, Bytes<32>>>(
+           [pad(32, "zk-credit-scorer:pk"), pinBytes, sk]);
+}
+
+// Re-export schnorrChallenge from the schnorr module so it's available
+// in the generated TypeScript pureCircuits for off-chain signing.
+export pure circuit schnorrChallenge(
+    announcement: JubjubPoint,
+    pk: JubjubPoint,
+    msg: Vector<4, Field>
+): Field {
+    return Schnorr_schnorrChallenge(announcement, pk, msg);
+}

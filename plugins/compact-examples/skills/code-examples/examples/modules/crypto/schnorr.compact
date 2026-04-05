@@ -1,0 +1,65 @@
+// Schnorr Signature Verification Polyfill for Jubjub Curve
+// Temporary: will be replaced by jubjubSchnorrVerify from CompactStandardLibrary
+// when it becomes available in a future Compact compiler release.
+// See: https://github.com/LFDT-Minokawa/compact/blob/25b22e3/compiler/standard-library.compact
+
+pragma language_version >= 0.22;
+
+module schnorr {
+    import CompactStandardLibrary;
+
+    export struct SchnorrSignature {
+        announcement: NativePoint;
+        response: Field;
+    }
+
+    struct SchnorrHashInput<#n> {
+        ann_x: Field;
+        ann_y: Field;
+        pk_x: Field;
+        pk_y: Field;
+        msg: Vector<n, Field>;
+    }
+
+    // The witness provides the quotient and remainder of dividing the challenge hash
+    // by 2^248, so we can truncate it to fit in Jubjub's scalar field.
+    witness getSchnorrReduction(challengeHash: Field): [Field, Uint<248>];
+
+    export circuit schnorrVerify<#n>(msg: Vector<n, Field>, signature: SchnorrSignature, pk: NativePoint): [] {
+        const {announcement, response} = signature;
+        const cFull: Field = transientHash<SchnorrHashInput<n>>(SchnorrHashInput<n>{
+            ann_x: announcement.x,
+            ann_y: announcement.y,
+            pk_x: pk.x,
+            pk_y: pk.y,
+            msg: msg
+        });
+        // Truncate challenge to 248 bits via witness-assisted division by 2^248.
+        // The witness provides (quotient, remainder) such that cFull == q * 2^248 + r
+        // where r : Uint<248>, guaranteeing r < 2^248 < Jubjub subgroup order.
+        // This is needed because ecMul requires scalars < JUBJUB_ORDER (~2^252.4),
+        // but transientHash returns values in BLS12-381's scalar field (~2^255).
+        const TWO_248: Field = 452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
+        const [q, cTruncated] = getSchnorrReduction(cFull);
+        assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull, "Invalid challenge reduction");
+        const c: Field = disclose(cTruncated) as Field;
+        const lhs: NativePoint = ecMulGenerator(response);
+        const rhs: NativePoint = ecAdd(announcement, ecMul(pk, c));
+        assert(lhs == rhs, "Invalid attestation signature");
+    }
+
+    export pure circuit schnorrChallenge(
+        ann_x: Field, ann_y: Field,
+        pk_x: Field, pk_y: Field,
+        msg: Vector<4, Field>
+    ): Field {
+        const cFull: Field = transientHash<SchnorrHashInput<4>>(SchnorrHashInput<4>{
+            ann_x: ann_x, ann_y: ann_y,
+            pk_x: pk_x, pk_y: pk_y,
+            msg: msg
+        });
+        // Return the full hash. Callers must truncate to 248 bits (mod 2^248)
+        // to match schnorrVerify's challenge reduction.
+        return cFull;
+    }
+}

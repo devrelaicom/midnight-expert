@@ -23,7 +23,7 @@ This repository contains 16 plugins organized by domain.
 | | Plugin | Description |
 |---|--------|-------------|
 | <img src="plugins/compact-core/assets/mascot.png" width="60" /> | **[compact-core](plugins/compact-core/)** | Compact language reference, patterns, privacy/disclosure, witnesses, tokens, circuit costs, debugging, and code review |
-| <img src="plugins/compact-examples/assets/mascot.png" width="60" /> | **[compact-examples](plugins/compact-examples/)** | OpenZeppelin-style reference implementations (access control, tokens, pausable, etc.) |
+| <img src="plugins/compact-examples/assets/mascot.png" width="60" /> | **[compact-examples](plugins/compact-examples/)** | Compilable Compact examples from 8 repos — modules, tokens, applications, witnesses, and tests |
 | <img src="plugins/compact-cli-dev/assets/mascot.png" width="60" /> | **[compact-cli-dev](plugins/compact-cli-dev/)** | Scaffold Oclif CLIs for Compact contracts with wallet management, deployment, and devnet control |
 
 ### DApp Development
