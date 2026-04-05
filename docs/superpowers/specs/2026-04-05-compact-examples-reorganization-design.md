@@ -27,177 +27,198 @@ The compact-examples plugin currently has a single skill (`openzeppelin`) contai
 | `OpenZeppelin/midnight-apps` | Math libraries, shielded tokens, queue data structure |
 | `bricktowers/midnight-rwa` | Real-world assets, passport identity, tBTC |
 
-## Skill Structure
+## Architecture: Single Skill with Routing
 
-Six skills organized by capability domain:
+One skill — `compact-examples:code-examples` — with a SKILL.md that routes agents to topic-based reference files. Each reference file describes the examples in its domain and points to specific files. The agent loads only what it needs.
+
+### Agent discovery flow
+
+```
+Agent needs token example
+  → loads compact-examples:code-examples skill
+  → SKILL.md routing table points to references/tokens.md
+  → tokens.md describes each token type with file paths
+  → agent reads only the specific .compact + witnesses it needs
+```
+
+This avoids loading all examples into context. The SKILL.md is a lightweight router, reference files are the catalogues, and example files are the payload.
+
+### Directory structure
 
 ```
 plugins/compact-examples/
   .claude-plugin/
     plugin.json
   skills/
-    getting-started/
-      SKILL.md
-      examples/
-        counter/
-          counter.compact
-          witnesses.ts
-        bboard/
-          bboard.compact
-          witnesses.ts
-      references/
-        ...
-    modules/
-      SKILL.md
-      examples/
-        access/
-          Ownable.compact
-          ZOwnablePK.compact
-          AccessControl.compact
-          witnesses/
-            OwnableWitnesses.ts
-            ZOwnablePKWitnesses.ts
-            AccessControlWitnesses.ts
-          test/
-            Ownable.test.ts
-            ZOwnablePK.test.ts
-            AccessControl.test.ts
-            mocks/
-              MockOwnable.compact
-              MockZOwnablePK.compact
-              MockAccessControl.compact
-            simulators/
-              OwnableSimulator.ts
-              ZOwnablePKSimulator.ts
-              AccessControlSimulator.ts
-        security/
-          Initializable.compact
-          Pausable.compact
-          witnesses/
-            InitializableWitnesses.ts
-            PausableWitnesses.ts
-          test/
-            Initializable.test.ts
-            Pausable.test.ts
-            mocks/
-              MockInitializable.compact
-              MockPausable.compact
-            simulators/
-              InitializableSimulator.ts
-              PausableSimulator.ts
-        token/
-          FungibleToken.compact
-          NonFungibleToken.compact
-          MultiToken.compact
-          Nft.compact
-          NftZk.compact
-          witnesses/
-            FungibleTokenWitnesses.ts
-            NonFungibleTokenWitnesses.ts
-            MultiTokenWitnesses.ts
-            NftWitnesses.ts
-            NftZkWitnesses.ts
-          test/
-            FungibleToken.test.ts
-            NonFungibleToken.test.ts
-            MultiToken.test.ts
-            mocks/
-              MockFungibleToken.compact
-              MockNonFungibleToken.compact
-              MockMultiToken.compact
-            simulators/
-              FungibleTokenSimulator.ts
-              NonFungibleTokenSimulator.ts
-              MultiTokenSimulator.ts
-        math/
-          Uint64.compact
-          Uint128.compact
-          Uint256.compact
-          Bytes8.compact
-          Bytes32.compact
-          Field255.compact
-          Pack.compact
-          Types.compact
-          witnesses/
-            ...
-          test/
-            ...
-        crypto/
-          schnorr.compact
-          crypto.compact
-        data-structures/
-          Queue.compact
-          witnesses/
-            ...
-          test/
-            ...
-        identity/
-          passportidentity.compact
-        utils/
-          Utils.compact
-          ShieldedUtils.compact
-          witnesses/
-            UtilsWitnesses.ts
-          test/
-            utils.test.ts
-            mocks/
-              MockUtils.compact
-            simulators/
-              UtilsSimulator.ts
-      references/
-        ...
-    tokens/
-      SKILL.md
-      examples/
-        AccessControlledToken.compact
-        FungibleTokenMintablePausableOwnable.compact
-        SimpleNonFungibleToken.compact
-        MultiTokenTwoTypes.compact
-        ShieldedFungibleToken.compact
-        ShieldedERC20.compact
-        nft.compact
-        nft-zk.compact
-        tbtc.compact
-        witnesses/
-          ...
-        test/
-          ...
-      references/
-        ...
-    privacy-and-cryptography/
+    code-examples/
       SKILL.md
       references/
-        ...
-    applications/
-      SKILL.md
+        getting-started.md
+        modules.md
+        tokens.md
+        privacy-and-cryptography.md
+        applications.md
       examples/
-        kitties/
-          kitties.compact
-          witnesses.ts
-        zkloan/
-          schnorr.compact
-          zkloan-credit-scorer.compact
-          witnesses.ts
-        midnight-rwa/
-          midnight-rwa.compact
-          passportidentity.compact
-          crypto.compact
-          witnesses.ts
-        tbtc/
+        getting-started/
+          counter/
+            counter.compact
+            witnesses.ts
+          bboard/
+            bboard.compact
+            witnesses.ts
+        modules/
+          access/
+            Ownable.compact
+            ZOwnablePK.compact
+            AccessControl.compact
+            witnesses/
+              OwnableWitnesses.ts
+              ZOwnablePKWitnesses.ts
+              AccessControlWitnesses.ts
+            test/
+              Ownable.test.ts
+              ZOwnablePK.test.ts
+              AccessControl.test.ts
+              mocks/
+                MockOwnable.compact
+                MockZOwnablePK.compact
+                MockAccessControl.compact
+              simulators/
+                OwnableSimulator.ts
+                ZOwnablePKSimulator.ts
+                AccessControlSimulator.ts
+          security/
+            Initializable.compact
+            Pausable.compact
+            witnesses/
+              InitializableWitnesses.ts
+              PausableWitnesses.ts
+            test/
+              Initializable.test.ts
+              Pausable.test.ts
+              mocks/
+                MockInitializable.compact
+                MockPausable.compact
+              simulators/
+                InitializableSimulator.ts
+                PausableSimulator.ts
+          token/
+            FungibleToken.compact
+            NonFungibleToken.compact
+            MultiToken.compact
+            Nft.compact
+            NftZk.compact
+            witnesses/
+              FungibleTokenWitnesses.ts
+              NonFungibleTokenWitnesses.ts
+              MultiTokenWitnesses.ts
+              NftWitnesses.ts
+              NftZkWitnesses.ts
+            test/
+              FungibleToken.test.ts
+              NonFungibleToken.test.ts
+              MultiToken.test.ts
+              mocks/
+                MockFungibleToken.compact
+                MockNonFungibleToken.compact
+                MockMultiToken.compact
+              simulators/
+                FungibleTokenSimulator.ts
+                NonFungibleTokenSimulator.ts
+                MultiTokenSimulator.ts
+          math/
+            Uint64.compact
+            Uint128.compact
+            Uint256.compact
+            Bytes8.compact
+            Bytes32.compact
+            Field255.compact
+            Pack.compact
+            Types.compact
+            witnesses/
+              ...
+            test/
+              ...
+          crypto/
+            schnorr.compact
+            crypto.compact
+          data-structures/
+            Queue.compact
+            witnesses/
+              ...
+            test/
+              ...
+          identity/
+            passportidentity.compact
+          utils/
+            Utils.compact
+            ShieldedUtils.compact
+            witnesses/
+              UtilsWitnesses.ts
+            test/
+              utils.test.ts
+              mocks/
+                MockUtils.compact
+              simulators/
+                UtilsSimulator.ts
+        tokens/
+          AccessControlledToken.compact
+          FungibleTokenMintablePausableOwnable.compact
+          SimpleNonFungibleToken.compact
+          MultiTokenTwoTypes.compact
+          ShieldedFungibleToken.compact
+          ShieldedERC20.compact
+          nft.compact
+          nft-zk.compact
           tbtc.compact
-      references/
-        ...
+          witnesses/
+            ...
+          test/
+            ...
+        applications/
+          kitties/
+            kitties.compact
+            witnesses.ts
+          zkloan/
+            schnorr.compact
+            zkloan-credit-scorer.compact
+            witnesses.ts
+          midnight-rwa/
+            midnight-rwa.compact
+            passportidentity.compact
+            crypto.compact
+            witnesses.ts
+          tbtc/
+            tbtc.compact
 ```
 
-### Skill descriptions
+### SKILL.md routing table
 
-| Skill | Purpose | When an agent should use it |
+The SKILL.md contains a concise routing table — no example code, no lengthy descriptions. Just enough for the agent to pick the right reference file:
+
+```markdown
+| Topic | Reference | When to use |
 |---|---|---|
-| `getting-started` | Minimal contracts for learning Compact basics | "Show me a simple contract", "How does state work?" |
-| `modules` | Reusable building blocks you import into contracts | "How do I add access control?", "Is there a math library?", "Show me a Queue implementation" |
-| `tokens` | Complete, deployable token contracts that compose modules | "How do I build a fungible token?", "Show me an NFT contract" |
-| `privacy-and-cryptography` | ZK patterns, signature verification, identity proofs | "How do I verify signatures?", "How do privacy proofs work?" |
-| `applications` | Full multi-module apps demonstrating real-world architecture | "Show me a complete DApp contract", "How do these modules compose?" |
+| Beginner examples | references/getting-started.md | Simple contracts, learning basics |
+| Reusable modules | references/modules.md | Access control, math, crypto, data structures, utils |
+| Token contracts | references/tokens.md | Fungible, NFT, multi-token, shielded tokens |
+| Privacy & cryptography | references/privacy-and-cryptography.md | ZK patterns, signatures, identity proofs |
+| Full applications | references/applications.md | Multi-module DApps, real-world architecture |
+```
+
+### Reference file structure
+
+Each reference file (e.g., `references/tokens.md`) contains:
+
+1. **Overview** — what this category covers (2-3 sentences)
+2. **Example index** — table listing each contract with:
+   - Name and file path (relative to `examples/`)
+   - One-line description of what it demonstrates
+   - Whether it has witnesses and/or tests
+   - Complexity level (beginner / intermediate / advanced)
+3. **Cross-references** — pointers to related examples in other categories (e.g., "For the reusable FungibleToken module used by these contracts, see `references/modules.md`")
+
+Reference files do NOT contain the example code itself. They are catalogues that help the agent decide which files to read.
 
 ### Co-location rule
 
@@ -207,26 +228,18 @@ Witnesses and tests always live alongside the contract they serve:
 - **Tests**: `test/` subdirectory, with `mocks/` and `simulators/` underneath when present
 - **Pure circuit libraries** (no witnesses needed): no `witnesses/` directory — no empty placeholders
 
-### Cross-referencing
-
-Some contracts demonstrate multiple domains (e.g., NFT-ZK is both a token module and a privacy pattern). Each contract lives in **one primary skill** based on its main purpose. Other skills cross-reference it in their SKILL.md routing table:
-
-```markdown
-| Privacy-preserving NFTs | See `modules` skill → `examples/token/NftZk.compact` |
-```
-
-### The privacy-and-cryptography skill is reference-only
-
-Unlike the other skills, `privacy-and-cryptography` has **no examples/ directory**. The actual contract code lives in `modules/` (Schnorr, NftZk, crypto) and `applications/` (zkloan, midnight-rwa). This skill's value is its reference material — documentation that explains the privacy patterns, cryptographic techniques, and ZK concepts demonstrated across those contracts, with routing to the relevant source files.
-
 ### Duplication between modules and applications
 
-The `applications/` skill contains full, self-contained app source trees (e.g., the complete zkloan with both its Schnorr module and credit scorer together). The `modules/` skill contains the extracted, standalone building block (e.g., just the Schnorr module). This intentional duplication means:
+The `examples/applications/` directory contains full, self-contained app source trees (e.g., the complete zkloan with both its Schnorr module and credit scorer together). The `examples/modules/` directory contains the extracted, standalone building block (e.g., just the Schnorr module). This intentional duplication means:
 
 - **modules/** shows the building block in isolation — useful for "how do I use this module?"
 - **applications/** shows the building block in context — useful for "how do these pieces fit together?"
 
 Both copies must compile independently.
+
+### The privacy-and-cryptography reference is routing-only
+
+The `references/privacy-and-cryptography.md` file points to contracts that live in `examples/modules/` (Schnorr, NftZk, crypto) and `examples/applications/` (zkloan, midnight-rwa). It does not have its own examples directory. Its value is documenting the privacy patterns and cryptographic techniques demonstrated across those contracts, with direct file paths.
 
 ## Compilation Requirements
 
@@ -267,35 +280,27 @@ For each source file being added to the plugin:
 3. **Fix** any compilation errors introduced by language version changes (syntax changes, removed/renamed stdlib functions, new disclosure requirements, etc.).
 4. **Run** `compact build` with full proof generation. Iterate until it passes.
 5. **Run tests** if they exist. Fix any failures caused by the language version update.
-6. **Place** the files in the correct skill directory per the structure above.
+6. **Place** the files in the correct example directory per the structure above.
 
-Do not attempt to migrate all files at once. Work skill-by-skill:
+Do not attempt to migrate all files at once. Work directory-by-directory:
 
-1. `getting-started` (2 contracts — smallest, fastest to validate)
-2. `modules` (largest — work subdomain by subdomain: access, security, token, math, crypto, data-structures, identity, utils)
-3. `tokens` (composed contracts that import modules — depends on modules compiling first)
-4. `privacy-and-cryptography` (extract patterns from zkloan, nft-zk, rwa)
-5. `applications` (full app trees — last, since they compose everything)
+1. `examples/getting-started/` (2 contracts — smallest, fastest to validate)
+2. `examples/modules/` (largest — work subdomain by subdomain: access, security, token, math, crypto, data-structures, identity, utils)
+3. `examples/tokens/` (composed contracts that import modules — depends on modules compiling first)
+4. `examples/applications/` (full app trees — last, since they compose everything)
 
-## SKILL.md Structure
-
-Each skill's SKILL.md will contain:
-
-1. **Frontmatter** with name, description, version, and scope keywords
-2. **Purpose** — when to use this skill (1-2 sentences)
-3. **Reference routing table** — maps topics to specific files
-4. **Examples index** — lists all contracts with one-line descriptions
-5. **Cross-references** — pointers to related contracts in other skills
+After all examples in a category compile, write the corresponding reference file.
 
 ## What changes from the current plugin
 
 | Aspect | Before | After |
 |---|---|---|
-| Skills | 1 (`openzeppelin`) | 6 (domain-based) |
+| Skills | 1 (`openzeppelin`) | 1 (`code-examples`) with topic-based routing |
 | Contracts | ~20 (OZ only) | ~55 (8 repos) |
 | Witnesses | None | Co-located with every contract that needs them |
 | Tests | Included but not emphasized | Co-located, required to pass |
-| Organization | By author (OpenZeppelin) | By capability domain |
+| Organization | By author (OpenZeppelin) | By capability domain within single skill |
+| Discovery | Read SKILL.md, scan file tree | SKILL.md → reference file → specific files |
 | Language version | Mixed (older versions) | All `>= 0.22` |
 | Compilation | Not verified | Full build with proof generation required |
 | Sources | compact-contracts | 8 repositories |
