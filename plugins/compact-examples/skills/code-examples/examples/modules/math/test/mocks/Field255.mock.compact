@@ -1,0 +1,74 @@
+pragma language_version >= 0.22;
+
+import CompactStandardLibrary;
+
+import "../../Field255" prefix Field255_;
+
+import { U256 } from "../../Types";
+
+export { U256 };
+
+// Helper for test suite: hardcoded to true in every circuit to enable circuit metadata reporting;
+// only increases circuit size by 3 rows per exposed circuit.
+ledger toImpure: Boolean;
+
+////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////
+
+export circuit MAX_FIELD(): Field {
+  toImpure = true;
+  return Field255_MAX_FIELD();
+}
+
+////////////////////////////////////////////////////////////////
+// Conversions
+////////////////////////////////////////////////////////////////
+
+export circuit toBytes(value: Field): Bytes<32> {
+  toImpure = true;
+  return disclose(Field255_toBytes(value));
+}
+
+export circuit toU256(value: Field): U256 {
+  toImpure = true;
+  return disclose(Field255_toU256(value));
+}
+
+////////////////////////////////////////////////////////////////
+// Comparisons
+////////////////////////////////////////////////////////////////
+
+export circuit eq(a: Field, b: Field): Boolean {
+  toImpure = true;
+  return Field255_eq(a, b);
+}
+
+export circuit lt(a: Field, b: Field): Boolean {
+  toImpure = true;
+  return disclose(Field255_lt(a, b));
+}
+
+export circuit lte(a: Field, b: Field): Boolean {
+  toImpure = true;
+  return disclose(Field255_lte(a, b));
+}
+
+export circuit gt(a: Field, b: Field): Boolean {
+  toImpure = true;
+  return disclose(Field255_gt(a, b));
+}
+
+export circuit gte(a: Field, b: Field): Boolean {
+  toImpure = true;
+  return disclose(Field255_gte(a, b));
+}
+
+////////////////////////////////////////////////////////////////
+// Utilities
+////////////////////////////////////////////////////////////////
+
+export circuit isZero(a: Field): Boolean {
+  toImpure = true;
+  return Field255_isZero(a);
+}

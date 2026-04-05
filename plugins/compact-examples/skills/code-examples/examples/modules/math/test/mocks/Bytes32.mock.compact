@@ -1,0 +1,75 @@
+pragma language_version >= 0.22;
+
+import CompactStandardLibrary;
+
+import { U256 } from "../../Types";
+
+import "../../Bytes32" prefix Bytes32_;
+
+export { U256 };
+
+// Helper for test suite: hardcoded to true in every circuit to enable circuit metadata reporting;
+// only increases circuit size by 3 rows per exposed circuit.
+ledger toImpure: Boolean;
+
+////////////////////////////////////////////////////////////////
+// Conversions
+////////////////////////////////////////////////////////////////
+
+export circuit pack(vec: Vector<32, Uint<8>>): Bytes<32> {
+  toImpure = true;
+  return Bytes32_pack(vec);
+}
+
+export circuit unpack(bytes: Bytes<32>): Vector<32, Uint<8>> {
+  toImpure = true;
+  return disclose(Bytes32_unpack(bytes));
+}
+
+export circuit vectorToU256(vec: Vector<32, Uint<8>>): U256 {
+  toImpure = true;
+  return disclose(Bytes32_toU256(vec));
+}
+
+export circuit bytesToU256(bytes: Bytes<32>): U256 {
+  toImpure = true;
+  return disclose(Bytes32_toU256(bytes));
+}
+
+////////////////////////////////////////////////////////////////
+// Comparisons
+////////////////////////////////////////////////////////////////
+
+export circuit eq(a: Bytes<32>, b: Bytes<32>): Boolean {
+  toImpure = true;
+  return disclose(Bytes32_eq(a, b));
+}
+
+export circuit lt(a: Bytes<32>, b: Bytes<32>): Boolean {
+  toImpure = true;
+  return disclose(Bytes32_lt(a, b));
+}
+
+export circuit lte(a: Bytes<32>, b: Bytes<32>): Boolean {
+  toImpure = true;
+  return disclose(Bytes32_lte(a, b));
+}
+
+export circuit gt(a: Bytes<32>, b: Bytes<32>): Boolean {
+  toImpure = true;
+  return disclose(Bytes32_gt(a, b));
+}
+
+export circuit gte(a: Bytes<32>, b: Bytes<32>): Boolean {
+  toImpure = true;
+  return disclose(Bytes32_gte(a, b));
+}
+
+////////////////////////////////////////////////////////////////
+// Utilities
+////////////////////////////////////////////////////////////////
+
+export circuit isZero(a: Bytes<32>): Boolean {
+  toImpure = true;
+  return Bytes32_isZero(a);
+}
