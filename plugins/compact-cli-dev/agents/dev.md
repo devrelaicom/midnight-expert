@@ -1,6 +1,6 @@
 ---
 name: dev
-memory: project
+memory: user
 description: >-
   Use this agent when you need to scaffold, develop, or modify an Oclif CLI
   for a Midnight Compact smart contract. This includes creating a new CLI
