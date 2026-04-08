@@ -1,6 +1,6 @@
 ---
 name: contract-writer
-memory: project
+memory: user
 description: >-
   Use this agent to verify Compact claims by writing and executing test contracts.
   Translates a claim into a minimal Compact contract, compiles it with the Compact

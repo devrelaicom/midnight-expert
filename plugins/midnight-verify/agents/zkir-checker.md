@@ -1,6 +1,6 @@
 ---
 name: zkir-checker
-memory: project
+memory: user
 description: >-
   Use this agent to verify ZKIR-level claims by running circuits through the
   @midnight-ntwrk/zkir-v2 WASM checker or inspecting compiled circuit structure.

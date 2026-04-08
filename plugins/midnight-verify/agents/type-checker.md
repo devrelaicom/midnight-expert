@@ -1,6 +1,6 @@
 ---
 name: type-checker
-memory: project
+memory: user
 description: >-
   Use this agent to verify SDK type claims or check user TypeScript files
   by running tsc --noEmit. Writes type assertion files for claims about

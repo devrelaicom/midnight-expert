@@ -1,6 +1,6 @@
 ---
 name: compact-dev
-memory: project
+memory: user
 description: >-
   Use this agent when you need to write, generate, review, or fix Compact smart
   contract code for the Midnight blockchain. This includes creating new contracts,

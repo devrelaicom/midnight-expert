@@ -1,6 +1,6 @@
 ---
 name: reviewer
-memory: project
+memory: user
 description: >-
   Use this agent when you need a focused review of Compact smart contract code
   in a specific category. Dispatched by the review-compact command with a
