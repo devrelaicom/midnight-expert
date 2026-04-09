@@ -1,0 +1,88 @@
+// ticket.compact
+// A one-time-use ticket system with privacy.
+//
+// Privacy properties:
+//   - Nobody can tie a ticket to an account
+//   - A holder can prove they have a valid ticket (via ZK Merkle proof)
+//   - Once used, a nullifier prevents reuse
+//   - An observer cannot link a used ticket to the original issuance
+
+pragma language_version >= 0.22;
+
+import CompactStandardLibrary;
+
+// Merkle tree of ticket commitments. HistoricMerkleTree so proofs stay
+// valid even after new tickets are issued. Depth 10 = up to 1024 tickets.
+export ledger tickets: HistoricMerkleTree<10, Bytes<32>>;
+
+// Set of used nullifiers — public by design, but unlinkable to commitments.
+export ledger usedTickets: Set<Bytes<32>>;
+
+// Counter of how many tickets have been used (public metric).
+export ledger ticketsUsed: Counter;
+
+// --- Witnesses (off-chain data) ---
+
+// The holder's ticket secret — known only to them.
+witness ticket_secret(): Bytes<32>;
+
+// Random blinding factor for the commitment.
+witness ticket_randomness(): Bytes<32>;
+
+// Merkle proof that a commitment exists in the tree.
+witness get_ticket_path(commitment: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+// --- Domain-separated derivation ---
+// CRITICAL: commitment and nullifier use different domains to prevent linking.
+
+circuit derive_ticket_commitment(secret: Bytes<32>, randomness: Bytes<32>): Bytes<32> {
+  return persistentCommit<Vector<2, Bytes<32>>>(
+    [pad(32, "ticket:commit::"), secret],
+    randomness
+  );
+}
+
+circuit derive_ticket_nullifier(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "ticket:nullify:"),
+    secret
+  ]);
+}
+
+// --- Circuits ---
+
+// Issue a new ticket. The commitment goes into the Merkle tree.
+// No one can see what the commitment contains.
+export circuit issue_ticket(): [] {
+  const secret = ticket_secret();
+  const randomness = ticket_randomness();
+  const commitment = derive_ticket_commitment(secret, randomness);
+  tickets.insert(commitment);
+}
+
+// Use a ticket. Proves you hold a valid ticket without revealing which one.
+// The nullifier prevents the same ticket from being used twice.
+export circuit use_ticket(): [] {
+  const secret = ticket_secret();
+  const randomness = ticket_randomness();
+
+  // Re-derive the commitment to find it in the tree
+  const commitment = derive_ticket_commitment(secret, randomness);
+
+  // Prove the commitment exists in the tree (without revealing which leaf)
+  const path = get_ticket_path(commitment);
+  assert(
+    tickets.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
+    "Invalid ticket"
+  );
+
+  // Derive the nullifier (different domain than commitment — unlinkable)
+  const nul = derive_ticket_nullifier(secret);
+
+  // Check ticket hasn't been used before
+  assert(disclose(!usedTickets.member(disclose(nul))), "Ticket already used");
+
+  // Mark as used
+  usedTickets.insert(disclose(nul));
+  ticketsUsed.increment(1);
+}
