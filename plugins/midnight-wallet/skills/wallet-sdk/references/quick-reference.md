@@ -21,7 +21,7 @@ The wallet SDK is split into focused packages under the `@midnight-ntwrk` scope.
 | `prover-client` | `@midnight-ntwrk/wallet-sdk-prover-client` | Proof server client | Prover connection utilities |
 | `runtime` | `@midnight-ntwrk/wallet-sdk-runtime` | Runtime for wallet variants | Runtime orchestration |
 | `shielded-wallet` | `@midnight-ntwrk/wallet-sdk-shielded` | Shielded (private) wallet variant | `ShieldedWallet` |
-| `unshielded-wallet` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | Unshielded (transparent) wallet variant | `UnshieldedWallet`, `createKeystore`, `PublicKey`, `UtxoWithMeta` |
+| `unshielded-wallet` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | Unshielded (transparent) wallet variant | `UnshieldedWallet`, `createKeystore`, `PublicKey` |
 | `utilities` | `@midnight-ntwrk/wallet-sdk-utilities` | Domain-agnostic utilities | Common operations and types |
 
 > **Common mistake:** `createKeystore` and `PublicKey` are exported from `@midnight-ntwrk/wallet-sdk-unshielded-wallet`, not from `address-format`. The shielded wallet package is `@midnight-ntwrk/wallet-sdk-shielded` (not `shielded-wallet`).
@@ -39,12 +39,12 @@ The `Roles` constant defines five key roles:
 | Role | Value | Description | Used in standard construction? |
 |---|---|---|---|
 | `NightExternal` | `0` | External NIGHT receive keys | Yes |
-| `NightInternal` | `1` | Internal NIGHT change keys | Yes |
+| `NightInternal` | `1` | Internal NIGHT change keys | No (reserved) |
 | `Dust` | `2` | DUST token keys | Yes |
-| `Zswap` | `3` | Shielded transfer (Zswap) keys | No (shielded wallet uses separate path) |
+| `Zswap` | `3` | Shielded transfer (Zswap) keys | Yes |
 | `Metadata` | `4` | Metadata signing keys | No (reserved) |
 
-Standard wallet construction uses three roles: `NightExternal` (0), `NightInternal` (1), and `Dust` (2).
+Standard wallet construction uses three roles: `NightExternal` (0), `Dust` (2), and `Zswap` (3).
 
 ### Derivation Path
 
@@ -118,10 +118,10 @@ The special `mainnet` symbol (exported as `mainnet` from `address-format`) repre
 | `SyncProgress` | `@midnight-ntwrk/wallet-sdk-abstractions` | Tracks blockchain sync status. Has `isStrictlyComplete()` (gap = 0) and `isCompleteWithin(maxGap?)` (default gap = 50 blocks) methods |
 | `ProtocolVersion` | `@midnight-ntwrk/wallet-sdk-abstractions` | Branded `bigint` via Effect `Brand.nominal<ProtocolVersion>()`. Represents the protocol version with range checking utilities |
 | `BalancingRecipe` | `@midnight-ntwrk/wallet-sdk-facade` | Union of `FinalizedTransactionRecipe`, `UnboundTransactionRecipe`, and `UnprovenTransactionRecipe` |
-| `UtxoWithMeta` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | Effect `Data.Class` representing a UTXO with metadata (used for coin tracking in unshielded and dust wallets) |
+| `UtxoWithMeta` | `@midnight-ntwrk/wallet-sdk-facade` | UTXO with metadata (`ctime` and `registeredForDustGeneration` flag). The facade re-exports this as the public type |
 | `WalletState` | `@midnight-ntwrk/wallet-sdk-abstractions` | Branded `string` via Effect `Brand.nominal<WalletState>()`. Serialized wallet state for persistence |
-| `ZswapSecretKeys` | `@midnight-ntwrk/ledger` | Secret keys for shielded (Zswap) operations. From the ledger package, not the wallet SDK |
-| `DustSecretKey` | `@midnight-ntwrk/ledger` | Secret key for DUST operations. From the ledger package, not the wallet SDK |
-| `PublicKey` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | Object containing `publicKey` (SignatureVerifyingKey) and `address` (hex string). Created via `PublicKey.fromKeyStore()` |
+| `ZswapSecretKeys` | `@midnight-ntwrk/ledger-v8` | Secret keys for shielded (Zswap) operations. From the ledger package, not the wallet SDK |
+| `DustSecretKey` | `@midnight-ntwrk/ledger-v8` | Secret key for DUST operations. From the ledger package, not the wallet SDK |
+| `PublicKey` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | Object containing `publicKey` (SignatureVerifyingKey), `addressHex` (UserAddress), and `address` (Bech32m string). Created via `PublicKey.fromKeyStore()` |
 
 > **See also:** [state-and-balances.md](state-and-balances.md) for how `FacadeState` and `SyncProgress` are used in practice. [transactions.md](transactions.md) for `BalancingRecipe` usage.

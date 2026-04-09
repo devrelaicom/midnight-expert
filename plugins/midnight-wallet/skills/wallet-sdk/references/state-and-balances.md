@@ -120,8 +120,9 @@ const dustBalance = state.dust.balance(new Date());
 console.log('Current DUST balance:', dustBalance);
 
 // Estimate how much DUST your NIGHT UTXOs will generate
-const shieldedCoins = state.shielded.availableCoins;
-const estimate = state.dust.estimateDustGeneration(shieldedCoins, new Date());
+// Note: estimateDustGeneration takes unshielded UTXOs (NIGHT), not shielded coins
+const nightUtxos = state.unshielded.availableCoins;
+const estimate = state.dust.estimateDustGeneration(nightUtxos, new Date());
 ```
 
 See [transactions.md](transactions.md) for how to register NIGHT UTXOs for dust generation.
@@ -158,11 +159,11 @@ interface SyncProgress {
 - **`isCompleteWithin(maxGap?: bigint)`** -- Returns `true` when the wallet is connected and the gap between `highestRelevantWalletIndex` and `appliedIndex` is at most `maxGap`. The default `maxGap` is **`50n`** when called via the static `SyncProgress.isCompleteWithin()` helper. Use this when a small lag is acceptable (e.g., for UI display where near-real-time is sufficient).
 
 ```typescript
-// Wait for strict sync
-await wallet.waitForSyncedState(0n);
+// WalletFacade.waitForSyncedState() takes no parameters — it waits for strict sync
+const state = await wallet.waitForSyncedState();
 
-// Allow up to 10 blocks of lag
-await wallet.waitForSyncedState(10n);
+// Individual sub-wallets accept an optional allowedGap parameter:
+// await wallet.shielded.waitForSyncedState(10n);  // allow up to 10 blocks of lag
 ```
 
 ## UTXO Metadata

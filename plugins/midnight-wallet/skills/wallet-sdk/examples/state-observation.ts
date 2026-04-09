@@ -20,7 +20,7 @@ import {
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger";
+import * as ledger from "@midnight-ntwrk/ledger-v8";
 import { Buffer } from "buffer";
 import * as rx from "rxjs";
 
@@ -93,7 +93,7 @@ console.log("DUST available coins:", syncedState.dust.availableCoins.length);
 // ---------------------------------------------------------------------------
 // Sync progress reporting
 // ---------------------------------------------------------------------------
-// Each sub-wallet exposes a progress field with appliedIndex and totalIndex
+// Each sub-wallet exposes a progress field with appliedIndex and highestIndex
 console.log("\n=== Sync Progress ===");
 console.log("Shielded progress:", syncedState.shielded.progress);
 console.log("Unshielded progress:", syncedState.unshielded.progress);
@@ -111,7 +111,7 @@ const subscription = wallet.state().subscribe({
       const shieldedProgress = state.shielded.progress;
       if (shieldedProgress) {
         console.log(
-          `Syncing... shielded: ${shieldedProgress.appliedIndex}/${shieldedProgress.totalIndex}`,
+          `Syncing... shielded: ${shieldedProgress.appliedIndex}/${shieldedProgress.highestIndex}`,
         );
       }
       return;

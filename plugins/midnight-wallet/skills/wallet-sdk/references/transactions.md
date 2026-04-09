@@ -216,7 +216,9 @@ for await (const entry of wallet.getAllFromTxHistory()) {
 }
 ```
 
-Transaction history depends on the `TransactionHistoryStorage` implementation provided during wallet construction. The `WalletEntrySchema` (exported from the facade) defines the full entry structure including optional `shielded` and `unshielded` sections. Currently, only unshielded transaction data is stored in history entries.
+Transaction history depends on the `TransactionHistoryStorage` implementation provided during wallet construction.
+
+> **Note:** `queryTxHistoryByHash` and `getAllFromTxHistory` exist in the wallet SDK source but may not be available in all published versions of `@midnight-ntwrk/wallet-sdk-facade`. Check your installed version's type exports before using these methods.
 
 ---
 
