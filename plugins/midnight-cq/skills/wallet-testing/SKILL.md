@@ -23,6 +23,7 @@ Midnight Wallet SDK packages (`@midnight-ntwrk/wallet-sdk-*`).
 | Am I integrating with the wallet via the DApp Connector API? | `midnight-cq:dapp-connector-testing` |
 | Am I testing Compact contract logic? | `midnight-cq:compact-testing` |
 | Am I testing DApp UI flows? | `midnight-cq:dapp-testing` |
+| Do I need the Wallet SDK API reference? | `midnight-wallet:wallet-sdk` |
 
 ## What This Skill Covers
 
