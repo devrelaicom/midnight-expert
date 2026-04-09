@@ -17,7 +17,7 @@ import {
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger";
+import * as ledger from "@midnight-ntwrk/ledger-v8";
 import { Buffer } from "buffer";
 
 // ---------------------------------------------------------------------------

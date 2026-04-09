@@ -92,18 +92,18 @@ if (keyResult.type === 'keyDerived') {
   console.log('Key bytes:', keyResult.key); // Uint8Array
 }
 
-// 4b. Derive multiple roles at once (recommended)
+// 4b. Derive multiple roles at once (recommended for wallet construction)
 const roles = account.selectRoles([
+  Roles.Zswap,
   Roles.NightExternal,
-  Roles.NightInternal,
   Roles.Dust,
 ] as const);
 
 const keysResult = roles.deriveKeysAt(0);
 if (keysResult.type === 'keysDerived') {
-  const nightExternal: Uint8Array = keysResult.keys[Roles.NightExternal];
-  const nightInternal: Uint8Array = keysResult.keys[Roles.NightInternal];
-  const dust: Uint8Array = keysResult.keys[Roles.Dust];
+  const zswap: Uint8Array = keysResult.keys[Roles.Zswap];           // → ShieldedWallet
+  const nightExternal: Uint8Array = keysResult.keys[Roles.NightExternal]; // → UnshieldedWallet
+  const dust: Uint8Array = keysResult.keys[Roles.Dust];             // → DustWallet
 }
 
 // 5. Clean up -- wipe private key material from memory

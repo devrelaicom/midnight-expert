@@ -6,7 +6,7 @@ The wallet SDK connects to three backend services. Each has a dedicated client p
 
 | Service       | Purpose                              | Protocol        | Default URL                        |
 |---------------|--------------------------------------|-----------------|------------------------------------|
-| Indexer       | Blockchain state sync and queries    | GraphQL (WS+HTTP) | `ws://localhost:4000/graphql`    |
+| Indexer       | Blockchain state sync and queries    | GraphQL (WS+HTTP) | `http://localhost:8088/api/v4/graphql` (HTTP), `ws://localhost:8088/api/v4/graphql/ws` (WS) |
 | Node          | Transaction submission               | WebSocket (Substrate RPC) | `ws://localhost:9944`     |
 | Proof Server  | Zero-knowledge proof generation      | HTTP             | `http://localhost:6300`           |
 
@@ -18,27 +18,31 @@ The wallet SDK connects to three backend services. Each has a dedicated client p
 The indexer client is not used directly in most DApp code. The wallet manages
 the indexer connection internally for state synchronization.
 
-Monitor sync progress through the wallet:
+Monitor sync progress through the wallet's state observable:
 
 ```typescript
-import { WalletBuilder } from '@midnight-ntwrk/wallet-sdk';
+wallet.state().subscribe((state) => {
+  // Each sub-wallet has its own SyncProgress
+  const shieldedProgress = state.shielded.progress;
+  const unshieldedProgress = state.unshielded.progress;
+  const dustProgress = state.dust.progress;
 
-// After building the wallet, observe sync status
-const wallet = await walletBuilder.build();
-const syncProgress = wallet.state().syncProgress;
-// syncProgress contains { current: bigint; latest: bigint }
+  console.log(`Shielded: ${shieldedProgress.appliedIndex}/${shieldedProgress.highestIndex}`);
+  console.log(`Synced: ${state.isSynced}`);
+});
 ```
 
-> **Tip:** If transactions appear missing, check `syncProgress` to confirm the
-> wallet has caught up with the chain head.
+> **Tip:** If transactions appear missing, check `state.isSynced` and the
+> individual `progress` fields to confirm the wallet has caught up with the chain head.
 
 ## Node Client
 
 **Package:** `@midnight-ntwrk/wallet-sdk-node-client`
 **Class:** `PolkadotNodeClient`
 
-The node client uses the Effect-ts library throughout. The `sendMidnightTransaction`
-method returns `Stream.Stream`, not `Observable`.
+The node client has two entry points: the main export wraps the Effect layer and exposes
+an `Observable`-based API, while the `/effect` sub-path exposes the raw Effect-ts API where
+`sendMidnightTransaction` returns `Stream.Stream`.
 
 ```typescript
 import { PolkadotNodeClient } from '@midnight-ntwrk/wallet-sdk-node-client/effect';
@@ -72,7 +76,7 @@ The prover client sends unproven transactions to the proof server over HTTP:
 import { HttpProverClient } from '@midnight-ntwrk/wallet-sdk-prover-client';
 
 const prover = new HttpProverClient({
-  serverURL: new URL('http://localhost:6300'),
+  url: new URL('http://localhost:6300'),
 });
 
 // proveTransaction signature:

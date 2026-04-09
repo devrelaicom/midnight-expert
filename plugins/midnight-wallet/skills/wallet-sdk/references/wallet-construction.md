@@ -14,14 +14,14 @@ Three separate conversions turn raw derived bytes into wallet-ready keys. Each c
 
 | Conversion | Function | Package |
 |---|---|---|
-| Shielded (Zswap) keys | `ZswapSecretKeys.fromSeed()` | `@midnight-ntwrk/ledger` |
+| Shielded (Zswap) keys | `ZswapSecretKeys.fromSeed()` | `@midnight-ntwrk/ledger-v8` |
 | Unshielded keystore | `createKeystore()` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` |
-| Dust secret key | `DustSecretKey.fromSeed()` | `@midnight-ntwrk/ledger` |
+| Dust secret key | `DustSecretKey.fromSeed()` | `@midnight-ntwrk/ledger-v8` |
 
 > **CRITICAL:** `createKeystore()` is exported from `@midnight-ntwrk/wallet-sdk-unshielded-wallet`, **not** from `@midnight-ntwrk/address-format` or any other package.
 
 ```typescript
-import * as ledger from '@midnight-ntwrk/ledger';
+import * as ledger from '@midnight-ntwrk/ledger-v8';
 import { createKeystore, PublicKey as UnshieldedPublicKey } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
 
 // After HD key derivation (see key-derivation.md):
@@ -118,16 +118,8 @@ await wallet.start(shieldedSecretKeys, dustSecretKey);
 To block until the wallet has fully synced with the indexer:
 
 ```typescript
-import { firstValueFrom } from 'rxjs';
-import { filter } from 'rxjs/operators';
-
-const waitForSyncedState = async (wallet: WalletFacade): Promise<void> => {
-  await firstValueFrom(
-    wallet.state().pipe(filter((state) => state.syncProgress === 1))
-  );
-};
-
-await waitForSyncedState(wallet);
+const syncedState = await wallet.waitForSyncedState();
+// syncedState.isSynced is guaranteed true
 ```
 
 ## Transaction History Storage
@@ -146,6 +138,8 @@ interface TransactionHistoryStorage<T extends { hash: TransactionHash }> {
 > **Note:** The interface uses `upsert()`, not `put()` or `set()`. This is an insert-or-update semantic keyed by the entry's `hash` property.
 
 The SDK provides `InMemoryTransactionHistoryStorage` from `@midnight-ntwrk/wallet-sdk-abstractions` as a ready-made in-memory implementation. Pass `WalletEntrySchema` (from `@midnight-ntwrk/wallet-sdk-facade`) to its constructor to enable serialization.
+
+> **Note:** `InMemoryTransactionHistoryStorage` and `WalletEntrySchema` exist in the wallet SDK source but may not be exported in all published package versions. If these are missing from your installed types, check the latest package version or implement `TransactionHistoryStorage` directly.
 
 ## Lifecycle
 
