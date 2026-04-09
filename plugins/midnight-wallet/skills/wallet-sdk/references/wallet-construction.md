@@ -139,7 +139,7 @@ interface TransactionHistoryStorage<T extends { hash: TransactionHash }> {
 
 The SDK provides `InMemoryTransactionHistoryStorage` from `@midnight-ntwrk/wallet-sdk-abstractions` as a ready-made in-memory implementation. Pass `WalletEntrySchema` (from `@midnight-ntwrk/wallet-sdk-facade`) to its constructor to enable serialization.
 
-> **Note:** `InMemoryTransactionHistoryStorage` and `WalletEntrySchema` exist in the wallet SDK source but may not be exported in all published package versions. If these are missing from your installed types, check the latest package version or implement `TransactionHistoryStorage` directly.
+> **Note:** `InMemoryTransactionHistoryStorage` (from `wallet-sdk-abstractions`) and `WalletEntrySchema` (from `wallet-sdk-facade`) are the canonical imports used in the SDK's own docs-snippets. If these are missing from your installed package versions, update to the latest release or implement `TransactionHistoryStorage` directly.
 
 ## Lifecycle
 
