@@ -1,0 +1,29 @@
+{
+  "name": "midnight-status-codes",
+  "version": "0.1.0",
+  "description": "Catalog and lookup for all Midnight ecosystem error codes, status codes, and error types across the node, ledger, indexer, wallet, SDK, compiler, proof server, and DApp connector.",
+  "author": {
+    "name": "Aaron Bassett",
+    "email": "aaron@devrel-ai.com"
+  },
+  "homepage": "https://github.com/devrelaicom/midnight-expert",
+  "repository": "https://github.com/devrelaicom/midnight-expert.git",
+  "license": "MIT",
+  "keywords": [
+    "midnight",
+    "compact",
+    "error-codes",
+    "status-codes",
+    "errors",
+    "diagnostics",
+    "troubleshooting",
+    "ledger",
+    "indexer",
+    "wallet",
+    "midnight-js",
+    "compact-compiler",
+    "proof-server",
+    "dapp-connector",
+    "zk-errors"
+  ]
+}
