@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-04-09",
+  "entries": [
+    {
+      "code": "166",
+      "name": "InvalidNetworkId",
+      "source": "midnight-node",
+      "category": "transaction-malformed",
+      "group": {
+        "name": "Transaction Malformed (110-139, 166-192)",
+        "description": "Structural validity errors caught before applying the transaction to ledger state."
+      },
+      "description": "The transaction specifies a network ID that doesn't match the node's configured network.",
+      "fixes": [
+        "Verify your networkId matches the target network",
+        "Check setNetworkId() is called with the correct value",
+        "Ensure wallet and DApp are configured for the same network"
+      ],
+      "aliases": ["InvalidTransaction::Custom(166)", "MalformedTransaction::InvalidNetworkId"],
+      "severity": "error",
+      "see_also": ["0"]
+    },
+    {
+      "code": "0",
+      "name": "NetworkId",
+      "source": "midnight-node",
+      "category": "deserialization",
+      "group": {
+        "name": "Deserialization Errors (0-11)",
+        "description": "Data that couldn't be deserialized from the wire format."
+      },
+      "description": "Failed to deserialize the network ID from the transaction payload.",
+      "fixes": [
+        "Ensure the transaction was serialized with a compatible SDK version",
+        "Check that the network ID format matches the node's expected encoding"
+      ],
+      "aliases": ["Deserialization(NetworkId)"],
+      "severity": "error",
+      "see_also": ["166"]
+    },
+    {
+      "code": "ContractRuntimeError",
+      "name": "ContractRuntimeError",
+      "source": "compact-js-sdk",
+      "category": "contract-execution",
+      "group": {
+        "name": "Contract Execution Errors",
+        "description": "Errors raised during contract constructor or circuit execution."
+      },
+      "description": "A general runtime error occurred while executing a constructor or circuit of an executable contract.",
+      "fixes": [
+        "Check the error message for specifics — it wraps the underlying cause",
+        "Verify circuit arguments match the contract's expected types",
+        "Ensure the contract state is valid before invoking circuits"
+      ],
+      "aliases": ["compact-js/effect/ContractRuntimeError"],
+      "severity": "error",
+      "see_also": []
+    }
+  ]
+}
