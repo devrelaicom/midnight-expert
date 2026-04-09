@@ -60,7 +60,7 @@ const seed: Uint8Array = mnemonicToSeedSync(phrase);
 | `mnemonicToWords` | `(mnemonic: string) => string[]` | Splits on spaces (`mnemonic.split(' ')`) |
 | `generateRandomSeed` | `(strength?: number) => Uint8Array` | Uses `crypto.getRandomValues`. Default strength: 256 |
 
-> **Note on genesis seeds:** For local devnet development, genesis wallets use known seeds. See [wallet-construction.md](wallet-construction.md) for how genesis seeds are used in the WalletBuilder.
+> **Note on genesis seeds:** For local devnet development, genesis wallets use known seeds. See [wallet-construction.md](wallet-construction.md) for how seeds feed into `WalletFacade.init()`.
 
 ---
 

@@ -120,9 +120,9 @@ const dustBalance = state.dust.balance(new Date());
 console.log('Current DUST balance:', dustBalance);
 
 // Estimate how much DUST your NIGHT UTXOs will generate
-// Note: estimateDustGeneration takes unshielded UTXOs (NIGHT), not shielded coins
+// Use wallet.estimateRegistration() — it handles the internal type conversion
 const nightUtxos = state.unshielded.availableCoins;
-const estimate = state.dust.estimateDustGeneration(nightUtxos, new Date());
+const { fee, dustGenerationEstimations } = await wallet.estimateRegistration(nightUtxos);
 ```
 
 See [transactions.md](transactions.md) for how to register NIGHT UTXOs for dust generation.
