@@ -109,11 +109,9 @@ const subscription = wallet.state().subscribe({
     if (!state.isSynced) {
       // Report sync progress while catching up
       const shieldedProgress = state.shielded.progress;
-      if (shieldedProgress) {
-        console.log(
-          `Syncing... shielded: ${shieldedProgress.appliedIndex}/${shieldedProgress.highestIndex}`,
-        );
-      }
+      console.log(
+        `Syncing... shielded: ${shieldedProgress.appliedIndex}/${shieldedProgress.highestIndex}`,
+      );
       return;
     }
 
