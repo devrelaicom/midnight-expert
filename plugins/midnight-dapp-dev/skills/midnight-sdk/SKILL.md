@@ -16,6 +16,8 @@ version: 0.1.0
 
 Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see `references/transaction-lifecycle.md`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
 
+For the underlying Wallet SDK packages (WalletFacade, HD derivation, three-wallet architecture), see `midnight-wallet:wallet-sdk`.
+
 ## SDK Package Map
 
 | Package | Purpose | Key Exports |

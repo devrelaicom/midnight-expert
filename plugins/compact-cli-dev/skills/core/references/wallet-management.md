@@ -1,5 +1,7 @@
 # Wallet Management Reference
 
+> For comprehensive Wallet SDK API reference, see `midnight-wallet:wallet-sdk`. This document covers wallet construction patterns specific to the CLI context.
+
 Covers HD key derivation, the three sub-wallets, seed format, WalletFacade construction, persistence, and key utility functions.
 
 ---
