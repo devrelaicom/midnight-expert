@@ -62,8 +62,7 @@ The stream emits `SubmissionEvent` variants as the transaction progresses:
 In most DApp code, prefer `wallet.submitTransaction()` over calling the node
 client directly. The wallet handles serialization, signing, and error recovery.
 
-> **See also:** [wallet-construction.md](wallet-construction.md) for how the
-> node client is passed to `WalletBuilder`.
+> **See also:** [wallet-construction.md](wallet-construction.md) for how `relayURL` is configured in `DefaultConfiguration`.
 
 ## Proof Server (Prover Client)
 

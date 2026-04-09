@@ -3,7 +3,7 @@ name: midnight-wallet:wallet-sdk
 description: >-
   This skill should be used when the user asks about the Midnight Wallet SDK
   packages (@midnight-ntwrk/wallet-sdk-*), how to construct a wallet with
-  WalletFacade or WalletBuilder, HD key derivation from seeds or mnemonics,
+  WalletFacade, HD key derivation from seeds or mnemonics,
   the three-wallet architecture (shielded, unshielded, dust), observing wallet
   state and sync progress, transaction balancing and signing, proving and
   submission services, connecting to infrastructure (indexer client, node client,
