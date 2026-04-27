@@ -44,17 +44,16 @@ These constraints apply to every artifact this spec touches:
 
 - Remove every trace of `midnight-wallet-cli` and `midnight-wallet-mcp` from the plugin and from cross-plugin references
 - Give Claude a single, well-bounded skill for managing test wallets in two scenarios: embedded-in-DApp and ad-hoc
-- Provide a fast, scriptable mechanism to detect SDK drift and verify the canonical wallet construction pattern still works
+- Provide a fast, scriptable mechanism to detect SDK drift and verify the wallet construction pattern documented in this plugin still works
 - Update `wallet-sdk` to cover material the audit found missing, particularly the variant/runtime pattern, the Effect-based dual API, and the capabilities sub-modules
 - Make a single descriptive entry in `midnight-tooling:devnet` for the genesis seed (where it conceptually belongs), without changing devnet behavior
 
 ## Non-goals
 
 - Building a replacement CLI for `midnight-wallet-cli`
-- Automating preprod/preview faucet interaction (no public faucet API has been confirmed; the SDK pattern is "print address, wait for balance" and that is what we will document)
-- Changing `midnight-tooling:devnet`'s compose template or scripts; the existing `CFG_PRESET: 'dev'` already produces the genesis-seed pre-mint that the SDK pattern relies on
+- Automating preprod/preview faucet interaction. None of the wallet SDK examples we surveyed call a programmatic faucet API; the pattern is "print address, wait for balance" and that is what we ship
+- Changing `midnight-tooling:devnet`'s compose template or scripts; the existing `CFG_PRESET: 'dev'` already produces the genesis-seed pre-mint that the documented funding pattern relies on
 - Persistent test-wallet aliasing (the local devnet wipes wallets on restart, so persistent name→address mapping has no durable utility)
-- Implementing a faucet-API spike inside this design (it is flagged as an implementation-time investigation; the design accommodates either outcome)
 
 ---
 
@@ -115,7 +114,7 @@ The example scripts are templates — Claude lifts them and adapts to the user's
 
 ### `plugins/midnight-wallet/skills/sdk-regression-check/`
 
-A new skill that gives Claude a fast way to ask "are the SDK patterns documented in this plugin still correct?". Two modes: a no-network drift check that compares pinned versions to npm, and a slow smoke test that runs the canonical construction pattern against a local devnet.
+A new skill that gives Claude a fast way to ask "are the SDK patterns documented in this plugin still correct?" and to triage failures that look like SDK drift. Two modes: a no-network drift check that compares pinned versions to npm, and a slow smoke test that runs the construction pattern documented in this plugin against a local devnet.
 
 Layout:
 
@@ -219,7 +218,7 @@ Closes with a related-skills table linking to `wallet-sdk` (reference), `sdk-reg
 
 - **`addresses-and-tokens.md`** — three sub-wallets (`UnshieldedWallet`, `ShieldedWallet`, `DustWallet`), three address types (`UnshieldedAddress` `mn_addr_*`, `ShieldedAddress`, `DustAddress`), three balance shapes. Faucets and the genesis-seed airdrop fund the unshielded address. Shielded tokens are minted via Zswap, not via faucets. DUST is generated over time from registered NIGHT UTXOs.
 - **`wallet-creation.md`** — random seed via `generateRandomSeed`, BIP-39 mnemonic via `generateMnemonicWords` / `validateMnemonic` / `mnemonicToSeedSync`, hex seed via `Buffer.from(hex, 'hex')`. HD derivation pattern. Construction with `WalletFacade.init`. Memory hygiene (`hdWallet.clear()`).
-- **`funding.md`** — network-keyed strategies. For `undeployed`: build a facade from the genesis seed (cross-link to `midnight-tooling:devnet#genesis-seed`), wait for sync, transfer NIGHT to the new wallet's unshielded address, wait for the new wallet to observe the balance. For `preprod` / `preview`: print the unshielded address, print the faucet URL, subscribe to wallet state, log when the balance becomes non-zero. Notes the spike on whether either testnet has a programmatic faucet API; the script is structured so an API path can drop in if found.
+- **`funding.md`** — network-keyed strategies. For `undeployed`: build a facade from the genesis seed (cross-link to `midnight-tooling:devnet#genesis-seed`), wait for sync, transfer NIGHT to the new wallet's unshielded address, wait for the new wallet to observe the balance. For `preprod` / `preview`: print the unshielded address, print the faucet URL, subscribe to wallet state, log when the balance becomes non-zero. There is no programmatic faucet API for the public testnets — the user funds the address manually via the faucet web page.
 - **`dust-registration.md`** — what DUST is (fee resource generated from registered NIGHT UTXOs over time), why it must be registered before any transaction can pay fees, the `registerNightUtxosForDustGeneration` recipe flow (balance, sign, finalize, submit), how `estimateRegistration` reports the fee and per-UTXO yield. Calls out that `state.dust.balance(date)` requires a `Date` parameter because DUST expires.
 - **`balance-monitoring.md`** — `wallet.state()` returns an `Observable<FacadeState>`. Subscribe and read `state.unshielded.balances['']` (NIGHT, 6 decimals), `state.shielded.balances` (per-token-type), `state.dust.balance(new Date())`. Handle the "wait until isSynced" pattern with `waitForSyncedState()`. Sample loop: filter for synced, then sample at an interval until a target balance is reached or a timeout fires.
 - **`transfers.md`** — three transfer kinds. Unshielded NIGHT via `transferTransaction` with a `CombinedTokenTransfer` of `type: 'unshielded'`. Shielded via `type: 'shielded'`. Combined (atomic shielded + unshielded) by passing both. Recipe → sign → finalize → submit. Fee estimation via `estimateTransactionFee`. The `payFees` option default and when to override.
@@ -239,9 +238,9 @@ Each example file opens with a header comment block:
 
 Body is a self-contained TypeScript script that runs under `npx tsx`. Comments mark the steps a reader can vary.
 
-- **`create-wallet.ts`** — single canonical wallet construction. Generates random seed by default; accepts `--seed <hex>` or `--mnemonic "<phrase>"` via `process.argv`. Outputs unshielded, shielded, dust addresses on stdout.
+- **`create-wallet.ts`** — wallet construction template. Generates random seed by default; accepts `--seed <hex>` or `--mnemonic "<phrase>"` via `process.argv`. Outputs unshielded, shielded, dust addresses on stdout.
 - **`fund-wallet-undeployed.ts`** — takes a recipient unshielded address as an arg. Builds a sender facade from the genesis seed (loaded from a constant in the script with the standard local-devnet seed value, and a comment cross-referencing `midnight-tooling:devnet#genesis-seed`). Waits for sync. Transfers NIGHT. Waits for the recipient's balance to reflect. Exits 0 when confirmed.
-- **`fund-wallet-public-faucet.ts`** — takes a recipient unshielded address and a network identifier (`preprod` or `preview`). Prints the faucet URL and the address. Subscribes to wallet state. Polls until the balance is non-zero or a timeout fires. The script is structured so a future programmatic faucet path can replace the "print and wait" branch without restructuring.
+- **`fund-wallet-public-faucet.ts`** — takes a recipient unshielded address and a network identifier (`preprod` or `preview`). Prints the faucet URL and the address, then subscribes to wallet state and polls until the balance is non-zero or a timeout fires. The user is expected to paste the printed address into the faucet web page; the script handles the watch-for-funds part.
 - **`register-dust.ts`** — takes a wallet seed and registers all available NIGHT UTXOs for DUST generation. Uses `estimateRegistration` first to print the fee preview, then runs the full registration recipe.
 - **`monitor-wallet.ts`** — takes an unshielded address (optionally also a shielded and a dust address) and prints a live ticker of balances on each state emission. Highlights when DUST appears.
 - **`transfer-night.ts`** — takes a sender seed, a recipient unshielded address, and an amount. Builds the transfer recipe, signs, finalizes, submits, prints the transaction identifier.
@@ -250,33 +249,34 @@ Body is a self-contained TypeScript script that runs under `npx tsx`. Comments m
 
 ### `sdk-regression-check/SKILL.md`
 
-Triggers on: verify wallet SDK is current, check for SDK drift, has the wallet SDK updated, SDK regression test, are these wallet patterns still valid, wallet SDK version check, smoke test the wallet SDK, validate wallet SDK installation, debug wallet SDK pattern failures.
+Triggers on: verify wallet SDK is current, check for SDK drift, has the wallet SDK updated, SDK regression test, are these wallet patterns still valid, wallet SDK version check, smoke test the wallet SDK, validate wallet SDK installation, debug wallet SDK pattern failures, troubleshoot wallet SDK error, diagnose wallet SDK failure, wallet SDK not working, why is my wallet SDK code failing, wallet SDK runtime error, wallet construction failing, WalletFacade.init throwing, sync stuck or never completes, transaction recipe rejected, signature mismatch in wallet SDK, type errors after upgrading wallet SDK, code that worked yesterday no longer works.
 
 Body opens with "When to invoke" — before trusting any pattern from `wallet-sdk` or `managing-test-wallets`, when patterns fail unexpectedly, after a Midnight release, on a long-running project after a gap. Then the two modes:
 
 - **Drift check (no network).** `scripts/drift-check.sh` reads `versions.lock.json`, calls `npm view <package> version` for each pinned package, classifies drift (`none`, `patch`, `minor`, `major`) per package, prints a table, exits 0 if all clean and 1 if any minor/major drift.
 - **Smoke test (devnet required).** `scripts/smoke-test.sh` creates a temp directory, runs `npm init -y`, installs the latest `@midnight-ntwrk/wallet-sdk-*` packages plus the matching `@midnight-ntwrk/ledger-*`, then `npx tsx fixtures/smoke-test.ts` against the local devnet.
 
-The smoke fixture (`fixtures/smoke-test.ts`) executes the canonical pattern: load the local-devnet genesis seed, derive keys, init `WalletFacade`, wait for sync, assert the unshielded NIGHT balance is non-zero (i.e. the dev preset's pre-mint reached this seed). Failure produces a structured error pointing at which step broke (HD derivation, key conversion, init, sync, balance read).
+The smoke fixture (`fixtures/smoke-test.ts`) executes the construction pattern documented in this plugin: load the local-devnet genesis seed, derive keys, init `WalletFacade`, wait for sync, assert the unshielded NIGHT balance is non-zero (i.e. the dev preset's pre-mint reached this seed). Failure produces a structured error pointing at which step broke (HD derivation, key conversion, init, sync, balance read).
 
 The "How Claude reads the output" section is a table:
 
 | Drift level | Meaning | What Claude does next |
 |-------------|---------|-----------------------|
-| `none` per package | No drift | Trust patterns; nothing to do |
-| `patch` per package | Patch bump (no API change by SemVer) | Trust patterns; optionally update `versions.lock.json` to reduce noise |
-| `minor` per package | New features, no removed APIs | Read release notes for new features that affect documented patterns; spot-check the relevant example; bump `versions.lock.json` |
-| `major` per package | Breaking changes possible | Run `smoke-test.sh`. If smoke passes, the pattern still works — read release notes to learn what changed and update references. If smoke fails, follow the drift workflow below. |
+| `none` per package | No drift | Trust the patterns documented in this plugin |
+| `patch` per package | Patch bump (no API change by SemVer) | Trust the patterns; mention the patch drift in the report so the user can decide whether to file an issue against the plugin asking for a lock bump |
+| `minor` per package | New features, no removed APIs | Read release notes for new features that affect documented patterns; spot-check the relevant example; report findings to the user — do not edit the lock file |
+| `major` per package | Breaking changes possible | Run `smoke-test.sh`. If smoke passes, the patterns still work; surface the release-note highlights so the user knows what changed. If smoke fails, follow the drift workflow below. |
 | Smoke fail with no drift detected | Devnet, proof server, or environment issue | Run `midnight-tooling:devnet health`; check proof server; retry. Do not change the SDK skill content. |
+
+> **Lock-file policy.** `versions.lock.json` is owned by plugin maintainers. Claude must not edit it as part of running this skill. When drift is detected, Claude reports findings to the user and stops. Updates to the lock file happen when the plugin is released, not when this skill runs.
 
 The "Drift workflow with release notes" section walks Claude through the response to a major drift:
 
 1. Identify drifted packages from `drift-check.sh`
 2. For each drifted package, invoke the `midnight-tooling:view-release-notes` skill scoped to the version range from the pinned version to the latest
 3. Look for: removed exports, renamed methods, changed signatures, deprecated APIs, ledger-version bumps
-4. Translate findings into concrete edits to `wallet-sdk` references and `managing-test-wallets` examples
-5. Re-run `smoke-test.sh` after edits. If it passes, bump `versions.lock.json` (`packages` and `verified` date)
-6. If it still fails, surface a structured report with the failing step and the relevant release-note bullets so the user can decide whether to roll back or update further
+4. Surface a structured report to the user listing: which packages drifted, the relevant release-note bullets per package, which documented patterns appear affected, and whether the smoke test passed or failed
+5. Stop. Do not edit the lock file, and do not edit `wallet-sdk` references or `managing-test-wallets` examples as part of this workflow — those edits, if needed, happen as deliberate plugin maintenance and ship in a plugin release
 
 ### `sdk-regression-check/versions.lock.json`
 
@@ -382,12 +382,11 @@ The row is removed. Other rows stay.
 
 These items are deliberately not resolved in this design and become checks during implementation:
 
-1. **Faucet API existence on `preprod` and `preview`.** Spike: probe `https://faucet.preprod.midnight.network/` and `https://faucet.preview.midnight.network/` for any documented or discoverable API endpoint. If found, `fund-wallet-public-faucet.ts` calls it. If not, it stays in the print-and-wait pattern.
-2. **`TransactionHistoryStorage<T>.getAll()` return type.** Reconcile the existing skill's `AsyncIterableIterator<T>` claim with the audit summary's `Promise<T[]>`. Read `packages/abstractions/src/index.ts` from the SDK source and update the skill if needed.
-3. **`TransactionHistoryStorage<T>.serialize()` return type.** Same — `Promise<SerializedTransactionHistory>` (current skill) vs. `Promise<string>` (audit). Verify from source.
-4. **Pin actual versions in `versions.lock.json`.** Run `npm view` for each of the 14 packages and write the resolved versions into the file at the moment the smoke test passes for the first time.
-5. **Smoke test acceptance threshold.** Confirm the pre-mint amount the `dev` preset deposits to the genesis seed, so the smoke assertion can be `>= <expected-min>` rather than just `> 0n`. If the value is brittle across image versions, a `> 0n` assertion is acceptable but should be documented.
-6. **`@midnight-ntwrk/wallet-sdk` meta-package version.** The audit names version 1.0.0 but this is a fast-moving package; verify and pin at implementation time.
+1. **`TransactionHistoryStorage<T>.getAll()` return type.** Reconcile the existing skill's `AsyncIterableIterator<T>` claim with the audit summary's `Promise<T[]>`. Read `packages/abstractions/src/index.ts` from the SDK source and update the skill if needed.
+2. **`TransactionHistoryStorage<T>.serialize()` return type.** Same — `Promise<SerializedTransactionHistory>` (current skill) vs. `Promise<string>` (audit). Verify from source.
+3. **Pin actual versions in `versions.lock.json`.** Run `npm view` for each of the packages listed and write the resolved versions into the file as part of the implementation work. After this, the lock is owned by plugin releases — see the lock-update policy below.
+4. **Smoke test acceptance threshold.** Confirm the pre-mint amount the `dev` preset deposits to the genesis seed, so the smoke assertion can be `>= <expected-min>` rather than just `> 0n`. If the value is brittle across image versions, a `> 0n` assertion is acceptable but should be documented.
+5. **`@midnight-ntwrk/wallet-sdk` meta-package version.** The audit names version 1.0.0 but this is a fast-moving package; verify and pin at implementation time.
 
 ---
 
@@ -411,6 +410,6 @@ These items are deliberately not resolved in this design and become checks durin
 
 - A replacement CLI for `midnight-wallet-cli`. The user's stated direction is to teach Claude SDK patterns, not to ship another tool.
 - Persistent test-wallet aliasing across devnet restarts (devnet wipes, so persistence has no durable utility).
-- Programmatic faucet automation for testnets unless the implementation-time spike finds a public API.
+- Programmatic faucet automation for testnets (no public faucet API is exposed; the documented pattern is print-address-and-wait).
 - Any changes to `midnight-tooling:devnet` beyond the single new reference file.
 - Onboarding work for the audit's deeper findings about the variant/runtime visitor pattern beyond a documentation reference; if the SDK exposes hooks for users to register custom variants, that is a separate skill or example, not part of this rewrite.
