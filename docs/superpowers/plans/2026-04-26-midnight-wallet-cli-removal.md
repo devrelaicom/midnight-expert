@@ -12,6 +12,44 @@
 
 ---
 
+## Phase 0 Findings — Plan Corrections (added 2026-04-27)
+
+After Phase 0 ran end-to-end, two facts emerged that change the rest of the plan. Apply these corrections wherever you encounter the older patterns in this document.
+
+### Correction A — Native NIGHT token key is NOT `""`
+
+`UnshieldedWalletState.balances` is keyed by the token's raw bytes as a hex string. For the native NIGHT token that key is **64 hex zeros**, obtained from `ledger.nativeToken().raw`. The empty-string key returns nothing.
+
+Wherever this plan or its embedded code blocks show:
+```ts
+state.unshielded.balances[""]
+```
+…the correct form is:
+```ts
+const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n
+```
+
+This affects: Task 0.6's fixture (already verified with the corrected key), Task 3.3's smoke-test fixture, Task 4.4-4.9 examples that read NIGHT balance, Tasks 4.10/4.14 references describing balance shapes, and Task 5.1's reconciliation (the existing `wallet-sdk:references/state-and-balances.md` makes the same wrong claim about `""` and must be corrected too).
+
+### Correction B — Verification harness and smoke-test temp project must be ESM
+
+`@midnight-ntwrk/wallet-sdk-*` packages are published as `"type": "module"`. CommonJS consumers fail with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
+For Task 0.5: the harness `package.json` was set to `"type": "module"` (already done).
+
+For Task 3.4 (`smoke-test.sh`): after `npm init -y`, add a step to set the temp project's type to module:
+
+```bash
+cd "$WORKDIR"
+npm init -y >/dev/null
+npm pkg set type=module
+```
+
+For all Phase 4 example scripts: write them as ESM (`import`, not `require`); the harness is already ESM so they will run correctly via `npx tsx`.
+
+---
+
 ## Verification Discipline
 
 The whole motivation for this rework is that the prior CLI/MCP layer drifted silently from the SDK. The replacement must not have the same failure mode. Therefore:
@@ -380,7 +418,8 @@ async function main() {
 
   await wallet.start(shieldedSecretKeys, dustSecretKey);
   const state = await wallet.waitForSyncedState();
-  const night = state.unshielded.balances[""] ?? 0n;
+  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const night = state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
   console.log(`Genesis-seed unshielded NIGHT balance: ${night}`);
   if (night <= 0n) {
     throw new Error(
@@ -966,7 +1005,8 @@ async function main() {
   }
 
   try {
-    const night = state!.unshielded.balances[""] ?? 0n;
+    const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+    const night = state!.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
     if (night <= 0n) {
       throw new Error(`Expected NIGHT > 0, got ${night}`);
     }
@@ -1036,6 +1076,7 @@ echo "Working in $WORKDIR"
 
 cd "$WORKDIR"
 npm init -y >/dev/null
+npm pkg set type=module
 
 PACKAGES=(
   "@midnight-ntwrk/wallet-sdk"
@@ -1327,7 +1368,7 @@ NIGHT to the genesis seed.
 5. **Wait for sync (`wait-sync`).** Call `wallet.waitForSyncedState()`.
 
 6. **Balance assertion (`balance-read`).** Read
-   `state.unshielded.balances[""]` and assert it is greater than `0n`.
+   `state.unshielded.balances[ledger.nativeToken().raw]` and assert it is greater than `0n`.
 
 ## What success means
 
@@ -1827,8 +1868,7 @@ followed by the network identifier. Always use that one for funding.
 
 ## Balances
 
-- **Unshielded:** `state.unshielded.balances[""]` — NIGHT balance as a `bigint`.
-  6 decimal places: `1_000_000n` = 1 NIGHT.
+- **Unshielded:** `state.unshielded.balances[ledger.nativeToken().raw]` — NIGHT balance as a `bigint`. The key is the native token's raw bytes (64 hex zeros), NOT the empty string. 6 decimal places: `1_000_000n` = 1 NIGHT.
 - **Shielded:** `state.shielded.balances[token]` — bigint per token kind.
 - **DUST:** `state.dust.balance(new Date())` — function call (DUST has expiry).
 
@@ -2026,7 +2066,8 @@ is true only when all three sub-wallets report strictly complete sync.
 ```typescript
 const sub = wallet.state().subscribe((state) => {
   if (!state.isSynced) return;
-  console.log("NIGHT:", state.unshielded.balances[""]);
+  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  console.log("NIGHT:", state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n);
   console.log("DUST:", state.dust.balance(new Date()));
 });
 ```
@@ -2039,7 +2080,7 @@ returns a single `FacadeState` once synced.
 | Field | Observe | Why |
 |-------|---------|-----|
 | `state.isSynced` | Yes — guard balance reads | Until synced, balances are incomplete |
-| `state.unshielded.balances[""]` | NIGHT balance, `bigint` | The unshielded NIGHT total |
+| `state.unshielded.balances[ledger.nativeToken().raw]` | NIGHT balance, `bigint` | The unshielded NIGHT total. The native token key is 64 hex zeros, NOT `""`. |
 | `state.shielded.balances[<tokenId>]` | Per-token shielded balance | Shielded tokens are keyed by token kind |
 | `state.dust.balance(new Date())` | DUST `bigint` | Time-dependent; pass current time |
 | `state.unshielded.progress` | `SyncProgress` | For diagnostics when sync stalls |
@@ -2381,16 +2422,24 @@ Expected: prints addresses, funding progress, DUST progress, and a final summary
 
 ## Phase 5 — Update the `wallet-sdk` skill (audit-driven)
 
-### Task 5.1: Reconcile `TransactionHistoryStorage` signatures from Phase 0 findings
+### Task 5.1: Reconcile Phase 0 findings into the wallet-sdk skill
 
 **Files:**
 - Modify: `plugins/midnight-wallet/skills/wallet-sdk/references/wallet-construction.md`
-- Modify (if needed): `plugins/midnight-wallet/skills/wallet-sdk/references/transactions.md`
+- Modify: `plugins/midnight-wallet/skills/wallet-sdk/references/transactions.md`
+- Modify: `plugins/midnight-wallet/skills/wallet-sdk/references/state-and-balances.md`
 
-- [ ] **Step 1: Read the verified signatures from Phase 0**
+Phase 0 surfaced three documented claims that disagree with source/runtime:
+
+1. `TransactionHistoryStorage.getAll()` — current skill says `AsyncIterableIterator<T>`; source says `Promise<readonly T[]>` (verified in `/tmp/wallet-sdk-verify/notes/transaction-history-storage.md`).
+2. `wallet.getAllFromTxHistory()` — current skill says `AsyncIterableIterator<WalletEntry>`; source says `Promise<WalletEntry[]>`. The `for await` example needs to become a plain `for...of`.
+3. The native NIGHT token key — current skill says `state.unshielded.balances[""]`; runtime confirms the correct key is `ledger.nativeToken().raw` (a 64-zero hex string). The `""` claim returns `undefined` and is wrong. Verified in `/tmp/wallet-sdk-verify/check-genesis.ts` runtime output.
+
+- [ ] **Step 1: Read the verified signatures and runtime findings from Phase 0**
 
 ```bash
 cat /tmp/wallet-sdk-verify/notes/transaction-history-storage.md
+cat /tmp/wallet-sdk-verify/notes/devnet-facts.txt
 ```
 
 - [ ] **Step 2: Compare to the current text**
@@ -2398,17 +2447,34 @@ cat /tmp/wallet-sdk-verify/notes/transaction-history-storage.md
 ```bash
 grep -A 5 "TransactionHistoryStorage" plugins/midnight-wallet/skills/wallet-sdk/references/wallet-construction.md
 grep -B 2 -A 4 "getAllFromTxHistory\|getAll" plugins/midnight-wallet/skills/wallet-sdk/references/transactions.md
+grep -B 1 -A 3 'balances\[""\]\|empty string' plugins/midnight-wallet/skills/wallet-sdk/references/state-and-balances.md
 ```
 
-- [ ] **Step 3: Edit only the lines that disagree with the verified source**
+- [ ] **Step 3: Apply the three corrections**
 
-If the verified source matches the current skill text, no edit is needed — record this in the commit message. If the verified source disagrees, update the type to match the source.
+  a. In `wallet-construction.md`, change `getAll(): AsyncIterableIterator<T>;` to `getAll(): Promise<readonly T[]>;` in the `TransactionHistoryStorage` interface block.
 
-- [ ] **Step 4: Commit**
+  b. In `transactions.md`, update the documented return type of `wallet.getAllFromTxHistory()` from `AsyncIterableIterator<WalletEntry>` to `Promise<WalletEntry[]>` and replace the `for await (const entry of wallet.getAllFromTxHistory())` example with a plain `for (const entry of await wallet.getAllFromTxHistory())` loop.
+
+  c. In `state-and-balances.md`, find every occurrence of `balances[""]` and the prose claiming the empty string key represents the native NIGHT token. Replace with `balances[ledger.nativeToken().raw]` (or `balances[NIGHT_TOKEN_TYPE]` after a `const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;` line) and update the prose to say the native token is keyed by its raw bytes (64 hex zeros), accessible via `ledger.nativeToken().raw`.
+
+- [ ] **Step 4: Verify runtime by reading from the live wallet**
+
+Add a small fixture to `/tmp/wallet-sdk-verify/check-balance-key.ts` that builds a wallet, syncs, and prints `Object.keys(state.unshielded.balances)`. Run it:
 
 ```bash
-git add plugins/midnight-wallet/skills/wallet-sdk/references/wallet-construction.md plugins/midnight-wallet/skills/wallet-sdk/references/transactions.md
-git commit -m "docs(midnight-wallet:wallet-sdk): reconcile TransactionHistoryStorage signatures with source"
+cd /tmp/wallet-sdk-verify && npx tsx check-balance-key.ts
+```
+
+Confirm the printed key list contains the 64-zero hex string and does NOT contain the empty string. Capture the actual key as proof.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add plugins/midnight-wallet/skills/wallet-sdk/references/wallet-construction.md \
+        plugins/midnight-wallet/skills/wallet-sdk/references/transactions.md \
+        plugins/midnight-wallet/skills/wallet-sdk/references/state-and-balances.md
+git commit -m "docs(midnight-wallet:wallet-sdk): reconcile TransactionHistoryStorage signatures and native NIGHT key with verified source/runtime"
 ```
 
 ### Task 5.2: Add `references/variants-and-runtime.md`
