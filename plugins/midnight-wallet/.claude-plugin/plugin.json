@@ -1,7 +1,7 @@
 {
   "name": "midnight-wallet",
   "version": "0.3.0",
-  "description": "Wallet management for Midnight Network development — wraps the midnight-wallet-cli MCP server for balance checking, transfers, airdrop, and dust registration, plus comprehensive Wallet SDK package reference for programmatic wallet construction and transaction operations.",
+  "description": "Wallet management for Midnight Network development — comprehensive Wallet SDK package reference for programmatic wallet construction and transaction operations.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"
