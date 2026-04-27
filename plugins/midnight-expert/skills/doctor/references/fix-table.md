@@ -34,7 +34,6 @@ Reference for resolving issues found by midnight-expert:doctor. Each section map
 | midnight not configured | `claude mcp add midnight -- npx -y github:devrelaicom/midnight-mcp` |
 | octocode not configured | `claude mcp add octocode-mcp -- npx octocode-mcp` |
 | midnight-devnet not configured | `claude mcp add midnight-devnet -- npx -y @aaronbassett/midnight-local-devnet` |
-| midnight-wallet not configured | `claude mcp add midnight-wallet -- npx -y -p midnight-wallet-cli@latest midnight-wallet-mcp` |
 | MCP server not responding | Restart Claude Code to reconnect MCP servers |
 
 For any MCP server add, also ask: "Would you prefer to add this to the local project only? I can write it to `.mcp.json` instead."
