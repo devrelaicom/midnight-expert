@@ -129,7 +129,7 @@ The `TransactionHistoryStorage` interface defines how wallet transaction history
 ```typescript
 interface TransactionHistoryStorage<T extends { hash: TransactionHash }> {
   upsert(entry: T): Promise<void>;
-  getAll(): AsyncIterableIterator<T>;
+  getAll(): Promise<readonly T[]>;
   get(hash: TransactionHash): Promise<T | undefined>;
   serialize(): Promise<SerializedTransactionHistory>;
 }
