@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "midnight-wallet": {
-      "command": "npx",
-      "args": ["-y", "-p", "midnight-wallet-cli@latest", "midnight-wallet-mcp"]
-    }
-  }
-}
