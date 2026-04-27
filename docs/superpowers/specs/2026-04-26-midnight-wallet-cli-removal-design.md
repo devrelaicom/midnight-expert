@@ -171,6 +171,7 @@ The audit confirmed the existing references (quick-reference, wallet-constructio
   - Remove the related-skills row referencing `midnight-wallet:wallet-cli`
   - Add rows for `midnight-wallet:managing-test-wallets` and `midnight-wallet:sdk-regression-check`
   - Add a new top-of-file caveat block linking to `sdk-regression-check` for drift verification
+  - Add a top-of-file scope disambiguation block: this skill covers programmatic SDK use only; browser extension wallets (Lace and others) are handled by `midnight-dapp-dev:dapp-connector`. Same wording as the disambiguation block in `managing-test-wallets/SKILL.md` so the boundary is identical in both skills
   - Expand the deep-dive references table to include the four new files
 
 The audit also surfaced two specific points that need verification at implementation time, not design time:
@@ -198,7 +199,11 @@ Full rewrite around the three-skill structure. No mention of MCP, no mention of 
 
 Triggers on: create test wallet, fund a wallet, get tNight from a faucet, register DUST, monitor wallet balance, transfer NIGHT or shielded tokens, derive a wallet from a seed or BIP-39 mnemonic, set up wallets for tests, watch an address for incoming funds, generate dust.
 
-Body opens with the critical caveat (verify SDK is current via `sdk-regression-check`), follows with a "When to use this skill" table that names the two scenarios (embedded-in-DApp vs. ad-hoc one-off), then a "three-address model" section that warns about the most common mistake (faucet expects unshielded; do not give it the shielded address), then the decision-tree table:
+Body opens with the critical caveat (verify SDK is current via `sdk-regression-check`), then a **scope disambiguation block**:
+
+> Browser wallets (Lace and other extensions) are out of scope for this skill. This skill teaches programmatic wallet patterns where the script owns the keys directly. If the user is integrating their DApp with a browser extension wallet, load `midnight-dapp-dev:dapp-connector` instead. The two skills are complementary: a DApp typically uses the extension wallet in production and uses the patterns in this skill for development and test wallets.
+
+Then a "When to use this skill" table that names the two scenarios (embedded-in-DApp vs. ad-hoc one-off), a "three-address model" section that warns about the most common mistake (faucet expects unshielded; do not give it the shielded address), and the decision-tree table:
 
 | User wants… | Reference | Example |
 |-------------|-----------|---------|
@@ -411,5 +416,6 @@ These items are deliberately not resolved in this design and become checks durin
 - A replacement CLI for `midnight-wallet-cli`. The user's stated direction is to teach Claude SDK patterns, not to ship another tool.
 - Persistent test-wallet aliasing across devnet restarts (devnet wipes, so persistence has no durable utility).
 - Programmatic faucet automation for testnets (no public faucet API is exposed; the documented pattern is print-address-and-wait).
+- Browser wallet (Lace and other extension wallets) integration. This plugin covers programmatic SDK use only; browser extension flows go through `midnight-dapp-dev:dapp-connector`, with provider wiring in `midnight-dapp-dev:midnight-sdk`.
 - Any changes to `midnight-tooling:devnet` beyond the single new reference file.
 - Onboarding work for the audit's deeper findings about the variant/runtime visitor pattern beyond a documentation reference; if the SDK exposes hooks for users to register custom variants, that is a separate skill or example, not part of this rewrite.
