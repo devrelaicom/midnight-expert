@@ -184,6 +184,9 @@ When a transaction fails or needs to be abandoned, reverting releases locked UTX
 
 Reverting happens automatically on `finalizeTransaction` failure and `submitTransaction` failure. The facade also subscribes to the pending transactions service and auto-reverts any transactions that fail after submission.
 
+> **See also:** `errors-and-troubleshooting.md` for the per-wallet
+> error types thrown when finalize or submit fails.
+
 ## Swap Initialization
 
 `initSwap` creates a swap offer transaction:
