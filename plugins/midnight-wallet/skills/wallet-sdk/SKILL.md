@@ -56,6 +56,5 @@ For configuration details, see `references/wallet-construction.md`.
 |------|-------|
 | DApp browser wallet integration (DApp Connector API) | `midnight-dapp-dev:dapp-connector` |
 | DApp SDK providers (MidnightProviders, WalletProvider) | `midnight-dapp-dev:midnight-sdk` |
-| Wallet CLI tools (balance, transfer, airdrop) | `midnight-wallet:wallet-cli` |
 | Testing wallet SDK code | `midnight-cq:wallet-testing` |
 | CLI wallet construction patterns | `compact-cli-dev:core` |
