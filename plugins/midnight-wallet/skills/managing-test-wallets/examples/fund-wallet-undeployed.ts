@@ -1,0 +1,243 @@
+// Verified against the package versions pinned in
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-04-27.
+// If your installed @midnight-ntwrk/wallet-sdk-* versions differ,
+// run scripts/drift-check.sh in that skill before trusting this template.
+
+import WebSocket from "ws";
+(globalThis as any).WebSocket = WebSocket;
+
+import { Buffer } from "buffer";
+import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
+import {
+  WalletFacade,
+  WalletEntrySchema,
+  type DefaultConfiguration,
+  type CombinedTokenTransfer,
+} from "@midnight-ntwrk/wallet-sdk-facade";
+import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+import {
+  UnshieldedWallet,
+  createKeystore,
+  PublicKey,
+} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
+import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import * as ledger from "@midnight-ntwrk/ledger-v8";
+import {
+  MidnightBech32m,
+  UnshieldedAddress,
+} from "@midnight-ntwrk/wallet-sdk-address-format";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+// The local-devnet genesis seed. The dev preset's chain spec pre-mints NIGHT
+// to the wallet derived from this seed. See midnight-tooling:devnet#genesis-seed.
+const GENESIS_SEED_HEX =
+  "0000000000000000000000000000000000000000000000000000000000000001";
+
+const DEFAULT_AMOUNT = 5_000_000n; // 5 NIGHT (6 decimal places)
+
+// ─── Arg parsing ─────────────────────────────────────────────────────────────
+
+function parseArgs(): { recipientBech32: string; amount: bigint } {
+  const args = process.argv.slice(2);
+
+  if (args.length === 0) {
+    console.error(
+      "Usage: fund-wallet-undeployed.ts <recipient-unshielded-bech32-address> [amount-bigint]"
+    );
+    console.error("  recipient  — bech32m unshielded address (mn_addr_undeployed…)");
+    console.error("  amount     — NIGHT amount in smallest units (default: 5000000)");
+    process.exit(1);
+  }
+
+  const recipientBech32 = args[0];
+
+  let amount = DEFAULT_AMOUNT;
+  if (args[1] !== undefined) {
+    try {
+      amount = BigInt(args[1]);
+    } catch {
+      console.error(`Error: invalid amount '${args[1]}' — must be a valid bigint.`);
+      process.exit(1);
+    }
+  }
+
+  return { recipientBech32, amount };
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+async function main() {
+  const { recipientBech32, amount } = parseArgs();
+
+  // Decode recipient bech32 to UnshieldedAddress
+  let recipientUnshielded: UnshieldedAddress;
+  try {
+    recipientUnshielded = MidnightBech32m.parse(recipientBech32).decode(
+      UnshieldedAddress,
+      "undeployed"
+    );
+  } catch (err) {
+    console.error(`Error: failed to decode recipient address: ${err}`);
+    process.exit(1);
+  }
+
+  // ─── Step 1: HD derivation from genesis seed ──────────────────────────────
+
+  const seed = Buffer.from(GENESIS_SEED_HEX, "hex");
+  const hd = HDWallet.fromSeed(seed);
+  if (hd.type !== "seedOk") {
+    console.error(`HDWallet.fromSeed failed: ${hd.type}`);
+    process.exit(1);
+  }
+  const derived = hd.hdWallet
+    .selectAccount(0)
+    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
+    .deriveKeysAt(0);
+  if (derived.type !== "keysDerived") {
+    console.error(`deriveKeysAt failed: ${derived.type}`);
+    process.exit(1);
+  }
+  hd.hdWallet.clear();
+  const derivedKeys = derived.keys as Record<number, Uint8Array>;
+
+  // ─── Step 2: Key conversion ───────────────────────────────────────────────
+
+  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(
+    derivedKeys[Roles.Zswap]
+  );
+  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivedKeys[Roles.Dust]);
+  const unshieldedKeystore = createKeystore(
+    derivedKeys[Roles.NightExternal],
+    "undeployed"
+  );
+
+  // ─── Step 3: Configuration (local devnet) ─────────────────────────────────
+
+  const configuration: DefaultConfiguration = {
+    networkId: "undeployed",
+    costParameters: { feeBlocksMargin: 5 },
+    relayURL: new URL("ws://localhost:9944"),
+    provingServerUrl: new URL("http://localhost:6300"),
+    indexerClientConnection: {
+      indexerHttpUrl: "http://localhost:8088/api/v3/graphql",
+      indexerWsUrl: "ws://localhost:8088/api/v3/graphql/ws",
+    },
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  };
+
+  // ─── Step 4: Wallet facade init ───────────────────────────────────────────
+
+  const wallet = await WalletFacade.init({
+    configuration,
+    shielded: (cfg) =>
+      ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+    unshielded: (cfg) =>
+      UnshieldedWallet(cfg).startWithPublicKey(
+        PublicKey.fromKeyStore(unshieldedKeystore)
+      ),
+    dust: (cfg) =>
+      DustWallet(cfg).startWithSecretKey(
+        dustSecretKey,
+        ledger.LedgerParameters.initialParameters().dust
+      ),
+  });
+
+  // ─── Step 5: Start and wait for sync ─────────────────────────────────────
+
+  await wallet.start(shieldedSecretKeys, dustSecretKey);
+  const state = await wallet.waitForSyncedState();
+
+  // ─── Step 6: Print sender info ────────────────────────────────────────────
+
+  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const senderBech32 = MidnightBech32m.encode(
+    "undeployed",
+    state.unshielded.address
+  ).asString();
+  const senderNight = state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
+
+  console.log(`Sender (genesis):       ${senderBech32}`);
+  console.log(`Sender NIGHT balance:   ${senderNight}`);
+  console.log(`Recipient:              ${recipientBech32}`);
+  console.log(`Amount:                 ${amount}`);
+
+  // ─── Step 7: Build transfer recipe ───────────────────────────────────────
+
+  const outputs: CombinedTokenTransfer[] = [
+    {
+      type: "unshielded",
+      outputs: [
+        {
+          type: NIGHT_TOKEN_TYPE,
+          receiverAddress: recipientUnshielded,
+          amount,
+        },
+      ],
+    },
+  ];
+
+  const ttl = new Date(Date.now() + 60 * 60 * 1000); // 1-hour TTL
+
+  let recipe;
+  try {
+    recipe = await wallet.transferTransaction(
+      outputs,
+      { shieldedSecretKeys, dustSecretKey },
+      { ttl }
+    );
+  } catch (err) {
+    console.error(`Error: transferTransaction failed: ${err}`);
+    await wallet.stop();
+    process.exit(1);
+  }
+
+  // ─── Step 8: Sign the recipe ──────────────────────────────────────────────
+  // For unshielded NIGHT transfers the recipe needs a signature from the
+  // sender's unshielded signing key. The keystore exposes signData() which
+  // wraps ledger.signData with the derived secret key.
+
+  let signedRecipe;
+  try {
+    signedRecipe = await wallet.signRecipe(recipe, (payload) =>
+      unshieldedKeystore.signData(payload)
+    );
+  } catch (err) {
+    console.error(`Error: signRecipe failed: ${err}`);
+    await wallet.stop();
+    process.exit(1);
+  }
+
+  // ─── Step 9: Finalize (prove) ─────────────────────────────────────────────
+
+  let finalizedTx;
+  try {
+    finalizedTx = await wallet.finalizeRecipe(signedRecipe);
+  } catch (err) {
+    console.error(`Error: finalizeRecipe failed: ${err}`);
+    await wallet.stop();
+    process.exit(1);
+  }
+
+  // ─── Step 10: Submit ──────────────────────────────────────────────────────
+
+  let txId;
+  try {
+    txId = await wallet.submitTransaction(finalizedTx);
+  } catch (err) {
+    console.error(`Error: submitTransaction failed: ${err}`);
+    await wallet.stop();
+    process.exit(1);
+  }
+
+  console.log(`Submitted transaction:  ${txId}`);
+
+  await wallet.stop();
+  process.exit(0);
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
