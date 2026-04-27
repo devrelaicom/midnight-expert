@@ -15,7 +15,6 @@ SERVERS=(
   "midnight|midnight|claude mcp add midnight -- npx -y github:devrelaicom/midnight-mcp|compact-core"
   "octocode|octocode|claude mcp add octocode-mcp -- npx octocode-mcp|midnight-tooling, midnight-verify, midnight-fact-check"
   "midnight-devnet|midnight-devnet|claude mcp add midnight-devnet -- npx -y @aaronbassett/midnight-local-devnet|midnight-tooling"
-  "midnight-wallet|midnight-wallet|claude mcp add midnight-wallet -- npx -y -p midnight-wallet-cli@latest midnight-wallet-mcp|midnight-wallet"
 )
 
 mcp_list="$(claude mcp list 2>&1)" || mcp_list=""
