@@ -184,6 +184,9 @@ When a transaction fails or needs to be abandoned, reverting releases locked UTX
 
 Reverting happens automatically on `finalizeTransaction` failure and `submitTransaction` failure. The facade also subscribes to the pending transactions service and auto-reverts any transactions that fail after submission.
 
+> **See also:** `errors-and-troubleshooting.md` for the per-wallet
+> error types thrown when finalize or submit fails.
+
 ## Swap Initialization
 
 `initSwap` creates a swap offer transaction:
@@ -204,14 +207,15 @@ const recipe = await wallet.initSwap(
 Two methods provide access to transaction history:
 
 - **`queryTxHistoryByHash(hash)`** -- looks up a single transaction by its hash. Returns `Promise<WalletEntry | undefined>`.
-- **`getAllFromTxHistory()`** -- returns an `AsyncIterableIterator<WalletEntry>` over all stored transaction history entries.
+- **`getAllFromTxHistory()`** -- returns a `Promise<WalletEntry[]>` resolving to all stored transaction history entries as a plain array.
 
 ```typescript
 // Single lookup
 const entry = await wallet.queryTxHistoryByHash(txHash);
 
-// Iterate all history
-for await (const entry of wallet.getAllFromTxHistory()) {
+// Retrieve all history
+const entries = await wallet.getAllFromTxHistory();
+for (const entry of entries) {
   console.log(entry);
 }
 ```

@@ -154,3 +154,14 @@ The `UnshieldedKeystore` interface provides:
 > **See also:** [key-derivation.md](key-derivation.md) for how secret keys are
 > derived from seed phrases, and [wallet-construction.md](wallet-construction.md)
 > for passing the keystore to the wallet builder.
+
+## Customizing the wallet's services
+
+`WalletFacade.init` accepts factory functions for `submissionService`,
+`pendingTransactionsService`, and `provingService`. The default
+implementations come from `@midnight-ntwrk/wallet-sdk-capabilities`.
+
+To customize a service (e.g. swap the HTTP prover for the WASM prover,
+add metrics to submission, or use a custom pending-transactions store),
+see `capabilities-deep-dive.md` for the full sub-export list and
+factory signatures.

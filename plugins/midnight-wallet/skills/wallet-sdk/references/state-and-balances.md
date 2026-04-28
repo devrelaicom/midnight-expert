@@ -50,9 +50,11 @@ sub.unsubscribe();
 For a one-shot wait until the wallet is fully synced, use `waitForSyncedState()`:
 
 ```typescript
+import * as ledger from '@midnight-ntwrk/ledger-v8';
+
 const state: FacadeState = await wallet.waitForSyncedState();
 // state.isSynced is guaranteed true
-console.log('Shielded NIGHT:', state.shielded.balances['']);
+console.log('Shielded NIGHT:', state.shielded.balances[ledger.nativeToken().raw]);
 ```
 
 Each individual wallet also exposes `waitForSyncedState(allowedGap?)` which accepts an optional `allowedGap` parameter (defaults to `0n`, meaning strictly complete).
@@ -72,10 +74,12 @@ Each individual wallet also exposes `waitForSyncedState(allowedGap?)` which acce
 | `address` | `UnshieldedAddress` | The wallet's unshielded address |
 | `progress` | `SyncProgress` | Current sync status |
 
-The `balances` record is keyed by `RawTokenType`. The **empty string `""`** key represents the native NIGHT token. All amounts are `bigint` values in the smallest denomination: **6 decimal places**, so `1_000_000n` equals 1 NIGHT.
+The `balances` record is keyed by `RawTokenType`. The native NIGHT token is keyed by its raw bytes — a 64-zero hex string — accessible via `ledger.nativeToken().raw`. The empty string `""` is **NOT** the native token key; `balances[""]` returns `undefined`. All amounts are `bigint` values in the smallest denomination: **6 decimal places**, so `1_000_000n` equals 1 NIGHT.
 
 ```typescript
-const nightBalance = state.unshielded.balances[''];
+import * as ledger from '@midnight-ntwrk/ledger-v8';
+
+const nightBalance = state.unshielded.balances[ledger.nativeToken().raw];
 const nightAsDecimal = Number(nightBalance) / 1_000_000;
 console.log(`Unshielded NIGHT: ${nightAsDecimal}`);
 ```
@@ -95,7 +99,7 @@ console.log(`Unshielded NIGHT: ${nightAsDecimal}`);
 | `address` | `ShieldedAddress` | The wallet's shielded address |
 | `progress` | `SyncProgress` | Current sync status |
 
-The same `""` key and `bigint` denomination rules apply. Shielded balances are privacy-preserving: they are only visible to the wallet holder. On-chain observers cannot see shielded coin values or link them to an address.
+The same `ledger.nativeToken().raw` key and `bigint` denomination rules apply. Shielded balances are privacy-preserving: they are only visible to the wallet holder. On-chain observers cannot see shielded coin values or link them to an address.
 
 ### Dust
 
@@ -114,6 +118,16 @@ The same `""` key and `bigint` denomination rules apply. Shielded balances are p
 | `estimateDustGeneration(nightUtxos, currentTime)` | `readonly UtxoWithFullDustDetails[]` | Estimate DUST yield from NIGHT UTXOs |
 
 The time parameter is required because DUST tokens have an expiry. Calling `balance(new Date())` gives you the current valid balance, excluding any expired DUST.
+
+### Clock injection
+
+The wallet accepts an optional `Clock` (`{ readonly now: () => Date }`)
+during construction so that `state.dust.balance(time)` and other
+time-sensitive operations can use a deterministic time source. This is
+useful for tests where you want to control "now". The `Clock` is set
+on `WalletFacade.init`'s configuration (see `wallet-construction.md`).
+The default clock is `systemClock` (exported from `@midnight-ntwrk/wallet-sdk-facade`),
+which delegates to `new Date()`.
 
 ```typescript
 const dustBalance = state.dust.balance(new Date());
