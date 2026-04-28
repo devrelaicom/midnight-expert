@@ -179,6 +179,10 @@ Guides creation of new Midnight projects using create-mn-app, covering template 
 | [project-structure](skills/compact-init-project/references/project-structure.md) | Project layouts, SDK versions, and network URLs | When understanding the generated project structure |
 | [troubleshooting](skills/compact-init-project/references/troubleshooting.md) | Common init failures and fixes | When scaffolding fails or produces errors |
 
+### compact-core:basic-start
+
+Step-by-step procedural walkthrough that takes you from zero to a working Midnight DApp on a local devnet, verifying your environment along the way. Output is ephemeral and intended for environment verification and familiarity-building, not retention.
+
 ### compact-core:compact-review
 
 Review checklists for 10 categories of Compact smart contract review. Each reference file provides a focused checklist for one review dimension.
