@@ -1,6 +1,6 @@
 {
   "name": "midnight-status-codes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Catalog and lookup for all Midnight ecosystem error codes, status codes, and error types across the node, ledger, indexer, wallet, SDK, compiler, proof server, and DApp connector.",
   "author": {
     "name": "Aaron Bassett",
