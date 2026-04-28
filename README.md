@@ -58,7 +58,8 @@ claude plugin install --scope user midnight-expert@midnight-expert
 /midnight-expert:doctor
 ```
 
-The `--scope user` flag installs the plugin **globally for your user** so it's available in every project. Drop the flag to install only for the current project.
+> [!IMPORTANT]
+> Use `--scope user` to install the plugin **globally for your user** (available in every project), `--scope project` to install only for the current project, or `--scope local` for an unmanaged local install.
 
 > [!TIP]
 > Updates are published to [`midnightntwrk.expert`](https://midnightntwrk.expert/) **3–5 days after they're merged into the GitHub repository**. The delay gives the community time for public testing and feedback. If you'd rather live on the bleeding edge, use the GitHub repo directly as your marketplace address — substitute `devrelaicom/midnight-expert` for `https://midnightntwrk.expert/` anywhere it appears in the manual install instructions above.
@@ -69,47 +70,123 @@ You can install any plugin from inside Claude Code with `/plugin`, or from the t
 
 ### Smart Contract Development
 
-| | Plugin | Description |
-|---|--------|-------------|
-| <img src="plugins/compact-core/assets/mascot.png" width="80" /> | **[compact-core](plugins/compact-core/)** | Core knowledge for writing Compact — contract structure, data types, ledger declarations, circuits, witnesses, privacy/disclosure rules, tokens, circuit costs, debugging, and code review.<pre lang="bash">claude plugin install --scope user compact-core@midnight-expert</pre> |
-| <img src="plugins/compact-examples/assets/mascot.png" width="80" /> | **[compact-examples](plugins/compact-examples/)** | Compilable Compact examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests, all at `pragma language_version >= 0.22`.<pre lang="bash">claude plugin install --scope user compact-examples@midnight-expert</pre> |
-| <img src="plugins/compact-cli-dev/assets/mascot.png" width="80" /> | **[compact-cli-dev](plugins/compact-cli-dev/)** | Scaffold and develop Oclif CLIs for Compact contracts — wallet management, contract deployment, devnet control, plus an agent for ongoing CLI work.<pre lang="bash">claude plugin install --scope user compact-cli-dev@midnight-expert</pre> |
-
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/compact-core/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/compact-core/">compact-core</a></strong></td>
+    <td>Core knowledge for writing Compact — contract structure, data types, ledger declarations, circuits, witnesses, privacy/disclosure rules, tokens, circuit costs, debugging, and code review.<pre lang="bash">claude plugin install --scope user compact-core@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/compact-examples/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/compact-examples/">compact-examples</a></strong></td>
+    <td>Compilable Compact examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests, all at <code>pragma language_version >= 0.22</code>.<pre lang="bash">claude plugin install --scope user compact-examples@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/compact-cli-dev/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/compact-cli-dev/">compact-cli-dev</a></strong></td>
+    <td>Scaffold and develop Oclif CLIs for Compact contracts — wallet management, contract deployment, devnet control, plus an agent for ongoing CLI work.<pre lang="bash">claude plugin install --scope user compact-cli-dev@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
 ### DApp Development
 
-| | Plugin | Description |
-|---|--------|-------------|
-| <img src="plugins/midnight-dapp-dev/assets/mascot.png" width="80" /> | **[midnight-dapp-dev](plugins/midnight-dapp-dev/)** | Scaffold and build Midnight DApp frontends — Vite + React 19 + shadcn + Tailwind v4 templates, wallet integration, provider architecture, and a development agent for ongoing UI work.<pre lang="bash">claude plugin install --scope user midnight-dapp-dev@midnight-expert</pre> |
-
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/midnight-dapp-dev/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-dapp-dev/">midnight-dapp-dev</a></strong></td>
+    <td>Scaffold and build Midnight DApp frontends — Vite + React 19 + shadcn + Tailwind v4 templates, wallet integration, provider architecture, and a development agent for ongoing UI work.<pre lang="bash">claude plugin install --scope user midnight-dapp-dev@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
 ### Testing & Code Quality
 
-| | Plugin | Description |
-|---|--------|-------------|
-| <img src="plugins/midnight-cq/assets/mascot.png" width="80" /> | **[midnight-cq](plugins/midnight-cq/)** | Code quality tooling for Midnight projects — linting, formatting, type checking, contract/DApp/ledger/wallet testing, Git hooks, and CI workflows.<pre lang="bash">claude plugin install --scope user midnight-cq@midnight-expert</pre> |
-| <img src="plugins/midnight-verify/assets/mascot.png" width="80" /> | **[midnight-verify](plugins/midnight-verify/)** | Verification framework for Midnight claims — compile + execute Compact, type-check SDK code, run ZKIR through the WASM checker, cross-check witness implementations, and inspect compiler/ledger/wallet source. Multi-agent pipeline behind `/verify`.<pre lang="bash">claude plugin install --scope user midnight-verify@midnight-expert</pre> |
-| <img src="plugins/midnight-fact-check/assets/mascot.png" width="80" /> | **[midnight-fact-check](plugins/midnight-fact-check/)** | Fact-checking pipeline for Midnight content — extracts testable claims from markdown, code, PDFs, URLs or GitHub repos, classifies them by domain, verifies each via `midnight-verify`, and produces structured reports.<pre lang="bash">claude plugin install --scope user midnight-fact-check@midnight-expert</pre> |
-
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/midnight-cq/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-cq/">midnight-cq</a></strong></td>
+    <td>Code quality tooling for Midnight projects — linting, formatting, type checking, contract/DApp/ledger/wallet testing, Git hooks, and CI workflows.<pre lang="bash">claude plugin install --scope user midnight-cq@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-verify/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-verify/">midnight-verify</a></strong></td>
+    <td>Verification framework for Midnight claims — compile + execute Compact, type-check SDK code, run ZKIR through the WASM checker, cross-check witness implementations, and inspect compiler/ledger/wallet source. Multi-agent pipeline behind <code>/verify</code>.<pre lang="bash">claude plugin install --scope user midnight-verify@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-fact-check/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-fact-check/">midnight-fact-check</a></strong></td>
+    <td>Fact-checking pipeline for Midnight content — extracts testable claims from markdown, code, PDFs, URLs or GitHub repos, classifies them by domain, verifies each via <code>midnight-verify</code>, and produces structured reports.<pre lang="bash">claude plugin install --scope user midnight-fact-check@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
 ### Toolchain & Infrastructure
 
-| | Plugin | Description |
-|---|--------|-------------|
-| <img src="plugins/midnight-tooling/assets/mascot.png" width="80" /> | **[midnight-tooling](plugins/midnight-tooling/)** | Install, configure, and manage the Compact CLI, the local devnet (node, indexer, proof server), compiler version switching, diagnostics, and ecosystem release notes.<pre lang="bash">claude plugin install --scope user midnight-tooling@midnight-expert</pre> |
-| <img src="plugins/midnight-wallet/assets/mascot.png" width="80" /> | **[midnight-wallet](plugins/midnight-wallet/)** | Wallet SDK reference, test-wallet management patterns, and SDK regression checking for Midnight Network development.<pre lang="bash">claude plugin install --scope user midnight-wallet@midnight-expert</pre> |
-| <img src="plugins/midnight-status-codes/assets/mascot.png" width="80" /> | **[midnight-status-codes](plugins/midnight-status-codes/)** | Catalog and lookup for every Midnight error code, status code, and tagged error across the node, ledger, indexer, wallet, SDK, compiler, proof server, and DApp connector.<pre lang="bash">claude plugin install --scope user midnight-status-codes@midnight-expert</pre> |
-
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/midnight-tooling/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-tooling/">midnight-tooling</a></strong></td>
+    <td>Install, configure, and manage the Compact CLI, the local devnet (node, indexer, proof server), compiler version switching, diagnostics, and ecosystem release notes.<pre lang="bash">claude plugin install --scope user midnight-tooling@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-wallet/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-wallet/">midnight-wallet</a></strong></td>
+    <td>Wallet SDK reference, test-wallet management patterns, and SDK regression checking for Midnight Network development.<pre lang="bash">claude plugin install --scope user midnight-wallet@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-status-codes/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-status-codes/">midnight-status-codes</a></strong></td>
+    <td>Catalog and lookup for every Midnight error code, status code, and tagged error across the node, ledger, indexer, wallet, SDK, compiler, proof server, and DApp connector.<pre lang="bash">claude plugin install --scope user midnight-status-codes@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
 ### Knowledge & Education
 
-| | Plugin | Description |
-|---|--------|-------------|
-| <img src="plugins/core-concepts/assets/mascot.png" width="80" /> | **[core-concepts](plugins/core-concepts/)** | Conceptual foundations for the Midnight Network — architecture, data models, privacy patterns, protocols (Kachina, Zswap), tokenomics, and zero-knowledge proofs.<pre lang="bash">claude plugin install --scope user core-concepts@midnight-expert</pre> |
-
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/core-concepts/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/core-concepts/">core-concepts</a></strong></td>
+    <td>Conceptual foundations for the Midnight Network — architecture, data models, privacy patterns, protocols (Kachina, Zswap), tokenomics, and zero-knowledge proofs.<pre lang="bash">claude plugin install --scope user core-concepts@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
 ### Meta
 
-| | Plugin | Description |
-|---|--------|-------------|
-| <img src="plugins/midnight-expert/assets/mascot.png" width="80" /> | **[midnight-expert](plugins/midnight-expert/)** | Ecosystem diagnostics — health-checks plugin installation, MCP server connectivity, external CLI tools, cross-plugin references, and NPM registry access in one report.<pre lang="bash">claude plugin install --scope user midnight-expert@midnight-expert</pre> |
-| <img src="plugins/midnight-plugin-utils/assets/mascot.png" width="80" /> | **[midnight-plugin-utils](plugins/midnight-plugin-utils/)** | Audits and resolves Claude plugin dependencies — validates installed plugins against `extends-plugin.json` declarations and resolves install paths with fuzzy matching.<pre lang="bash">claude plugin install --scope user midnight-plugin-utils@midnight-expert</pre> |
-
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/midnight-expert/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-expert/">midnight-expert</a></strong></td>
+    <td>Ecosystem diagnostics — health-checks plugin installation, MCP server connectivity, external CLI tools, cross-plugin references, and NPM registry access in one report.<pre lang="bash">claude plugin install --scope user midnight-expert@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-plugin-utils/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-plugin-utils/">midnight-plugin-utils</a></strong></td>
+    <td>Audits and resolves Claude plugin dependencies — validates installed plugins against <code>extends-plugin.json</code> declarations and resolves install paths with fuzzy matching.<pre lang="bash">claude plugin install --scope user midnight-plugin-utils@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
 ## Example Prompts
 
 Most of the time you don't need to remember a slash command — once a plugin is installed, its skills activate based on what you're asking for. A few starting points:
