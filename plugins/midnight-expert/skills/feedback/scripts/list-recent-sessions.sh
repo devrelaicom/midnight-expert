@@ -63,8 +63,9 @@ while IFS= read -r path; do
   branch="$(printf '%s' "$first" | jq -r '.gitBranch // null')"
   prompt="$(printf '%s' "$first" | jq -r '.message.content' | head -c 200)"
 
-  # Last entry's timestamp: endedAt.
-  ended="$(jq -c -s 'last | (.timestamp // null)' "$path" 2>/dev/null || echo null)"
+  # Last entry's timestamp: endedAt. (tail+jq is O(1) memory; jq -s reads whole file.)
+  last_line="$(tail -n 1 "$path" 2>/dev/null || true)"
+  ended="$(printf '%s' "$last_line" | jq -c '.timestamp // null' 2>/dev/null || echo null)"
 
   entry="$(jq -nc \
     --arg sid "$sid" \
