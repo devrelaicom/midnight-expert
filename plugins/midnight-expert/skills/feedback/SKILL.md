@@ -114,7 +114,7 @@ Apply the rubric to produce a JSON object matching this exact schema:
 
 Save it to `/tmp/feedback-inference.json` using the Write tool. Do not include any prose around the JSON.
 
-If your output is unparseable, retry once with stricter framing. If still unparseable, save the prose to a draft and abort:
+If your output is unparseable, retry once. On the retry, prepend this exact instruction to your reasoning context: *"Output ONLY the JSON object — no markdown fences, no commentary, no leading or trailing whitespace, no explanatory text. The very first character of your output must be `{` and the last must be `}`."* If still unparseable after the retry, save the prose to a draft and abort:
 
 ```bash
 DRAFT_DIR="${CLAUDE_PLUGIN_DATA}/.feedback/drafts"
