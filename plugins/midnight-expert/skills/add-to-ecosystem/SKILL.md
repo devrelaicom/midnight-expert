@@ -137,4 +137,217 @@ Print:
 
 Set `branch_state = "existing-branch"`.
 
-(Phases 4–6 added in Task 8.)
+## Phase 4 — Topics
+
+Compare `existing_topics` (from Phase 2) to required topics.
+
+### `midnightntwrk` (mandatory)
+
+If `"midnightntwrk"` is **not** in `existing_topics`:
+
+```bash
+gh repo edit "$OWNER_REPO" --add-topic midnightntwrk
+```
+
+Print: `[FIX] Added topic 'midnightntwrk'`.
+
+If already present: print `[OK] Topic 'midnightntwrk' present`.
+
+### `compact` (conditional)
+
+Run the project detection script:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/detect-project.sh"
+```
+
+Parse the JSON output. Read `recommendation.add_compact_topic`. The signal-to-recommendation rules are documented in `references/project-categorisation.md` — refer to it if you need to explain the recommendation to the user.
+
+Use `AskUserQuestion`:
+
+> "Does this project use Compact?"
+
+Options (mark the recommended one):
+
+1. `"Yes, add 'compact' topic"` — recommended if `add_compact_topic == true`
+2. `"No, skip 'compact' topic"` — recommended if `add_compact_topic == false`
+3. `"Cancel"` — abort the skill
+
+If the user picks option 1 and `"compact"` is not already in `existing_topics`:
+
+```bash
+gh repo edit "$OWNER_REPO" --add-topic compact
+```
+
+Print `[FIX] Added topic 'compact'` or `[OK] Topic 'compact' present` accordingly.
+
+If `gh repo edit` fails (e.g., the user lacks admin permission), surface the error and continue to Phase 5 — don't abort. Topic edits are independent of the README work.
+
+## Phase 5 — README attribution
+
+Snapshot the working tree's modified paths **before** doing anything to the README:
+
+```bash
+git diff --name-only > /tmp/add-to-ecosystem-pre-snapshot.txt
+git diff --cached --name-only >> /tmp/add-to-ecosystem-pre-snapshot.txt
+```
+
+Persist this list as `readme_pre_dirty_paths`.
+
+Run the README check:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/check-readme.sh"
+```
+
+Parse the JSON.
+
+**If `present == true`**: print `[OK] README contains the "$matched_sentence" attribution.` and skip to the summary (no Phase 6 work — `made_readme_change` stays false).
+
+**If `present == false`**: continue.
+
+Run detection again (cached value from Phase 4 is fine) to get `recommendation.category`. Translate to display text using `references/ec-criteria.md`:
+
+| `category` | Display label | Sentence |
+|---|---|---|
+| `built-on` | "Built on Midnight" | `This project is built on the Midnight Network.` |
+| `integrates` | "Integrates with Midnight" | `This project integrates with the Midnight Network.` |
+| `extends` | "Extends Midnight" | `This project extends the Midnight Network with additional developer tooling.` |
+
+Use `AskUserQuestion` with the question:
+
+> "Pick the attribution sentence for this project's README. (Recommended: $RECOMMENDED_LABEL)"
+
+Show all three options (each labelled with the category and the verbatim sentence) plus a fourth `"Cancel"` option. Mark the recommendation. The user is free to override.
+
+If the user picks `Cancel`, abort the skill cleanly with a summary of what's been done so far.
+
+Otherwise, build the alert block:
+
+```
+> [!NOTE]
+> {chosen sentence}
+```
+
+with one blank line before and one blank line after.
+
+Decide the insertion point using the JSON from `check-readme.sh`:
+
+- `placement == "top-of-file"`:
+  - File doesn't exist: write the alert + `\n` to a new `README.md`.
+  - File exists and is empty: write the alert + `\n`.
+  - File exists with content: prepend the alert (alert + blank line + existing content).
+- `placement == "after-title-block"`: insert the alert at line `title_block_end_line + 1` (1-indexed). Ensure exactly one blank line precedes and follows.
+- `placement == "ambiguous"`: use `AskUserQuestion` with options:
+  1. `"Insert after the H1 title (line $FIRST_H1)"` — recommended
+  2. `"Insert at the very top of the file"`
+  3. `"I'll add it myself — skip the README edit"`
+  Apply the chosen action, or skip if option 3.
+
+For all in-file edits, prefer the `Edit` tool with a unique `old_string` (use a few lines of surrounding context from `README.md` to make it unique). Do not use `sed -i` — it's not portable and obscures the change.
+
+After writing the file, set `made_readme_change = true` and persist the chosen `category` and `sentence` for the commit message.
+
+Print: `[FIX] Inserted "$category" attribution into README.md.`
+
+## Phase 6 — Commit, push, PR
+
+If `made_readme_change == false`, skip this phase entirely — print the summary and stop.
+
+### 6a — Detect commit convention
+
+```bash
+git log --oneline -30 --no-merges
+```
+
+For each line, strip the leading SHA and check whether the message starts with one of: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`, `revert` (optionally followed by `(scope)`), then `:`. Count matches.
+
+If matches / total ≥ 0.6, set `commit_convention = "conventional"`. Else `"freeform"`.
+
+Build the commit message:
+
+- `conventional`:
+  ```
+  docs: add Midnight Network attribution for Electric Capital
+
+  Adds the canonical Electric Capital attribution sentence to README.md.
+  ```
+- `freeform`:
+  ```
+  Add Midnight Network attribution for Electric Capital
+
+  Adds the canonical Electric Capital attribution sentence to README.md.
+  ```
+
+### 6b — Stage only this skill's changes, with safety check
+
+If `README.md` appears in `readme_pre_dirty_paths` (the user already had unstaged changes there before the skill ran), abort the commit:
+
+> "`README.md` had uncommitted changes before the skill ran. The skill won't mix its edits with yours. Commit or stash your changes manually, then re-run, or commit the skill's work yourself."
+
+Otherwise:
+
+```bash
+git add README.md
+```
+
+Use `AskUserQuestion`:
+
+> "Commit the README change?"
+
+Options:
+1. `"Commit with this message"` (show the message; recommended)
+2. `"Edit the message"` — ask the user for replacement text via a follow-up `AskUserQuestion` free-text prompt
+3. `"Skip — I'll commit myself"`
+
+If the user skips, leave the file staged and jump to the summary.
+
+If the user commits, run:
+
+```bash
+git commit -m "$COMMIT_MESSAGE"
+```
+
+(Use a heredoc to preserve the body line.)
+
+### 6c — Push and PR
+
+| `branch_state` | Behaviour |
+|---|---|
+| `existing-branch` | No push, no PR. Print: "Committed to `$CURRENT_BRANCH`. Push when you're ready." |
+| `default-branch` | `AskUserQuestion`: "Push to `origin/$DEFAULT_BRANCH`?" Options: `"Yes, push"`, `"No, I'll push later"`. If yes: `git push`. |
+| `new-branch` | `AskUserQuestion`: "Push and open a PR?" Options: `"Push and open a PR"`, `"Push only"`, `"Neither — I'll handle it"`. If push+PR: `git push -u origin "$CURRENT_BRANCH" && gh pr create --fill`. If push only: `git push -u origin "$CURRENT_BRANCH"`. |
+
+For all push paths use plain `git push` (no `--force`, no `--force-with-lease`). If push fails, surface the error and stop without retrying.
+
+If `gh pr create` fails after a successful push, print the error and a hint:
+
+> "PR creation failed. Branch is pushed; open the PR manually at https://github.com/$OWNER_REPO/pull/new/$CURRENT_BRANCH"
+
+## Final summary
+
+Print a structured summary listing:
+
+- Each EC requirement and whether it's now satisfied (with `[OK]` or `[FIX]` markers).
+- Any actions still pending (e.g., "review and merge the PR", "submit to the Electric Capital `crypto-ecosystems` repo manually").
+- A link to the EC submission process if the user wants to take the next step:
+  > "To submit your project to the Electric Capital report, follow the instructions at https://github.com/electric-capital/crypto-ecosystems"
+
+## Idempotency
+
+Re-running the skill on a fully eligible project must:
+
+1. Pass Phase 1.
+2. Pass Phase 2 (no changes).
+3. Skip the branch question — go straight through Phase 3 (no edits to make).
+4. Phase 4: print `[OK]` for both topics, no `gh repo edit` calls.
+5. Phase 5: detect the existing sentence, print `[OK]`, skip Phase 6.
+6. Print the "already eligible" summary.
+
+No prompts, no edits, no commits.
+
+## Reference files
+
+- `references/ec-criteria.md` — the canonical Electric Capital requirements and the three verbatim attribution sentences. Use this as the source of truth — never paraphrase.
+- `references/project-categorisation.md` — what each detection signal means and how the category is recommended.
+- `references/readme-placement.md` — the placement heuristic with worked examples.
