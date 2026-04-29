@@ -64,7 +64,7 @@ A short tagline that describes the project in one sentence.
 ...
 ```
 
-`first_h1_line: 1`, `title_block_end_line: 5`, `first_h2_line: 7`, `placement: "after-title-block"`. Insert at line 6 (between the tagline and `## Installation`).
+`first_h1_line: 1`, `title_block_end_line: 6`, `first_h2_line: 7`, `placement: "after-title-block"`. Insert at line 7 (`title_block_end_line + 1`); the alert is placed between the trailing blank line and `## Installation`. The walker advances through blank lines that fall inside the title block, so `title_block_end_line` points to the last continuation line (which may be blank), not to the last content line.
 
 ### Banner-only README (common in OSS)
 

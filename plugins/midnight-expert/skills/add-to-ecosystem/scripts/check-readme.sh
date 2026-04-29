@@ -54,6 +54,7 @@ if [ "$EXISTS" = "true" ] && [ -s "$README" ]; then
     line_no=0
     tagline_seen=0
     while IFS= read -r line; do
+      line="${line%$'\r'}"
       line_no=$((line_no+1))
       [ "$line_no" -le "$FIRST_H1" ] && continue
       # Block-end signals

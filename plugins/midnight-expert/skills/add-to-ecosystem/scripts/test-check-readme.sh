@@ -72,6 +72,7 @@ run_case "H1 + badges + tagline + H2" "$F3"
 assert_eq "exists" "true" "$(field '.exists')"
 assert_eq "first_h1_line" "1" "$(field '.first_h1_line')"
 assert_eq "first_h2_line" "7" "$(field '.first_h2_line')"
+assert_eq "title_block_end_line" "6" "$(field '.title_block_end_line')"
 assert_eq "placement" "after-title-block" "$(field '.placement')"
 
 # Fixture 4: HTML banner, no H1
