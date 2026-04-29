@@ -122,4 +122,64 @@ cp /tmp/feedback-prose.txt "$DRAFT_DIR/$(date -u +%Y%m%dT%H%M%SZ)-prose-only.md"
 
 Print: *"I couldn't analyze the feedback. Your prose is saved at <path>. Try again or file manually at https://github.com/devrelaicom/midnight-expert/issues/new"*
 
-(Phase 3 + Phase 4 dispatch in next section.)
+## Phase 3 — Confirm only what's uncertain
+
+Read `/tmp/feedback-inference.json`. Build a single `AskUserQuestion` call with up to 3 questions, each guarded by its confidence:
+
+### Route question
+
+Skip if `route_confidence == "high"`.
+
+- **header**: `Route`
+- **question**: `Is this a bug report or a feature request?`
+- **options**:
+  - `Bug report` (description: "Something isn't working as expected.")
+  - `Feature request` (description: "I'd like a new capability.")
+
+### Session question
+
+Skip if `session_pointer == "current"`.
+
+- **header**: `Session`
+- **question**: `Which session does this relate to?`
+- **options**: build from `session_candidates`. For each `sessionId` listed, an option whose label is `<gitBranch> · <startedAt>` and description is `<firstUserPrompt>` (truncated to ~80 chars). Always include `Current session` as the first option (recommended if `session_candidates` is empty).
+
+### Plugin question
+
+Skip if `plugin_confidence == "high"`.
+
+- **header**: `Plugin`
+- **question**: `Which plugin is this about?`
+- **options**: build from the union of `fromProse + fromFailingTools + activeInSession` in `plugin-candidates.json`. Mark `plugin_label` (if non-null) as recommended. If the candidate list is empty, fall back to a 4-option list of plugins from `environment.json plugins` (top 4 by alphabetical order — better than nothing).
+
+### Submitting the question
+
+If all three are skipped (everything was high-confidence), proceed directly to Phase 4 with the inferred values.
+
+If at least one is asked, send a single message containing the AskUserQuestion. After the user responds, update the inference object with their corrections (in working memory; no file write needed unless you prefer to persist).
+
+## Phase 4 — Dispatch
+
+Based on the (possibly user-corrected) `route`:
+
+- `route == "issue"` → read `${CLAUDE_SKILL_DIR}/references/issue-flow.md` and follow it step by step.
+- `route == "enhancement"` → read `${CLAUDE_SKILL_DIR}/references/enhancement-flow.md` and follow it step by step.
+
+The hub does not duplicate route procedures inline. Each reference file is self-contained and uses the values already produced by Phases 0–3 (prose, JSONL path, environment, inference).
+
+## Cleanup
+
+After the route flow returns:
+
+- Delete `/tmp/feedback-prose.txt`, `/tmp/feedback-environment.json`, `/tmp/feedback-recent-sessions.json`, `/tmp/feedback-failure-signature.json`, `/tmp/feedback-plugin-candidates.json`, `/tmp/feedback-inference.json` if they still exist.
+- Do NOT delete anything in `${CLAUDE_PLUGIN_DATA}/.feedback/drafts/` — those are user-visible artifacts.
+
+## End-state
+
+The skill has either:
+
+- Filed an issue or enhancement (URL printed)
+- Saved a draft on `gh` failure (path printed, paste-ready command printed)
+- Aborted cleanly (no draft, brief message)
+
+In all cases, return control to the user.
