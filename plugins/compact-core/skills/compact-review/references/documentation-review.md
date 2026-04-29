@@ -2,18 +2,9 @@
 
 Review checklist for the **Documentation** category. This covers contract-level documentation, circuit documentation, ledger state documentation, witness documentation, and privacy documentation. Well-documented contracts are easier to audit, maintain, and integrate with. Poor documentation hides intent, makes review harder, and increases the chance that bugs go unnoticed because reviewers cannot tell what the code is supposed to do. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation output reveals contract structure for documentation completeness analysis |
-| `midnight-extract-contract-structure` | `[shared]` | Lists all exported circuits, ledger variables, witnesses — the definitive inventory for documentation coverage |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of contract patterns and structure |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for verifying documentation accuracy |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Contract-Level Documentation Checklist
 
@@ -121,7 +112,7 @@ Check that every exported circuit and complex internal circuit has documentation
 
 - [ ] **Every exported circuit has a comment explaining its purpose.** An `export circuit` is part of the contract's public API. Anyone interacting with the contract needs to understand what each circuit does. The comment should describe the high-level action, not repeat the code line-by-line.
 
-  > **Tool:** `midnight-extract-contract-structure` lists all exported circuits. Use this as your definitive checklist — every exported circuit must have documentation.
+  > **Tool:** Read the contract source to list all exported circuits. Use this as your definitive checklist — every exported circuit must have documentation.
 
   ```compact
   // BAD — no documentation on exported circuit
@@ -312,7 +303,7 @@ Check that every ledger variable has documentation explaining its purpose, visib
 
 - [ ] **Every ledger variable has a comment explaining its purpose.** Ledger variables are the persistent state of the contract. Each one should have a brief comment explaining what it stores and why. Type alone does not convey purpose: a `Map<Bytes<32>, Field>` could be balances, vote counts, bid amounts, or timestamps. The comment disambiguates.
 
-  > **Tool:** `midnight-extract-contract-structure` lists all ledger variable declarations with their types and visibility modifiers. Use this as your checklist for documentation coverage.
+  > **Tool:** Read the contract source to list all ledger variable declarations with their types and visibility modifiers. Use this as your checklist for documentation coverage.
 
   ```compact
   // BAD — ledger variables with no documentation; purpose unclear
@@ -439,7 +430,7 @@ Check that every witness declaration in the Compact contract has documentation e
 
 - [ ] **Every witness declaration has a comment explaining what data it provides.** A witness declaration in Compact is a function signature with no body. The implementation lives in TypeScript. Without documentation on the Compact side, a reviewer must switch to the TypeScript file to understand what the witness does. Each witness should have a brief comment explaining what data it supplies and from where.
 
-  > **Tool:** `midnight-extract-contract-structure` lists all witness declarations. Use this to verify every witness has documentation. `midnight-search-docs` can provide context on standard witness patterns and WitnessContext documentation.
+  > **Tool:** Read the contract source to list all witness declarations. Use this to verify every witness has documentation. Use `octocode` to search the LFDT-Minokawa/compact repository for standard witness patterns and WitnessContext documentation.
 
   ```compact
   // BAD — witness declarations with no documentation
@@ -641,7 +632,7 @@ Check that the contract includes documentation explaining its privacy model: wha
 
 - [ ] **Privacy documentation covers the full data lifecycle.** Privacy analysis should cover data at rest (ledger state), data in motion (circuit parameters, return values, disclosed values), and data derivation (what can be inferred from public state changes over time). A common oversight is documenting what is private within a single transaction but ignoring what can be inferred from observing multiple transactions over time.
 
-  > **Tool:** `midnight-extract-contract-structure` identifies all `disclose()` calls, ledger writes, and data flow patterns. Use this to verify the privacy documentation covers every disclosure point. `midnight-search-docs` has guidance on documenting privacy models.
+  > **Tool:** Read the contract source to identify all `disclose()` calls, ledger writes, and data flow patterns. Use this to verify the privacy documentation covers every disclosure point.
 
   ```compact
   // BAD — privacy documented only for individual circuits, not lifecycle
@@ -684,12 +675,3 @@ Quick reference of common documentation anti-patterns in Compact contracts.
 | Documentation only covers happy path | No mention of what happens when assertions fail, when state is missing, or when preconditions are not met | Document failure modes, error conditions, and edge cases |
 | Stale documentation that contradicts the code | Worse than no documentation; misleads reviewers into believing incorrect behavior | Update documentation whenever code changes; review docs as part of code review |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Reveals complete contract structure. |
-| `midnight-extract-contract-structure` | Lists all exported circuits, ledger variables, witnesses, and data flow — the definitive inventory for documentation coverage analysis. |
-| `midnight-analyze-contract` | Static analysis of contract patterns for architectural documentation. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference for verifying technical accuracy of documentation. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation for documentation standards and privacy model guidance. |

@@ -81,7 +81,7 @@ If the template directory is not found, report the error and stop.
 Invoke the template engine via stdin/stdout. Construct the JSON input with the template directory, output directory, and context object:
 
 ```bash
-echo '{"template":"<TEMPLATE_DIR>","output":"<directory>","context":{"PROJECT_NAME":"...","CLI_PACKAGE_NAME":"...","CONTRACT_NAME":"...","CONTRACT_PACKAGE":"...","CONTRACT_ZK_CONFIG_PATH":"...","GENERATED_AT":"..."}}' | npx @aaronbassett/template-engine
+echo '{"template":"<TEMPLATE_DIR>","output":"<directory>","context":{"PROJECT_NAME":"...","CLI_PACKAGE_NAME":"...","CONTRACT_NAME":"...","CONTRACT_PACKAGE":"...","CONTRACT_ZK_CONFIG_PATH":"...","GENERATED_AT":"..."}}' | npx --ignore-scripts @aaronbassett/template-engine
 ```
 
 The template engine will:
@@ -89,7 +89,7 @@ The template engine will:
 - Substitute `{{VARIABLE}}` placeholders in `.tmpl` files and rename them (removing `.tmpl`)
 - Copy non-template files as-is
 
-Parse the stdout JSON result. It returns `{"success": true, "filesCreated": [...]}` on success. If it fails, the stderr will contain the error message -- report it to the user.
+Parse the stdout JSON result. On success it returns `{"output": "<absolute path>", "files": <number>}` where `output` is the resolved output directory and `files` is the count of files created. If it fails, the process exits with code 1 and stderr contains a JSON error like `{"error": "<message>"}` -- report the error message to the user.
 
 ## Step 6 -- Post-Scaffold Setup
 

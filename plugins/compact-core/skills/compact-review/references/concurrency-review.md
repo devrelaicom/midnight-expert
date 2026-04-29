@@ -2,18 +2,9 @@
 
 Review checklist for the **Concurrency & Contention** category. Midnight processes transactions concurrently, and two transactions that read-then-write the same ledger state will conflict — only the first to land succeeds, and the rest fail. This review identifies contention-prone patterns and recommends conflict-free alternatives. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation output helps identify ledger operation patterns |
-| `midnight-extract-contract-structure` | `[shared]` | Identifies data structure declarations and usage patterns |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of contention-prone patterns |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for ADT operation semantics |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Read-Then-Write Contention Checklist
 
@@ -38,7 +29,7 @@ Check every exported circuit for patterns where state is read and then written b
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` shows all `Counter` operations. Look for `.read()` calls followed by manual writes to the same variable.
+  > **Tool:** Read the contract source to find all `Counter` operations. Look for `.read()` calls followed by manual writes to the same variable.
 
 - [ ] **Map read-modify-write pattern.** Reading a value from a `Map`, computing a new value from it, and writing it back to the same key creates contention when two transactions target the same key. Both transactions read the same value, compute derived values, and race to write — only one succeeds.
 
@@ -77,7 +68,7 @@ Check every exported circuit for patterns where state is read and then written b
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` lists all exported circuits and their ledger operations. Cross-reference reads and writes to the same variables within each circuit.
+  > **Tool:** Read the contract source to list all exported circuits and their ledger operations. Cross-reference reads and writes to the same variables within each circuit.
 
 ## ADT Contention Properties Checklist
 
@@ -143,7 +134,7 @@ Check each ledger data structure usage for its inherent contention characteristi
   export ledger members: HistoricMerkleTree<16, Bytes<32>>;
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies all MerkleTree declarations. Check whether `HistoricMerkleTree` is used where concurrent inserts are expected. `midnight-search-docs` has guidance on choosing between `MerkleTree` and `HistoricMerkleTree`.
+  > **Tool:** Read the contract source to identify all MerkleTree declarations. Check whether `HistoricMerkleTree` is used where concurrent inserts are expected.
 
 - [ ] **`List.pushFront(value)` — conflicts when concurrent pushes occur.** List ordering is significant. When two transactions push concurrently, they conflict because the resulting list depends on insertion order. If ordering is not important, consider whether a Set or Map would be more appropriate.
 
@@ -308,12 +299,3 @@ Quick reference of common concurrency anti-patterns in Compact contracts.
 | `List.pushFront()` from many concurrent users | Pushes conflict because list ordering depends on insertion sequence | Use `Map` or `Set` if ordering is not required; accept contention if strict ordering is necessary |
 | Single status flag (`state = State.ACTIVE`) set by every user | All concurrent transactions write to the same enum variable; only one succeeds | Limit state transitions to a single admin; per-user state does not help because all state modifications conflict |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation. |
-| `midnight-extract-contract-structure` | Deep structural analysis: data structure declarations, ledger operation patterns. |
-| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including ADT operation semantics. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation for concurrency guidance. |

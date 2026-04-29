@@ -1,11 +1,11 @@
-name: Publish - Fact Checker Utils
+name: Publish - Template Engine
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'packages/midnight-fact-checker-utils/**'
+      - 'packages/template-engine/**'
   workflow_dispatch:
     inputs:
       force:
@@ -15,7 +15,7 @@ on:
 
 defaults:
   run:
-    working-directory: packages/midnight-fact-checker-utils
+    working-directory: packages/template-engine
 
 jobs:
   publish:
@@ -32,7 +32,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
 
       - name: Check if version changed
         id: version-check
@@ -77,10 +77,9 @@ jobs:
 
       - name: Lock dependency tree for publish (npm-shrinkwrap.json)
         if: steps.version-check.outputs.changed == 'true'
-        # Renames package-lock.json to npm-shrinkwrap.json so the locked
-        # dep tree ships in the published tarball. Consumers (including
-        # `npx`) then install exactly the versions tested in this CI run,
-        # not whatever floats up under semver ranges in package.json.
+        # template-engine has no runtime dependencies — shrinkwrap is
+        # still emitted so consumers see an empty, signed dep tree
+        # rather than relying on the package.json on every install.
         run: cp package-lock.json npm-shrinkwrap.json
 
       - name: Inspect tarball contents

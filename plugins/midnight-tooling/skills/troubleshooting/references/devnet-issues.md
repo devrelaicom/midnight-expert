@@ -1,6 +1,6 @@
 # Devnet Issues
 
-Diagnose and resolve common issues with the Midnight local devnet, including network startup, indexer sync, and MCP server connectivity. For wallet initialization and funding issues, use the `midnight-wallet` plugin.
+Diagnose and resolve common issues with the Midnight local devnet, including network startup and indexer sync. For wallet initialization and funding issues, use the `midnight-wallet` plugin.
 
 ## Network Fails to Start
 
@@ -35,8 +35,8 @@ Diagnose and resolve common issues with the Midnight local devnet, including net
 
 **Diagnosis:**
 
-1. Check overall status with `/midnight-tooling:devnet status` to see which services are running.
-2. Check health of each service with `/midnight-tooling:devnet health`.
+1. Check overall status with `/midnight-tooling:devnet status` to see which services are running. From inside a script, run the `midnight-tooling:devnet-health` skill's `status.sh` directly.
+2. Check health of each service with `/midnight-tooling:devnet health`, or run `health.sh` from the `midnight-tooling:devnet-health` skill.
 3. Inspect logs for the failing service:
    ```
    /midnight-tooling:devnet logs --service node
@@ -80,26 +80,6 @@ Wallet initialization, account funding, balance checking, transfers, and dust re
    ```
 
 This removes all chain data, indexer state, and proof server caches. After a clean start, any wallet operations (initialization, funding) must be re-run via the `midnight-wallet` plugin.
-
-## MCP Server Connectivity
-
-**Symptoms:** `/midnight-tooling:devnet` commands fail before reaching Docker, MCP tool calls return errors, or the midnight-devnet MCP server does not start.
-
-**Common causes and fixes:**
-
-1. **Node.js not available:** The MCP server requires Node.js and `npx`. Verify they are installed and on the PATH:
-   ```bash
-   node --version
-   npx --version
-   ```
-
-2. **Package resolution failure:** The MCP server runs via `npx @aaronbassett/midnight-local-devnet`. If the npm registry is unreachable or the package name has changed, npx will fail. Check:
-   - Network access to the npm registry: `npm ping`
-   - That the package exists: `npm view @aaronbassett/midnight-local-devnet`
-
-3. **Docker not running:** Even though the MCP server itself is a Node.js process, it manages Docker containers. If Docker is not running, the MCP server will start but tool calls that interact with containers will fail. Ensure Docker is running before using devnet commands.
-
-4. **MCP configuration issues:** Verify that the midnight-devnet MCP server is correctly configured in your Claude Code settings. The server should be listed in the MCP servers configuration and should show as connected.
 
 ## If Issues Persist
 

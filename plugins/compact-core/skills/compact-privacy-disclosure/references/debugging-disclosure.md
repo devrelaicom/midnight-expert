@@ -399,10 +399,9 @@ code instead (see Step 5 in the debugging process).
 
 After adding `disclose()` or restructuring code, verify the fix:
 
-1. **Compile the contract** to confirm the disclosure error is resolved. If
-   using MCP tools, `midnight-compile-contract` with `skipZk=true` provides
-   fast syntax validation. If additional errors appear, repeat the 5-step
-   process for each one.
+1. **Compile the contract** to confirm the disclosure error is resolved.
+   `compact compile <file> --skip-zk` provides fast syntax validation. If
+   additional errors appear, repeat the 5-step process for each one.
 
 2. **Audit what you are making public.** For every `disclose()` you added,
    trace the value back to its source and ask: "What can an on-chain observer

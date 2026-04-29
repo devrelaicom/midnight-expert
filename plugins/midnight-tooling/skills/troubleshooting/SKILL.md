@@ -38,8 +38,8 @@ Follow this diagnostic sequence for any issue:
 | compact: command not found, shebang, exec format error, compactc wrapper | `references/compact-cli-issues.md` |
 | direnv, mise, dotenv-cli, COMPACT_DIRECTORY, stale cache | `references/environment-tooling.md` |
 | Devnet, local network, node, indexer, network start | `references/devnet-issues.md` |
+| Quick "is the devnet up and serving?" check, container/HTTP probes | Use the `midnight-tooling:devnet-health` skill |
 | Wallet initialization, funding, balance, transfers, dust registration | Use the `midnight-wallet` plugin |
-| MCP server not connecting, midnight-devnet MCP error, npx failed | `references/devnet-issues.md` |
 
 For **cross-cutting** diagnostic techniques (not tied to a specific symptom):
 

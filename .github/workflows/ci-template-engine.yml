@@ -1,19 +1,19 @@
-name: CI - Fact Checker Utils
+name: CI - Template Engine
 
 on:
   pull_request:
     branches: ['**']
     paths:
-      - 'packages/midnight-fact-checker-utils/**'
+      - 'packages/template-engine/**'
   push:
     branches:
       - main
     paths:
-      - 'packages/midnight-fact-checker-utils/**'
+      - 'packages/template-engine/**'
 
 defaults:
   run:
-    working-directory: packages/midnight-fact-checker-utils
+    working-directory: packages/template-engine
 
 jobs:
   lint:
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
       - run: npm ci
       - name: Biome check
         run: npx biome check .
@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
       - run: npm ci
       - name: Biome format check
         run: npx biome format .
@@ -55,7 +55,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
 
@@ -68,7 +68,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
       - run: npm ci
       - run: npx tsc
 
@@ -81,7 +81,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
       - run: npm ci
       - run: npx vitest run
 
@@ -94,7 +94,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+          cache-dependency-path: packages/template-engine/package-lock.json
       - run: npm ci
       - name: npm audit (high+)
         run: npm audit --audit-level=high

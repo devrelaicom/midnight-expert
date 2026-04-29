@@ -34,19 +34,22 @@
 			"import": "./dist/engine.js"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc",
 		"check": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"lint": "biome check .",
-		"format:check": "biome format ."
+		"format:check": "biome format .",
+		"prepublishOnly": "npm run lint && npm run check && npm run test && npm run build"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@types/node": "^20.17.0",
 		"typescript": "^5.7.0",
-		"vitest": "^3.0.0"
+		"vitest": "^3.2.4"
 	}
 }

@@ -67,7 +67,7 @@ if entries:
   fi
 
   if [ -z "$install_path" ]; then
-    emit "$plugin" "critical" "not installed"
+    emit "$plugin" "info" "not installed (install only what you need)"
     fail=1
     continue
   fi
@@ -93,7 +93,7 @@ print('true' if ep.get('$key', False) else 'false')
   fi
 
   if [ "$enabled" = "false" ]; then
-    emit "$plugin" "warn" "installed (v${version}) but not enabled"
+    emit "$plugin" "info" "installed (v${version}) but not enabled"
     fail=1
     continue
   fi
@@ -120,3 +120,5 @@ done
 if [ "$fail" -eq 0 ]; then
   emit "ALL_PLUGINS_PASS" "pass" "all midnight-expert plugins installed and enabled"
 fi
+# Note: not-installed and not-enabled rows above are emitted as info,
+# not failures — users only need the plugins relevant to their work.

@@ -61,6 +61,13 @@ check_agent() {
   [ -f "$install_path/agents/$agent_name.md" ]
 }
 
+# Helper: check if a slash command exists at a plugin install path
+check_command() {
+  local install_path="$1"
+  local command_name="$2"
+  [ -f "$install_path/commands/$command_name.md" ]
+}
+
 fail=0
 
 # Resolve all unique target plugins upfront into a temp file (avoids bash 4+ associative arrays)
@@ -93,29 +100,31 @@ get_cached_version() {
 
 # Cross-plugin reference map
 # Format: source_plugin|target_plugin@marketplace|ref_type|ref_name
-# ref_type: skill or agent
+# ref_type: skill | agent | command
 REFS=(
-  # compact-core → midnight-tooling
+  # compact-core → midnight-tooling (skills)
   "compact-core|midnight-tooling@midnight-expert|skill|compact-cli"
+  "compact-core|midnight-tooling@midnight-expert|skill|devnet"
+  "compact-core|midnight-tooling@midnight-expert|skill|proof-server"
   "compact-core|midnight-tooling@midnight-expert|skill|troubleshooting"
-  "compact-core|midnight-tooling@midnight-expert|skill|doctor"
+  # compact-core → midnight-tooling (commands)
+  "compact-core|midnight-tooling@midnight-expert|command|doctor"
+  "compact-core|midnight-tooling@midnight-expert|command|install-cli"
   # compact-core → devs (external)
   "compact-core|devs@agent-foundry|skill|code-review"
   "compact-core|devs@agent-foundry|skill|typescript-core"
   "compact-core|devs@agent-foundry|skill|security-core"
-  # midnight-verify → compact-core
+  # midnight-verify → compact-core (skills)
   "midnight-verify|compact-core@midnight-expert|skill|compact-standard-library"
   "midnight-verify|compact-core@midnight-expert|skill|compact-structure"
   "midnight-verify|compact-core@midnight-expert|skill|compact-language-ref"
   "midnight-verify|compact-core@midnight-expert|skill|compact-privacy-disclosure"
-  "midnight-verify|compact-core@midnight-expert|skill|compact-compilation"
   "midnight-verify|compact-core@midnight-expert|skill|compact-witness-ts"
   "midnight-verify|compact-core@midnight-expert|skill|compact-review"
-  "midnight-verify|compact-core@midnight-expert|skill|compact-deployment"
   # midnight-verify → midnight-tooling
   "midnight-verify|midnight-tooling@midnight-expert|skill|compact-cli"
   "midnight-verify|midnight-tooling@midnight-expert|skill|devnet"
-  "midnight-verify|midnight-tooling@midnight-expert|skill|install-cli"
+  "midnight-verify|midnight-tooling@midnight-expert|command|install-cli"
   # midnight-verify → devs (external)
   "midnight-verify|devs@agent-foundry|agent|deps-maintenance"
   # midnight-fact-check → midnight-verify (agents)
@@ -126,12 +135,10 @@ REFS=(
   "midnight-fact-check|midnight-verify@midnight-expert|agent|sdk-tester"
   "midnight-fact-check|midnight-verify@midnight-expert|agent|witness-verifier"
   "midnight-fact-check|midnight-verify@midnight-expert|agent|zkir-checker"
-  # midnight-cq → compact-core
-  "midnight-cq|compact-core@midnight-expert|skill|compact-testing"
-  "midnight-cq|compact-core@midnight-expert|skill|compact-witness-ts"
+  # midnight-fact-check → midnight-verify (skills)
+  "midnight-fact-check|midnight-verify@midnight-expert|skill|verify-correctness"
   # midnight-cq → midnight-tooling
-  "midnight-cq|midnight-tooling@midnight-expert|skill|compact-cli"
-  "midnight-cq|midnight-tooling@midnight-expert|skill|devnet"
+  "midnight-cq|midnight-tooling@midnight-expert|skill|troubleshooting"
 )
 
 # Pre-resolve all unique targets
@@ -154,21 +161,23 @@ for ref in "${REFS[@]}"; do
     continue
   fi
 
-  # Check if specific skill/agent exists
-  if [ "$ref_type" = "skill" ]; then
-    if check_skill "$target_path" "$ref_name"; then
-      emit "$source → $target_name:$ref_name" "pass" "$ref_type found ($target_name v$target_ver)"
-    else
-      emit "$source → $target_name:$ref_name" "warn" "$ref_type not found in $target_name v$target_ver — update may be needed"
+  # Check if specific skill/agent/command exists
+  case "$ref_type" in
+    skill)   check_skill "$target_path" "$ref_name"; found=$? ;;
+    agent)   check_agent "$target_path" "$ref_name"; found=$? ;;
+    command) check_command "$target_path" "$ref_name"; found=$? ;;
+    *)
+      emit "$source → $target_name:$ref_name" "warn" "unknown ref type '$ref_type'"
       fail=1
-    fi
-  elif [ "$ref_type" = "agent" ]; then
-    if check_agent "$target_path" "$ref_name"; then
-      emit "$source → $target_name:$ref_name" "pass" "$ref_type found ($target_name v$target_ver)"
-    else
-      emit "$source → $target_name:$ref_name" "warn" "$ref_type not found in $target_name v$target_ver — update may be needed"
-      fail=1
-    fi
+      continue
+      ;;
+  esac
+
+  if [ "$found" -eq 0 ]; then
+    emit "$source → $target_name:$ref_name" "pass" "$ref_type found ($target_name v$target_ver)"
+  else
+    emit "$source → $target_name:$ref_name" "warn" "$ref_type not found in $target_name v$target_ver — update may be needed"
+    fail=1
   fi
 done
 

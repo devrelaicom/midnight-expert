@@ -1,6 +1,6 @@
 {
   "name": "midnight-fact-check",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Fact-checking pipeline for Midnight content \u2014 extracts testable claims from any source (markdown, code, PDFs, URLs, GitHub repos), classifies them by domain (Compact, SDK, ZKIR, Witness), and verifies each claim using the midnight-verify framework. Produces structured JSON artifacts and human-readable reports.",
   "author": {
     "name": "Aaron Bassett",

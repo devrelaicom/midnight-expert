@@ -2,18 +2,9 @@
 
 Review checklist for the **Token & Economic Security** category. This covers double-spend prevention, arithmetic overflow/underflow, authorization controls, shielded token operations, and unshielded balance safety. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation errors from type mismatches in token operations |
-| `midnight-extract-contract-structure` | `[shared]` | Detects structural issues in token handling, missing checks |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of token patterns |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for token operation signatures |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Double-Spend Prevention Checklist
 
@@ -75,7 +66,7 @@ Check every token-spending circuit for proper nullifier handling and commitment 
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies hash function usage. Verify all nullifier derivations use `persistentHash`, not `transientHash`.
+  > **Tool:** Read the contract source to identify hash function usage. Verify all nullifier derivations use `persistentHash`, not `transientHash`.
 
 - [ ] **Commitment path verified against tree root before spend.** When spending a coin, the prover supplies a Merkle path proving the coin's commitment exists in the commitment tree. The contract must verify this path against the on-chain root using `checkRoot()`. Without this check, a prover can fabricate a commitment for coins that were never minted.
 
@@ -114,7 +105,7 @@ Check all arithmetic operations on token amounts for type sufficiency and bounds
   }
   ```
 
-  > **Tool:** `midnight-get-latest-syntax` provides the authoritative stdlib function signatures showing the exact `Uint` width for each token operation. `midnight-compile-contract` output will show type mismatch errors if the wrong width is used.
+  > **Tool:** `COMPILE_RESULT` will show type mismatch errors if the wrong width is used. Use `octocode` to search the LFDT-Minokawa/compact repository for the authoritative stdlib function signatures showing the exact `Uint` width for each token operation.
 
 - [ ] **Addition overflow check: total does not exceed maximum value.** When adding to a balance or accumulating amounts, be aware of type widening: `Uint` addition and multiplication cannot overflow because the compiler widens the result type (e.g., `Uint<64> + Uint<64>` produces `Uint<65>`). The wider result must then be cast back to the storage type, which can fail if the value exceeds the target width. `Uint` subtraction underflow produces a runtime error. There is no silent wrapping for `Uint`. For `Field`, arithmetic wraps silently (modular arithmetic). Always validate that accumulated values fit within the intended type bounds.
 
@@ -328,7 +319,7 @@ Check all shielded (zswap) token operations for correct API usage and value hand
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies all `receiveShielded` calls. Cross-reference against all circuits that accept `ShieldedCoinInfo` parameters — each must call `receiveShielded`. `midnight-search-compact` can find reference patterns for correct shielded token handling.
+  > **Tool:** Read the contract source to identify all `receiveShielded` calls. Cross-reference against all circuits that accept `ShieldedCoinInfo` parameters — each must call `receiveShielded`. Use `octocode` to search the LFDT-Minokawa/compact repository for reference patterns for correct shielded token handling.
 
 - [ ] **Correct coin color used (token type identifier).** In Midnight's zswap model, each token type is identified by a "color" (a `Bytes<32>` domain separator). Using the wrong color means the operation targets the wrong token type. Verify that the domain separator passed to `mintShieldedToken` and other operations matches the intended token.
 
@@ -420,7 +411,7 @@ Check all shielded (zswap) token operations for correct API usage and value hand
   sendUnshielded(Bytes<32>, Uint<128>, Either<ContractAddress, UserAddress>)
   ```
 
-  > **Tool:** `midnight-get-latest-syntax` is the authoritative source for these function signatures. Cross-reference every token operation call against the syntax reference.
+  > **Tool:** Use `octocode` to search the LFDT-Minokawa/compact repository for the authoritative function signatures. Cross-reference every token operation call against the syntax reference.
 
 ## Unshielded Token Checklist
 
@@ -443,7 +434,7 @@ Check all unshielded token operations for construction-time pitfalls and API cor
   }
   ```
 
-  > **Tool:** `midnight-search-docs` has guidance on construction-time balance locks and the correct use of comparison functions.
+  > **Tool:** Use `octocode` to search the LFDT-Minokawa/compact repository for guidance on construction-time balance locks and the correct use of comparison functions.
 
 - [ ] **Comparison functions used instead of raw balance reads.** The standard library provides `unshieldedBalanceGt` and `unshieldedBalanceLt` for safe balance comparisons. These functions are designed to avoid the construction-time lock problem inherent in `unshieldedBalance()`. Use them instead of reading the balance and comparing manually.
 
@@ -498,14 +489,3 @@ Quick reference of common token security anti-patterns in Compact contracts.
 | Nullifier derived using `transientHash` | Non-deterministic; same coin produces different nullifiers each time, completely defeating double-spend prevention | Use `persistentHash` with domain separation and secret key for deterministic nullifier derivation |
 | `unsafeTransfer` to a contract address | Recipient contract may not call `receiveShielded`, causing permanent token loss | Use safe transfer wrappers that verify recipient handling, or ensure the target contract is known to call `receiveShielded` |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation. |
-| `midnight-extract-contract-structure` | Deep structural analysis: token patterns, missing `receiveShielded`, hash function usage. |
-| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including token operation signatures. |
-| `midnight-search-compact` | Semantic search across Compact code for token handling patterns. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation. |
-| `midnight-list-examples` | List available example contracts with token implementations for reference. |
