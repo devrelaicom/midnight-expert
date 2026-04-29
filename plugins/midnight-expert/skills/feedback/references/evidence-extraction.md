@@ -56,5 +56,3 @@ Build `evidence-cards.json` (in-memory):
   ]
 }
 ```
-
-Replace the zero-width-space-prefixed fences with plain triple backticks in the actual file.
