@@ -35,6 +35,17 @@ describe('collect-environment.sh', () => {
     }
   });
 
+  it('tools.compact is a string when compact is installed, else null', () => {
+    const result = spawnSync('bash', [SCRIPT], { encoding: 'utf8' });
+    const parsed = JSON.parse(result.stdout);
+    const compactInstalled = spawnSync('compact', ['--version'], { encoding: 'utf8' }).status === 0;
+    if (compactInstalled) {
+      assert.equal(typeof parsed.tools.compact, 'string');
+    } else {
+      assert.equal(parsed.tools.compact, null);
+    }
+  });
+
   it('model and effort are null (filled in by SKILL.md from session metadata)', () => {
     const result = spawnSync('bash', [SCRIPT], { encoding: 'utf8' });
     const parsed = JSON.parse(result.stdout);

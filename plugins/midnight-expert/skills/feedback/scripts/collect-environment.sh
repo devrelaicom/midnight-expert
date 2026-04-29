@@ -4,7 +4,12 @@
 # Session-level fields (model, effort) are always null — SKILL.md fills them
 # from the parsed session metadata.
 
-set -u
+set -uo pipefail
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf '{"error":"jq not found; install jq and re-run"}\n' >&2
+  exit 1
+fi
 
 INSTALLED_PLUGINS="$HOME/.claude/plugins/installed_plugins.json"
 MARKETPLACE_FILE="$HOME/.claude/plugins/marketplaces/midnight-expert/.claude-plugin/marketplace.json"
@@ -26,7 +31,7 @@ if [ -f "$MARKETPLACE_FILE" ]; then
 fi
 
 # Claude Code version
-cc_raw="$(claude --version 2>/dev/null | head -1 | awk '{print $1}')"
+cc_raw="$(claude --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*' | head -1 || true)"
 cc_version="$(to_json_str "$cc_raw")"
 
 # OS
@@ -34,10 +39,10 @@ os_raw="$(uname -srm)"
 os_json="$(to_json_str "$os_raw")"
 
 # External tools
-compact_raw="$(compact --version 2>/dev/null | head -1 | awk '{print $NF}')"
+compact_raw="$(compact --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*' | head -1 || true)"
 compact_json="$(to_json_str "$compact_raw")"
 
-gh_raw="$(gh --version 2>/dev/null | head -1 | awk '{print $3}')"
+gh_raw="$(gh --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*' | head -1 || true)"
 gh_json="$(to_json_str "$gh_raw")"
 
 # Plugins: read installed_plugins.json, extract { "<plugin>": "<version>" }
@@ -53,6 +58,7 @@ if [ -f "$INSTALLED_PLUGINS" ]; then
   ' "$INSTALLED_PLUGINS" 2>/dev/null || echo "{}")"
 fi
 
+# Note: midnightSdk version detection deferred — no stable CLI flag yet.
 # Output combined JSON
 jq -nc \
   --argjson mp "$mp_version" \
