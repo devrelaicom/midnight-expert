@@ -1,0 +1,1 @@
+I think compact-core is broken. The verify skill keeps telling me my contract is invalid even though it compiles fine.
