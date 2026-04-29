@@ -2,20 +2,9 @@
 
 Review checklist for the **Performance & Circuit Efficiency** category. Every operation in a Compact circuit translates to constraints in the zero-knowledge proof. More constraints mean longer proof generation time and higher resource consumption for the prover. This review identifies unnecessary computational overhead, oversized data structures, and operations that could be moved off-chain. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Syntax validation and basic compilation checks |
-| `midnight-extract-contract-structure` | `[shared]` | Identifies data structure declarations, loop patterns, type casts |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of circuit complexity patterns |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for pure circuit syntax and type cast rules |
-| `midnight-compile-contract` (fullCompile) | `[category-specific]` | **Run this yourself** with `fullCompile=true` to get full ZK compilation including circuit size metrics. This reveals proof generation cost. |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
-Tools marked `[category-specific]` must be run by you during your review.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Proof Generation Cost Checklist
 
@@ -174,7 +163,7 @@ Check every `MerkleTree` and `HistoricMerkleTree` declaration for appropriate de
   export ledger voters: HistoricMerkleTree<10, Bytes<32>>;
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` lists all MerkleTree declarations with their depth parameters. Cross-reference each depth against the expected capacity table above.
+  > **Tool:** Read the contract source to list all MerkleTree declarations with their depth parameters. Cross-reference each depth against the expected capacity table above.
 
 - [ ] **Undersized depth limits future capacity.** While oversizing wastes resources, undersizing risks running out of capacity. Once a MerkleTree is full, no new leaves can be inserted without deploying a new contract. This is not recoverable.
 
@@ -227,7 +216,7 @@ Check every `for` loop and `Vector<N, T>` iteration for circuit size impact. Com
   // Or move the validation to witness code and verify the result in circuit
   ```
 
-  > **Tool:** `midnight-compile-contract` with `fullCompile=true` reveals the actual constraint count. Compare against the expected count based on loop iterations and body complexity.
+  > **Tool:** Running `compact compile` (without `--skip-zk`) on the contract reveals the actual constraint count. Compare against the expected count based on loop iterations and body complexity.
 
 - [ ] **Large `Vector<N, T>` iterations: N directly multiplies circuit size.** When iterating over a `Vector<N, T>`, the loop body is duplicated N times. A `Vector<256, Field>` iteration with a body containing 5 constraints generates 1280 constraints. Consider whether the full vector needs to be processed in-circuit or whether a partial approach is possible.
 
@@ -356,7 +345,6 @@ Check whether expensive computations are correctly placed at the circuit/witness
   }
   ```
 
-  > **Tool:** `midnight-explain-circuit` can explain what a circuit does in plain language, helping identify computations that could be moved to the witness. `midnight-search-docs` has guidance on the circuit vs witness boundary optimization.
 
 - [ ] **Only the verification (assert the result is correct) needs to be in the circuit.** The circuit's job is to constrain the witness output so that only correct results are accepted. The actual computation can happen anywhere — the witness, a server, the user's browser — as long as the circuit can verify the result. This is the fundamental optimization principle for ZK circuits.
 
@@ -433,7 +421,7 @@ Check for opportunities to use `pure circuit` for reusable logic that does not a
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies all circuits and whether they access ledger state. Flag any non-pure circuit that does not read or write ledger variables. `midnight-explain-circuit` can analyze specific circuits to confirm whether they access ledger state.
+  > **Tool:** Read the contract source to identify all circuits and whether they access ledger state. Flag any non-pure circuit that does not read or write ledger variables.
 
 - [ ] **Pure circuits can be called from TypeScript witness code.** Because `pure circuit` functions have no side effects (no ledger access), they are exported as `pureCircuits` and can be called from witness TypeScript code as well as from other circuits. This enables sharing logic between the on-chain proof and the off-chain witness computation without duplication. Note: the `pure` keyword primarily validates purity and enables TypeScript export — it does not trigger additional compiler optimizations beyond what the compiler already applies to all circuits.
 
@@ -487,13 +475,3 @@ Quick reference of common performance anti-patterns in Compact contracts.
 | `MerkleTree<1, T>` declaration | Depth 1 is invalid and causes a compile-time error | Minimum valid depth is 2: `MerkleTree<2, T>` |
 | Unnecessary `counter.read()` when only `increment()` is needed | Read generates constraints for a value that is never used in computation | Remove the read; call `counter.increment(n)` directly |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation, `fullCompile=true` for circuit size metrics and proof generation cost analysis. |
-| `midnight-extract-contract-structure` | Deep structural analysis: data structure declarations, loop patterns, type cast chains, pure circuit candidates. |
-| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including `pure circuit` rules and type cast paths. |
-| `midnight-explain-circuit` | Explains what a circuit does in plain language, including ZK proof cost implications. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation for performance guidance. |

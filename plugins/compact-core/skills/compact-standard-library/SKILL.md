@@ -1,31 +1,31 @@
 ---
 name: compact-core:compact-standard-library
-description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, JubjubPoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), deprecated stdlib names (CurvePoint, NativePoint, CoinInfo), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve, jubjubPointX, jubjubPointY, constructJubjubPoint), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library, prevent hallucination of non-existent stdlib functions, or search the Midnight MCP for stdlib source code.
+description: This skill should be used when the user asks about the Compact standard library (CompactStandardLibrary), stdlib types (Maybe, Either, JubjubPoint, MerkleTreeDigest, MerkleTreePath, ContractAddress, ZswapCoinPublicKey, UserAddress), deprecated stdlib names (CurvePoint, NativePoint, CoinInfo), stdlib constructor functions (some, none, left, right), elliptic curve functions (ecAdd, ecMul, ecMulGenerator, hashToCurve, jubjubPointX, jubjubPointY, constructJubjubPoint), Merkle tree path verification (merkleTreePathRoot, merkleTreePathRootNoLeafHash), or when the user needs to verify which functions exist in the standard library or prevent hallucination of non-existent stdlib functions.
 version: 0.1.0
 ---
 
 # Compact Standard Library Reference
 
-This is the single authoritative index of everything `import CompactStandardLibrary;` provides. Every type, constructor, circuit, and builtin documented here has been verified against the Compact compiler and MCP codebase. For contract anatomy and scaffold patterns, see `compact-structure`. For language mechanics (types, operators, control flow), see `compact-language-ref`. For ledger ADT state design and privacy, see `compact-ledger`. For token mint/send/receive operations and patterns, see `compact-tokens`. This skill follows a verification-first philosophy: when in doubt, verify -- never assume a function exists.
+This is the single authoritative index of everything `import CompactStandardLibrary;` provides. Every type, constructor, circuit, and builtin documented here has been verified against the Compact compiler. For contract anatomy and scaffold patterns, see `compact-structure`. For language mechanics (types, operators, control flow), see `compact-language-ref`. For ledger ADT state design and privacy, see `compact-ledger`. For token mint/send/receive operations and patterns, see `compact-tokens`. This skill follows a verification-first philosophy: when in doubt, verify -- never assume a function exists.
 
 ## Verification Protocol
 
 **RULE: Never assume a stdlib function exists.** Before using any function from CompactStandardLibrary, verify it appears in the export inventory below. If a function is not listed, it does not exist.
 
-### MCP Verification Techniques
+### Verification Techniques
 
 | Technique | Tool | What It Tells You |
 |-----------|------|-------------------|
-| Search Compact codebase | `midnight-search-compact` with the function name | Finds real usage in Compact repos. If no results, the function likely does not exist. |
-| Search official docs | `midnight-search-docs` with the function name | Finds official API documentation. Cross-check signatures against this skill. |
-| Compile a minimal contract | `midnight-compile-contract` with a contract that calls the function | The ultimate verification. If it compiles, the function exists with that signature. |
+| Search the Compact source on GitHub | `octocode` (`githubSearchCode` against `LFDT-Minokawa/compact`) | Finds real usage and definitions. If no results, the symbol likely does not exist. |
+| Compile a minimal contract | `compact compile --skip-zk <file>` | The ultimate verification. If it compiles, the function exists with that signature. |
+| Dispatch the verify agent | `/midnight-verify:verify` with the claim | Runs source-first verification and (optionally) executes a minimal contract end-to-end. |
 
 ### Verification Checklist
 
 1. Check the export inventory in this skill
 2. Verify the function signature matches (parameter types, return type, generic parameters)
-3. If uncertain, use `midnight-search-compact` to find real usage examples
-4. For critical code, compile a minimal contract with `midnight-compile-contract`
+3. If uncertain, search the Compact source via `octocode` for real usage examples
+4. For critical code, compile a minimal contract with `compact compile --skip-zk`
 
 **Common Hallucination Traps:** See the complete "Common Mistakes & Non-Existent Functions" table at the end of this document for the full list of functions that do NOT exist in the standard library.
 
@@ -163,7 +163,7 @@ Types provided by the standard library. All are available after `import CompactS
 | `QualifiedShieldedCoinInfo` | none | `nonce: Bytes<32>`, `color: Bytes<32>`, `value: Uint<128>`, `mt_index: Uint<64>` | All-zero fields |
 | `ShieldedSendResult` | none | `change: Maybe<ShieldedCoinInfo>`, `sent: ShieldedCoinInfo` | Default Maybe + default coin |
 
-> **Verification:** Use `midnight-search-compact` with the type name (e.g., `MerkleTreeDigest`) to find real-world usage patterns across the Compact codebase.
+> **Verification:** Use `octocode` to search the `LFDT-Minokawa/compact` repository for the type name (e.g., `MerkleTreeDigest`) to find real-world usage patterns.
 
 For full field documentation and TypeScript representations, see `references/types-and-constructors.md`.
 
@@ -222,7 +222,7 @@ All EC operations use `JubjubPoint`, not the deprecated `NativePoint` or `CurveP
 
 Use cases: Pedersen commitments, key derivation building blocks, custom signature schemes. For example, Pedersen blinding: `ecAdd(ecMulGenerator(rc), ecMul(colorBase, value))`.
 
-> **Verification:** EC functions operate on `JubjubPoint`, not the deprecated `NativePoint` or `CurvePoint`. The type was renamed from `CurvePoint` → `NativePoint` → `JubjubPoint`. Always verify with `midnight-compile-contract` when using EC operations. See `references/cryptographic-functions.md` for full documentation and examples.
+> **Verification:** EC functions operate on `JubjubPoint`, not the deprecated `NativePoint` or `CurvePoint`. The type was renamed from `CurvePoint` → `NativePoint` → `JubjubPoint`. Always verify with `compact compile --skip-zk` when using EC operations. See `references/cryptographic-functions.md` for full documentation and examples.
 
 ## Merkle Tree Path Functions
 

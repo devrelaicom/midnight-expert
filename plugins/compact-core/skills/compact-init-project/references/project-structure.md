@@ -88,7 +88,7 @@ The counter uses npm workspaces — both `contract` and `counter-cli` are worksp
 
 ## SDK Package Versions
 
-These are the versions used by `create-mn-app` v0.3.26 hello-world template (verified on 2026-03-30). Versions may have been updated since — use the `midnight-get-version-info` MCP tool or `npm view <package> version` to check current versions:
+These are the versions used by `create-mn-app` v0.3.26 hello-world template (verified on 2026-03-30). Versions may have been updated since — run `npm view <package> version` to check current versions:
 
 | Package | Version |
 |---------|---------|
@@ -136,8 +136,8 @@ Verified on 2026-03-30. Use `compact --version` and `npm view create-mn-app vers
 
 ## Verifying Versions
 
-If these versions appear outdated, use the Midnight MCP server to check current versions:
+If these versions appear outdated, check current versions directly:
 
-- `midnight-get-version-info` with repo `compact` for compiler version
-- `midnight-get-version-info` with repo `midnight-js` for SDK version
-- `midnight-get-latest-updates` for recent changes across all repos
+- `compact check` — latest Compact compiler version
+- `compact self check` — latest Compact developer tools version
+- `npm view @midnight-ntwrk/midnight-js version` — latest SDK version

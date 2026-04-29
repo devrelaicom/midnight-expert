@@ -88,9 +88,8 @@ Prompt the Task agent:
 > You are compiling a Compact smart contract to check for errors.
 >
 > Try these approaches in order:
-> 1. Check if the MCP tool `midnight-compile-contract` is available. If so, call it with the file path and `skipZk=true`. (Note: MCP tool name is tentative — it may not exist yet.)
-> 2. If MCP unavailable, try CLI: `compact compile <FILE_PATH> /tmp/compact-debug-out --skip-zk`
-> 3. If `compact` CLI is not installed, return: `COMPILATION_UNAVAILABLE | info | Compact compiler not available — verify manually | info`
+> 1. Run `compact compile <FILE_PATH> /tmp/compact-debug-out --skip-zk`.
+> 2. If `compact` CLI is not installed, return: `COMPILATION_UNAVAILABLE | info | Compact compiler not available — verify manually | info`
 >
 > If compilation succeeds, return: `NONE | info | Compilation successful (skipZk) | info`
 >

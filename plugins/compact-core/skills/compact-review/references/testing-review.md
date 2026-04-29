@@ -2,18 +2,9 @@
 
 Review checklist for the **Testing Adequacy** category. This covers test coverage for exported circuits, edge case and boundary testing, negative/failure-path testing, private state verification, witness mock correctness, and integration test patterns. Apply every item below to the test files accompanying the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation output reveals contract structure for coverage analysis |
-| `midnight-extract-contract-structure` | `[shared]` | Lists all exported circuits (required for coverage checklist) |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of contract patterns |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for type mappings (needed for mock correctness) |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Test Coverage Checklist
 
@@ -61,7 +52,7 @@ Check that the test suite provides baseline coverage for every exported circuit 
   });
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` lists all exported circuits. Use this as your definitive checklist — every exported circuit name must appear in the test files.
+  > **Tool:** Read the contract source to list all exported circuits. Use this as your definitive checklist — every exported circuit name must appear in the test files.
 
 - [ ] **Constructor tested with expected initial state.** The contract constructor (typically the `deploy` or `initialize` circuit) sets the initial ledger state. A test must verify that all ledger fields are initialized to their expected values after construction. Missing constructor tests allow incorrect initialization to go undetected, causing all subsequent circuit calls to operate on wrong state.
 
@@ -690,7 +681,7 @@ Check that witness mocks in tests accurately represent the runtime witness behav
   };
   ```
 
-  > **Tool:** `midnight-get-latest-syntax` provides the authoritative type mapping rules. `midnight-extract-contract-structure` shows the Compact types for each witness, which must match the mock types per the mapping table.
+  > **Tool:** Read the contract source to identify the Compact types for each witness, which must match the mock types per the mapping table.
 
 - [ ] **`Maybe<T>` mocked as `{ is_some: boolean; value: T }`, not `null` or `undefined`.** The Compact `Maybe<T>` type is represented in TypeScript as a tagged object with explicit `is_some` and `value` fields. Mocks that use JavaScript `null`/`undefined` for absent values will silently produce incorrect proof inputs. When `is_some` is `false`, the `value` field must still be present with a zero/default value of the correct type.
 
@@ -801,7 +792,7 @@ Check that the test suite covers multi-step workflows, concurrent user scenarios
   });
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` and `midnight-analyze-contract` reveal the contract's state machine and multi-phase patterns. Use these to identify which flows need end-to-end tests. `midnight-list-examples` shows test patterns from reference implementations.
+  > **Tool:** Read the contract source to identify the contract's state machine and multi-phase patterns; use these to identify which flows need end-to-end tests. Use `octocode` to search the LFDT-Minokawa/compact repository for test patterns from reference implementations.
 
 - [ ] **Concurrent user scenarios tested.** When two or more users interact with the same contract, contention and ordering issues can emerge. Tests should simulate two users acting on shared state — both depositing, one transferring while another withdraws, or two users voting on the same proposal. These tests catch concurrency bugs that single-user tests miss.
 
@@ -933,13 +924,3 @@ Quick reference of common testing anti-patterns in Compact contract test suites.
 | No concurrent user tests | Single-user tests miss contention, ordering, and shared-state bugs that emerge when multiple users interact simultaneously | Test two or more users acting on the same contract in sequence |
 | No state invariant checks | Subtle corruption (supply != sum of balances, counter drift) accumulates across operations and goes undetected | After multi-operation sequences, verify contract invariants hold |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Reveals contract structure for coverage analysis. |
-| `midnight-extract-contract-structure` | Lists all exported circuits, witness declarations, and state structure — the definitive list for coverage analysis. |
-| `midnight-analyze-contract` | Static analysis of contract patterns and state machines. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including type mapping rules for mock correctness. |
-| `midnight-list-examples` | List available example contracts with test suites for reference patterns. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation for testing guidance. |

@@ -2,18 +2,9 @@
 
 Review checklist for the **Security & Cryptographic Correctness** category. This covers access control, cryptographic primitive usage, Merkle path verification, error handling, and input validation. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation errors from missing assertions, type mismatches |
-| `midnight-extract-contract-structure` | `[shared]` | Detects missing access control, structural security issues |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of security patterns |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for cryptographic primitives |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Access Control Checklist
 
@@ -38,7 +29,7 @@ Check every exported circuit for proper authorization and state guards.
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` lists all exported circuits and their structure. Cross-reference each exported circuit that modifies state against the presence of authorization checks.
+  > **Tool:** Read the contract source to list all exported circuits and their structure. Cross-reference each exported circuit that modifies state against the presence of authorization checks.
 
 - [ ] **Missing ownership verification before state-modifying operations.** For contracts with an owner or authority pattern, every state-modifying circuit must verify that the caller holds the correct secret key. Look for `publicKey(secretKey, domain)` or equivalent derivation followed by an `assert` comparing against a stored authority. If the comparison is missing, anyone can modify state.
 
@@ -150,7 +141,7 @@ Check hash and commitment usage for correctness, determinism, and domain separat
   // Clears taint, hides the value, can be stored on ledger
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies hash and commit usage. Verify each call uses the correct primitive per the table above. `midnight-search-compact` can find reference patterns for correct cryptographic primitive usage.
+  > **Tool:** Read the contract source to identify hash and commit usage. Verify each call uses the correct primitive per the table above. Use `octocode` to search the LFDT-Minokawa/compact repository for reference patterns for correct cryptographic primitive usage.
 
 - [ ] **Domain separation: every hash/commit call should include a unique domain string.** Without domain separation, identical inputs across different protocols or different purposes within the same contract produce the same hash output, enabling cross-protocol replay attacks or unintended hash collisions.
 
@@ -183,7 +174,7 @@ Check hash and commitment usage for correctness, determinism, and domain separat
   }
   ```
 
-  > **Tool:** `midnight-search-compact` can find official examples of domain separation patterns to compare against.
+  > **Tool:** Use `octocode` to search the LFDT-Minokawa/compact repository for official examples of domain separation patterns to compare against.
 
 - [ ] **Nullifier construction: must be deterministic, include secret key + unique identifier, and use domain separation.** A nullifier is a one-time-use token derived from a secret to prevent double-spending or double-voting. It must satisfy three properties:
   1. **Deterministic** (uses `persistentHash`, not `transientHash`) so the same secret always produces the same nullifier.
@@ -244,7 +235,7 @@ Check Merkle tree operations for correct root verification and data structure ch
   assert(members.checkRoot(disclose(digest)), "Merkle root mismatch");
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies MerkleTree operations. Verify every `merkleTreePathRoot` call is followed by a `checkRoot()` assertion.
+  > **Tool:** Read the contract source to identify MerkleTree operations. Verify every `merkleTreePathRoot` call is followed by a `checkRoot()` assertion.
 
 - [ ] **Path leaf matches expected value.** A valid Merkle path proves that *some* leaf is in the tree, but the reviewer must verify that the leaf at the base of the path is the expected value (e.g., the user's commitment, the voter's credential). If the contract does not check what leaf the path proves membership for, a user could supply a path for a different leaf.
 
@@ -319,7 +310,7 @@ Check assertions and error paths for information leakage and missing safety chec
   }
   ```
 
-  > **Tool:** `midnight-compile-contract` output may reveal runtime failures from missing safety checks. `midnight-search-docs` has guidance on safe Map/Set access patterns.
+  > **Tool:** `COMPILE_RESULT` may reveal runtime failures from missing safety checks. Use `octocode` to search the LFDT-Minokawa/compact repository for guidance on safe Map/Set access patterns.
 
 - [ ] **Missing bounds checks before arithmetic operations.** Subtraction underflow, division by zero, and array out-of-bounds access must be guarded with assertions. For `Field` types, arithmetic underflow wraps around silently (modular arithmetic), producing an incorrect but valid-looking result. For `Uint<N>` types: addition and multiplication cannot overflow (the compiler widens the result type), but subtraction underflow causes a runtime error. There is no silent wrapping for `Uint`. In both cases, explicit bounds checks prevent unexpected behavior.
 
@@ -421,13 +412,3 @@ Quick reference of common security anti-patterns in Compact contracts.
 | Missing state machine guard on phase transition | Calling `reveal` before `commit`, or `execute` before `vote`, breaks protocol invariants | Assert current state at the top of each phase-transition circuit: `assert(state == State.COMMITTED, ...)` |
 | No bounds check before arithmetic | `Field` subtraction underflow wraps silently (modular arithmetic); `Uint<N>` addition/multiplication widen the result type (no overflow), but subtraction underflow causes a runtime error. There is no silent wrapping for `Uint`. | Assert `a >= b` before computing `a - b`; assert `amount > 0` for all token operations |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation, `fullCompile=true` for full ZK compilation. |
-| `midnight-extract-contract-structure` | Deep structural analysis: deprecated syntax, missing access control, cryptographic primitive usage. |
-| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference from the latest compiler version. |
-| `midnight-search-compact` | Semantic search across Compact smart contract code and patterns. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation. |

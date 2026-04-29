@@ -2,18 +2,9 @@
 
 Review checklist for the **Privacy & Disclosure** category. This is the highest-priority review category in Midnight's privacy-first design philosophy. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation errors from incorrect `disclose()` usage |
-| `midnight-extract-contract-structure` | `[shared]` | Detects missing `disclose()` calls, structural disclosure issues |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of privacy patterns |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for `disclose()` semantics |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## Unnecessary Disclosure Checklist
 
@@ -21,7 +12,7 @@ Check every `disclose()` call in the contract for necessity and placement.
 
 - [ ] **Every `disclose()` call: is it actually needed?** For each `disclose()`, ask whether the value could remain private. A value only needs disclosure if it flows to a public context (ledger write, return value, public assertion). If the value is only used in private computation, `disclose()` is unnecessary and reduces privacy.
 
-> **Tool:** `midnight-extract-contract-structure` lists all `disclose()` call sites. Cross-reference each one against necessity.
+> **Tool:** Read the contract source to list all `disclose()` call sites. Cross-reference each one against necessity.
 
 - [ ] **`disclose()` placed at witness call site instead of near the public boundary.** Disclosing at the witness call site (e.g., `const x = disclose(getSecret())`) is bad practice because it marks the value as public immediately, and ALL downstream uses of that value lose privacy. Instead, place `disclose()` as close to the actual disclosure point as possible (e.g., the ledger write or return statement).
 
@@ -37,7 +28,7 @@ Check every `disclose()` call in the contract for necessity and placement.
   ledgerField = disclose(derived);
   ```
 
-> **Tool:** `midnight-extract-contract-structure` flags early-disclosure patterns. Check its output for disclosure placement warnings.
+> **Tool:** Read the contract source to inspect each `disclose()` call site for early-disclosure patterns.
 
 - [ ] **Bulk `disclose()` on structs when only one field needs disclosure.** If a struct has multiple fields but only one needs to be public, disclosing the entire struct leaks all fields. Extract and disclose only the specific field that must be public.
 
@@ -59,7 +50,7 @@ Check for private witness data escaping the zero-knowledge proof boundary.
 
 - [ ] **Witness-derived values written to public ledger without `disclose()`.** The compiler catches this as an error, but review the intent. If the developer added `disclose()` solely to silence the compiler without considering whether the value should actually be public, that is a privacy bug even though the code compiles.
 
-> **Tool:** `midnight-compile-contract` output shows `implicit disclosure of witness value` errors for these cases.
+> **Tool:** `COMPILE_RESULT` shows `implicit disclosure of witness value` errors for these cases.
 
 - [ ] **Conditional branches revealing private information.** Patterns like `if (disclose(secret == expected))` leak the boolean result of a private comparison. An observer learns whether the secret matched the expected value. Consider whether the branch outcome itself is sensitive.
 
@@ -73,7 +64,7 @@ Check for private witness data escaping the zero-knowledge proof boundary.
   assert(secret == expected, "Mismatch");
   ```
 
-> **Tool:** Consider calling `midnight-explain-circuit` on circuits that use `disclose()` inside conditionals to understand the full privacy implications.
+> **Tool:** Read the source for circuits that use `disclose()` inside conditionals to understand the full privacy implications.
 
 - [ ] **Assert conditions that leak private state.** Patterns like `assert(disclose(balance > 0), "...")` reveal private state through the assertion. The observer learns the boolean result of the condition. Consider whether the assertion condition itself is sensitive information.
 
@@ -112,7 +103,7 @@ Check ledger data structure choices for unintended information leakage.
   assert(members.checkRoot(disclose(digest)), "Not a member");
   ```
 
-> **Tool:** `midnight-extract-contract-structure` shows all data structure declarations. Look for `Set` types used in membership contexts.
+> **Tool:** Read the contract source to find all data structure declarations. Look for `Set` types used in membership contexts.
 
 - [ ] **Using `Map<key, value>` where key reveals identity.** Map keys are always visible on insert and lookup. If the key is a user identifier (public key, address, name hash), every operation reveals which user is acting. Consider whether the key can be replaced with a commitment or whether the data model should use a different structure.
 
@@ -148,7 +139,7 @@ Check cryptographic operations for correctness and privacy guarantees.
   // 'hidden' is no longer tainted; value is cryptographically hidden
   ```
 
-> **Tool:** `midnight-extract-contract-structure` flags `persistentHash` vs `persistentCommit` usage. Check for misuse patterns.
+> **Tool:** Read the contract source to inspect `persistentHash` vs `persistentCommit` usage. Check for misuse patterns.
 
 - [ ] **Transient vs persistent confusion.** `transientHash` and `transientCommit` produce values that are deterministic within a single circuit execution but are NOT guaranteed to produce the same output across compiler upgrades or different contract versions. Their results must NEVER be stored in ledger state because a value committed with `transientCommit` cannot be reliably verified in a future transaction after a compiler upgrade. Use `persistentHash` or `persistentCommit` for any value that will be stored on-chain or compared across transactions.
 
@@ -160,7 +151,7 @@ Check cryptographic operations for correctness and privacy guarantees.
   storedCommitment = persistentCommit<Field>(value, salt);
   ```
 
-> **Tool:** `midnight-search-docs` can clarify the transient vs persistent guarantees if there is any ambiguity in the contract's usage.
+> **Tool:** Use `octocode` to search the LFDT-Minokawa/compact repository for documentation clarifying the transient vs persistent guarantees if there is any ambiguity in the contract's usage.
 
 - [ ] **Salt/nonce reuse in commitments.** Reusing the same salt across different commitments allows rainbow table attacks. If two commitments use the same salt and the same value, they produce identical outputs, breaking the hiding property. Always source fresh randomness from a witness function for each commitment.
 
@@ -219,13 +210,3 @@ Quick reference of common privacy anti-patterns in Compact contracts.
 | Same domain for commit + nullifier | Allows an observer to link a commitment to its corresponding nullifier, breaking unlinkability and deanonymizing the user | Different domain strings for each purpose: `"app:commit"` vs `"app:nullifier"` |
 | Raw secret in sealed field | Sealed fields are set publicly during contract deployment; the secret value is visible in the deployment transaction to all observers | Hash or commit the secret before storing it in a sealed field |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation, `fullCompile=true` for full ZK compilation. |
-| `midnight-extract-contract-structure` | Deep structural analysis: deprecated syntax, missing `disclose()`, potential overflows, data structure usage. |
-| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference from the latest compiler version. |
-| `midnight-explain-circuit` | Explains what a circuit does in plain language, including ZK proof and privacy implications. |
-| `midnight-search-docs` | Full-text search across official Midnight documentation. |

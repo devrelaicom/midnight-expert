@@ -2,18 +2,9 @@
 
 Review checklist for the **Architecture, State Design & Composability** category. This covers ADT selection, MerkleTree depth planning, ledger visibility, contract decomposition, circuit vs witness boundary design, and state initialization. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | Compilation output reveals structural issues |
-| `midnight-extract-contract-structure` | `[shared]` | Identifies all data structure declarations, visibility modifiers, modules |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of contract architecture |
-| `midnight-get-latest-syntax` | `[shared]` | Authoritative reference for ADT types, visibility modifiers, module syntax |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns.
 
 ## ADT Selection Checklist
 
@@ -31,7 +22,7 @@ Check every ledger variable for correct abstract data type choice. Choosing the 
   | Ordered history | `List<T>` | Preserves insertion order; Set is unordered |
   | Single value | Direct `ledger var: T` | Simplest; no ADT overhead |
 
-  > **Tool:** `midnight-extract-contract-structure` lists all ledger variable declarations with their types. Cross-reference each declaration against the ADT selection decision tree above.
+  > **Tool:** Read the contract source's ledger declarations. Cross-reference each declaration against the ADT selection decision tree above.
 
 - [ ] **Using `Field` as a counter instead of `Counter`.** If a ledger variable of type `Field` is incremented by reading its current value and writing back the incremented result, it should be a `Counter`. The `Counter` ADT provides conflict-free `increment()` and `decrement()` operations. A `Field` used as a counter causes read-modify-write contention under concurrent load.
 
@@ -125,7 +116,7 @@ Check every MerkleTree and HistoricMerkleTree declaration for appropriate depth 
 
   Note: depth 1 is invalid. The minimum valid depth is 2.
 
-  > **Tool:** `midnight-extract-contract-structure` shows all MerkleTree declarations with their depth parameters. Verify each depth against the planning table.
+  > **Tool:** Read the contract source's MerkleTree declarations to find all depth parameters. Verify each depth against the planning table.
 
 - [ ] **Depth is not excessively large for the expected number of entries.** A tree with depth 32 supports ~4 billion entries but requires 32 hash operations per proof. If the contract will never have more than a few thousand entries, depth 16 is sufficient. Over-sizing wastes proof generation time and circuit resources.
 
@@ -158,7 +149,7 @@ Check every ledger variable for correct visibility modifiers. Visibility determi
   - `sealed ledger` — set only in constructor, immutable after deployment
   - `ledger` (no modifier) — internal, not directly queryable but state changes are visible on-chain
 
-  > **Tool:** `midnight-extract-contract-structure` shows the visibility modifier for each ledger variable. `midnight-list-examples` provides reference architectures showing idiomatic visibility patterns.
+  > **Tool:** Read the contract source to see the visibility modifier for each ledger variable. Use `octocode` to search the LFDT-Minokawa/compact repository for reference architectures showing idiomatic visibility patterns.
 
 - [ ] **Missing `export` on ledger variables that the DApp needs to query.** If the DApp front-end needs to read a ledger variable (e.g., to display the current state, check balances, show voting results), the variable must be `export ledger`. Without `export`, the DApp cannot directly query the value.
 
@@ -213,7 +204,7 @@ Check the contract for modularity and appropriate separation of concerns.
   }
   ```
 
-  > **Tool:** `midnight-extract-contract-structure` identifies module structure and imports. `midnight-search-compact` can find reference examples of module decomposition patterns.
+  > **Tool:** Read the contract source to identify module structure and imports. Use `octocode` to search the LFDT-Minokawa/compact repository for reference examples of module decomposition patterns.
 
 - [ ] **Shared types defined at the top level or in a shared module.** If multiple modules use the same types (enums, structs), those types should be defined at the top level or in a dedicated shared module, not duplicated across modules.
 
@@ -337,13 +328,3 @@ Quick reference of common architecture anti-patterns in Compact contracts.
 | Non-ADT ledger variable not initialized in constructor | Variable has undefined initial value; behavior on first read is unpredictable | Explicitly initialize all `Field`, `Uint`, `Bytes`, `Boolean`, and enum ledger variables in the constructor |
 | Single monolithic contract with unrelated concerns | Harder to audit, test, and maintain; access control review becomes complex | Split into modules using `module Name { ... }` with clear separation of concerns |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | Compile contract with hosted compiler. Use `skipZk=true` for syntax validation. |
-| `midnight-extract-contract-structure` | Deep structural analysis: data structure declarations, visibility modifiers, module organization. |
-| `midnight-analyze-contract` | Static analysis of contract architecture and patterns. |
-| `midnight-get-latest-syntax` | Authoritative Compact syntax reference including ADT types and module syntax. |
-| `midnight-list-examples` | List available example contracts for reference architectures and idiomatic patterns. |
-| `midnight-search-compact` | Semantic search across Compact code for architectural patterns. |

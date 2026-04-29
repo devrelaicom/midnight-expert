@@ -2,20 +2,9 @@
 
 Review checklist for the **Compilation & Type Safety** category. This covers deprecated syntax, incorrect return types, type casting errors, hallucinated API methods, and common compiler error patterns. LLM-generated Compact code is especially prone to these issues because training data contains outdated syntax and invented APIs. Apply every item below to the contract under review.
 
-## Required MCP Tools
+## Shared Evidence
 
-Run these tools before starting your review. Reference their output when evaluating checklist items.
-
-| Tool | Label | Purpose |
-|------|-------|---------|
-| `midnight-compile-contract` | `[shared]` | **Primary evidence source.** Actual compilation output reveals all syntax and type errors. |
-| `midnight-extract-contract-structure` | `[shared]` | Detects deprecated syntax, hallucinated APIs, structural issues |
-| `midnight-analyze-contract` | `[shared]` | Static analysis of contract patterns |
-| `midnight-get-latest-syntax` | `[shared]` | **Critical for this category.** Authoritative syntax reference — the ground truth for what is valid Compact. |
-
-Tools marked `[shared]` are pre-run by the orchestrator — their output is in your prompt.
-
-**Important:** For Compilation & Type Safety review, the `midnight-compile-contract` and `midnight-get-latest-syntax` outputs are your primary evidence. Cross-reference every checklist item against actual compilation results before reporting findings.
+The orchestrator runs `compact compile --skip-zk` on the contract before dispatching reviewers. The resulting `COMPILE_RESULT` (full stdout/stderr from the compiler) is provided in your prompt. Reference this compilation output when evaluating checklist items. Read the contract source files directly to inspect structure, declarations, and patterns. This category relies most heavily on the compilation output — cross-reference every checklist item against the actual compiler diagnostics before reporting findings.
 
 ## Syntax Error Checklist
 
@@ -35,7 +24,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   }
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show `unknown type "Void"` or `found "{" looking for ";"` if present. `midnight-extract-contract-structure` also flags deprecated syntax.
+  > **Tool:** `COMPILE_RESULT` will show `unknown type "Void"` or `found "{" looking for ";"` if present.
 
 - [ ] **Deprecated `ledger { ... }` block instead of individual ledger declarations.** Older versions of Compact used a single `ledger { ... }` block to group all ledger declarations. Current Compact requires each ledger variable to be declared individually. The `export` modifier is optional — use it when the DApp needs to query the variable directly.
 
@@ -53,7 +42,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   ledger owner: Bytes<32>;
   ```
 
-  > **Tool:** `midnight-compile-contract` output shows `found "{" looking for ";"` for deprecated ledger block syntax. `midnight-extract-contract-structure` flags this pattern.
+  > **Tool:** `COMPILE_RESULT` shows `found "{" looking for ";"` for deprecated ledger block syntax.
 
 - [ ] **`Choice::variant` (Rust-style) instead of `Choice.variant` (dot notation).** Compact uses dot notation for enum/choice variant access, not Rust-style double-colon path syntax. LLMs trained on Rust code frequently produce the wrong syntax.
 
@@ -79,7 +68,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   witness local_secret_key(): Bytes<32>;
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show a parsing error for witness bodies. `midnight-get-latest-syntax` confirms witness declaration-only syntax.
+  > **Tool:** `COMPILE_RESULT` will show a parsing error for witness bodies.
 
 - [ ] **`pure function` instead of `pure circuit`.** Compact does not have a `function` keyword. Reusable non-exported logic is declared as a `circuit` (or `pure circuit` for circuits that do not access ledger state). LLMs frequently hallucinate `function` because it is ubiquitous in other languages.
 
@@ -95,7 +84,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   }
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show an error for the `function` keyword. `midnight-get-latest-syntax` confirms `circuit` and `pure circuit` as the only keywords.
+  > **Tool:** `COMPILE_RESULT` will show an error for the `function` keyword.
 
 - [ ] **`Cell<T>` used as a type.** `Cell<T>` is not a valid Compact type. LLMs sometimes hallucinate it from Rust or other ZK language patterns. Use the type directly for ledger declarations.
 
@@ -150,7 +139,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   export ledger balances: Map<Bytes<32>, Field>;
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show undefined type errors for stdlib types if the import is missing. `midnight-extract-contract-structure` checks for the import presence.
+  > **Tool:** `COMPILE_RESULT` will show undefined type errors for stdlib types if the import is missing.
 
 - [ ] **`include "std"` (outdated) instead of `import CompactStandardLibrary;`.** Older versions of Compact used `include "std"` to load the standard library. Since language version 0.12.3 (compiler 0.19.7), the standard library is a builtin module imported via `import CompactStandardLibrary;`. The `std.compact` file is still provided for backward compatibility, so `include "std"` may still compile, but the `import` form is the recommended approach. Note: the `include` keyword itself is still valid for including other `.compact` files — only its use for the standard library is outdated.
 
@@ -276,7 +265,7 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const result = value as Field as Bytes<32>;
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show `cannot cast from type X to type Y`. `midnight-get-latest-syntax` documents the valid cast paths.
+  > **Tool:** `COMPILE_RESULT` will show `cannot cast from type X to type Y`.
 
 - [ ] **`Boolean` to `Field` cast is direct.** `Boolean` can be cast directly to `Field` without an intermediate step. This is a common source of unnecessary complexity — LLMs sometimes generate a multi-step cast through `Uint<8>` which works but is not required.
 
@@ -357,7 +346,7 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const current = counter.read();
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show `operation "value" undefined for Counter`. `midnight-get-latest-syntax` lists the correct Counter API methods.
+  > **Tool:** `COMPILE_RESULT` will show `operation "value" undefined for Counter`.
 
 - [ ] **`Map.get(key)` instead of `Map.lookup(key)`.** The `Map` type does not have a `.get()` method. The correct method to retrieve a value by key is `.lookup(key)`. LLMs hallucinate `.get()` from JavaScript `Map` or other language standard libraries.
 
@@ -370,7 +359,7 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const balance = balances.lookup(account);
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show `operation "get" undefined for Map`. `midnight-search-compact` can find correct Map usage patterns in reference code.
+  > **Tool:** `COMPILE_RESULT` will show `operation "get" undefined for Map`. Use `octocode` to search the LFDT-Minokawa/compact repository for correct Map usage patterns in reference code.
 
 - [ ] **`Map.has(key)` instead of `Map.member(key)`.** The `Map` type does not have a `.has()` method. The correct method to check whether a key exists is `.member(key)`. LLMs hallucinate `.has()` from JavaScript `Map` or similar APIs.
 
@@ -403,7 +392,7 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   const h = transientHash<Bytes<32>>(input);
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show `unknown function "hash"`. `midnight-get-latest-syntax` lists all valid hash functions.
+  > **Tool:** `COMPILE_RESULT` will show `unknown function "hash"`.
 
 - [ ] **`verify()` as a general verification function.** There is no general `verify()` function in Compact. Verification is done through `assert()` for condition checks, `checkRoot()` for Merkle tree root verification, or specific cryptographic operations. LLMs invent `verify()` because it sounds natural.
 
@@ -469,7 +458,7 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   const point: JubjubPoint = computePoint(scalar);
   ```
 
-  > **Tool:** `midnight-compile-contract` output will show an unknown type error for `CurvePoint` or `NativePoint`. `midnight-get-latest-syntax` confirms `JubjubPoint` as the current type name.
+  > **Tool:** `COMPILE_RESULT` will show an unknown type error for `CurvePoint` or `NativePoint`. Use `octocode` to search the LFDT-Minokawa/compact repository to confirm `JubjubPoint` as the current type name.
 
 - [ ] **`CoinInfo` instead of `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`.** The correct type names for coin information in Compact are `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`, not `CoinInfo`. LLMs simplify the type name because `CoinInfo` is shorter.
 
@@ -504,12 +493,3 @@ Quick reference of common compiler error patterns, their likely causes, and fixe
 | Witness-related deployment error in constructor | Constructor calls a witness but the deployment workflow does not provide the witness implementation | Ensure witness providers are available at deploy time, or prefer passing initial values as constructor parameters |
 | `operation "<" undefined for Field` | Using relational operators on `Field` type | Cast to `Uint<N>` before comparison: `(a as Uint<64>) < (b as Uint<64>)` |
 
-## Tool Reference
-
-| Tool | Description |
-|------|-------------|
-| `midnight-compile-contract` | **Primary tool for this category.** Compile contract with hosted compiler. Use `skipZk=true` for syntax/type validation. All compilation errors listed in the Compiler Error Quick Reference are directly caught by this tool. |
-| `midnight-extract-contract-structure` | Deep structural analysis: deprecated syntax, hallucinated APIs, missing imports. |
-| `midnight-analyze-contract` | Static analysis of contract structure and common patterns. |
-| `midnight-get-latest-syntax` | **Critical for this category.** Authoritative Compact syntax reference — use as ground truth for valid types, functions, and keywords. |
-| `midnight-search-compact` | Semantic search across Compact code for correct API usage patterns. |
