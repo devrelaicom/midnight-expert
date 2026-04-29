@@ -1,0 +1,2 @@
+{"sessionId":"sess-03","type":"user","isMeta":false,"uuid":"u1","parentUuid":null,"message":{"role":"user","content":"hello"},"timestamp":"2026-04-29T10:00:00Z","gitBranch":"main"}
+{"sessionId":"sess-03","type":"assistant","uuid":"a1","parentUuid":"u1","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]},"timestamp":"2026-04-29T10:00:01Z"}
