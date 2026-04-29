@@ -46,9 +46,13 @@ while IFS= read -r path; do
   [ -z "$path" ] && continue
   sid="$(basename "$path" .jsonl)"
 
-  # First user-string-content message: gives startedAt, gitBranch, firstUserPrompt.
+  # First non-meta user message with string content: gives startedAt,
+  # gitBranch, firstUserPrompt.
+  # Real schema: { type: "user", isMeta?: bool, message: { content: <string|array> }, timestamp, gitBranch }
   first="$(jq -c '
-    select(.type == "user" and (.content | type == "string"))
+    select(.type == "user")
+    | select((.isMeta // false) == false)
+    | select(.message.content | type == "string")
   ' "$path" 2>/dev/null | head -1)"
 
   if [ -z "$first" ]; then
@@ -57,7 +61,7 @@ while IFS= read -r path; do
 
   started="$(printf '%s' "$first" | jq -r '.timestamp // null')"
   branch="$(printf '%s' "$first" | jq -r '.gitBranch // null')"
-  prompt="$(printf '%s' "$first" | jq -r '.content' | head -c 200)"
+  prompt="$(printf '%s' "$first" | jq -r '.message.content' | head -c 200)"
 
   # Last entry's timestamp: endedAt.
   ended="$(jq -c -s 'last | (.timestamp // null)' "$path" 2>/dev/null || echo null)"

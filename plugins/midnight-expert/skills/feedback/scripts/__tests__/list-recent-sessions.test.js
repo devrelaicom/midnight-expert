@@ -11,8 +11,20 @@ const SCRIPT = join(__dirname, '..', 'list-recent-sessions.sh');
 
 function makeFakeJsonl(sessionId, startTs, endTs, branch, firstPrompt) {
   return [
-    JSON.stringify({ sessionId, type: 'user', content: firstPrompt, timestamp: startTs, gitBranch: branch }),
-    JSON.stringify({ sessionId, type: 'assistant', content: [{ type: 'text', text: 'ok' }], timestamp: endTs }),
+    JSON.stringify({
+      sessionId,
+      type: 'user',
+      isMeta: false,
+      message: { role: 'user', content: firstPrompt },
+      timestamp: startTs,
+      gitBranch: branch,
+    }),
+    JSON.stringify({
+      sessionId,
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'ok' }] },
+      timestamp: endTs,
+    }),
   ].join('\n') + '\n';
 }
 
@@ -89,5 +101,38 @@ describe('list-recent-sessions.sh', () => {
     const sessions = JSON.parse(result.stdout);
     const ccc = sessions.find(s => s.sessionId === 'ccc');
     assert.ok(ccc.firstUserPrompt.length <= 200);
+  });
+
+  it('skips isMeta user messages when finding first user prompt', () => {
+    const projectKey2 = '-fake-meta-test';
+    const projectsDir2 = join(tmpHome, '.claude', 'projects', projectKey2);
+    mkdirSync(projectsDir2, { recursive: true });
+    const lines = [
+      JSON.stringify({
+        sessionId: 'meta1',
+        type: 'user',
+        isMeta: true,
+        message: { role: 'user', content: '<system caveat>' },
+        timestamp: '2026-04-29T10:00:00Z',
+        gitBranch: 'main',
+      }),
+      JSON.stringify({
+        sessionId: 'meta1',
+        type: 'user',
+        isMeta: false,
+        message: { role: 'user', content: 'real user prompt' },
+        timestamp: '2026-04-29T10:00:01Z',
+        gitBranch: 'main',
+      }),
+    ].join('\n') + '\n';
+    writeFileSync(join(projectsDir2, 'meta1.jsonl'), lines);
+
+    const result = spawnSync('bash', [SCRIPT, '/fake/meta/test'], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: tmpHome },
+    });
+    const sessions = JSON.parse(result.stdout);
+    assert.equal(sessions.length, 1);
+    assert.equal(sessions[0].firstUserPrompt, 'real user prompt');
   });
 });
