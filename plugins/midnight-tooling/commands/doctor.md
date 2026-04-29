@@ -1,7 +1,7 @@
 ---
 name: midnight-tooling:doctor
 description: Comprehensive diagnostic and health report for the Compact CLI installation, compiler versions, PATH configuration, custom directory setup, proof server status, and plugin dependencies
-allowed-tools: Bash, Task, AskUserQuestion, mcp__plugin_midnight-tooling_octocode__githubViewRepoStructure, mcp__plugin_midnight-tooling_octocode__githubGetFileContent, mcp__plugin_midnight-tooling_midnight-devnet__network-status, mcp__plugin_midnight-tooling_midnight-devnet__health-check, mcp__plugin_midnight-tooling_midnight-devnet__get-network-config
+allowed-tools: Bash, Task, AskUserQuestion, mcp__plugin_midnight-tooling_octocode__githubViewRepoStructure, mcp__plugin_midnight-tooling_octocode__githubGetFileContent
 argument-hint: "[--auto-fix]"
 ---
 
@@ -47,13 +47,13 @@ Prompt the agent with:
 
 ### Agent 3 — Docker & Devnet
 
-This agent uses a hybrid bash + MCP approach. Bash commands check Docker prerequisites and container status (resilient — no MCP dependency). The `health-check` MCP tool checks live service health with response times. If MCP tools fail, report that health checks could not be performed.
+This agent uses bash to check Docker prerequisites, container status, and HTTP service health. Container status and service health are sourced from the `midnight-tooling:devnet-health` skill's `status.sh` and `health.sh` scripts.
 
 Prompt the agent with:
 
-> Run the following checks and report results. Do NOT output anything except lines in the exact format `CHECK_NAME | STATUS | DETAIL`. Do not include markdown fences or any other text.
+> First invoke the `midnight-plugin-utils:find-claude-plugin-root` skill to create `/tmp/cpr.py`. Run the following checks and report results. Do NOT output anything except lines in the exact format `CHECK_NAME | STATUS | DETAIL`. Do not include markdown fences or any other text.
 >
-> **Part A — Docker prerequisites (bash):**
+> **Part A — Docker prerequisites:**
 >
 > 1. Check Docker is installed: `docker --version 2>&1`
 >    - If succeeds → `Docker installed | pass | installed` and `Docker version | info | <version output>`
@@ -63,24 +63,24 @@ Prompt the agent with:
 >    - If succeeds → `Docker daemon | pass | running`
 >    - If fails → `Docker daemon | critical | not running` — skip container and health checks
 >
-> **Part B — Container status (bash):**
+> **Part B — Container status:**
 >
-> 3. List devnet containers: `docker ps -a --filter "name=midnight-" --format "{{.Names}}\t{{.Status}}"`
->    - For each of the three expected containers (node, indexer, proof server), check if a matching container name is present and whether its status starts with "Up":
->      - Running → `Node container | pass | running` (same for Indexer, Proof server)
->      - Stopped → `Node container | warn | stopped`
->      - Not found → `Node container | warn | not found`
+> 3. Resolve the devnet-health scripts:
+>    - `PLUGIN_ROOT="$(python3 /tmp/cpr.py midnight-tooling)"`
+>    - `DEVNET_SCRIPTS="$PLUGIN_ROOT/skills/devnet-health/scripts"`
 >
-> **Part C — Service health (MCP):**
+> 4. Run `bash "$DEVNET_SCRIPTS/status.sh"`. Each line is `<service>\t<status>\t<containerName>`. For each of `node`, `indexer`, `proof-server`:
+>    - `running` → `<Service> container | pass | running` (e.g. `Node container | pass | running`)
+>    - `stopped` → `<Service> container | warn | stopped`
+>    - `not-found` → `<Service> container | warn | not found`
 >
-> 4. Call the `mcp__plugin_midnight-tooling_midnight-devnet__health-check` tool to get service health with response times.
->    - For each service (node, indexer, proof server), report:
->      - Healthy → `Node health | pass | healthy`
->      - Unhealthy/not responding → `Node health | warn | not responding`
->    - If the MCP tool call fails entirely, emit warnings for all three:
->      - `Node health | warn | MCP unavailable`
->      - `Indexer health | warn | MCP unavailable`
->      - `Proof server health | warn | MCP unavailable`
+> **Part C — Service health (HTTP probes):**
+>
+> 5. Run `bash "$DEVNET_SCRIPTS/health.sh"`. Each line is `<service>\t<healthy|unhealthy>\t<ms>\t<httpCode>`. For each of `node`, `indexer`, `proof-server`:
+>    - `healthy` → `<Service> health | pass | responding (<ms>ms, HTTP <code>)`
+>    - `unhealthy` and the corresponding container is `running` → `<Service> health | warn | not responding (HTTP <code>)`
+>    - `unhealthy` and the corresponding container is `stopped`/`not-found` → emit nothing extra (the container row already covered it)
+>    - If `health.sh` exits `2` (e.g. `curl` not installed) → emit `<Service> health | warn | curl unavailable` once for each service.
 
 ### Agent 4 — Plugin Dependencies
 

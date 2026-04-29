@@ -4,6 +4,12 @@
 # Designed to chain with any existing statusLine command.
 set -euo pipefail
 
+# Resolve the plugin root so we can invoke sibling scripts (e.g. devnet-health).
+# This script lives at <plugin-root>/scripts/sl.sh.
+SL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+PLUGIN_ROOT="$(cd "$SL_SCRIPT_DIR/.." >/dev/null 2>&1 && pwd)"
+DEVNET_HEALTH_SCRIPTS="$PLUGIN_ROOT/skills/devnet-health/scripts"
+
 # =============================================================================
 # Phase 0: Read stdin + configuration
 # =============================================================================
@@ -245,14 +251,14 @@ fi
 # Phase 4: Status checks (only if Midnight project)
 # =============================================================================
 
-# --- Devnet status (via midnight-local-devnet CLI) ---
+# --- Devnet status (via devnet-health/scripts/status.sh) ---
 DEVNET_NODE="unknown"
 DEVNET_INDEXER="unknown"
 DEVNET_PROOF="unknown"
 DEVNET_ANY_RUNNING=0
 
-if command -v npx >/dev/null 2>&1; then
-  devnet_status_json="$(run_with_timeout 5 npx -y @aaronbassett/midnight-local-devnet status --json 2>/dev/null || true)"
+if [ -x "$DEVNET_HEALTH_SCRIPTS/status.sh" ] || [ -f "$DEVNET_HEALTH_SCRIPTS/status.sh" ]; then
+  devnet_status_json="$(run_with_timeout 5 bash "$DEVNET_HEALTH_SCRIPTS/status.sh" --json 2>/dev/null || true)"
   if [ -n "$devnet_status_json" ]; then
     # Parse per-service status
     if command -v jq >/dev/null 2>&1; then
@@ -286,8 +292,8 @@ if [ "$DEVNET_ANY_RUNNING" -eq 1 ]; then
     fi
   fi
 
-  if [ "$health_needs_refresh" -eq 1 ] && command -v npx >/dev/null 2>&1; then
-    devnet_health_json="$(run_with_timeout 5 npx -y @aaronbassett/midnight-local-devnet health --json 2>/dev/null || true)"
+  if [ "$health_needs_refresh" -eq 1 ] && [ -f "$DEVNET_HEALTH_SCRIPTS/health.sh" ]; then
+    devnet_health_json="$(run_with_timeout 5 bash "$DEVNET_HEALTH_SCRIPTS/health.sh" --json 2>/dev/null || true)"
     if [ -n "$devnet_health_json" ]; then
       printf '%s' "$devnet_health_json" > "$DEVNET_HEALTH_CACHE" 2>/dev/null || true
     fi

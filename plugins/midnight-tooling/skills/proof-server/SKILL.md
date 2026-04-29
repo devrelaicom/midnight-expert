@@ -17,7 +17,7 @@ The rest of this skill covers working with proof servers directly — useful whe
 
 Current proof server addresses for testnet and mainnet are published in the Midnight documentation. To look up the latest endpoints:
 
-Use the Midnight MCP server's documentation search tools to search for the `relnotes/overview` page in the `midnightntwrk/midnight-docs` repository:
+Use the `octocode` MCP to fetch the `relnotes/overview` page from the `midnightntwrk/midnight-docs` repository:
 
 ```
 githubGetFileContent(
@@ -151,6 +151,8 @@ docker logs --tail 20 midnight-proof-server
 ```
 
 The server is ready when `/health` returns `{"status":"ok",...}` and `/ready` returns status `"ok"` with HTTP 200. If `/ready` returns HTTP 503 with status `"busy"`, the server is running but its job queue is full.
+
+For a one-shot probe of the proof server (and the rest of the devnet) from inside a script, use the `midnight-tooling:devnet-health` skill — its `health.sh` calls `/version` on the proof server with a 5 s timeout.
 
 ## Stopping the Proof Server
 

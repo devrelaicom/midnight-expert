@@ -92,6 +92,10 @@ The compose file template is at `${CLAUDE_SKILL_DIR}/templates/devnet.yml`.
 
 For wallet management, funding, balance checking, transfers, and dust registration, use the `midnight-wallet` plugin. The wallet plugin's MCP tools work with any running devnet — it auto-detects the services by Docker image name.
 
+## Status & Health Probes
+
+For status and health checks from inside a script, the statusline, or a doctor agent, use the `midnight-tooling:devnet-health` skill. It provides two bash scripts (`status.sh`, `health.sh`) that report container state and per-service HTTP health using only `bash`, `docker`, and `curl`.
+
 ## Reference Files
 
 Consult these for detailed procedures:
