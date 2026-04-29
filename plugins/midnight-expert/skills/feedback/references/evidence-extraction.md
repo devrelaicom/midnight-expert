@@ -14,7 +14,7 @@ Build up to 6 cards. Pick from these kinds, prioritized in this order:
 
 1. **failing-tool-call** — the most-recent `tool-error` or `nonzero-exit` event from the failure signature. Use the assistant entry referenced by the event's `messageIndex` to retrieve the tool input (the command). Caption: `<tool>: <one-line summary of input>`.
 2. **error-output** — separate card if the tool result content is substantial (>2 lines) or if a follow-up assistant message quotes/analyzes the error. Caption: `Tool output / error from <tool>`.
-3. **preceding-user-prompt** — the user message at `previousUserPromptIndex`. Caption: `User prompt immediately before the failure`.
+3. **preceding-user-prompt** — the user message at `previousUserPromptIndex`. Caption: `User prompt immediately before the failure`. **If `previousUserPromptIndex` is `null` (e.g., resumed sessions where no string-content user prompt precedes the failure), skip this card.**
 4. **environment-snapshot** — a card whose content is a code-block formatted version of `environment.json`'s relevant fields (plugin, plugin version, CC version, model, OS, toolchain). Caption: `Environment`. Always include unless the bug is purely about the prose itself.
 
 If multiple failures appear in the signature, prefer the one whose `previousUserPromptIndex` is closest to the user's described symptom. If unclear, pick the most recent (latest `messageIndex`).

@@ -62,8 +62,8 @@ If `plugin_confidence` is `low` and there are no candidates at all, set `plugin_
 
 ## Anchor drafts
 
-- **expected_anchor_draft**: 1–2 sentences describing what the user expected to happen, drawn from the prose. If the prose contains *"I expected X"* or *"X should have happened"*, lift it directly. If you can't derive an expectation from the prose, emit `null`.
-- **intent_anchor_draft**: 1–2 sentences describing what the user was trying to do. If the prose explicitly says *"I was trying to X"* or describes a task ("compiling the contract"), lift it. If unclear, emit `null`.
+- **expected_anchor_draft**: 1–2 sentences describing what the user expected to happen, drawn from the prose. **Cap at ~120 characters** so it renders cleanly in `AskUserQuestion` option descriptions. If the prose contains *"I expected X"* or *"X should have happened"*, lift it directly (truncating if needed). If you can't derive an expectation from the prose, emit `null`.
+- **intent_anchor_draft**: 1–2 sentences describing what the user was trying to do, **capped at ~120 characters**. If the prose explicitly says *"I was trying to X"* or describes a task ("compiling the contract"), lift it. If unclear, emit `null`.
 
 Never fabricate anchors. `null` is a valid output and triggers a user prompt downstream.
 
