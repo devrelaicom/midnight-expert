@@ -67,7 +67,7 @@ fi
 
 HAS_COMPACT_NPM=$(json_bool any_pkg_dep_matches '^@midnight-ntwrk/(compact-runtime|compactc)$')
 HAS_RUNTIME_NPM=$(json_bool any_pkg_dep_matches '^@midnight-ntwrk/midnight-js-(contracts|node-zk-config-provider|fetch-zk-config-provider|http-client-proof-provider)$')
-HAS_WALLET_NPM=$(json_bool any_pkg_dep_matches '^@midnight-ntwrk/(wallet.*|dapp-connector-api)$')
+HAS_WALLET_NPM=$(json_bool any_pkg_dep_matches '^@midnight-ntwrk/(wallet[^/]*|dapp-connector-api)$')
 HAS_DAPP_CONN_NPM=$(json_bool any_pkg_dep_matches '^@midnight-ntwrk/dapp-connector-api$')
 
 # is_claude_plugin

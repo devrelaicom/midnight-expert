@@ -11,6 +11,7 @@ DETECT="$SCRIPT_DIR/detect-project.sh"
 
 PASS=0
 FAIL=0
+CASE_JSON=""
 
 assert_eq() {
   local label="$1"
