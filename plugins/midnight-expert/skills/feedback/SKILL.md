@@ -36,6 +36,17 @@ Determine the current session's JSONL file:
 CURRENT_JSONL="$(bash "${CLAUDE_SKILL_DIR}/scripts/find-current-session.sh" "$PWD")"
 ```
 
+The Phase 1 dependency graph (so you call these in the right batch):
+
+```
+parallel:  collect-environment.sh   list-recent-sessions.sh   find-current-session.sh
+                    │                          │                          │
+                    │                          │                          ▼
+                    │                          │              extract-failure-signature.js
+                    │                          │              plugin-name-detection.js
+                    └────── all five → /tmp/feedback-*.json ──┘
+```
+
 Then in a single message, run these in parallel Bash tool calls (independent):
 
 ```bash
