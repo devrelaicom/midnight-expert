@@ -173,7 +173,11 @@ The hub does not duplicate route procedures inline. Each reference file is self-
 
 After the route flow returns:
 
-- Delete `/tmp/feedback-prose.txt`, `/tmp/feedback-environment.json`, `/tmp/feedback-recent-sessions.json`, `/tmp/feedback-failure-signature.json`, `/tmp/feedback-plugin-candidates.json`, `/tmp/feedback-inference.json` if they still exist.
+- Delete the per-run JSON sidecars if they still exist: `/tmp/feedback-prose.txt`, `/tmp/feedback-environment.json`, `/tmp/feedback-recent-sessions.json`, `/tmp/feedback-failure-signature.json`, `/tmp/feedback-plugin-candidates.json`, `/tmp/feedback-inference.json`.
+- Defensive: clean up any leftover body tempfile from `issue-flow.md` Step 9 that didn't reach its own cleanup branch:
+  ```bash
+  rm -f /tmp/feedback-body.*.md
+  ```
 - Do NOT delete anything in `${CLAUDE_PLUGIN_DATA}/.feedback/drafts/` — those are user-visible artifacts.
 
 ## End-state
