@@ -2,6 +2,19 @@
 
 Heavy-curation path for bug reports. Loaded from SKILL.md when `route == "issue"`.
 
+## Steps at a glance
+
+1. [Re-target the session if not current](#step-1-re-target-the-session-if-not-current)
+2. [Show pre-filled anchors](#step-2-show-pre-filled-anchors)
+3. [Forensic scan deeper](#step-3-forensic-scan-deeper)
+4. [Pick evidence cards](#step-4-pick-evidence-cards)
+5. [Apply heavy redaction](#step-5-apply-heavy-redaction)
+6. [Show evidence summary](#step-6-show-evidence-summary)
+7. [Compose the issue body](#step-7-compose-the-issue-body)
+8. [Final review](#step-8-final-review)
+9. [File the issue](#step-9-file-the-issue)
+10. [Success / failure handling](#step-10-success--failure-handling)
+
 ## Step 1: Re-target the session if not current
 
 The skill produced `failure-signature.json` and `plugin-candidates.json` over the CURRENT session in Phase 1. If `session_pointer != "current"`, you must re-target.
