@@ -39,24 +39,33 @@ Follow `references/evidence-extraction.md`. Output `evidence-cards.json` (in-mem
 
 ## Step 5: Apply heavy redaction
 
-For each card's content, pipe through the string-level transforms from `redactor.js`. Use a small inline Node script:
+For each card, pipe its raw content through `${CLAUDE_SKILL_DIR}/scripts/redact-string.js` via stdin. NEVER pass card content as a shell-quoted string — shell expansion would silently inline the user's environment variables before redaction sees them.
+
+Pattern:
 
 ```bash
 GIT_USER_NAME="$(git config user.name 2>/dev/null || true)"
 GIT_USER_EMAIL="$(git config user.email 2>/dev/null || true)"
-node --input-type=module -e "
-  import('${CLAUDE_SKILL_DIR}/scripts/redactor.js').then(m => {
-    const { readFileSync } = await import('node:fs');
-    const stdin = readFileSync(0, 'utf8');
-    let out = m.redactPII(stdin, { gitUserName: process.env.GIT_USER_NAME, gitUserEmail: process.env.GIT_USER_EMAIL });
-    out = m.redactSecrets(out);
-    out = m.relativizePaths(out, { homeDir: process.env.HOME, projectRoot: process.cwd() });
-    process.stdout.write(out);
-  });
-" <<< "$CARD_CONTENT"
+PROJECT_ROOT="$PWD"
+export GIT_USER_NAME GIT_USER_EMAIL PROJECT_ROOT
+
+# For each card, write its raw content to a temp file, then pipe via stdin:
+RAW_PATH="$(mktemp)"
+cat > "$RAW_PATH" <<RAW_EOF
+<card raw content here>
+RAW_EOF
+
+REDACTED="$(node ${CLAUDE_SKILL_DIR}/scripts/redact-string.js < "$RAW_PATH")"
+rm -f "$RAW_PATH"
 ```
 
-Or write a single helper that reads stdin, applies all three, writes stdout. Either way, the result becomes `redactedContent`.
+Or, simpler if you can capture stdin programmatically (preferred):
+
+```bash
+echo -n "$RAW_CONTENT_FROM_STRUCTURED_DATA" | node ${CLAUDE_SKILL_DIR}/scripts/redact-string.js
+```
+
+The Node script reads stdin verbatim — no shell expansion of `$` references inside the content. The result is safe to use as `redactedContent` on the evidence card.
 
 ## Step 6: Show evidence summary
 
