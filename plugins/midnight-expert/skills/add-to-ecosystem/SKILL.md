@@ -1,6 +1,6 @@
 ---
 name: midnight-expert:add-to-ecosystem
-description: This skill should be used when the user asks to "add my project to the Midnight ecosystem", "submit to Electric Capital", "make my repo eligible for the EC report", "add Midnight topics to my repo", "add the Midnight attribution to my README", or invokes /midnight-expert:add-to-ecosystem. Walks the project through the four Electric Capital eligibility requirements (on GitHub, public, `midnightntwrk` topic, optional `compact` topic) and inserts the canonical attribution sentence into the README, then commits / pushes / opens a PR.
+description: This skill should be used when the user asks to add their project to the Midnight ecosystem, submit to Electric Capital, make a repo eligible for the EC crypto-ecosystems report, register a Midnight project, list a project in the EC report, tag a repo with `midnightntwrk` or `compact` topics, or add the canonical Midnight attribution to a README. Walks through the four Electric Capital eligibility requirements (on GitHub, public, `midnightntwrk` topic, optional `compact` topic), inserts the canonical attribution sentence into README.md, commits, pushes, and opens a PR.
 version: 0.1.0
 ---
 
@@ -15,7 +15,7 @@ Walk the user's current project through the Electric Capital eligibility checkli
 
 ## Tools required
 
-- `git`, `gh` (GitHub CLI), `jq`. If any are missing, abort Phase 1 with the install command.
+- `git`, `gh` (GitHub CLI, version ≥ 2.0 — required for the `--json defaultBranchRef,repositoryTopics` flags used in Phase 2), `jq`. If any are missing, abort Phase 1 with the install command.
 
 ## Skill state
 
@@ -114,9 +114,15 @@ Compare to `default_branch`.
 
 **Case A — current branch is the default branch.**
 
-First, look ahead: if all required topics are already present (`existing_topics` from Phase 2 contains `midnightntwrk`, and either contains `compact` or the project doesn't use Compact) AND the README already contains one of the three EC sentences (run `check-readme.sh` and check `present`), then there is no work for Phase 4–6 to do. In that case, set `branch_state = "default-branch"`, skip the branch question, and continue — Phases 4–6 will print `[OK]` lines and exit.
+First, look ahead and decide whether any work remains. Run these checks:
 
-Otherwise, use `AskUserQuestion` with this question:
+1. Is `midnightntwrk` already in `existing_topics` (from Phase 2)?
+2. If the project uses Compact (run `detect-project.sh`, check `recommendation.add_compact_topic`), is `compact` also already in `existing_topics`?
+3. Does the README already contain one of the three EC sentences? (Run `check-readme.sh`, check `present`.)
+
+If all three checks pass: there's no work for Phases 4–6. Set `branch_state = "default-branch"`, skip the branch question, and continue — Phases 4–6 will simply print `[OK]` lines and the skill will exit at the summary.
+
+Otherwise, use `AskUserQuestion`:
 
 > "You're on the default branch (`$DEFAULT_BRANCH`). Create a feature branch for these changes?"
 
@@ -124,10 +130,13 @@ Options:
 
 1. `"Yes, create branch 'add-midnight-ecosystem'"` (recommended)
 2. `"No, work directly on $DEFAULT_BRANCH"`
+3. `"Cancel"` — abort the skill cleanly with a brief summary of the Phase 1–2 findings.
 
 If the user picks option 1: run `git switch -c add-midnight-ecosystem`. Set `branch_state = "new-branch"`.
 
 If option 2: set `branch_state = "default-branch"`.
+
+If option 3: abort.
 
 **Case B — current branch is not the default branch.**
 
@@ -208,7 +217,13 @@ bash "${CLAUDE_SKILL_DIR}/scripts/check-readme.sh"
 
 Parse the JSON. If the script exits non-zero or output isn't valid JSON: tell the user the README check couldn't be completed and ask them to either fix the issue (e.g., create `README.md` if it's missing — though `check-readme.sh` already handles that case) or skip the README phase. Don't proceed silently.
 
-**If `present == true`**: look up the full sentence text from `references/ec-criteria.md` using `matched_sentence` as the key (`built-on` → "This project is built on the Midnight Network.", etc.) and print `[OK] README contains "<full sentence text>"`. Skip to the summary (no Phase 6 work — `made_readme_change` stays false).
+**If `present == true`**: look up the full sentence text using the table below, then print `[OK] README contains "<full sentence text>"`. Skip to the summary (no Phase 6 work — `made_readme_change` stays false).
+
+| `matched_sentence` | Full sentence |
+|---|---|
+| `built-on` | This project is built on the Midnight Network. |
+| `integrates` | This project integrates with the Midnight Network. |
+| `extends` | This project extends the Midnight Network with additional developer tooling. |
 
 **If `present == false`**: continue.
 
@@ -263,12 +278,14 @@ If `made_readme_change == false`, skip this phase entirely — print the summary
 ### 6a — Detect commit convention
 
 ```bash
-git log --oneline -30 --no-merges
+bash "${CLAUDE_SKILL_DIR}/scripts/detect-commit-convention.sh"
 ```
 
-For each line, strip the leading SHA and check whether the message starts with one of: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`, `revert` (optionally followed by `(scope)`), then `:`. Count matches.
+The script inspects the last 30 non-merge commits, counts how many start with a Conventional Commits prefix (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`, `revert`, optionally with `(scope)`, then `:`), and emits JSON like `{"convention": "conventional", "matches": 18, "total": 30, "threshold": 0.6}`. If the ratio meets the threshold, `convention` is `"conventional"`; otherwise `"freeform"`. A brand-new repo with zero commits returns `"freeform"`.
 
-If matches / total ≥ 0.6, set `commit_convention = "conventional"`. Else `"freeform"`.
+If the script exits non-zero or the output isn't valid JSON, default `commit_convention` to `"freeform"` and continue.
+
+Set `commit_convention` from the script's `convention` field.
 
 Build the commit message:
 
@@ -357,3 +374,15 @@ No prompts, no edits, no commits.
 - `references/ec-criteria.md` — the canonical Electric Capital requirements and the three verbatim attribution sentences. Use this as the source of truth — never paraphrase.
 - `references/project-categorisation.md` — what each detection signal means and how the category is recommended.
 - `references/readme-placement.md` — the placement heuristic with worked examples.
+
+## Verifying the helper scripts
+
+The three helper scripts each have a fixture-based test driver. Run them all from the skill directory:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/test-detect-project.sh"
+bash "${CLAUDE_SKILL_DIR}/scripts/test-check-readme.sh"
+bash "${CLAUDE_SKILL_DIR}/scripts/test-detect-commit-convention.sh"
+```
+
+Each prints `N passed, 0 failed` on success.

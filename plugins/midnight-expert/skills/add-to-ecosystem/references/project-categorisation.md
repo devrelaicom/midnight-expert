@@ -58,3 +58,13 @@
 - `has_pragma_language_version`: yes
 - `is_cli_tool`: yes
 - → `category: "built-on"` (priority 1 wins; it's a tool that runs on Midnight, not just one that helps build for it)
+
+### A project with zero Midnight signals
+
+- `has_compact_files`: no
+- `has_runtime_npm_dep`: no
+- `has_wallet_sdk_npm_dep`: no
+- `is_claude_plugin`: no
+- `is_cli_tool`: no
+- `is_template`: no
+- → `category: "built-on"` (priority-4 default fallback — the user is expected to override at the prompt if this isn't right)
