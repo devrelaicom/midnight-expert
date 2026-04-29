@@ -115,7 +115,7 @@ Save it to `/tmp/feedback-inference.json` using the Write tool. Do not include a
 If your output is unparseable, retry once with stricter framing. If still unparseable, save the prose to a draft and abort:
 
 ```bash
-DRAFT_DIR="$CLAUDE_PLUGIN_DATA/.feedback/drafts"
+DRAFT_DIR="${CLAUDE_PLUGIN_DATA}/.feedback/drafts"
 mkdir -p "$DRAFT_DIR"
 cp /tmp/feedback-prose.txt "$DRAFT_DIR/$(date -u +%Y%m%dT%H%M%SZ)-prose-only.md"
 ```

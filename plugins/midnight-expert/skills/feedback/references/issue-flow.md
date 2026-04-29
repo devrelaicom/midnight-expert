@@ -160,7 +160,7 @@ Capture stdout (the URL) and stderr.
 **On gh missing or unauthed.** Detect by checking exit code or matching stderr. Save the body:
 
 ```bash
-DRAFT_DIR="$CLAUDE_PLUGIN_DATA/.feedback/drafts"
+DRAFT_DIR="${CLAUDE_PLUGIN_DATA}/.feedback/drafts"
 mkdir -p "$DRAFT_DIR"
 DRAFT_PATH="$DRAFT_DIR/<sessionId>-$(date -u +%Y%m%dT%H%M%SZ).md"
 cp "$BODY_PATH" "$DRAFT_PATH"
