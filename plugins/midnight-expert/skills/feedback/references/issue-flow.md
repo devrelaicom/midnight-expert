@@ -22,13 +22,15 @@ node ${CLAUDE_SKILL_DIR}/scripts/plugin-name-detection.js \
   > /tmp/feedback-plugin-candidates.json
 ```
 
-**B) Optionally parse to IR for narrative slicing in Step 4** (the IR is convenient for human-readable text extraction). The IR is NOT used for failure detection:
+The IR (output of `parse-session.js`) is NOT required for the v1 issue flow. Steps 4 (evidence extraction) and 5 (redaction) read directly from the raw `$TARGET_JSONL` using the `messageIndex` pointers in `failure-signature.json`. If you find yourself wanting human-readable narrative slicing (longer-term), you can parse to IR with:
 
 ```bash
 node ${CLAUDE_SKILL_DIR}/scripts/parse-session.js "$TARGET_JSONL" > /tmp/feedback-ir.json
 ```
 
-Subsequent steps work with both `/tmp/feedback-failure-signature.json` (raw-JSONL-derived events with `messageIndex` pointers into the JSONL) and the raw `$TARGET_JSONL` for direct content lookup.
+But this is optional — leave it off for v1.
+
+Subsequent steps work with `/tmp/feedback-failure-signature.json` (raw-JSONL-derived events with `messageIndex` pointers) and the raw `$TARGET_JSONL` for direct content lookup.
 
 ## Step 2: Show pre-filled anchors
 
