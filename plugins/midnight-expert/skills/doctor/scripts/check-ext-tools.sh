@@ -154,12 +154,13 @@ else
   fail=1
 fi
 
-# --- jq (optional) ---
+# --- jq ---
 if command -v jq >/dev/null 2>&1; then
   jq_ver="$(extract_version "$(jq --version 2>&1)")"
   emit "jq" "pass" "v${jq_ver}"
 else
-  emit "jq" "info" "not installed (optional — fallback exists in some plugins)"
+  emit "jq" "warn" "not installed — needed for JSON parsing in several plugins"
+  fail=1
 fi
 
 # --- OS info ---

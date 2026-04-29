@@ -83,7 +83,7 @@ Common failures when creating a new Midnight project and how to resolve them.
 
 ### Docker not running
 
-**Symptom:** `/midnight-tooling:run-proof-server` fails with Docker errors.
+**Symptom:** `/midnight-tooling:devnet start` fails with Docker errors.
 
 **Fixes:**
 1. Start Docker Desktop

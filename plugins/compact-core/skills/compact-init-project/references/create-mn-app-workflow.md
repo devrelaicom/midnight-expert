@@ -95,14 +95,14 @@ For counter, expect: `contract/`, `counter-cli/`, `package.json`
 
 ## Phase 4 — Proof Server
 
-Start the proof server using the midnight-tooling command:
+Start the local devnet (which includes the proof server) using the midnight-tooling command:
 
-Run `/midnight-tooling:run-proof-server`
+Run `/midnight-tooling:devnet start`
 
-This starts a Docker container running the Midnight proof server on port 6300. The command handles:
-- Resolving the latest stable Docker image tag
-- Starting the container
-- Verifying the health endpoint responds
+This starts the three Docker containers (node, indexer, proof server). The proof server runs on port 6300. The command handles:
+- Resolving stable Docker image tags
+- Starting the containers
+- Waiting for them to come up
 
 **If the proof server fails to start:** consult `references/troubleshooting.md` for common issues.
 
