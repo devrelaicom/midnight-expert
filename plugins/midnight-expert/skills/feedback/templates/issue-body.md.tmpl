@@ -1,0 +1,40 @@
+# {{title}}
+
+> Filed by `midnight-expert:feedback` v{{skill_version}} · session {{session_short}}
+
+## TL;DR
+{{tldr}}
+
+## Severity (skill's read)
+**{{severity}}** — {{severity_justification}}
+
+## Repro context
+- **Plugin**: `{{plugin_slug}}` (v{{plugin_version}})
+- **Marketplace**: midnight-expert v{{marketplace_version}}
+- **Claude Code**: v{{cc_version}}
+- **Model**: {{model}} ({{effort}})
+- **OS**: {{os}}
+{{#if toolchain_relevant}}
+- **Toolchain**: Compact {{compact_version}}, Midnight SDK {{sdk_version}}
+{{/if}}
+
+## What the user was trying to do
+{{intent_anchor}}
+
+## What the user expected
+{{expected_anchor}}
+
+## Evidence
+{{#each evidence_cards}}
+### {{caption}}
+```
+{{redactedContent}}
+```
+{{/each}}
+
+{{#if analysis_grounded}}
+## Skill's analysis
+**Confidence**: {{analysis_confidence}}
+
+{{analysis_prose}}
+{{/if}}
