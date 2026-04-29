@@ -62,7 +62,7 @@ describe('extractFailureSignature', () => {
       },
     ]);
     assert.deepEqual(sig.events, []);
-    assert.deepEqual(sig.counts, { 'tool-error': 0, 'nonzero-exit': 0, 'hook-event': 0, 'exception': 0 });
+    assert.deepEqual(sig.counts, { 'tool-error': 0, 'nonzero-exit': 0 });
   });
 
   it('detects a tool-error event from is_error=true', () => {

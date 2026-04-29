@@ -75,7 +75,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/plugin-name-detection.js" \
 If `CURRENT_JSONL` is empty (no session JSONLs found), substitute these defaults:
 
 ```bash
-echo '{"events":[],"counts":{"tool-error":0,"nonzero-exit":0,"hook-event":0,"exception":0}}' > /tmp/feedback-failure-signature.json
+echo '{"events":[],"counts":{"tool-error":0,"nonzero-exit":0}}' > /tmp/feedback-failure-signature.json
 echo '{"fromProse":[],"fromFailingTools":[],"activeInSession":[]}' > /tmp/feedback-plugin-candidates.json
 ```
 

@@ -7,7 +7,9 @@ import { readFileSync } from 'node:fs';
  * @returns {{ events: object[], counts: object }}
  */
 export function extractFailureSignature(entries) {
-  const counts = { 'tool-error': 0, 'nonzero-exit': 0, 'hook-event': 0, 'exception': 0 };
+  // Only kinds we currently detect. hook-event and exception will be added when
+  // we have concrete patterns; emitting them as 0 today is a false promise.
+  const counts = { 'tool-error': 0, 'nonzero-exit': 0 };
   const events = [];
 
   // Map tool_use_id -> { messageIndex, tool, plugin }
