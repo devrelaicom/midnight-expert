@@ -114,7 +114,9 @@ Compare to `default_branch`.
 
 **Case A — current branch is the default branch.**
 
-Use `AskUserQuestion` with this question:
+First, look ahead: if all required topics are already present (`existing_topics` from Phase 2 contains `midnightntwrk`, and either contains `compact` or the project doesn't use Compact) AND the README already contains one of the three EC sentences (run `check-readme.sh` and check `present`), then there is no work for Phase 4–6 to do. In that case, set `branch_state = "default-branch"`, skip the branch question, and continue — Phases 4–6 will print `[OK]` lines and exit.
+
+Otherwise, use `AskUserQuestion` with this question:
 
 > "You're on the default branch (`$DEFAULT_BRANCH`). Create a feature branch for these changes?"
 
@@ -163,7 +165,11 @@ bash "${CLAUDE_SKILL_DIR}/scripts/detect-project.sh"
 
 Parse the JSON output. Read `recommendation.add_compact_topic`. The signal-to-recommendation rules are documented in `references/project-categorisation.md` — refer to it if you need to explain the recommendation to the user.
 
-Use `AskUserQuestion`:
+**If the script exits non-zero or its output isn't valid JSON**: treat detection as inconclusive. Skip the recommendation marker — present both options as equal and add a short note to the user that automatic detection failed and they should pick based on their own knowledge of the project.
+
+If `"compact"` is already in `existing_topics`: print `[OK] Topic 'compact' present` and skip the rest of this section (no question, no edit).
+
+Otherwise, use `AskUserQuestion`:
 
 > "Does this project use Compact?"
 
@@ -171,7 +177,7 @@ Options (mark the recommended one):
 
 1. `"Yes, add 'compact' topic"` — recommended if `add_compact_topic == true`
 2. `"No, skip 'compact' topic"` — recommended if `add_compact_topic == false`
-3. `"Cancel"` — abort the skill
+3. `"Cancel"` — abort the skill cleanly with a summary of what's been done so far (e.g., `midnightntwrk` topic was already applied if you reached this point and it was missing).
 
 If the user picks option 1 and `"compact"` is not already in `existing_topics`:
 
@@ -200,13 +206,13 @@ Run the README check:
 bash "${CLAUDE_SKILL_DIR}/scripts/check-readme.sh"
 ```
 
-Parse the JSON.
+Parse the JSON. If the script exits non-zero or output isn't valid JSON: tell the user the README check couldn't be completed and ask them to either fix the issue (e.g., create `README.md` if it's missing — though `check-readme.sh` already handles that case) or skip the README phase. Don't proceed silently.
 
-**If `present == true`**: print `[OK] README contains the "$matched_sentence" attribution.` and skip to the summary (no Phase 6 work — `made_readme_change` stays false).
+**If `present == true`**: look up the full sentence text from `references/ec-criteria.md` using `matched_sentence` as the key (`built-on` → "This project is built on the Midnight Network.", etc.) and print `[OK] README contains "<full sentence text>"`. Skip to the summary (no Phase 6 work — `made_readme_change` stays false).
 
 **If `present == false`**: continue.
 
-Run detection again (cached value from Phase 4 is fine) to get `recommendation.category`. Translate to display text using `references/ec-criteria.md`:
+Run detection again (cached value from Phase 4 is fine) to get `recommendation.category`. If detection failed in Phase 4, present all three options without a recommendation and add a note. Otherwise, translate to display text using `references/ec-criteria.md`:
 
 | `category` | Display label | Sentence |
 |---|---|---|
