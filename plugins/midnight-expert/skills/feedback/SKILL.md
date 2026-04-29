@@ -30,23 +30,10 @@ Save `prose` to `/tmp/feedback-prose.txt` using the Write tool (cleaner than her
 
 ## Phase 1 — Collect structured context
 
-Determine the current session's JSONL file. The encoded project key is `cwd` with `/` replaced by `-`:
+Determine the current session's JSONL file:
 
 ```bash
-PROJECT_KEY="$(printf '%s' "$PWD" | sed 's|/|-|g')"
-SESSIONS_DIR="$HOME/.claude/projects/$PROJECT_KEY"
-
-CURRENT_JSONL=""
-if [ -d "$SESSIONS_DIR" ]; then
-  if cur_bsd=$(find "$SESSIONS_DIR" -maxdepth 1 -type f -name '*.jsonl' -print0 \
-      | xargs -0 stat -f '%m %N' 2>/dev/null | sort -rn | head -1 | awk '{ $1=""; sub(/^ /,""); print }'); then
-    CURRENT_JSONL="$cur_bsd"
-  fi
-  if [ -z "$CURRENT_JSONL" ]; then
-    CURRENT_JSONL=$(find "$SESSIONS_DIR" -maxdepth 1 -type f -name '*.jsonl' -print0 \
-      | xargs -0 stat -c '%Y %n' 2>/dev/null | sort -rn | head -1 | awk '{ $1=""; sub(/^ /,""); print }' || true)
-  fi
-fi
+CURRENT_JSONL="$(bash "${CLAUDE_SKILL_DIR}/scripts/find-current-session.sh" "$PWD")"
 ```
 
 Then in a single message, run these in parallel Bash tool calls (independent):
