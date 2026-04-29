@@ -1,9 +1,0 @@
-{
-  "midnight": {
-    "command": "npx",
-    "args": [
-      "-y",
-      "github:devrelaicom/midnight-mcp"
-    ]
-  }
-}

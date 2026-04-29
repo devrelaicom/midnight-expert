@@ -89,7 +89,7 @@ The template engine will:
 - Substitute `{{VARIABLE}}` placeholders in `.tmpl` files and rename them (removing `.tmpl`)
 - Copy non-template files as-is
 
-Parse the stdout JSON result. It returns `{"success": true, "filesCreated": [...]}` on success. If it fails, the stderr will contain the error message -- report it to the user.
+Parse the stdout JSON result. On success it returns `{"output": "<absolute path>", "files": <number>}` where `output` is the resolved output directory and `files` is the count of files created. If it fails, the process exits with code 1 and stderr contains a JSON error like `{"error": "<message>"}` -- report the error message to the user.
 
 ## Step 6 -- Post-Scaffold Setup
 

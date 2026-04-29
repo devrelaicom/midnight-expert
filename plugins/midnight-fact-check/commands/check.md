@@ -170,7 +170,7 @@ If zero claims were extracted, tell the user and stop:
 4. Wait for all classifiers to complete.
 5. Merge all copies:
    ```bash
-   npx @aaronbassett/midnight-fact-checker-utils merge --mode update -o "$RUN_DIR/classified-claims.json" "$RUN_DIR/extracted-claims.json" "$RUN_DIR/extracted-claims.compact-classifier.json" "$RUN_DIR/extracted-claims.sdk-classifier.json" "$RUN_DIR/extracted-claims.zkir-classifier.json" "$RUN_DIR/extracted-claims.witness-classifier.json"
+   npx @aaronbassett/midnight-fact-checker-utils merge --mode update --original "$RUN_DIR/extracted-claims.json" -o "$RUN_DIR/classified-claims.json" "$RUN_DIR/extracted-claims.compact-classifier.json" "$RUN_DIR/extracted-claims.sdk-classifier.json" "$RUN_DIR/extracted-claims.zkir-classifier.json" "$RUN_DIR/extracted-claims.witness-classifier.json"
    ```
 6. If the merge fails (validation error), tell the user:
    > "Merge validation failed. Agent copies preserved in [run directory] for debugging."
