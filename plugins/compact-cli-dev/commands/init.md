@@ -81,7 +81,7 @@ If the template directory is not found, report the error and stop.
 Invoke the template engine via stdin/stdout. Construct the JSON input with the template directory, output directory, and context object:
 
 ```bash
-echo '{"template":"<TEMPLATE_DIR>","output":"<directory>","context":{"PROJECT_NAME":"...","CLI_PACKAGE_NAME":"...","CONTRACT_NAME":"...","CONTRACT_PACKAGE":"...","CONTRACT_ZK_CONFIG_PATH":"...","GENERATED_AT":"..."}}' | npx @aaronbassett/template-engine
+echo '{"template":"<TEMPLATE_DIR>","output":"<directory>","context":{"PROJECT_NAME":"...","CLI_PACKAGE_NAME":"...","CONTRACT_NAME":"...","CONTRACT_PACKAGE":"...","CONTRACT_ZK_CONFIG_PATH":"...","GENERATED_AT":"..."}}' | npx --ignore-scripts @aaronbassett/template-engine
 ```
 
 The template engine will:

@@ -21,15 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+      - run: npm ci
       - name: Biome check
         run: npx biome check .
         working-directory: .
@@ -39,15 +36,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+      - run: npm ci
       - name: Biome format check
         run: npx biome format .
         working-directory: .
@@ -57,15 +51,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+      - run: npm ci
       - run: npx tsc --noEmit
 
   build:
@@ -73,15 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+      - run: npm ci
       - run: npx tsc
 
   test:
@@ -89,13 +77,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+      - run: npm ci
       - run: npx vitest run
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
+      - run: npm ci
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high
+      - name: Inspect tarball contents
+        run: npm pack --dry-run

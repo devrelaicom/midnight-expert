@@ -27,16 +27,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
-          cache: pnpm
-          cache-dependency-path: packages/midnight-fact-checker-utils/pnpm-lock.yaml
+          cache: npm
+          cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
 
       - name: Check if version changed
         id: version-check
@@ -61,18 +57,38 @@ jobs:
 
       - name: Install dependencies
         if: steps.version-check.outputs.changed == 'true'
-        run: pnpm install --frozen-lockfile
+        run: npm ci
+
+      - name: Audit (block on high+ severity)
+        if: steps.version-check.outputs.changed == 'true'
+        run: npm audit --audit-level=high
 
       - name: Run tests
         if: steps.version-check.outputs.changed == 'true'
         run: npx vitest run
 
+      - name: Type check
+        if: steps.version-check.outputs.changed == 'true'
+        run: npx tsc --noEmit
+
       - name: Build
         if: steps.version-check.outputs.changed == 'true'
         run: npx tsc
 
+      - name: Lock dependency tree for publish (npm-shrinkwrap.json)
+        if: steps.version-check.outputs.changed == 'true'
+        # Renames package-lock.json to npm-shrinkwrap.json so the locked
+        # dep tree ships in the published tarball. Consumers (including
+        # `npx`) then install exactly the versions tested in this CI run,
+        # not whatever floats up under semver ranges in package.json.
+        run: cp package-lock.json npm-shrinkwrap.json
+
+      - name: Inspect tarball contents
+        if: steps.version-check.outputs.changed == 'true'
+        run: npm pack --dry-run
+
       - name: Publish to npm with provenance
         if: steps.version-check.outputs.changed == 'true'
-        run: pnpm publish --no-git-checks --provenance --access public
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -60,7 +60,7 @@ Parse `$ARGUMENTS` and resolve each target to readable content. Classify each ta
 - Detected by: path exists, is a directory, does NOT contain `.claude-plugin/plugin.json`
 - Run file discovery:
   ```bash
-  npx @aaronbassett/midnight-fact-checker-utils discover "**/*" --cwd "[directory path]"
+  npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils discover "**/*" --cwd "[directory path]"
   ```
 - Show the matched file list to the user and ask for confirmation before proceeding.
 
@@ -73,7 +73,7 @@ Parse `$ARGUMENTS` and resolve each target to readable content. Classify each ta
 - Detected by: starts with `http://` or `https://`, does NOT match `github.com`
 - For each URL, run:
   ```bash
-  npx @aaronbassett/midnight-fact-checker-utils extract-url "[URL]" > "$RUN_DIR/url-content-N.md"
+  npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils extract-url "[URL]" > "$RUN_DIR/url-content-N.md"
   ```
 - Add the saved markdown files to the content list.
 
@@ -100,7 +100,7 @@ Parse `$ARGUMENTS` and resolve each target to readable content. Classify each ta
 - Detected by: contains `*`, `?`, `[`, or `{`
 - Run file discovery:
   ```bash
-  npx @aaronbassett/midnight-fact-checker-utils discover "[pattern]"
+  npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils discover "[pattern]"
   ```
 - Show matched file list to user and ask for confirmation.
 
@@ -145,7 +145,7 @@ Tell the user: `"Resolved N files from M targets"`
 5. Write each extractor's output to the run directory: `extracted-chunk-N.json`
 6. Merge all outputs using the merge script in concat mode:
    ```bash
-   npx @aaronbassett/midnight-fact-checker-utils merge --mode concat -o "$RUN_DIR/extracted-claims.json" "$RUN_DIR/extracted-chunk-1.json" "$RUN_DIR/extracted-chunk-2.json" ...
+   npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils merge --mode concat -o "$RUN_DIR/extracted-claims.json" "$RUN_DIR/extracted-chunk-1.json" "$RUN_DIR/extracted-chunk-2.json" ...
    ```
 7. Read the merged file. Assign sequential IDs (`claim-001`, `claim-002`, ...) to each claim. Write back.
 8. Tell the user: `"Extracted N claims from M content chunks"`
@@ -170,7 +170,7 @@ If zero claims were extracted, tell the user and stop:
 4. Wait for all classifiers to complete.
 5. Merge all copies:
    ```bash
-   npx @aaronbassett/midnight-fact-checker-utils merge --mode update --original "$RUN_DIR/extracted-claims.json" -o "$RUN_DIR/classified-claims.json" "$RUN_DIR/extracted-claims.compact-classifier.json" "$RUN_DIR/extracted-claims.sdk-classifier.json" "$RUN_DIR/extracted-claims.zkir-classifier.json" "$RUN_DIR/extracted-claims.witness-classifier.json"
+   npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils merge --mode update --original "$RUN_DIR/extracted-claims.json" -o "$RUN_DIR/classified-claims.json" "$RUN_DIR/extracted-claims.compact-classifier.json" "$RUN_DIR/extracted-claims.sdk-classifier.json" "$RUN_DIR/extracted-claims.zkir-classifier.json" "$RUN_DIR/extracted-claims.witness-classifier.json"
    ```
 6. If the merge fails (validation error), tell the user:
    > "Merge validation failed. Agent copies preserved in [run directory] for debugging."

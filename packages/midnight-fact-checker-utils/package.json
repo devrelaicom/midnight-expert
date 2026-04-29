@@ -30,17 +30,20 @@
 			"import": "./dist/index.js"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc",
 		"check": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"lint": "biome check .",
-		"format:check": "biome format ."
+		"format:check": "biome format .",
+		"prepublishOnly": "npm run lint && npm run check && npm run test && npm run build"
 	},
 	"dependencies": {
-		"@mozilla/readability": "^0.5.0",
+		"@mozilla/readability": "^0.6.0",
 		"commander": "^13.1.0",
 		"globby": "^14.1.0",
 		"jsdom": "^26.0.0",
@@ -52,6 +55,6 @@
 		"@types/node": "^20.17.0",
 		"@types/turndown": "^5.0.5",
 		"typescript": "^5.7.0",
-		"vitest": "^3.0.0"
+		"vitest": "^3.2.4"
 	}
 }
