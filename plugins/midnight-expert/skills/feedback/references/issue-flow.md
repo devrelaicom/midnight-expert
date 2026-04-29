@@ -2,15 +2,33 @@
 
 Heavy-curation path for bug reports. Loaded from SKILL.md when `route == "issue"`.
 
-## Step 1: Re-parse target session if not current
+## Step 1: Re-target the session if not current
 
-If `session_pointer != "current"`, parse the chosen session:
+The skill produced `failure-signature.json` and `plugin-candidates.json` over the CURRENT session in Phase 1. If `session_pointer != "current"`, you must re-target.
+
+Two operations on the chosen session:
+
+**A) Re-run failure-signature and plugin-detection over the OLDER session's RAW JSONL** (these scripts consume raw JSONL — they do NOT consume the IR, because the IR strips `is_error`):
 
 ```bash
-node ${CLAUDE_SKILL_DIR}/scripts/parse-session.js ~/.claude/projects/<project-key>/<sessionId>.jsonl > /tmp/feedback-ir.json
+TARGET_JSONL=~/.claude/projects/<project-key>/<chosen-sessionId>.jsonl
+node ${CLAUDE_SKILL_DIR}/scripts/extract-failure-signature.js "$TARGET_JSONL" > /tmp/feedback-failure-signature.json
+
+KNOWN="$(jq -r '.plugins | keys | join(",")' /tmp/feedback-environment.json)"
+node ${CLAUDE_SKILL_DIR}/scripts/plugin-name-detection.js \
+  --prose-file /tmp/feedback-prose.txt \
+  --jsonl-file "$TARGET_JSONL" \
+  --plugins "$KNOWN" \
+  > /tmp/feedback-plugin-candidates.json
 ```
 
-Then re-run extract-failure-signature and plugin-name-detection over this new session's raw JSONL. Update `failure-signature.json` and `plugin-candidates.json`.
+**B) Optionally parse to IR for narrative slicing in Step 4** (the IR is convenient for human-readable text extraction). The IR is NOT used for failure detection:
+
+```bash
+node ${CLAUDE_SKILL_DIR}/scripts/parse-session.js "$TARGET_JSONL" > /tmp/feedback-ir.json
+```
+
+Subsequent steps work with both `/tmp/feedback-failure-signature.json` (raw-JSONL-derived events with `messageIndex` pointers into the JSONL) and the raw `$TARGET_JSONL` for direct content lookup.
 
 ## Step 2: Show pre-filled anchors
 
