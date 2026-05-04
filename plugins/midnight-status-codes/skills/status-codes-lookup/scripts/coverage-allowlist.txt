@@ -2,5 +2,8 @@
 # One regex per line (extended POSIX). Lines starting with '#' are ignored.
 # Templates here are typically internal-errorf paths or messages users only see as exit 254.
 #
-# To add: paste the canonical message template (with ~a/~s/~d placeholders preserved),
-# escape regex metacharacters, and prefix with reason in a leading comment.
+# IMPORTANT: regexes are matched against the NORMALISED template, not the raw source string.
+# Normalisation collapses placeholders (~a, ~s, ~d, etc.) to "__" and runs of horizontal
+# whitespace to a single space. To add a new entry: copy the message string, replace each
+# ~-placeholder with "__", and escape regex metacharacters as needed. Add a leading '#' line
+# explaining why this template is intentionally not user-facing.

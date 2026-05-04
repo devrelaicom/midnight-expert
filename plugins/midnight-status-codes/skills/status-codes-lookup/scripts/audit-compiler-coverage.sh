@@ -29,12 +29,43 @@ else
   fi
 fi
 
+# Shared normalisation: collapse format placeholders to "__" and squeeze runs of
+# horizontal whitespace to a single space. Used by both the extractor and the
+# JSON haystack; drift between the two would silently cause match failures.
+normalize() {
+  sed -E 's/~[asd@%]/__/g; s/~\*?[a-zA-Z]/__/g' \
+    | sed -E 's/[[:blank:]]+/ /g; s/^ //; s/ $//'
+}
+
 extract_templates() {
-  grep -rEnho '\((source-errorf|pending-errorf|external-errorf|source-warningf|error-accessing-file)[^"]*"[^"]*"' "$CLONE_DIR/compiler" "$CLONE_DIR/runtime" 2>/dev/null \
-    | sed -E 's/^.*"([^"]*)".*$/\1/' \
-    | sed -E 's/~[asd@%]/__/g; s/~\*?[a-zA-Z]/__/g' \
-    | sed -E 's/[[:blank:]]+/ /g; s/^ //; s/ $//' \
-    | sort -u
+  local files
+  files=$(find "$CLONE_DIR/compiler" "$CLONE_DIR/runtime" -type f \( -name '*.ss' -o -name '*.ts' \) 2>/dev/null)
+  for f in $files; do
+    # Join continuation lines so each macro invocation lives on a single
+    # logical line. We look forward up to 3 lines after a target macro name
+    # and stop once we have seen a quoted string — that captures the common
+    # case where the macro name and the format string sit on adjacent lines
+    # (e.g. fixup.ss:83 source-warningf with the format string on the next
+    # physical line).
+    awk '
+      /\((source-errorf|pending-errorf|external-errorf|source-warningf|error-accessing-file)([^[:alnum:]_-]|$)/ {
+        buf = $0
+        for (i = 1; i <= 3; i++) {
+          if ((getline next_line) <= 0) break
+          buf = buf " " next_line
+          if (next_line ~ /"[^"]*"/) break
+        }
+        print buf
+        next
+      }
+      { print }
+    ' "$f"
+  done \
+    | grep -Eo '\((source-errorf|pending-errorf|external-errorf|source-warningf|error-accessing-file)[^"]*"[^"]*"' \
+    | sed -E 's/^[^"]*"([^"]*)".*$/\1/' \
+    | normalize \
+    | sort -u \
+    || true
 }
 
 TEMPLATES_FILE=$(mktemp)
@@ -47,8 +78,7 @@ HAYSTACK=$(jq -r '
   | [(.code // ""), (.aliases // [] | .[])]
   | .[]
 ' "$CODES_FILE" \
-  | sed -E 's/~[asd@%]/__/g; s/~\*?[a-zA-Z]/__/g' \
-  | sed -E 's/[[:blank:]]+/ /g; s/^ //; s/ $//')
+  | normalize)
 
 # Build allowlist regex array
 ALLOW_PATTERNS=()
