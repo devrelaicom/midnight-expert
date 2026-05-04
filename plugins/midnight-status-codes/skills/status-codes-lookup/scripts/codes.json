@@ -1644,7 +1644,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-192)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "The transaction is unbalanced \u2014 inputs and outputs do not match.",
+      "description": "The transaction is unbalanced — inputs and outputs do not match.",
       "fixes": [
         "Ensure transaction inputs equal outputs plus fees"
       ],
@@ -5064,7 +5064,7 @@
       "see_also": [
         "Maximum field mismatch"
       ],
-      "reference_anchor": "skills/status-codes/references/runtime-errors.md",
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#version-mismatch-compiled-code-expects-xyz-runtime-is-abc",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -5728,7 +5728,7 @@
       "name": "InvalidRequest",
       "source": "dapp-connector",
       "category": "api-error",
-      "description": "The DApp sent an invalid or malformed request. Per the spec, this can be thrown in various circumstances \u2014 a malformed transaction is one example.",
+      "description": "The DApp sent an invalid or malformed request. Per the spec, this can be thrown in various circumstances — a malformed transaction is one example.",
       "fixes": [
         "Review the dapp connector API specification and correct the request format"
       ],
@@ -5748,11 +5748,11 @@
       "name": "PermissionRejected",
       "source": "dapp-connector",
       "category": "api-error",
-      "description": "Session-level / persistent denial \u2014 the user has set a general preference to not permit this action for this DApp. Once observed for a particular API method, expect it to keep being returned for the session (until the browser tab/window is closed).",
+      "description": "Session-level / persistent denial — the user has set a general preference to not permit this action for this DApp. Once observed for a particular API method, expect it to keep being returned for the session (until the browser tab/window is closed).",
       "fixes": [
         "Inform the user that the DApp is blocked at the wallet-permission level",
         "Direct the user to unblock the DApp in wallet settings if they want to proceed",
-        "Do NOT auto-retry \u2014 the rejection is persistent for the session"
+        "Do NOT auto-retry — the rejection is persistent for the session"
       ],
       "aliases": [],
       "severity": "error",
@@ -5770,7 +5770,7 @@
       "name": "Rejected",
       "source": "dapp-connector",
       "category": "api-error",
-      "description": "One-time user rejection \u2014 the user saw the request (e.g. saw the cost of a transaction) and explicitly declined it.",
+      "description": "One-time user rejection — the user saw the request (e.g. saw the cost of a transaction) and explicitly declined it.",
       "fixes": [
         "Inform the user the action was cancelled",
         "Do not auto-retry; let the user re-initiate"
@@ -6102,9 +6102,9 @@
       },
       "description": "Substrate transaction pool rejected the extrinsic as invalid. The wire-level error has the shape `{code: 1010, message: \"Invalid Transaction\", data: \"Custom error: N\"}` where N is the inner LedgerApiError u8. To decode N, look up codes 0-255 in this dataset.",
       "fixes": [
-        "Read the inner data string \u2014 it ends with `Custom error: N` where N is a u8 0-255",
+        "Read the inner data string — it ends with `Custom error: N` where N is a u8 0-255",
         "Look up that u8 in the Midnight node error tables (e.g. 168 was FeeCalculation, now retired; 155 is FeeCalculationError; 154 is BlockLimitExceededError)",
-        "If you only see `1010` with no inner u8, the cause is upstream substrate validation rather than ledger-level rejection \u2014 check signature, era, nonce"
+        "If you only see `1010` with no inner u8, the cause is upstream substrate validation rather than ledger-level rejection — check signature, era, nonce"
       ],
       "aliases": [
         "POOL_INVALID_TX",
@@ -6140,7 +6140,7 @@
       },
       "description": "Pool could not determine whether the transaction is valid (typically a `UnknownTransaction` from the runtime).",
       "fixes": [
-        "Retry \u2014 the validity may resolve once the runtime catches up",
+        "Retry — the validity may resolve once the runtime catches up",
         "Confirm the runtime exposes the validation API the SDK expects"
       ],
       "aliases": [
@@ -6170,7 +6170,7 @@
       "description": "The pool has temporarily banned this transaction hash, usually after repeated invalid submissions. Resubmissions are dropped until the ban window expires.",
       "fixes": [
         "Wait for the ban window to elapse (typically a few minutes)",
-        "Investigate why the transaction was rejected previously \u2014 fix the root cause before retrying"
+        "Investigate why the transaction was rejected previously — fix the root cause before retrying"
       ],
       "aliases": [
         "Transaction is temporarily banned",
@@ -6285,7 +6285,7 @@
       },
       "description": "Pool dropped the transaction immediately because of pool size limits.",
       "fixes": [
-        "Retry \u2014 the pool may have capacity later",
+        "Retry — the pool may have capacity later",
         "Submit with higher priority so it is not the lowest-ranked entry",
         "Reduce overall transaction throughput from this account"
       ],
@@ -6345,7 +6345,7 @@
       "description": "Transaction provides no tags, so the pool cannot identify or order it.",
       "fixes": [
         "Verify the runtime validate_unsigned/validate_transaction is producing tags",
-        "This typically indicates an SDK or runtime bug \u2014 report it"
+        "This typically indicates an SDK or runtime bug — report it"
       ],
       "aliases": [
         "No tags provided",
@@ -6457,7 +6457,7 @@
         "name": "Infrastructure Errors (150-157, 165)",
         "description": "Node-side infrastructure failures unrelated to the transaction itself."
       },
-      "description": "Top-level LedgerApiError::ContractNotPresent \u2014 a contract lookup outside of transaction validation found no contract at the address. Distinct from the transaction-time codes 102 (Invalid::ContractNotPresent) and 114 (Malformed::ContractNotPresent).",
+      "description": "Top-level LedgerApiError::ContractNotPresent — a contract lookup outside of transaction validation found no contract at the address. Distinct from the transaction-time codes 102 (Invalid::ContractNotPresent) and 114 (Malformed::ContractNotPresent).",
       "fixes": [
         "Verify the contract address; deploy the contract first",
         "If the lookup happens during a non-transaction RPC, ensure the address is correctly serialized"
@@ -6489,7 +6489,7 @@
         "name": "Infrastructure Errors (150-157, 165)",
         "description": "Node-side infrastructure failures unrelated to the transaction itself."
       },
-      "description": "Top-level LedgerApiError::BeneficiaryNotFound \u2014 a referenced reward beneficiary was not found.",
+      "description": "Top-level LedgerApiError::BeneficiaryNotFound — a referenced reward beneficiary was not found.",
       "fixes": [
         "Confirm the beneficiary address has been registered before referencing it"
       ],
@@ -6518,7 +6518,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "SystemTransactionError::MerkleTreeError \u2014 a Merkle tree update failed during system transaction processing.",
+      "description": "SystemTransactionError::MerkleTreeError — a Merkle tree update failed during system transaction processing.",
       "fixes": [
         "Internal protocol error; check node logs for the wrapped InvalidUpdate cause"
       ],
@@ -7186,7 +7186,7 @@
       },
       "description": "Contract deployment carries non-zero balance entries on the contract account. Contracts must deploy with empty balances.",
       "fixes": [
-        "Remove balance entries from the deploy intent \u2014 newly deployed contracts must start with zero balances"
+        "Remove balance entries from the deploy intent — newly deployed contracts must start with zero balances"
       ],
       "aliases": [
         "MalformedContractDeployErrorCode::NonZeroBalance",
@@ -7368,7 +7368,7 @@
       },
       "description": "Zswap double-spend: nullifier already exists in the chain. Specific subcase split out from the older opaque 103 Zswap(Unknown).",
       "fixes": [
-        "The coin has already been spent \u2014 refresh wallet state and try a different coin"
+        "The coin has already been spent — refresh wallet state and try a different coin"
       ],
       "aliases": [
         "ZswapInvalidErrorCode::NullifierAlreadyPresent",
@@ -7557,7 +7557,7 @@
       },
       "description": "System-transaction replay-protection: intent TTL expired. Specific subcase split out from the older opaque 205 ReplayProtectionFailure.",
       "fixes": [
-        "System transactions are submitted by governance \u2014 operators must resubmit with a fresh TTL"
+        "System transactions are submitted by governance — operators must resubmit with a fresh TTL"
       ],
       "aliases": [
         "SystemTransactionError::ReplayProtectionFailure(IntentTtlExpired)",
@@ -7651,7 +7651,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "InvalidError::DivideByZero \u2014 a contract circuit attempted division by zero during ledger-side validation.",
+      "description": "InvalidError::DivideByZero — a contract circuit attempted division by zero during ledger-side validation.",
       "fixes": [
         "Add a non-zero check before the division in the contract's witness logic"
       ],
@@ -7680,7 +7680,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "InvalidError::MerkleTreeError \u2014 a Merkle tree update failed during transaction validation.",
+      "description": "InvalidError::MerkleTreeError — a Merkle tree update failed during transaction validation.",
       "fixes": [
         "Internal protocol error; check node logs for the wrapped InvalidUpdate cause"
       ],
@@ -7742,7 +7742,7 @@
         "name": "JSON-RPC 2.0 Standard Codes",
         "description": "Reserved codes from the JSON-RPC 2.0 specification, surfaced via jsonrpsee."
       },
-      "description": "Invalid JSON received by the server \u2014 the request could not be parsed.",
+      "description": "Invalid JSON received by the server — the request could not be parsed.",
       "fixes": [
         "Verify the request body is valid JSON before sending"
       ],
@@ -7840,7 +7840,7 @@
         "name": "Substrate JSON-RPC AUTHOR Errors (1001-1040)",
         "description": "Upstream Substrate JSON-RPC error envelopes returned by author_submitExtrinsic and related RPC methods. Inherited from paritytech/polkadot-sdk."
       },
-      "description": "Extrinsic format is invalid (SCALE decode failed at the RPC layer, before the runtime saw it). Same code as the existing 'BAD_FORMAT' entry under midnight-node \u2014 duplicated here for taxonomy clarity; will be deduplicated in a future pass.",
+      "description": "Extrinsic format is invalid (SCALE decode failed at the RPC layer, before the runtime saw it). Same code as the existing 'BAD_FORMAT' entry under midnight-node — duplicated here for taxonomy clarity; will be deduplicated in a future pass.",
       "fixes": [
         "Verify the SDK and node are on compatible runtime versions"
       ],
@@ -7869,7 +7869,7 @@
         "name": "Substrate JSON-RPC SYSTEM Errors (2001-2002)",
         "description": "Upstream Substrate JSON-RPC error envelopes returned by system_* RPC methods."
       },
-      "description": "system_health reports the node is not fully functional \u2014 peer count is zero, the node is syncing, or shouldHavePeers is set and the node is isolated. The data field carries a `Health` payload.",
+      "description": "system_health reports the node is not fully functional — peer count is zero, the node is syncing, or shouldHavePeers is set and the node is isolated. The data field carries a `Health` payload.",
       "fixes": [
         "Wait for the node to finish syncing",
         "Check connectivity to peers",
@@ -7954,7 +7954,7 @@
         "name": "Substrate JSON-RPC CHAIN Errors (3001-3002)",
         "description": "Upstream Substrate JSON-RPC error envelopes returned by chain_* RPC methods."
       },
-      "description": "Wrapped client error from chain RPCs \u2014 typically a storage/db lookup failure or header decode failure. A DApp polling chain_getBlockHash for a future block number gets 3002, not -32602.",
+      "description": "Wrapped client error from chain RPCs — typically a storage/db lookup failure or header decode failure. A DApp polling chain_getBlockHash for a future block number gets 3002, not -32602.",
       "fixes": [
         "For 'unknown block' errors, wait for the block to be produced",
         "Resync the node if the database is corrupted"
@@ -8072,7 +8072,7 @@
         "name": "Standard InvalidTransaction Variants",
         "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
       },
-      "description": "Transaction is outdated \u2014 its nonce has already been used.",
+      "description": "Transaction is outdated — its nonce has already been used.",
       "fixes": [
         "Use the current nonce for the signing account",
         "Fetch system_accountNextIndex(account) to get the next nonce"
@@ -8102,7 +8102,7 @@
         "name": "Standard InvalidTransaction Variants",
         "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
       },
-      "description": "Transaction will be valid in the future \u2014 its nonce is ahead of the chain (gap in the nonce sequence).",
+      "description": "Transaction will be valid in the future — its nonce is ahead of the chain (gap in the nonce sequence).",
       "fixes": [
         "Submit earlier nonces first so the gap closes"
       ],
@@ -8193,7 +8193,7 @@
         "name": "Standard InvalidTransaction Variants",
         "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
       },
-      "description": "Transaction has an ancient birth block \u2014 the mortal era's block hash is too old (TTL expired before submission).",
+      "description": "Transaction has an ancient birth block — the mortal era's block hash is too old (TTL expired before submission).",
       "fixes": [
         "Rebuild the transaction with a recent block hash",
         "Use an immortal era if the SDK exposes that option"
@@ -8222,7 +8222,7 @@
         "name": "Standard InvalidTransaction Variants",
         "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
       },
-      "description": "Invalid signing address \u2014 the signer is not a valid signer for this extrinsic.",
+      "description": "Invalid signing address — the signer is not a valid signer for this extrinsic.",
       "fixes": [
         "Use a signing key that the runtime accepts for this call",
         "Verify the call is allowed for the signer's role"
@@ -8280,7 +8280,7 @@
         "name": "Work Errors (WorkError)",
         "description": "Errors during proof generation; mapped to HTTP responses."
       },
-      "description": "Job was cancelled without explicit request \u2014 mapped to HTTP 500. Display: \"work cancelled unexpectedly\".",
+      "description": "Job was cancelled without explicit request — mapped to HTTP 500. Display: \"work cancelled unexpectedly\".",
       "fixes": [
         "Internal error; retry the proof request",
         "Inspect proof server logs for cause"
@@ -8310,7 +8310,7 @@
         "name": "Work Errors (WorkError)",
         "description": "Errors during proof generation; mapped to HTTP responses."
       },
-      "description": "Async task join error during proof generation \u2014 mapped to HTTP 500. Display: \"task join error\".",
+      "description": "Async task join error during proof generation — mapped to HTTP 500. Display: \"task join error\".",
       "fixes": [
         "Internal threading error; retry or restart the proof server"
       ],
@@ -8535,6 +8535,7 @@
         "assert",
         "typeError"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#compacterror",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8558,13 +8559,15 @@
         "The assertion message ${s} describes the failed invariant; fix the inputs that violate it"
       ],
       "aliases": [
-        "failed assert"
+        "failed assert",
+        "CompactError: failed assert"
       ],
       "severity": "error",
       "see_also": [
         "CompactError",
         "typeError"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#failed-assert-message",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8588,13 +8591,15 @@
         "Cross-check witness return types against contract-declared types"
       ],
       "aliases": [
-        "type error"
+        "type error",
+        "CompactError: type error"
       ],
       "severity": "error",
       "see_also": [
         "CompactError",
         "assert"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#type-error-who-what-at-where-expected-value-of-type-type-but-received-value",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8619,12 +8624,14 @@
         "Or install a runtime version whose MAX_FIELD matches what the compiler embedded"
       ],
       "aliases": [
-        "maximum field mismatch"
+        "maximum field mismatch",
+        "CompactError: Maximum field mismatch"
       ],
       "severity": "error",
       "see_also": [
         "Version mismatch"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#maximum-field-mismatch-compiled-code-uses-x-runtime-uses-y",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8650,13 +8657,15 @@
       ],
       "aliases": [
         "range error",
-        "does not fit into"
+        "does not fit into",
+        "CompactError: range error"
       ],
       "severity": "error",
       "see_also": [
         "convertBytesToField range error",
         "convertBytesToUint range error"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#range-error-at-src-field-or-uint-value-x-does-not-fit-into-n-bytes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8682,13 +8691,15 @@
       ],
       "aliases": [
         "range error",
-        "exceeds maximum value"
+        "exceeds maximum value",
+        "CompactError: range error"
       ],
       "severity": "error",
       "see_also": [
         "convertFieldToBytes range error",
         "convertBytesToUint range error"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#range-error-at-src-byte-vector-exceeds-maximum-value-maxfield-of-field-type",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8714,13 +8725,15 @@
       ],
       "aliases": [
         "range error",
-        "exceeds maximum value"
+        "exceeds maximum value",
+        "CompactError: range error"
       ],
       "severity": "error",
       "see_also": [
         "convertFieldToBytes range error",
         "convertBytesToField range error"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#range-error-at-src-byte-vector-exceeds-maximum-value-maxval-of-target-uint-type",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8746,10 +8759,12 @@
       ],
       "aliases": [
         "unexpected type",
-        "contractState parameter"
+        "contractState parameter",
+        "CompactError: 'contractState' parameter"
       ],
       "severity": "error",
       "see_also": [],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#contractstate-parameter-contractstate-has-unexpected-type",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8768,7 +8783,7 @@
         "name": "compact-runtime errors",
         "description": "Errors thrown by @midnight-ntwrk/compact-runtime at contract execution time."
       },
-      "description": "The query-circuit wrapper in circuit-context.ts catches any Error from @midnight-ntwrk/onchain-runtime-v1 and rethrows it as new CompactError(err.toString()). The message text is whatever the upstream library produced \u2014 there is no fixed template. Look at the wrapped message itself for the underlying cause.",
+      "description": "The query-circuit wrapper in circuit-context.ts catches any Error from @midnight-ntwrk/onchain-runtime-v1 and rethrows it as new CompactError(err.toString()). The message text is whatever the upstream library produced — there is no fixed template. Look at the wrapped message itself for the underlying cause.",
       "fixes": [
         "Read the wrapped message; it comes from @midnight-ntwrk/onchain-runtime-v1, not from compact-runtime",
         "Search the onchain-runtime-v1 source or status-codes for that specific message"
@@ -8778,6 +8793,7 @@
       "see_also": [
         "CompactError"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#onchain-runtime-error-wrapped-as-compacterror",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8801,12 +8817,15 @@
         "Confirm the witness or upstream value really is a JubjubPoint (two Field components, x then y)",
         "Check for an off-by-one in upstream value construction that consumed the JubjubPoint elements early"
       ],
-      "aliases": [],
+      "aliases": [
+        "CompactError: expected JubjubPoint"
+      ],
       "severity": "error",
       "see_also": [
         "expected MerkleTreeDigest",
         "expected Field"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-jubjubpoint",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8830,12 +8849,15 @@
         "Confirm the upstream value contains a single Field element representing the digest",
         "Inspect upstream value construction for an unexpected empty value"
       ],
-      "aliases": [],
+      "aliases": [
+        "CompactError: expected MerkleTreeDigest"
+      ],
       "severity": "error",
       "see_also": [
         "expected JubjubPoint",
         "expected Field"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-merkletreedigest",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8859,12 +8881,15 @@
         "Confirm the upstream value contains a single Field element where one is expected",
         "Inspect witness or struct construction for an unexpected empty value at this position"
       ],
-      "aliases": [],
+      "aliases": [
+        "CompactError: expected Field"
+      ],
       "severity": "error",
       "see_also": [
         "expected JubjubPoint",
         "expected MerkleTreeDigest"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8889,12 +8914,14 @@
         "Inspect witness construction for an unexpected empty value at this position"
       ],
       "aliases": [
-        "expected Enum[<="
+        "expected Enum[<=",
+        "CompactError: expected Enum"
       ],
       "severity": "error",
       "see_also": [
         "expected UnsignedInteger"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-enumn",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8913,20 +8940,22 @@
         "name": "compact-runtime errors",
         "description": "Errors thrown by @midnight-ntwrk/compact-runtime at contract execution time."
       },
-      "description": "Throws CompactError('expected UnsignedInteger[<=${maxValue}]') when an Enum or UnsignedInteger value either has no leading runtime element to read or has a value exceeding the type's maxValue. Three distinct call sites share this template (Enum overflow + UnsignedInteger missing + UnsignedInteger overflow) \u2014 the message alone does not distinguish them; check the surrounding stack frame.",
+      "description": "Throws CompactError('expected UnsignedInteger[<=${maxValue}]') when an Enum or UnsignedInteger value either has no leading runtime element to read or has a value exceeding the type's maxValue. Three distinct call sites share this template (Enum overflow + UnsignedInteger missing + UnsignedInteger overflow) — the message alone does not distinguish them; check the surrounding stack frame.",
       "fixes": [
         "Confirm the upstream value is non-empty and within the target type's maxValue range",
         "If overflow: cast to a wider UnsignedInteger or reduce the source value",
         "If missing: inspect upstream value construction for an unexpected empty value"
       ],
       "aliases": [
-        "expected UnsignedInteger[<="
+        "expected UnsignedInteger[<=",
+        "CompactError: expected UnsignedInteger"
       ],
       "severity": "error",
       "see_also": [
         "expected Enum",
         "expected Field"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-unsignedintegern",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8952,12 +8981,14 @@
       ],
       "aliases": [
         "element array",
-        "-element array"
+        "-element array",
+        "CompactError: expected"
       ],
       "severity": "error",
       "see_also": [
         "expected Bytes"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-length-element-array",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -8981,9 +9012,12 @@
         "Confirm the upstream value is a single byte equal to 0 (false) or 1 (true)",
         "Check witness return values that should produce booleans"
       ],
-      "aliases": [],
+      "aliases": [
+        "CompactError: expected Boolean"
+      ],
       "severity": "error",
       "see_also": [],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-boolean",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9008,12 +9042,14 @@
         "Truncate or re-encode the value to the correct length before producing it as a witness"
       ],
       "aliases": [
-        "expected Bytes["
+        "expected Bytes[",
+        "CompactError: expected Bytes"
       ],
       "severity": "error",
       "see_also": [
         "expected N-element array"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-byteslength",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9038,13 +9074,15 @@
         "Match the actual value's shape to the expected type's invariants"
       ],
       "aliases": [
-        "but received"
+        "but received",
+        "CompactError: Expected"
       ],
       "severity": "error",
       "see_also": [
         "State map missing value",
         "State cast failed"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-expected-but-received-actual",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9066,17 +9104,19 @@
       "description": "Throws CompactError('State map ${stateMap} contains key without corresponding value') during compactADTDependencies traversal when a StateMap key has no associated value.",
       "fixes": [
         "Inspect the state map's structure for an inconsistent (key, value) pairing",
-        "If reproducible from a contract path, this indicates a state-construction bug \u2014 file an issue with the failing state"
+        "If reproducible from a contract path, this indicates a state-construction bug — file an issue with the failing state"
       ],
       "aliases": [
         "State map",
-        "key without corresponding value"
+        "key without corresponding value",
+        "CompactError: State map"
       ],
       "severity": "error",
       "see_also": [
         "State cast failed",
         "Expected but received"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#state-map-statemap-contains-key-without-corresponding-value",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9101,13 +9141,15 @@
         "Confirm the contract's expected ADT matches the state on chain (versioning mismatch is a common cause)"
       ],
       "aliases": [
-        "cannot be cast to"
+        "cannot be cast to",
+        "CompactError: State"
       ],
       "severity": "error",
       "see_also": [
         "State map missing value",
         "Expected but received"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#state-statevalue-cannot-be-cast-to-a-expectedcastoutput",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9126,18 +9168,20 @@
         "name": "compact-runtime errors",
         "description": "Errors thrown by @midnight-ntwrk/compact-runtime at contract execution time."
       },
-      "description": "Throws CompactError('Expected 32-byte string') from persistentCommit when the opening parameter is not exactly 32 bytes long. Identical message to degradeToTransient \u2014 distinguish by the surrounding stack frame.",
+      "description": "Throws CompactError('Expected 32-byte string') from persistentCommit when the opening parameter is not exactly 32 bytes long. Identical message to degradeToTransient — distinguish by the surrounding stack frame.",
       "fixes": [
         "Pass an opening that is exactly 32 bytes (Uint8Array of length 32)",
         "Generate openings via a 32-byte hash (e.g., persistentHash) before passing them in"
       ],
       "aliases": [
-        "Expected 32-byte string"
+        "Expected 32-byte string",
+        "CompactError: Expected 32-byte string"
       ],
       "severity": "error",
       "see_also": [
         "degradeToTransient input size"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-32-byte-string-in-persistentcommit",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9156,18 +9200,20 @@
         "name": "compact-runtime errors",
         "description": "Errors thrown by @midnight-ntwrk/compact-runtime at contract execution time."
       },
-      "description": "Throws CompactError('Expected 32-byte string') from degradeToTransient when the input is not exactly 32 bytes long. Identical message to persistentCommit \u2014 distinguish by the surrounding stack frame.",
+      "description": "Throws CompactError('Expected 32-byte string') from degradeToTransient when the input is not exactly 32 bytes long. Identical message to persistentCommit — distinguish by the surrounding stack frame.",
       "fixes": [
         "Pass an input that is exactly 32 bytes (Uint8Array of length 32)",
         "Use the output of persistentHash or persistentCommit (which are 32 bytes) as the input"
       ],
       "aliases": [
-        "Expected 32-byte string"
+        "Expected 32-byte string",
+        "CompactError: Expected 32-byte string"
       ],
       "severity": "error",
       "see_also": [
         "persistentCommit opening size"
       ],
+      "reference_anchor": "skills/status-codes/references/runtime-errors.md#expected-32-byte-string-in-degradetotransient",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
@@ -9237,7 +9283,7 @@
       "category": "platform-js-error",
       "group": {
         "name": "platform-js errors",
-        "description": "Errors from @midnight-ntwrk/platform-js \u2014 typed-id-based Effect errors."
+        "description": "Errors from @midnight-ntwrk/platform-js — typed-id-based Effect errors."
       },
       "description": "Raised when a hex string fails to parse. TypeId 'platform-js/effect/ParseError'. Guard: isParseError(e). Known messages include 'Source string must have non-zero length', 'Last byte of source string is incomplete', 'Invalid hex-digit found in source string at index N'.",
       "fixes": [
