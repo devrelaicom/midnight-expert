@@ -4289,18 +4289,24 @@
       "name": "Success",
       "source": "compact-compiler",
       "category": "exit-code",
+      "phase": "exit",
+      "id": "compiler.exit.success",
       "description": "The compiler completed successfully with no errors.",
-      "fixes": [],
+      "fixes": [
+        "No action required — compilation succeeded"
+      ],
       "aliases": [
-        "exit code 0"
+        "exit code 0",
+        "ok"
       ],
       "severity": "info",
-      "see_also": [],
+      "see_also": ["exit:255"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "compactc-v0.31.0",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "anchor": "compiler/program-common.ss",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4313,21 +4319,26 @@
       "name": "BadArguments",
       "source": "compact-compiler",
       "category": "exit-code",
+      "phase": "exit",
+      "id": "compiler.exit.bad-arguments",
       "description": "The compiler was invoked with invalid or missing command-line arguments.",
       "fixes": [
-        "Run compactc --help to see valid arguments",
-        "Check the argument names and values passed to the compiler"
+        "Re-run with --help to see usage",
+        "Check the argument names and values passed to the compiler",
+        "Capture stderr — error context appears immediately above this exit"
       ],
       "aliases": [
-        "exit code 1"
+        "exit code 1",
+        "bad arguments"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["exit:255"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "compactc-v0.31.0",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "anchor": "compiler/program-common.ss",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4340,20 +4351,26 @@
       "name": "InternalError",
       "source": "compact-compiler",
       "category": "exit-code",
-      "description": "The compiler encountered an internal error and could not continue.",
+      "phase": "exit",
+      "id": "compiler.exit.internal-error",
+      "description": "The compiler encountered an internal error (unhandled exception) and could not continue. The diagnostic is prefixed with `Internal error (please report): `.",
       "fixes": [
-        "File a bug report with the compact-compiler version and input that triggered the error"
+        "File a bug report with the compact-compiler version and input that triggered the error",
+        "Capture stderr — the full condition is printed immediately above this exit"
       ],
       "aliases": [
-        "exit code 254"
+        "exit code 254",
+        "internal error",
+        "Internal error (please report)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["exit:255"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "compactc-v0.31.0",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "anchor": "compiler/program-common.ss:117",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4366,20 +4383,26 @@
       "name": "CompilationFailed",
       "source": "compact-compiler",
       "category": "exit-code",
-      "description": "Compilation failed due to one or more errors in the source code.",
+      "phase": "exit",
+      "id": "compiler.exit.compilation-failed",
+      "description": "Compilation failed due to one or more source errors (`source-error-condition?`) or an explicit halt (`halt-condition?`).",
       "fixes": [
-        "Review compiler diagnostics and fix reported errors in the Compact source"
+        "Review compiler diagnostics printed above this exit and fix reported source errors",
+        "Capture stderr — pending-errorf diagnostics may also appear before this exit"
       ],
       "aliases": [
-        "exit code 255"
+        "exit code 255",
+        "compilation failed",
+        "source error"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["exit:254", "parse error"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "compactc-v0.31.0",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "anchor": "compiler/program-common.ss:113",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4392,19 +4415,30 @@
       "name": "unbound identifier",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A variable or function name was referenced that has not been defined in scope.",
+      "phase": "name-res",
+      "id": "compiler.name-res.unbound-identifier",
+      "description": "A variable or function name was referenced that has not been defined in any enclosing scope or imported module.",
       "fixes": [
-        "Check spelling and ensure the identifier is declared before use",
-        "Verify the correct module is imported"
+        "Check spelling",
+        "Ensure the name is defined before it is used",
+        "Verify that `import CompactStandardLibrary;` is present if using standard library names",
+        "Check that the relevant module is imported"
       ],
-      "aliases": [],
+      "aliases": [
+        "unbound identifier ~s",
+        "unbound identifier '<name>'",
+        "identifier not bound",
+        "unbound id",
+        "unbound name"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["parse error", "no compatible function"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#unbound-identifier-very-common",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:404",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4417,19 +4451,28 @@
       "name": "parse error",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "The compiler encountered a generic syntax error in the source file.",
+      "phase": "parser",
+      "id": "compiler.parser.parse-error",
+      "description": "Any syntax that does not match the Compact grammar at the point the parser expected something else.",
       "fixes": [
-        "Review the indicated line for syntax mistakes",
-        "Consult the Compact language reference for correct syntax"
+        "Read the location carefully",
+        "Check for missing semicolons at the end of statements",
+        "Check for mismatched braces `{` / `}`",
+        "Check for wrong or misspelled keyword",
+        "Check for extra or missing commas in argument lists"
       ],
-      "aliases": [],
+      "aliases": [
+        "parse error: found ~a looking for~?",
+        "parse error: found <token> looking for <expected>"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["unbound identifier", "exit:255"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#parse-error-most-common-compiler-error",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/parser.ss:986",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4442,19 +4485,28 @@
       "name": "no compatible function",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "No overload of the called function is compatible with the provided argument types.",
+      "phase": "type-check",
+      "id": "compiler.type-check.no-compatible-function",
+      "description": "A function call cannot be resolved because no overload in scope matches the argument types provided. Up to three optional context decorations may be appended (e.g. `; consider importing X`, `; defined as private`).",
       "fixes": [
-        "Check argument types match one of the available overloads",
-        "Consult the Compact standard library docs for valid signatures"
+        "Check that the argument types match the expected function signature",
+        "Check for implicit conversions that may be needed",
+        "Verify the function is imported",
+        "Look at overloaded variants to see which signatures are available"
       ],
-      "aliases": [],
+      "aliases": [
+        "no compatible function named ~a is in scope at this call",
+        "no compatible function named ~a is in scope at this call~@[~a~]~@[~a~]~@[~a~]",
+        "no compatible function named <name> is in scope at this call"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["unbound identifier"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-compatible-function-in-scope-very-common",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1742",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4467,18 +4519,27 @@
       "name": "potential witness-value disclosure",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A privacy violation was detected where a witness value may be disclosed publicly.",
+      "phase": "witness",
+      "id": "compiler.witness.disclosure",
+      "description": "A witness value flows to the ledger or a public output without being wrapped in `disclose()`. This is Compact's core privacy enforcement mechanism. Emitted via `pending-errorf` (batched) — multiple disclosure errors in the same compile may be reported together at end-of-pass.",
       "fixes": [
-        "Refactor the circuit so witness values are not exposed in public outputs"
+        "Wrap the witness value access in `disclose()` before it reaches any ledger state or public output",
+        "Restructure the circuit so the witness value does not reach a public position"
       ],
-      "aliases": [],
+      "aliases": [
+        "potential witness-value disclosure must be declared but is not",
+        "potential witness-value disclosure must be declared but is not:\n    witness value potentially disclosed:\n      ~a~{~a~}",
+        "witness value potentially disclosed",
+        "witness disclosure"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["circuit is marked pure but is actually impure"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#undeclared-witness-disclosure-critical",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:5218",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4491,18 +4552,26 @@
       "name": "mismatch between type",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "The two branches of an if-expression return different types.",
+      "phase": "type-check",
+      "id": "compiler.type-check.mismatched-branch-types",
+      "description": "The `then` and `else` branches of an `if` expression (or the arms of a `select` expression) return different types. Fires for both `if` expressions and `select` expressions.",
       "fixes": [
-        "Ensure both branches of the if-expression return the same type"
+        "Both branches must have the same type",
+        "Add explicit casts so both branches produce the same type",
+        "Restructure so both branches produce the same type"
       ],
-      "aliases": [],
+      "aliases": [
+        "mismatch between type ~a and type ~a of condition branches",
+        "mismatch between type <A> and type <B> of condition branches"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["expected test to have type Boolean", "cannot cast from type"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#mismatched-branch-types",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2471",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4515,18 +4584,26 @@
       "name": "structure has no field",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A struct field access used a field name that does not exist on the struct.",
+      "phase": "type-check",
+      "id": "compiler.type-check.no-such-field",
+      "description": "Field access on a struct type uses a name that does not exist in that struct's definition. The same form fires for enums.",
       "fixes": [
-        "Check the struct definition for the correct field names"
+        "Check the struct definition for the correct field name",
+        "Look for typos in the field name"
       ],
-      "aliases": [],
+      "aliases": [
+        "structure ~s has no field named ~s",
+        "structure <S> has no field named <F>",
+        "enum ~s has no field named ~s"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["unbound identifier"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2494",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4539,18 +4616,27 @@
       "name": "expected test to have type Boolean",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A condition expression does not evaluate to a Boolean type.",
+      "phase": "type-check",
+      "id": "compiler.type-check.test-not-boolean",
+      "description": "The condition of an `if`, `while`, `select`, or other conditional is not a `Boolean` expression.",
       "fixes": [
-        "Ensure the condition in if/assert/while expressions evaluates to Boolean"
+        "Add an explicit comparison (for example, instead of `if x`, write `if x != 0`)",
+        "Wrap the test in a comparison or boolean operation"
       ],
-      "aliases": [],
+      "aliases": [
+        "expected test to have type Boolean, received ~a",
+        "expected test to have type Boolean, received <type>",
+        "expected select test to have type Boolean, received ~a",
+        "expected select test to have type Boolean, received <type>"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["mismatch between type"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#condition-is-not-boolean",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2322",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4563,18 +4649,25 @@
       "name": "cannot cast from type",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "An unsupported type cast was attempted.",
+      "phase": "type-check",
+      "id": "compiler.type-check.invalid-cast",
+      "description": "An explicit cast between two types that the compiler does not support.",
       "fixes": [
+        "Not all type casts are valid in Compact — consult the language reference for which casts are permitted",
         "Use a valid conversion function instead of a direct cast"
       ],
-      "aliases": [],
+      "aliases": [
+        "cannot cast from type ~a to type ~a",
+        "cannot cast from type <A> to type <B>"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["mismatch between type"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-cast",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:3107",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4587,18 +4680,24 @@
       "name": "Uint width not between 1 and 248",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A Uint type was declared with a width outside the valid range of 1 to 248 bits.",
+      "phase": "type-check",
+      "id": "compiler.type-check.uint-width-out-of-range",
+      "description": "A `Uint<N>` type is declared with `N` outside the valid range. The maximum is computed as `field-bytes * 8` and is currently 248 in `compactc-v0.31.0`.",
       "fixes": [
-        "Use a Uint width value between 1 and 248 inclusive"
+        "Choose a width `N` satisfying `1 <= N <= 248`"
       ],
-      "aliases": [],
+      "aliases": [
+        "Uint width ~d is not between 1 and the maximum Uint width ~d (inclusive)",
+        "Uint width <N> is not between 1 and the maximum Uint width <M> (inclusive)"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["cannot cast from type"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-width-out-of-range",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1193",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4611,18 +4710,23 @@
       "name": "return is not supported within for loops",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A return statement was used inside a for loop, which is not supported.",
+      "phase": "frontend",
+      "id": "compiler.frontend.return-in-for",
+      "description": "A `return` statement appears inside a `for` loop body.",
       "fixes": [
-        "Refactor to avoid returning from within a for loop; use a result variable instead"
+        "Assign the desired value to a variable declared outside the loop, then return that variable after the loop exits"
       ],
-      "aliases": [],
+      "aliases": [
+        "return is not supported within for loops"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["parse error"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#return-inside-for-loop",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:149",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4635,18 +4739,23 @@
       "name": "cross-contract calls not yet supported",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "The code attempted a cross-contract call, which is not yet a supported feature.",
+      "phase": "zkir",
+      "id": "compiler.zkir.cross-contract-not-supported",
+      "description": "The contract attempts a cross-contract call, which has not yet been implemented in the ZKIR output stage.",
       "fixes": [
-        "Redesign to avoid cross-contract calls until the feature is available"
+        "This is a current compiler limitation — restructure to avoid cross-contract calls until the feature is available"
       ],
-      "aliases": [],
+      "aliases": [
+        "cross-contract calls are not yet supported"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["exit:255"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#cross-contract-calls-not-yet-supported",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/zkir-passes.ss:384",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4659,18 +4768,26 @@
       "name": "Version mismatch",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "The compact-runtime version in the contract is incompatible with the installed compiler.",
+      "phase": "runtime",
+      "id": "compiler.runtime.version-mismatch",
+      "description": "The contract was compiled with one version of the Compact compiler but is being executed against a different version of `@midnight-ntwrk/compact-runtime`. Thrown at module load time as a `CompactError`.",
       "fixes": [
-        "Update the compact-runtime dependency to match the compiler version"
+        "Update `@midnight-ntwrk/compact-runtime` in your project to the version that matches the compiler used to build the contract",
+        "Recompile the contract with the compiler version that matches your runtime"
       ],
-      "aliases": [],
+      "aliases": [
+        "Version mismatch: compiled code expects X.Y.Z, runtime is A.B.C",
+        "Version mismatch: compiled code expects ${expectedRuntimeVersionString}, runtime is ${versionString}",
+        "CompactError: Version mismatch"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["failed assert"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#version-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "runtime/export-version.ss:36",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4683,18 +4800,26 @@
       "name": "failed assert",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A runtime assertion in the contract failed.",
+      "phase": "runtime",
+      "id": "compiler.runtime.failed-assert",
+      "description": "A Compact `assert` expression evaluated to `false` at runtime. The `<message>` text is the string provided to `assert`.",
       "fixes": [
-        "Check the assertion condition and ensure the inputs satisfy it"
+        "Investigate the assertion condition using the message text to locate the assertion in source",
+        "Determine why the condition was not satisfied for the given inputs"
       ],
-      "aliases": [],
+      "aliases": [
+        "failed assert: ~a",
+        "failed assert: <message>",
+        "CompactError: failed assert"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["Version mismatch"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-assertion",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "runtime/src/error.ts:34",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4707,18 +4832,27 @@
       "name": "circuit is marked pure but is actually impure",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "A circuit declared as pure performs operations that make it impure.",
+      "phase": "purity",
+      "id": "compiler.purity.pure-is-impure",
+      "description": "A circuit annotated as `pure` contains an operation that is impure: writing to the ledger, calling an external contract, etc. Includes both direct and indirect (transitive) variants.",
       "fixes": [
-        "Remove the pure annotation or refactor the circuit to eliminate impure operations"
+        "Remove the `pure` annotation",
+        "Eliminate the impure operations from the circuit body",
+        "Trace the call chain — if the impurity is transitive, address it in the inner circuit"
       ],
-      "aliases": [],
+      "aliases": [
+        "circuit ~a is marked pure but is actually impure because it ~a at ~a",
+        "circuit ~a is marked pure but is actually impure because it calls (directly or indirectly) impure circuit ~a at ~a",
+        "circuit <name> is marked pure but is actually impure"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["exported circuits cannot modify sealed ledger fields", "potential witness-value disclosure"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#pure-circuit-is-actually-impure",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:4463",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
@@ -4731,18 +4865,26 @@
       "name": "exported circuits cannot modify sealed ledger fields",
       "source": "compact-compiler",
       "category": "diagnostic",
-      "description": "An exported circuit attempts to modify a sealed ledger field, which is not allowed.",
+      "phase": "purity",
+      "id": "compiler.purity.export-modifies-sealed",
+      "description": "An exported circuit attempts to write to a ledger field that is marked `sealed`. Includes both direct and indirect (transitive) variants.",
       "fixes": [
-        "Remove writes to sealed ledger fields from exported circuits"
+        "Move the sealed-field modification into an internal (non-exported) circuit, and call that from the exported circuit if needed",
+        "Trace the call chain — if the violation is transitive, address it in the inner circuit"
       ],
-      "aliases": [],
+      "aliases": [
+        "exported circuits cannot modify sealed ledger fields but ~a at ~a",
+        "exported circuits cannot modify sealed ledger fields but ~a calls (directly or indirectly) ~a, which ~a at ~a",
+        "exported circuits cannot modify sealed ledger fields but <circuit> at <location>"
+      ],
       "severity": "error",
-      "see_also": [],
+      "see_also": ["circuit is marked pure but is actually impure"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#exported-circuit-modifies-sealed-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:4273",
+        "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
           "compiler": "0.31.101",
