@@ -63,6 +63,7 @@ Each entry in `codes.json` has the following fields:
 | `severity` | string | yes | `error` \| `warning` \| `info`. |
 | `see_also` | array of string | yes | Related entry codes. |
 | `verified_against` | object | yes | `{ source_repo, ref, anchor, anchor_modified, verified_at }`. |
+| `verified_against.extra_refs` | array of `{ source_repo, ref, anchor, anchor_modified }` | no | Additional upstream sources cross-referenced when an entry's behavior is co-determined by more than one repo (e.g. an indexer entry whose 400 paths come from `async-graphql-axum`). |
 | `status` | string | no | `"active"` (default, may be omitted) or `"retired"`. A retired entry is one no current emitter produces but older deployed components may still surface; lookup continues to return it. |
 | `superseded_by` | array of string | no | Code values that replaced a retired umbrella. Lookup output prints `Superseded by:` when present. |
 | `class` | string \| null | no | For SDK/JS sources only: the JS class name (`"TaggedError:WalletError"`, `"Error"`, `"TypeError"`, or `null` for untagged throws). |
