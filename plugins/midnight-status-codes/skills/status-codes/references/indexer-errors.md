@@ -27,11 +27,27 @@ These are returned by the Axum HTTP layer before any GraphQL processing occurs.
 | 200 OK | `GET /ready` | Indexer is caught up with the node | N/A — service is healthy |
 | 308 Permanent Redirect | `/api/<other>` (non-versioned) | Redirect to the latest API version (currently `/api/v4/...`) | Use the redirected URL; clients should follow redirects |
 | 404 Not Found | `/api/v3/<unknown>`, `/api/v4/<unknown>` | Subpath under a known API version is not registered | Verify the GraphQL endpoint path |
-| 400 Bad Request | Body-limit middleware (rare) | Internal stepping stone for body-limit handling — typically promoted to 413 by `transform_lentgh_limit_exceeded`. **Real GraphQL parse errors return HTTP 200 with errors[] inside the response body** (async-graphql default). | If you actually see a 400 from the indexer, the body limit was hit before the rewrite layer ran |
-| 413 Payload Too Large | GraphQL body | Request body exceeds the configured size limit. Body string is verbatim `"length limit exceeded"`. | Reduce query complexity, paginate results, or split into multiple smaller queries |
+| 400 Bad Request | `async-graphql-axum` request extractor | Returned when the request body cannot be parsed into a GraphQL request (malformed JSON, JSON-array batch on single endpoint, body read I/O error, or multipart parse failure). **Real GraphQL semantic/validation errors still return HTTP 200 with `errors[]` inside the response body** (async-graphql default). See "HTTP 400 paths" below for the exhaustive list. | Inspect the response body — it is the Rust `Debug` repr of the underlying `ParseRequestError` variant (e.g. `InvalidRequest(...)`, `UnsupportedBatch`). Fix the request payload accordingly. |
+| 413 Payload Too Large | GraphQL body | Request body exceeds the configured size limit. Body string is verbatim `"length limit exceeded"`. The indexer's `transform_lentgh_limit_exceeded` middleware intercepts the upstream `tower-http` `RequestBodyLimit` 400 and rewrites it to 413 — but **only** when the response body matches the `LENGTH_LIMIT_EXCEEDED_BODY` sentinel. Other 400s pass through unchanged. | Reduce query complexity, paginate results, or split into multiple smaller queries |
 | 503 Service Unavailable | `GET /ready` | Body string verbatim: `"indexer has not yet caught up with the node"` | Wait for the indexer to finish syncing; check node connectivity and indexer logs |
 
 > **GraphQL responses do NOT carry `extensions.code`.** Clients distinguish client vs server errors by inspecting `errors[].message` — server errors surface as the literal string `"Internal Server Error"`; client errors surface verbatim.
+
+### HTTP 400 paths (exhaustive)
+
+The indexer mounts **only** `POST /api/v{3,4}/graphql` (see `indexer-api/src/infra/api/v4.rs::make_app`), so a `GET` against the GraphQL endpoint returns 405, not 400. All HTTP 400 responses originate from `async-graphql-axum`'s `GraphQLRequest` extractor (which delegates to `async_graphql::http::receive_batch_body`) and pass through the indexer's `transform_lentgh_limit_exceeded` middleware unchanged unless the body matches the body-limit sentinel.
+
+The extractor's `GraphQLRejection::into_response` emits **413** for `ParseRequestError::PayloadTooLarge` and **400** for every other variant of `ParseRequestError`, with response body `format!("{:?}", err)` — the Rust `Debug` repr of the variant (note: **Debug, not Display**). All reachable variants for the indexer:
+
+| Trigger | `ParseRequestError` variant | Response body shape | Remediation |
+|---------|----------------------------|--------------------|-------------|
+| Malformed JSON request body (e.g. trailing comma, wrong types, missing `query` field) | `InvalidRequest(Box<dyn Error>)` | `InvalidRequest(<inner-error-debug>)` | Send well-formed JSON matching the GraphQL-over-HTTP request shape `{ "query": "...", "variables": {...}, "operationName": "..." }`. |
+| Client sends a JSON array (batch) to the single-request endpoint | `UnsupportedBatch` | `UnsupportedBatch` | The indexer wires `GraphQLRequest` (singular) — batches are not supported. Send one query per request. |
+| Body-stream I/O failure (network glitch, premature client disconnect on a chunked body), or any non-`PayloadTooLarge` `io::Error` from the body reader | `Io(std::io::Error)` | `Io(<io-error-debug>)` | Retry the request. If persistent, inspect indexer logs and client networking. |
+| Body exceeds `request_body_limit` | `Io(...)` wrapping the `tower-http` `RequestBodyLimit` overflow | (rewritten to **413** by `transform_lentgh_limit_exceeded` with body `"length limit exceeded"`) | See 413 row above. |
+| Client sends `Content-Type: multipart/form-data` (the indexer does not expose uploads but the extractor enters its multipart branch on this content type): bad multipart framing → `InvalidMultipart(multer::Error)`; missing `operations`/`map`/files parts → `MissingOperatorsPart`/`MissingMapPart`/`MissingFiles`/`NotUpload`; bad files map JSON → `InvalidFilesMap(Box<dyn Error>)` | as listed | Debug repr of the variant, e.g. `MissingMapPart`, `InvalidMultipart(...)` | Use `Content-Type: application/json` — the indexer's GraphQL endpoint expects JSON, not multipart. |
+
+Confirmed against `async-graphql/async-graphql@82cd1f15c2a66c6134be6b93e3ac6331847934c6` (`integrations/axum/src/extract.rs`, `src/error.rs`) and `midnightntwrk/midnight-indexer@main` (`indexer-api/src/infra/api.rs`, `indexer-api/src/infra/api/v4.rs`). The previous "stepping-stone-only" framing was incomplete: non-body-limit 400s **do** surface to clients, with `Debug`-formatted bodies.
 
 ---
 

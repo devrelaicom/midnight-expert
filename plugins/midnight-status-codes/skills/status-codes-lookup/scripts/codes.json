@@ -5106,21 +5106,40 @@
       "name": "BadRequest",
       "source": "midnight-indexer",
       "category": "http-status",
-      "description": "The indexer received a malformed or invalid request.",
+      "description": "Returned by async-graphql-axum's GraphQLRequest extractor when the request body cannot be parsed into a GraphQL request. Triggers: malformed JSON body (InvalidRequest), JSON-array batch sent to the single-request endpoint (UnsupportedBatch), body-stream I/O failure (Io), or — if Content-Type is multipart/form-data — multipart parse failures (InvalidMultipart, MissingOperatorsPart, MissingMapPart, MissingFiles, NotUpload, InvalidFilesMap). Response body is the Rust Debug repr of the underlying ParseRequestError variant. The indexer's transform_lentgh_limit_exceeded middleware rewrites only the body-limit-overflow case to 413; all other 400s pass through unchanged. Note: GraphQL semantic/validation errors do NOT produce 400 — they return HTTP 200 with errors[] inside the response body.",
       "fixes": [
-        "Review the request format and correct any invalid fields or parameters"
+        "Inspect the response body — it identifies the ParseRequestError variant in Debug format (e.g. 'InvalidRequest(...)', 'UnsupportedBatch')",
+        "Send well-formed JSON shaped as { \"query\": \"...\", \"variables\": {...}, \"operationName\": \"...\" }",
+        "Use Content-Type: application/json — the indexer does not expose multipart upload routes",
+        "Send one query per request; the single-request endpoint does not accept JSON-array batches"
       ],
       "aliases": [
         "HTTP 400"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "413/PayloadTooLarge"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-indexer",
         "ref": "main",
         "anchor": "indexer-api/src/infra/api.rs",
-        "anchor_modified": "2026-04-15",
-        "verified_at": "2026-05-04"
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04",
+        "extra_refs": [
+          {
+            "source_repo": "async-graphql/async-graphql",
+            "ref": "82cd1f15c2a66c6134be6b93e3ac6331847934c6",
+            "anchor": "integrations/axum/src/extract.rs",
+            "anchor_modified": "2025-05-24"
+          },
+          {
+            "source_repo": "async-graphql/async-graphql",
+            "ref": "82cd1f15c2a66c6134be6b93e3ac6331847934c6",
+            "anchor": "src/error.rs",
+            "anchor_modified": "2026-02-04"
+          }
+        ]
       }
     },
     {
