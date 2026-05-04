@@ -4438,7 +4438,8 @@
         "unbound identifier '<name>'",
         "identifier not bound",
         "unbound id",
-        "unbound name"
+        "unbound name",
+        "encountered undefined identifier ~s"
       ],
       "severity": "error",
       "see_also": [
@@ -4547,7 +4548,8 @@
         "potential witness-value disclosure must be declared but is not",
         "potential witness-value disclosure must be declared but is not:\n    witness value potentially disclosed:\n      ~a~{~a~}",
         "witness value potentially disclosed",
-        "witness disclosure"
+        "witness disclosure",
+        "potential witness-value disclosure must be declared but is not:\\n    witness value potentially disclosed:\\n      ~a~{~a~}"
       ],
       "severity": "error",
       "see_also": [
@@ -5052,7 +5054,8 @@
       "aliases": [
         "Version mismatch: compiled code expects X.Y.Z, runtime is A.B.C",
         "Version mismatch: compiled code expects ${expectedRuntimeVersionString}, runtime is ${versionString}",
-        "CompactError: Version mismatch"
+        "CompactError: Version mismatch",
+        "~a version ~a mismatch"
       ],
       "severity": "error",
       "see_also": [
@@ -5121,7 +5124,9 @@
       "aliases": [
         "circuit ~a is marked pure but is actually impure because it ~a at ~a",
         "circuit ~a is marked pure but is actually impure because it calls (directly or indirectly) impure circuit ~a at ~a",
-        "circuit <name> is marked pure but is actually impure"
+        "circuit <name> is marked pure but is actually impure",
+        "circuit ~a is marked pure but is actually impure because it calls (directly or indirectly) impure circuit ~a;\\n    ~:*~a is impure because it ~a at ~a",
+        "circuit ~a is marked pure but is actually impure because it calls (directly or indirectly) impure circuit ~a;\\ \\n    ~:*~a is impure because it ~a at ~a"
       ],
       "severity": "error",
       "see_also": [
@@ -5584,7 +5589,8 @@
       "aliases": [
         "invalid context for reference to ~a name ~s",
         "invalid context for reference to <kind> name <name>",
-        "invalid context for reference"
+        "invalid context for reference",
+        "invalid context for reference to ~a (defined at ~a)"
       ],
       "severity": "error",
       "see_also": [
@@ -5658,7 +5664,8 @@
         "mismatch between actual number ~s and declared number ~s of import generic parameters for ~s",
         "mismatch between actual number ~s and declared number ~s of ADT parameters for ~s",
         "wrong number of generic parameters",
-        "mismatch between actual number"
+        "mismatch between actual number",
+        "mismatch between actual number ~s and declared number ~s of field values for ~s"
       ],
       "severity": "error",
       "see_also": [
@@ -8845,7 +8852,9 @@
       ],
       "aliases": [
         "constant ~d is larger than the largest representable Uint; use\n    ~:*~d as Field\n  to treat as a value of type Field",
-        "constant <n> is larger than the largest representable Uint; use <n> as Field to treat as a value of type Field"
+        "constant <n> is larger than the largest representable Uint; use <n> as Field to treat as a value of type Field",
+        "constant ~d is larger than the largest representable Uint; use\\n    ~:*~d as Field\\n  to treat as a value of type Field",
+        "constant ~d is larger than the largest representable Uint; use\\ \\n    ~:*~d as Field\\ \\n  to treat as a value of type Field"
       ],
       "severity": "error",
       "see_also": [
@@ -8884,7 +8893,8 @@
       "aliases": [
         "range start for Uint type is ~d but must be 0",
         "range end for Uint type is ~d but must be at least 1 (the range end is exclusive)",
-        "range end\n    ~d\n  for Uint type exceeds the limit of\n    ~d (2^~d)\n  (the range end is exclusive)"
+        "range end\n    ~d\n  for Uint type exceeds the limit of\n    ~d (2^~d)\n  (the range end is exclusive)",
+        "range end\\n    ~d\\n  for Uint type exceeds the limit of\\n    ~d (2^~d)\\n  (the range end is exclusive)"
       ],
       "severity": "error",
       "see_also": [
@@ -8966,7 +8976,9 @@
         "~a length\n  ~d\n  exceeds the maximum supported length ~d",
         "<kind> length\n  <N>\n  exceeds the maximum supported length <M>",
         "length ~d of the UTF-8 representation of string constant exceeds the maximum supported length ~d",
-        "pad length ~d exceeds the maximum supported length ~d"
+        "pad length ~d exceeds the maximum supported length ~d",
+        "~a length\\n    ~d\\n  exceeds the maximum supported length ~d",
+        "Bytes construction length\\n    ~d exceeds the maximum bytes length allowed\\n    ~d"
       ],
       "severity": "error",
       "see_also": [
@@ -9009,7 +9021,11 @@
         "index ~d exceeds maximum allowed index ~d for a tuple or vector reference",
         "index ~d exceeds maximum index allowed ~d for a slice",
         "index ~s is out-of-bounds for tuple or vector of length ~s",
-        "index ~d plus length ~d is out-of-bounds for a tuple or vector of length ~d"
+        "index ~d plus length ~d is out-of-bounds for a tuple or vector of length ~d",
+        "invalid Bytes index ~d for a Bytes value of length ~d",
+        "invalid slice index ~d and length ~d for a Bytes value of length ~d",
+        "invalid slice index ~d and length ~d for vector of length ~d",
+        "invalid vector index ~d for vector of length ~d"
       ],
       "severity": "error",
       "see_also": [
@@ -9048,7 +9064,9 @@
       "aliases": [
         "the size of tuple/vector construction expression with vector-typed spread\n    ~d\n  exceeds the maximum vector size allowed\n    ~d",
         "the size of tuple/vector construction expression with tuple-typed spread\n    ~d\n  exceeds the maximum tuple size allowed\n    ~d",
-        "Bytes construction length\n    ~d exceeds the maximum bytes length allowed\n    ~d"
+        "Bytes construction length\n    ~d exceeds the maximum bytes length allowed\n    ~d",
+        "the size of tuple/vector construction expression with tuple-typed spread\\n    ~d\\n  exceeds the maximum tuple size allowed\\n    ~d",
+        "the size of tuple/vector construction expression with vector-typed spread\\n    ~d\\n  exceeds the maximum vector size allowed\\n    ~d"
       ],
       "severity": "error",
       "see_also": [
@@ -9171,7 +9189,8 @@
       "aliases": [
         "~a cannot be applied to a first argument containing opaque JavaScript values, received ~a",
         "persistentHash cannot be applied to a first argument containing opaque JavaScript values, received <type>",
-        "persistentCommit cannot be applied to a first argument containing opaque JavaScript values, received <type>"
+        "persistentCommit cannot be applied to a first argument containing opaque JavaScript values, received <type>",
+        "~a ~a cannot be applied to a first argument containing opaque JavaScript values, received ~a"
       ],
       "severity": "error",
       "see_also": [
@@ -9209,7 +9228,8 @@
       ],
       "aliases": [
         "invalid type ~a for witness ~a return value",
-        "invalid type ~a for witness ~a return value:\n  witness return values cannot include contract values"
+        "invalid type ~a for witness ~a return value:\n  witness return values cannot include contract values",
+        "invalid type ~a for witness ~a return value:\\n  witness return values cannot include contract values"
       ],
       "severity": "error",
       "see_also": [
@@ -9672,6 +9692,703 @@
         "anchor": "compiler/analysis-passes.ss:509",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "expected ~a, got ~a for ~a",
+      "name": "Builtin-call type mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.builtin-call-type-mismatch",
+      "description": "A builtin conversion or accessor (e.g. bytes->vector, cast-from-bytes, downcast-unsigned, vector-ref, slice, field->bytes) was called with an argument of the wrong type or wrong length.",
+      "fixes": [
+        "Inspect the call site and the declared type of the argument; coerce the value to the type the builtin expects",
+        "For Bytes-length mismatches, change the source `Bytes<N>` declaration or use a different builtin that accepts the actual length",
+        "If conversion is intentional, use the matching cast (e.g. cast-from-bytes vs bytes->field)"
+      ],
+      "aliases": [
+        "expected Bytes<~d> for bytes->vector call, received ~a",
+        "expected Bytes<~s>, got ~a for bytes->field",
+        "expected Bytes<~s>, got ~a for cast-from-bytes",
+        "expected Field, got ~a for downcast-unsigned",
+        "expected Uint, got ~a for downcast-unsigned",
+        "expected Vector<~d, Uint<8>> for vector->bytes call, received ~a",
+        "expected ~a, got ~a for cast-from-enum",
+        "expected ~a, got ~a for cast-to-enum",
+        "expected ~a, got ~a for upcast",
+        "expected bytes-ref argument to have type ~a, received ~a",
+        "expected bytes-ref nat to be less than (field-bytes) but received ~d",
+        "expected slice argument to have type ~a, received ~a",
+        "expected vector-ref argument to have type ~a, received ~a",
+        "expected ~:r argument of ~s to have type ~a but received ~a",
+        "expected ~:r argument of ~a.~s to have type ~a but received ~a",
+        "mismatch between actual type ~a and expected type Field for field->bytes",
+        "mismatch between Bytes lengths ~s and ~s for bytes->field",
+        "mismatch between Bytes lengths ~s and ~s for bytes->vector",
+        "mismatch between Bytes lengths ~s and ~s for cast-from-bytes",
+        "incompatible types (~{~a~^, ~}) for vector->bytes",
+        "unexpected ~a of first argument to bytes->field",
+        "unexpected ~a of second argument to bytes->field"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.invalid-cast"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#builtin-call-type-mismatch",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:4056"
+      }
+    },
+    {
+      "code": "expected a tuple, Vector, or Bytes type, received",
+      "name": "Aggregate (tuple/Vector/Bytes) expected",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.expected-aggregate",
+      "description": "A position that requires a tuple, Vector<…>, or Bytes<…> value received a non-aggregate (or empty-aggregate) type. Covers spread, slice, vector-ref, struct-spread, and non-empty-aggregate variants.",
+      "fixes": [
+        "Construct or coerce the value into the expected aggregate shape",
+        "For non-empty requirements, ensure the length is at least 1",
+        "For spread or slice positions, confirm the source is a tuple, vector, or Bytes value rather than a struct or scalar"
+      ],
+      "aliases": [
+        "~a should be a vector but has a tuple type ~a that cannot be converted to a vector because its element types are unrelated",
+        "~a should be a vector, tuple, or Bytes but has type ~a",
+        "expected a non-empty tuple, vector, or Bytes type, received ~a",
+        "expected a tuple, Vector, or Bytes type, received ~a",
+        "expected first slice argument to be a tuple, Vector, or Bytes type, received ~a",
+        "expected slice expr to have a Bytes type, received ~a",
+        "expected slice expr to have a vector type, received ~a",
+        "expected tuple or vector type, received ~a",
+        "expected tuple/vector spread expression to have a tuple, Vector, or Bytes type but received ~a",
+        "expected type of Bytes constructor argument to be a subtype of Uint<8> but received ~a",
+        "expected type of Bytes spread to be a Bytes value or a Tuple or Vector of Uint<8> subtypes but received ~a",
+        "expected type of tuple spread to be a ttuple type but received ~a",
+        "expected type of vector spread to be a ttuple or ttvector type but received ~a",
+        "expected type of vector spread to be a ttuple, ttvector, or tbytes type but received ~a",
+        "expected vector type, received ~a",
+        "expected vector-ref expr to have a non-empty vector type, received ~a",
+        "different vector element types ~a and ~a",
+        "tuple/vector construction expression with vector-typed spreads has unrelated element types ~a and ~a",
+        "mismatch in ~s-argument vector lengths",
+        "length ~d exceeds the length ~d of the input vector",
+        "slice length ~d exceeds the length ~d of the input Bytes",
+        "slice length ~d exceeds the length ~d of the input tuple, vector, or Bytes value",
+        "slice length ~d exceeds the length ~d of the input vector"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#aggregate-tuplevectorbytes-expected",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:2640"
+      }
+    },
+    {
+      "code": "expected enum type, received",
+      "name": "Generic 'expected type X, received Y' (non-builtin)",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.expected-type-shape",
+      "description": "A position required a specific kind of type (enum, struct, tcontract, ADT, ordinary type, unsigned-typed index, Field/Uint operand) and got a different one.",
+      "fixes": [
+        "Use the required kind of type in the failing position",
+        "For 'ordinary type vs ADT type' complaints, drop the ADT wrapper or move the access through an ADT operator (.read, .member, ...)",
+        "For 'unsigned index' complaints, use a Uint-typed expression as the index"
+      ],
+      "aliases": [
+        "expected enum type, received ~a",
+        "expected structure type, received ~a",
+        "expected primitive type tcontract for contract call, received ~a",
+        "expected ADT-type for ledger declaration after expand-modules-and-types, received ~a",
+        "expected ~a type to be an ordinary Compact type but received ADT type ~a",
+        "expected index to have an unsigned type, received ~a",
+        "~a requires its ~a operand to be a Field or Uint; the actual type is ~a"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#generic-expected-type-x-received-y-non-builtin",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:2502"
+      }
+    },
+    {
+      "code": "mismatch between actual type ~a and declared type ~a",
+      "name": "Declared/actual type or count mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.declared-actual-mismatch",
+      "description": "A declared type or generic-parameter signature does not match the value or argument supplied (const binding, struct field, fold first argument, generic parameter, etc.).",
+      "fixes": [
+        "Make the declared type match the actual value, or adjust the value to fit the declared type",
+        "For generic parameters, check the declaration site quoted in the message and ensure call-site arguments match the declared kind/arity"
+      ],
+      "aliases": [
+        "mismatch between actual type ~a and declared type ~a for field ~s of ~s",
+        "mismatch between actual type ~a and declared type ~a of ~a",
+        "mismatch between actual type ~a and declared type ~a of const binding",
+        "mismatch between actual type ~a and declared type ~a of fold first argument",
+        "mismatch between actual type ~a and expected type ~a for ~a",
+        "expected ~a but received ~a for generic parameter ~s declared at ~a"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.return-type-mismatch"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#declaredactual-type-or-count-mismatch",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:2334"
+      }
+    },
+    {
+      "code": "incompatible combination of types",
+      "name": "Incompatible types for binary, relational, or equality operator",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.incompatible-binary-op",
+      "description": "Two operands of an arithmetic, relational, or equality operator have types that do not combine. The 'might exceed' variant indicates Uint result overflow.",
+      "fixes": [
+        "Cast one or both operands to a common type (typically Field for arithmetic that may overflow Uint)",
+        "For 'might exceed largest representable Uint value' errors, cast either operand to Field to use Field semantics",
+        "For equality comparisons across distinct ADT/struct types, project to a common primitive value first"
+      ],
+      "aliases": [
+        "incompatible combination of types ~a and ~a for ~s",
+        "incompatible combination of types ~a and ~a for binary arithmetic operator ~s",
+        "incompatible combination of types ~a and ~a for relational operator",
+        "incompatible types ~a and ~a for equality operator",
+        "incompatible types ~a and ~a for relational operator",
+        "non-equivalent types ~a and ~a for equality operator",
+        "resulting value might exceed largest representable Uint value (for Field semantics, cast either operand to Field)"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.uint-range-bounds"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#incompatible-types-for-binary-relational-or-equality-operator",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:2038"
+      }
+    },
+    {
+      "code": "ADT nesting is permitted only within Map ADTs",
+      "name": "ADT misuse (assignment, default, ledger access)",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.adt-misuse",
+      "description": "An ADT-typed (ledger ADT) value was used outside the operations it supports — assigned with =, given a default(...), referenced through a partial chain, or used as the LHS of += / -=. Also covers nested-ADT placement rules.",
+      "fixes": [
+        "Use the ADT's published operators (.read, .write, .insert, .remove, .member, ...)",
+        "Complete the indirect chain so the final result is a regular Compact type before use",
+        "ADT nesting outside Map<K, V> is unsupported — flatten the structure or wrap in Map"
+      ],
+      "aliases": [
+        "ADT nesting is permitted only within Map ADTs",
+        "cannot nest ~s ADTs within another ADT",
+        "expected left-hand side of += to have an ADT type, received ~a",
+        "expected left-hand side of -= to have an ADT type, received ~a",
+        "expected left-hand side of = to have an ADT type, received ~a",
+        "expected left-hand side of ~s to have an ADT type, received ~a",
+        "operation ~a undefined for ledger field type ~a",
+        "default is not defined for ADT type Kernel",
+        "default is not defined for contract types",
+        "expected a ledger field name at base of ledger access",
+        "incomplete chain of ledger indirects: final result must be a regular type, but received ADT type ~a",
+        "incomplete reference to nested ADT"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#adt-misuse-assignment-default-ledger-access",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:4568"
+      }
+    },
+    {
+      "code": "exported circuit arguments cannot include contract values",
+      "name": "Contract-typed values in disallowed positions",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.contract-value-misuse",
+      "description": "A contract handle (the contract<...> type) appears as an exported circuit argument or return, or in a TypeScript-output position the compiler does not yet handle. Includes the broader 'opaque type not supported' and 'contract types not yet implemented' family.",
+      "fixes": [
+        "Pass primitive values (Field, Bytes, Uint) across the export boundary and reconstruct contract handles inside the circuit",
+        "For 'contract types are not yet implemented' — track upstream compactc; this is a planned future-feature placeholder",
+        "For 'opaque type not supported', avoid Opaque<JS-only> values in TypeScript-emitted positions"
+      ],
+      "aliases": [
+        "invalid type ~a for circuit ~a argument ~d:\\n  exported circuit arguments cannot include contract values",
+        "invalid type ~a for circuit ~a return value:\\n  exported circuit return values cannot include contract values",
+        "contract types are not yet implemented",
+        "opaque type ~a is not supported"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.witness.invalid-return-type"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-typed-values-in-disallowed-positions",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:1814"
+      }
+    },
+    {
+      "code": "did not reduce to a constant nonnegative value at compile time",
+      "name": "Compile-time-constant index required",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.const-index-required",
+      "description": "Indexing into Bytes, Vector, or a slice with a value the constant-folder could not resolve to a non-negative integer at compile time.",
+      "fixes": [
+        "Replace the dynamic index with a literal integer or a const-bound identifier whose value the compiler can fold",
+        "If the index genuinely needs to be runtime-computed, redesign to use ADT operators (e.g. Map<K,V>) instead of bare Bytes/Vector indexing"
+      ],
+      "aliases": [
+        "Bytes index did not reduce to a constant nonnegative value at compile time",
+        "slice index did not reduce to a constant nonnegative value at compile time",
+        "vector index did not reduce to a constant nonnegative value at compile time",
+        "invalid cast from field to Bytes<0>"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.tuple-vector-index-oob"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#compile-time-constant-index-required",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/circuit-passes.ss:1354"
+      }
+    },
+    {
+      "code": "is declared to return a value of type ~a, but its body can return without supplying a value",
+      "name": "Function body can return without value",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.body-missing-return",
+      "description": "A circuit, witness, or function declared with a non-[] return type has at least one path that hits the end of the body (or an early `return;`) without producing a value.",
+      "fixes": [
+        "Add an explicit `return <expr>;` on every reachable path",
+        "Change the declared return type to [] if the function genuinely has no result"
+      ],
+      "aliases": [
+        "~a is declared to return a value of type ~a, but its body can return without supplying a value"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.return-type-mismatch"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#function-body-can-return-without-supplying-a-value",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:3123"
+      }
+    },
+    {
+      "code": "fold requires the return type and first-argument type to be the same",
+      "name": "fold first-argument / return-type mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.fold-type-mismatch",
+      "description": "The accumulator type returned by the folding circuit does not match the type of fold's first argument (the seed).",
+      "fixes": [
+        "Make the seed type match the return type of the folding circuit",
+        "Adjust the folding circuit's return type so it matches the seed"
+      ],
+      "aliases": [
+        "fold requires the return type and first-argument type to be the same\\n    ~:[[inferred] ~;~]first-argument type: ~a,\\n    ~:[[inferred] ~;~]return type: ~a",
+        "fold requires the return type and first-argument type to be the same\\n    \\ ~:[[inferred] ~;~]first-argument type: ~a,\\n    \\ ~:[[inferred] ~;~]return type: ~a"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#fold-first-argument--return-type-mismatch",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:1887"
+      }
+    },
+    {
+      "code": "the type of the spread structure",
+      "name": "Spread-construction structure mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.spread-type-mismatch",
+      "description": "A struct-spread expression's source structure has a type incompatible with the declared structure shape. (Note: the upstream message contains a typo — 'does match' should read 'does not match'; the message fires on the non-matching case.)",
+      "fixes": [
+        "Spread a value whose type matches the destination structure",
+        "Build the structure explicitly without a spread"
+      ],
+      "aliases": [
+        "the type of the spread structure:\\n    ~a\\n  does match the declared type of the structure to be created:\\n    ~a"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#spread-construction-structure-mismatch",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:2580"
+      }
+    },
+    {
+      "code": "requires ~a argument(s) but received",
+      "name": "Wrong number of arguments",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.wrong-arg-count",
+      "description": "A circuit, witness, ADT method, or builtin was called with the wrong number of arguments.",
+      "fixes": [
+        "Inspect the declaration of the called name and supply the correct argument count",
+        "If overloads exist, ensure the right overload is being selected"
+      ],
+      "aliases": [
+        "~a ~a requires ~a argument~:*~p but received ~a",
+        "~a.~a requires ~a argument~:*~p but received ~a"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.no-compatible-function"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#wrong-number-of-arguments",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:2108"
+      }
+    },
+    {
+      "code": "cannot pad ~s to length ~s since its utf8-equivalent already exceeds that length",
+      "name": "Pad string target shorter than UTF-8 length",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.pad-too-short",
+      "description": "pad(string, length) was given a length smaller than the UTF-8 byte-length of the input string.",
+      "fixes": [
+        "Increase the target length to at least the UTF-8 byte length of the string",
+        "Pre-truncate the input before padding if you intend a shorter target"
+      ],
+      "aliases": [
+        "cannot pad ~s to length ~s since its utf8-equivalent already exceeds that length"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.type-check.vector-bytes-length"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#pad-string-target-shorter-than-utf-8-length",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/lparser-to-lsrc.ss:181"
+      }
+    },
+    {
+      "code": "cannot export ~a (~s) from the top level",
+      "name": "Disallowed top-level export",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.bad-export",
+      "description": "An export targets a kind of name the language does not allow exporting at the top level (or exports the same name twice).",
+      "fixes": [
+        "Remove the offending export",
+        "For type-parameterized circuits, export a non-generic wrapper instead",
+        "For duplicate exports, remove the redundant export"
+      ],
+      "aliases": [
+        "attempt to export ~a name ~s",
+        "cannot export ~a (~s) from the top level",
+        "cannot export alias for ADT types from the top level",
+        "cannot export type-parameterized function (~s) from the top level",
+        "multiple top-level exports for ~s"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.name-res.no-such-export"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#disallowed-top-level-export",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:608"
+      }
+    },
+    {
+      "code": "misplaced constructor: should appear only at the top level of a program",
+      "name": "Misplaced or duplicate top-level constructor",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.misplaced-constructor",
+      "description": "A constructor block appears nested (not at the top level) or the program contains more than one ledger constructor.",
+      "fixes": [
+        "Move the constructor to the top level of the program",
+        "A program may contain at most one ledger constructor — merge bodies if you have several"
+      ],
+      "aliases": [
+        "misplaced constructor: should appear only at the top level of a program",
+        "found other ledger constructors in program: \\ ~{\\n    ~a~^,~}"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#misplaced-or-duplicate-top-level-constructor",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:786"
+      }
+    },
+    {
+      "code": "does not contain a (single) module defintion",
+      "name": "File missing single module definition",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.module-defn-missing",
+      "description": "An imported .compact source file does not contain exactly one top-level module declaration (zero, or more than one). Note the upstream typo `defintion` is preserved in the message.",
+      "fixes": [
+        "Add a single `module Name { ... }` wrapper to the file",
+        "Split files so each imported file declares exactly one module"
+      ],
+      "aliases": [
+        "~a does not contain a (single) module defintion"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.external.module-name-mismatch"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-missing-a-single-module-definition",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:675"
+      }
+    },
+    {
+      "code": "recursion involving",
+      "name": "Recursion involving identifiers",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.recursion-cycle",
+      "description": "Compact does not allow general circuit recursion. A static-analysis pass detected a recursive reference cycle among circuit definitions.",
+      "fixes": [
+        "Restructure the program to remove the cycle",
+        "Use iteration (`for`), `fold`, or refactor recursive helpers into a flat sequence",
+        "If the cycle is via mutual recursion, inline one side or split the shared logic into a helper"
+      ],
+      "aliases": [
+        "recursion involving~?"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.name-res.circular-type-alias"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#recursion-involving-identifiers",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/analysis-passes.ss:3343"
+      }
+    },
+    {
+      "code": "apparent use of an old standard-library / ledger operator name",
+      "name": "Old standard-library / ledger operator name",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.warning.renamed-operator",
+      "description": "The program references an identifier whose name was renamed in a recent standard-library or ledger version. The compiler suggests the new name and continues. Emitted via source-warningf.",
+      "fixes": [
+        "Rename the reference to the new name shown in the message",
+        "Re-run compile to confirm the warning disappears"
+      ],
+      "aliases": [
+        "apparent use of an old standard-library / ledger operator name ~a:\\n    the new name is ~a"
+      ],
+      "severity": "warning",
+      "see_also": [
+        "compiler.warning.rename-not-applied"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-old-standard-library--ledger-operator-name",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/utils.ss:48"
+      }
+    },
+    {
+      "code": "creating output file",
+      "name": "Compiler I/O error (file or directory access)",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.external.file-io",
+      "description": "The compiler failed to read, create, or write a file or directory. Emitted via error-accessing-file (which wraps the underlying file-system error message), source-errorf when reading a contract-info file, or external-errorf for malformed --format arguments and JSON parse errors.",
+      "fixes": [
+        "Check filesystem permissions on the target directory and any input files",
+        "Confirm the output directory is writable (the compiler creates it if missing)",
+        "For 'error opening …; try (re)compiling …' on a contract-info file, recompile the upstream contract so the cached file matches its source",
+        "For 'specified line length …', pass a non-negative integer to --format line-length"
+      ],
+      "aliases": [
+        "creating output directory",
+        "creating output file",
+        "writing output file",
+        "error opening ~a; try (re)compiling ~a",
+        "error reading ~a: ~a",
+        "expected ~a (received ~a)",
+        "specified line length ~a is not a nonnegative integer"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.parser.file-io-error",
+        "compiler.external.contract-info-malformed"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        },
+        "anchor": "compiler/passes.ss:89"
       }
     }
   ]

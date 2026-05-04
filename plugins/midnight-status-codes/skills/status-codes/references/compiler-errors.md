@@ -834,9 +834,195 @@ potential witness-value disclosure must be declared but is not:
 
 ---
 
+## Type-Checker Diagnostic Families
+
+These entries group large numbers of related type-checker templates that all share a single root cause and a single fix. The compiler emits many phrasing variants depending on which builtin or position triggered the check, but the user's correction is the same in every variant.
+
+### Builtin-call type mismatch
+
+**Templates (variants):** Many templates of the form `"expected <T1> for <builtin> call, received <T2>"`, `"expected <T1>, got <T2> for <builtin>"`, or `"mismatch between Bytes lengths <N> and <M> for <builtin>"`. Builtins observed: `bytes->vector`, `bytes->field`, `cast-from-bytes`, `cast-from-enum`, `cast-to-enum`, `downcast-unsigned`, `upcast`, `vector->bytes`, `bytes-ref`, `vector-ref`, `field->bytes`, `slice`.
+
+**Triggers:** A builtin conversion or accessor was called with an argument of the wrong type or wrong length.
+
+**Fix:** Inspect the call site and the declared type of the argument. Adjust the surrounding code so the value reaching the builtin has exactly the type the builtin expects. For length mismatches, change the source `Bytes<N>` declaration or use a different builtin that accepts the actual length.
+
+---
+
+### Aggregate (tuple/Vector/Bytes) expected
+
+**Templates:** Many `"expected <kind>, received ~a"` variants — including spread-context, slice-context, vector-ref, struct-spread, and the various non-empty-aggregate forms.
+
+**Triggers:** A position that requires a tuple, `Vector<…>`, or `Bytes<…>` value received a non-aggregate (or empty-aggregate) type.
+
+**Fix:** Construct or coerce the value to the expected aggregate shape. For non-empty requirements, ensure length is `>= 1`. For spreads and slices, confirm the source is a tuple, vector, or `Bytes` value rather than a struct or scalar.
+
+---
+
+### Generic "expected type X, received Y" (non-builtin)
+
+**Templates:** `"expected enum type, received ~a"`, `"expected structure type, received ~a"`, `"expected primitive type tcontract for contract call, received ~a"`, `"expected ADT-type for ledger declaration after expand-modules-and-types, received ~a"`, `"expected ~a type to be an ordinary Compact type but received ADT type ~a"`, `"expected index to have an unsigned type, received ~a"`, `"~a requires its ~a operand to be a Field or Uint; the actual type is ~a"`.
+
+**Triggers:** The position required a specific kind of type and got a different one.
+
+**Fix:** Use the required kind in the failing position. For "ordinary type vs ADT type" complaints, drop the ADT wrapper or move the access through an ADT operator such as `.read()` or `.member(...)`.
+
+---
+
+### Declared/actual type or count mismatch
+
+**Templates:** `"mismatch between actual type ~a and declared type ~a [of …|for field …]"`, `"mismatch between actual type ~a and expected type ~a for ~a"`, `"expected ~a but received ~a for generic parameter ~s declared at ~a"`.
+
+**Triggers:** A declared type or generic-parameter signature does not match the value or argument supplied.
+
+**Fix:** Make the declared type match the actual value, or adjust the value to fit the declared type. For generic parameters, check the declaration site quoted in the message.
+
+---
+
+### Incompatible types for binary, relational, or equality operator
+
+**Templates:** `"incompatible combination of types ~a and ~a for [binary arithmetic operator|relational operator|<op>]"`, `"incompatible types ~a and ~a for [equality|relational] operator"`, `"non-equivalent types ~a and ~a for equality operator"`, `"resulting value might exceed largest representable Uint value (for Field semantics, cast either operand to Field)"`.
+
+**Triggers:** Two operands of an arithmetic, relational, or equality operator have types that do not combine. The "might exceed" form indicates Uint result overflow.
+
+**Fix:** Cast one or both operands to a common type. For "might exceed" warnings on Uint arithmetic, cast either operand to `Field` to use Field semantics.
+
+---
+
+### ADT misuse (assignment, default, ledger access)
+
+**Templates:** `"ADT nesting is permitted only within Map ADTs"`, `"cannot nest ~s ADTs within another ADT"`, `"expected left-hand side of [+=|-=|=|~a] to have an ADT type, received ~a"`, `"operation ~a undefined for ledger field type ~a"`, `"default is not defined for ADT type Kernel"`, `"default is not defined for contract types"`, `"expected a ledger field name at base of ledger access"`, `"incomplete chain of ledger indirects: final result must be a regular type, but received ADT type ~a"`, `"incomplete reference to nested ADT"`.
+
+**Triggers:** An ADT-typed (ledger ADT) value was used outside the operations it supports — assigned with `=`, given a `default(...)`, or referenced through a partial chain.
+
+**Fix:** Use the ADT's published operators (`.read`, `.write`, `.insert`, `.remove`, etc.). If you need a primitive value, complete the indirect chain so the final result is a regular Compact type. ADT nesting outside `Map<K, V>` is unsupported — flatten the structure.
+
+---
+
+### Contract-typed values in disallowed positions
+
+**Templates:** `"invalid type ~a for circuit ~a argument ~d:\n  exported circuit arguments cannot include contract values"`, `"invalid type ~a for circuit ~a return value:\n  exported circuit return values cannot include contract values"`, `"contract types are not yet implemented"`, `"opaque type ~a is not supported"`.
+
+**Triggers:** A contract handle (the `contract<...>` type) appears as an exported circuit argument or return, or in a TypeScript-output position the compiler does not yet handle.
+
+**Fix:** Pass primitive values (Field, Bytes, Uint) across the export boundary and reconstruct contract handles inside the circuit. The "contract types are not yet implemented" form is a planned-future-feature placeholder; the diagnostic disappears as the relevant TypeScript lowering pass lands.
+
+---
+
+### Compile-time-constant index required
+
+**Templates:** `"Bytes index did not reduce to a constant nonnegative value at compile time"`, `"slice index did not reduce to a constant nonnegative value at compile time"`, `"vector index did not reduce to a constant nonnegative value at compile time"`, `"invalid cast from field to Bytes<0>"`.
+
+**Triggers:** Indexing into `Bytes`, `Vector`, or a slice with a value the constant-folder could not resolve to a non-negative integer at compile time.
+
+**Fix:** Replace the dynamic index with a literal integer or a `const`-bound identifier whose value the compiler can fold. If the index genuinely needs to be runtime-computed, re-design to use ADT operators (e.g., `Map`) instead of bare `Bytes`/`Vector` indexing.
+
+---
+
+### Function body can return without supplying a value
+
+**Template:** `"~a is declared to return a value of type ~a, but its body can return without supplying a value"`
+
+**Triggers:** A circuit, witness, or function declared with a non-`[]` return type has at least one path that hits the end of the body (or an early `return;`) without producing a value.
+
+**Fix:** Add an explicit `return <expr>;` on every reachable path, or change the declared return type to `[]`.
+
+---
+
+### `fold` first-argument / return-type mismatch
+
+**Template:** `"fold requires the return type and first-argument type to be the same"` (with inferred-vs-declared annotations).
+
+**Triggers:** The accumulator type returned by the folding circuit does not match the type of `fold`'s first argument (the seed).
+
+**Fix:** Make the seed type match the return type of the folding circuit. The annotated `[inferred]` notation in the message indicates which side the compiler inferred vs. read from a declaration.
+
+---
+
+### Spread-construction structure mismatch
+
+**Template:** `"the type of the spread structure: <T1> does match the declared type of the structure to be created: <T2>"` (sic — the `does match` wording is an upstream typo; in practice this fires for the *non-matching* case).
+
+**Triggers:** A struct-spread expression's source structure has a type incompatible with the declared structure shape.
+
+**Fix:** Spread a value whose type matches the destination structure, or build the structure explicitly without a spread.
+
+---
+
+### Wrong number of arguments
+
+**Templates:** `"~a ~a requires ~a argument(s) but received ~a"`, `"~a.~a requires ~a argument(s) but received ~a"`.
+
+**Triggers:** A circuit, witness, ADT method, or builtin was called with the wrong number of arguments.
+
+**Fix:** Inspect the declaration of the called name and supply the correct argument count.
+
+---
+
+### Pad-string target shorter than UTF-8 length
+
+**Template:** `"cannot pad ~s to length ~s since its utf8-equivalent already exceeds that length"`
+
+**Triggers:** `pad(string, length)` was given a length smaller than the UTF-8 byte-length of the input string.
+
+**Fix:** Increase the target length, or pre-truncate the input before padding.
+
+---
+
+## Name-Resolution Diagnostic Families
+
+### Disallowed top-level export
+
+**Templates:** `"attempt to export ~a name ~s"`, `"cannot export ~a (~s) from the top level"`, `"cannot export alias for ADT types from the top level"`, `"cannot export type-parameterized function (~s) from the top level"`, `"multiple top-level exports for ~s"`.
+
+**Triggers:** An export targets a kind of name the language does not allow exporting (or exports the same name twice).
+
+**Fix:** Remove the offending `export`. For type-parameterized circuits, export a non-generic wrapper instead. For duplicate exports, remove the redundant one.
+
+---
+
+### Misplaced or duplicate top-level constructor
+
+**Templates:** `"misplaced constructor: should appear only at the top level of a program"`, `"found other ledger constructors in program: …"`.
+
+**Triggers:** A `constructor { ... }` block appears nested (not at the top level), or the program contains more than one ledger `constructor`.
+
+**Fix:** Move the constructor to the top level of the program. A program may contain at most one ledger constructor — merge bodies if you have several.
+
+---
+
+### File missing a single module definition
+
+**Template:** `"~a does not contain a (single) module defintion"` (sic — the upstream typo `defintion` is preserved in the message).
+
+**Triggers:** An imported `.compact` source file does not contain exactly one top-level `module` declaration (zero, or more than one).
+
+**Fix:** Add a single `module Name { ... }` wrapper to the file, or split files so each imported file declares one module.
+
+---
+
+### Recursion involving identifiers
+
+**Template:** `"recursion involving~?"` (the trailing `~?` is a Scheme format-recursive directive that gets filled in with the offending identifier list).
+
+**Triggers:** Compact does not allow general circuit recursion; this fires when a static-analysis pass detects a recursive reference cycle among circuit definitions.
+
+**Fix:** Restructure the program to remove the cycle. Use iteration (`for`), `fold`, or refactor recursive helpers into a flat sequence.
+
+---
+
 ## Compiler Warnings (non-fatal)
 
 These diagnostics are emitted via `source-warningf` (or its deferred-warning sibling). They do not fail compilation, but they flag situations where the user's intent may not match what the compiler is doing.
+
+### Warning: Old standard-library / ledger operator name
+
+**Template:** `"apparent use of an old standard-library / ledger operator name <old>: the new name is <new>"`
+
+**Triggers:** The program references an identifier whose name was renamed in a recent standard-library or ledger version. The compiler suggests the new name and continues.
+
+**Fix:** Rename the reference to the new name shown in the message. The warning will disappear at the next compile.
+
+---
 
 ### Warning: Uint range end may be left unchanged after generic-size update
 

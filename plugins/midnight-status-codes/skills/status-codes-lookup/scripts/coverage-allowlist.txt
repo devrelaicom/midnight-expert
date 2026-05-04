@@ -7,3 +7,38 @@
 # whitespace to a single space. To add a new entry: copy the message string, replace each
 # ~-placeholder with "__", and escape regex metacharacters as needed. Add a leading '#' line
 # explaining why this template is intentionally not user-facing.
+
+# Internal sanity check: post-pass invariant fired by check-types pass when an
+# earlier compiler stage produced a malformed IR. Source: compiler/analysis-passes.ss
+# around line 4171; users only see this if a previous compiler bug let bad IR slip
+# through, in which case the message is effectively an internal-errorf.
+^mismatch between recorded length __ and actual length __ for __ argument __$
+
+# Internal sanity check: same family, post-pass invariant on argument types.
+# Source: compiler/analysis-passes.ss; recorded type vs actual type after a pass
+# is supposed to be infallible if the pass is correct.
+^mismatch between recorded type __ and actual type __ for __ argument __$
+
+# Internal sanity check: post-pass invariant on equality operands.
+# Source: compiler/analysis-passes.ss:3640.
+^mismatch between recorded type __ and equality operand type __$
+
+# Internal sanity check: post-pass element-index invariant for tuple/vector
+# construction. Source: compiler/analysis-passes.ss:3762.
+^recorded index __ does not match actual index __ for elt __ of __$
+
+# Internal post-typecheck consistency check: bit-width tag and type tag should
+# always agree after type-check. Source: compiler/analysis-passes.ss around 2074.
+^mismatched bits __ and type __ for relational operator$
+
+# Internal post-typecheck consistency check (mbits / type form). Source:
+# compiler/analysis-passes.ss:3607.
+^mismatched mbits __ and type __ for __$
+
+# Same family, three-type variant. Source: compiler/analysis-passes.ss around 3607.
+^mismatched mbits __ and types __ and __ for __$
+
+# Internal VM-evaluation guard: argument values reaching the in-circuit VM
+# should always satisfy the predicate. Source: compiler/vm.ss:189.
+^unexpected __ value __ while evaluating VM-instruction argument value$
+
