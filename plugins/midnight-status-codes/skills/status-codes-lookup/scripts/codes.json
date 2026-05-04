@@ -4893,6 +4893,305 @@
       }
     },
     {
+      "code": "unexpected end of file",
+      "name": "Unexpected end of file / newline / character",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "lexer",
+      "id": "compiler.lexer.unexpected-eof-newline-character",
+      "group": {
+        "name": "Lexer Errors",
+        "description": "Errors raised by the tokenizer when the input does not form a valid token stream."
+      },
+      "description": "The lexer reached an unexpected token boundary mid-token, mid-string, or mid-comment.",
+      "fixes": [
+        "Locate the unterminated construct (string literal, block comment, or character literal) at the reported source location",
+        "Add the missing closing delimiter (`\"`, `*/`, or `'`)",
+        "If the file is truncated, restore the remainder"
+      ],
+      "aliases": [
+        "unexpected ~a",
+        "unexpected end of file",
+        "unexpected newline",
+        "unexpected character '~c'",
+        "unexpected character ~a"
+      ],
+      "severity": "error",
+      "see_also": ["parse error"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#unexpected-end-of-file-newline-character",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/lexer.ss:93",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "attempt to nest block comment",
+      "name": "Nested Block Comment",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "lexer",
+      "id": "compiler.lexer.nested-block-comment",
+      "group": {
+        "name": "Lexer Errors",
+        "description": "Errors raised by the tokenizer when the input does not form a valid token stream."
+      },
+      "description": "The lexer encountered `/*` while already inside an open `/* */` block comment. Compact does not allow nested block comments.",
+      "fixes": [
+        "Remove the inner `/*` or close the outer block comment first",
+        "Use line comments (`//`) for inner comments",
+        "Restructure the source to avoid nesting block comments"
+      ],
+      "aliases": [
+        "attempt to nest block comment"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.lexer.unexpected-eof-newline-character"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#nested-block-comment",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/lexer.ss:99",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "unsupported numeric syntax syntax: leading 0 must be followed by b, B, o, O, x, X",
+      "name": "Invalid Leading Zero In Numeric Literal",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "lexer",
+      "id": "compiler.lexer.numeric-leading-zero",
+      "group": {
+        "name": "Lexer Errors",
+        "description": "Errors raised by the tokenizer when the input does not form a valid token stream."
+      },
+      "description": "A numeric literal began with a leading `0` followed by a decimal digit. Compact requires a base prefix (`b`/`B`, `o`/`O`, or `x`/`X`) after a leading zero. Note: the duplicated word `syntax` matches upstream as of compactc-v0.31.0.",
+      "fixes": [
+        "Use `0b…` for binary literals (e.g. `0b1010`)",
+        "Use `0o…` for octal literals (e.g. `0o755`)",
+        "Use `0x…` for hexadecimal literals (e.g. `0xFF`)",
+        "Do not start a decimal literal with `0` followed by another digit"
+      ],
+      "aliases": [
+        "unsupported numeric syntax syntax: leading 0 must be followed by b, B, o, O, x, X",
+        "unsupported numeric syntax: leading 0 must be followed by b, B, o, O, x, X",
+        "leading 0 must be followed by b, B, o, O, x, X"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.lexer.invalid-binary-octal-digit", "compiler.lexer.numeric-out-of-field-range"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-leading-zero-in-numeric-literal",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/lexer.ss:161",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "is out of Field range",
+      "name": "Numeric Literal Out Of Field Range",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "lexer",
+      "id": "compiler.lexer.numeric-out-of-field-range",
+      "group": {
+        "name": "Lexer Errors",
+        "description": "Errors raised by the tokenizer when the input does not form a valid token stream."
+      },
+      "description": "A numeric literal exceeds the maximum representable Field value. Field values are bounded by the prime used in the ZK proof system.",
+      "fixes": [
+        "Use a smaller numeric literal that fits within the Field range",
+        "Verify the value is intended as a Field — if you need an arbitrary integer, choose a Uint width or other type",
+        "Check for accidental extra digits or wrong base prefix"
+      ],
+      "aliases": [
+        "~s is out of Field range",
+        "<value> is out of Field range",
+        "is out of Field range"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.lexer.numeric-leading-zero"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#numeric-literal-out-of-field-range",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/lexer.ss:170",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "unexpected digit in binary or octal literal",
+      "name": "Invalid Digit In Binary Or Octal Literal",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "lexer",
+      "id": "compiler.lexer.invalid-binary-octal-digit",
+      "group": {
+        "name": "Lexer Errors",
+        "description": "Errors raised by the tokenizer when the input does not form a valid token stream."
+      },
+      "description": "A digit outside the allowed range appeared inside a binary (`0b…`) or octal (`0o…`) literal. Binary literals may only contain `0` and `1`; octal literals may only contain `0` through `7`.",
+      "fixes": [
+        "For binary literals (`0b…`), use only the digits `0` and `1`",
+        "For octal literals (`0o…`), use only the digits `0` through `7`",
+        "If a different base was intended, switch to `0x…` (hex) or a plain decimal literal"
+      ],
+      "aliases": [
+        "unexpected digit ~a (expected 0 or 1)",
+        "unexpected digit ~a (expected 0 through 7)",
+        "unexpected digit <d> (expected 0 or 1)",
+        "unexpected digit <d> (expected 0 through 7)"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.lexer.numeric-leading-zero"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-digit-in-binary-literal",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/lexer.ss:175",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "unrecognized pragma setting",
+      "name": "Unrecognized Pragma Setting",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "parser",
+      "id": "compiler.parser.unrecognized-pragma",
+      "group": {
+        "name": "Parser Errors",
+        "description": "Errors raised after tokenization while the compiler builds the AST."
+      },
+      "description": "A `pragma` directive uses a value the compiler does not recognize.",
+      "fixes": [
+        "Check the supported pragma directives for this compiler version",
+        "Confirm the pragma name and value are spelled correctly",
+        "Example of a valid pragma: `pragma language_version >= 0.22;`"
+      ],
+      "aliases": [
+        "unrecognized pragma setting ~s",
+        "unrecognized pragma setting <value>",
+        "unrecognized pragma setting"
+      ],
+      "severity": "error",
+      "see_also": ["parse error"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#unrecognized-pragma-setting",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/parser.ss:427",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "error opening source file",
+      "name": "File I/O Error",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "parser",
+      "id": "compiler.parser.file-io-error",
+      "group": {
+        "name": "Parser Errors",
+        "description": "Errors raised after tokenization while the compiler builds the AST."
+      },
+      "description": "The compiler could not open, read, or close the specified source file. Raised through `error-accessing-file` for the opening / reading / closing phases.",
+      "fixes": [
+        "Verify the file path is correct and the file exists",
+        "Confirm the file has a `.compact` extension",
+        "Check filesystem permissions on the file and its parent directory",
+        "Ensure the file is not locked or being written by another process"
+      ],
+      "aliases": [
+        "error opening source file",
+        "error reading source file",
+        "error closing source file"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.parser.is-directory", "compiler.frontend.failed-to-locate-include"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/parser.ss:999",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "is a directory",
+      "name": "Source Path Is A Directory",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "parser",
+      "id": "compiler.parser.is-directory",
+      "group": {
+        "name": "Parser Errors",
+        "description": "Errors raised after tokenization while the compiler builds the AST."
+      },
+      "description": "The path passed to the compiler points to a directory, not a file.",
+      "fixes": [
+        "Pass a path to a `.compact` source file, not a directory",
+        "Check shell expansion or build-tool wiring that may have substituted a directory",
+        "If the directory contains the entry-point file, append the file name to the path"
+      ],
+      "aliases": [
+        "~a is a directory",
+        "<path> is a directory",
+        "is a directory"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.parser.file-io-error"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/parser.ss:1005",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
       "code": "dapp-connector/Disconnected",
       "name": "Disconnected",
       "source": "dapp-connector",
