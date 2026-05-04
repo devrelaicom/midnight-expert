@@ -55,7 +55,7 @@ bash ${CLAUDE_SKILL_DIR}/scripts/lookup.sh --source midnight-node
 bash ${CLAUDE_SKILL_DIR}/scripts/lookup.sh --source compact-compiler
 ```
 
-Available sources: `compact-compiler`, `compact-js-sdk`, `dapp-connector`, `jsonrpc-2.0`, `midnight-indexer`, `midnight-js`, `midnight-node`, `midnight-wallet`, `partner-chains`, `proof-server`, `substrate`.
+Available sources: `compact-compiler`, `compact-js-sdk`, `compact-runtime`, `dapp-connector`, `jsonrpc-2.0`, `midnight-indexer`, `midnight-js`, `midnight-node`, `midnight-wallet`, `partner-chains`, `proof-server`, `substrate`.
 
 ### List All Sources
 
