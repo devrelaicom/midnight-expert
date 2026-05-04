@@ -1,5 +1,5 @@
 {
-  "version": "2.1.0",
+  "version": "2.2.0",
   "generated": "2026-05-04",
   "entries": [
     {
@@ -7827,6 +7827,1930 @@
         "ref": "main",
         "anchor": "partner-chains/toolkit/bridge/pallet/src/lib.rs",
         "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/0",
+      "name": "NewStateOutOfBounds",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "The newly produced ledger state is out of acceptable bounds for the on-chain encoding.",
+      "fixes": [
+        "Inspect the transaction whose application produced the out-of-bounds state — the ledger refused to commit",
+        "Check for runaway storage growth (e.g., contract state explosions)",
+        "If reproducible on a known transaction, file an issue against midnightntwrk/midnight-node"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 0 }",
+        "pallet_midnight::Error::NewStateOutOfBounds"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/1",
+      "name": "Deserialization",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Wraps a flattened DeserializationError from LedgerApiError; the inner u8 identifies which artifact failed to deserialize.",
+      "fixes": [
+        "Decodes a DeserializationError u8 in the 0–11 range; look up that u8 with `lookup.sh --code <N>`",
+        "Most common causes: SDK/node version drift, malformed transaction encoding"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 1 }",
+        "pallet_midnight::Error::Deserialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "6/2",
+        "13/5",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/2",
+      "name": "Serialization",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Wraps a flattened SerializationError from LedgerApiError; the inner u8 identifies which artifact failed to serialize.",
+      "fixes": [
+        "Decodes a SerializationError u8 in the 50–63 range; look up that u8 with `lookup.sh --code <N>`",
+        "Typically indicates an encoding mismatch between node and ledger versions"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 2 }",
+        "pallet_midnight::Error::Serialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "6/3",
+        "13/6",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62",
+        "63"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/3",
+      "name": "Transaction",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Wraps a flattened TransactionError from LedgerApiError; the inner u8 identifies the specific ledger transaction failure.",
+      "fixes": [
+        "Decodes a TransactionError u8 in the 100–210 or 212–250 range; look up that u8 with `lookup.sh --code <N>`",
+        "Inspect the transaction inputs, witnesses, and balance — the ledger rejected application"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 3 }",
+        "pallet_midnight::Error::Transaction"
+      ],
+      "severity": "error",
+      "see_also": [
+        "6/4",
+        "13/7"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/4",
+      "name": "LedgerCacheError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::LedgerCacheError — the in-memory ledger cache is poisoned or could not be acquired.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 150 — look up `lookup.sh --code 150` for the same root-cause notes",
+        "Usually indicates internal state corruption or a panicked background task; restart the node",
+        "If reproducible, capture node logs and file an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 4 }",
+        "pallet_midnight::Error::LedgerCacheError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "150",
+        "6/5",
+        "13/8"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/5",
+      "name": "NoLedgerState",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::NoLedgerState — no ledger state is present at the expected storage key.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 151 — look up `lookup.sh --code 151` for diagnostic notes",
+        "Indicates a missing or uninitialized ledger; check that the node has finished initial sync and that genesis was applied"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 5 }",
+        "pallet_midnight::Error::NoLedgerState"
+      ],
+      "severity": "error",
+      "see_also": [
+        "151",
+        "6/6",
+        "13/9"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/6",
+      "name": "LedgerStateScaleDecodingError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::LedgerStateScaleDecodingError — the on-chain ledger state could not be SCALE-decoded.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 152 — look up `lookup.sh --code 152` for the same root-cause notes",
+        "Indicates encoding/version mismatch; verify node binary matches the runtime's ledger version"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 6 }",
+        "pallet_midnight::Error::LedgerStateScaleDecodingError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "152",
+        "6/7",
+        "13/10"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/7",
+      "name": "ContractCallCostError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::ContractCallCostError — the cost calculation for a contract call failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 153 — look up `lookup.sh --code 153` for diagnostic notes",
+        "Typically caused by malformed cost metadata in the transaction or a mismatch between SDK-emitted and runtime-expected fee inputs"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 7 }",
+        "pallet_midnight::Error::ContractCallCostError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "153",
+        "6/8",
+        "13/11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/8",
+      "name": "BlockLimitExceededError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::BlockLimitExceededError — the transaction would exceed the block's resource limit.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 154 — look up `lookup.sh --code 154` for diagnostic notes",
+        "Reduce transaction size or wait and retry — the previous block was already near capacity"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 8 }",
+        "pallet_midnight::Error::BlockLimitExceededError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "154",
+        "6/9",
+        "13/12"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/9",
+      "name": "FeeCalculationError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::FeeCalculationError — fee calculation failed for the transaction.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 155 — look up `lookup.sh --code 155` for diagnostic notes",
+        "Check transaction fee inputs and ensure the SDK's fee model matches the runtime"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 9 }",
+        "pallet_midnight::Error::FeeCalculationError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "155",
+        "6/10",
+        "13/13"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/10",
+      "name": "HostApiError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::HostApiError — a host API call into the runtime failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 255 — look up `lookup.sh --code 255` for diagnostic notes",
+        "Inspect node logs around the failure; usually indicates a runtime/host boundary error and is worth filing as an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 10 }",
+        "pallet_midnight::Error::HostApiError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "255",
+        "6/11",
+        "13/14"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/11",
+      "name": "NetworkIdNotString",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "The runtime's network ID could not be converted to a valid string.",
+      "fixes": [
+        "Indicates a runtime configuration error; check the chain spec and runtime-version network-id field",
+        "If reproducible against a public chain, file an issue — chain-spec values should always decode as strings"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 11 }",
+        "pallet_midnight::Error::NetworkIdNotString"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/12",
+      "name": "GetTransactionContextError",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::GetTransactionContextError — failed to retrieve the transaction context required for ledger application.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 165 — look up `lookup.sh --code 165` for diagnostic notes",
+        "Usually points to a missing or stale block context; verify timestamp/parent hash plumbing if testing locally"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 12 }",
+        "pallet_midnight::Error::GetTransactionContextError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "165",
+        "6/12",
+        "13/15"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/13",
+      "name": "ContractNotPresent",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::ContractNotPresent — the transaction targets a contract address that does not exist on chain.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 156 — look up `lookup.sh --code 156` for diagnostic notes",
+        "Verify the contract address; the deploy may have been on a different network or a different chain reset"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 13 }",
+        "pallet_midnight::Error::ContractNotPresent"
+      ],
+      "severity": "error",
+      "see_also": [
+        "156",
+        "6/13",
+        "13/16"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "5/14",
+      "name": "BeneficiaryNotFound",
+      "source": "midnight-node",
+      "category": "pallet-midnight",
+      "group": {
+        "name": "pallet_midnight Errors (index 5)",
+        "description": "Errors emitted by pallet_midnight, the core Midnight ledger pallet."
+      },
+      "description": "Flattened LedgerApiError::BeneficiaryNotFound — the reward beneficiary referenced by the transaction was not found.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 157 — look up `lookup.sh --code 157` for diagnostic notes",
+        "Check that the beneficiary account is registered before claiming rewards"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 5, error: 14 }",
+        "pallet_midnight::Error::BeneficiaryNotFound"
+      ],
+      "severity": "error",
+      "see_also": [
+        "157",
+        "6/14",
+        "13/17"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight/src/lib.rs",
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/1",
+      "name": "SystemTransactionNotAllowedForGovernance",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "The system transaction is not permitted under the current governance configuration.",
+      "fixes": [
+        "Confirm the call is allowed by the active governance policy — system transactions are gated to specific origins",
+        "If invoking from a governance motion, ensure the motion call kind matches the system tx category"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 1 }",
+        "pallet_midnight_system::Error::SystemTransactionNotAllowedForGovernance"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/2",
+      "name": "Deserialization",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Wraps a flattened DeserializationError from LedgerApiError; the inner u8 identifies which artifact failed to deserialize.",
+      "fixes": [
+        "Decodes a DeserializationError u8 in the 0–11 range; look up that u8 with `lookup.sh --code <N>`",
+        "Most common cause: SDK/node version drift on the system-tx encoding"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 2 }",
+        "pallet_midnight_system::Error::Deserialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/1",
+        "13/5",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/3",
+      "name": "Serialization",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Wraps a flattened SerializationError from LedgerApiError; the inner u8 identifies which artifact failed to serialize.",
+      "fixes": [
+        "Decodes a SerializationError u8 in the 50–63 range; look up that u8 with `lookup.sh --code <N>`",
+        "Indicates an encoding mismatch between node and ledger versions"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 3 }",
+        "pallet_midnight_system::Error::Serialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/2",
+        "13/6",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62",
+        "63"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/4",
+      "name": "Transaction",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Wraps a flattened TransactionError from LedgerApiError; the inner u8 identifies the specific ledger transaction failure.",
+      "fixes": [
+        "Decodes a TransactionError u8 in the 100–210 or 212–250 range; look up that u8 with `lookup.sh --code <N>`",
+        "System tx failures usually originate from malformed governance/system payloads — check the encoded body"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 4 }",
+        "pallet_midnight_system::Error::Transaction"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/3",
+        "13/7"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/5",
+      "name": "LedgerCacheError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::LedgerCacheError — the in-memory ledger cache is poisoned or could not be acquired.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 150 — look up `lookup.sh --code 150`",
+        "Restart the node; if reproducible, capture logs and file an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 5 }",
+        "pallet_midnight_system::Error::LedgerCacheError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "150",
+        "5/4",
+        "13/8"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/6",
+      "name": "NoLedgerState",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::NoLedgerState — no ledger state is present at the expected storage key.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 151 — look up `lookup.sh --code 151`",
+        "Check that the node has finished initial sync and that genesis was applied"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 6 }",
+        "pallet_midnight_system::Error::NoLedgerState"
+      ],
+      "severity": "error",
+      "see_also": [
+        "151",
+        "5/5",
+        "13/9"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/7",
+      "name": "LedgerStateScaleDecodingError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::LedgerStateScaleDecodingError — the on-chain ledger state could not be SCALE-decoded.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 152 — look up `lookup.sh --code 152`",
+        "Verify node binary matches the runtime's ledger version"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 7 }",
+        "pallet_midnight_system::Error::LedgerStateScaleDecodingError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "152",
+        "5/6",
+        "13/10"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/8",
+      "name": "ContractCallCostError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::ContractCallCostError — the cost calculation for a contract call failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 153 — look up `lookup.sh --code 153`",
+        "Inspect the system tx's contract-call cost metadata"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 8 }",
+        "pallet_midnight_system::Error::ContractCallCostError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "153",
+        "5/7",
+        "13/11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/9",
+      "name": "BlockLimitExceededError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::BlockLimitExceededError — the system transaction would exceed the block's resource limit.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 154 — look up `lookup.sh --code 154`",
+        "Reduce system tx size or wait and retry"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 9 }",
+        "pallet_midnight_system::Error::BlockLimitExceededError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "154",
+        "5/8",
+        "13/12"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/10",
+      "name": "FeeCalculationError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::FeeCalculationError — fee calculation failed for the system transaction.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 155 — look up `lookup.sh --code 155`",
+        "Verify fee inputs against the runtime's fee model"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 10 }",
+        "pallet_midnight_system::Error::FeeCalculationError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "155",
+        "5/9",
+        "13/13"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/11",
+      "name": "HostApiError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::HostApiError — a host API call into the runtime failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 255 — look up `lookup.sh --code 255`",
+        "Inspect node logs around the failure; usually worth filing as an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 11 }",
+        "pallet_midnight_system::Error::HostApiError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "255",
+        "5/10",
+        "13/14"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/12",
+      "name": "GetTransactionContextError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::GetTransactionContextError — failed to retrieve the transaction context required for ledger application.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 165 — look up `lookup.sh --code 165`",
+        "Usually indicates a missing or stale block context"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 12 }",
+        "pallet_midnight_system::Error::GetTransactionContextError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "165",
+        "5/12",
+        "13/15"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/13",
+      "name": "ContractNotPresent",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::ContractNotPresent — the system transaction targets a contract address that does not exist on chain.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 156 — look up `lookup.sh --code 156`",
+        "Verify the contract address is correct for the network"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 13 }",
+        "pallet_midnight_system::Error::ContractNotPresent"
+      ],
+      "severity": "error",
+      "see_also": [
+        "156",
+        "5/13",
+        "13/16"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/14",
+      "name": "BeneficiaryNotFound",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::BeneficiaryNotFound — the reward beneficiary referenced by the system transaction was not found.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 157 — look up `lookup.sh --code 157`",
+        "Ensure the beneficiary account is registered before claiming rewards"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 14 }",
+        "pallet_midnight_system::Error::BeneficiaryNotFound"
+      ],
+      "severity": "error",
+      "see_also": [
+        "157",
+        "5/14",
+        "13/17"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/0",
+      "name": "MaxCardanoAddrLengthExceeded",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "A Cardano wallet address was longer than the bounded BoundedCardanoAddress capacity.",
+      "fixes": [
+        "Verify the Cardano address — Bech32-encoded mainnet/testnet addresses should fit; truncation here implies a malformed registration entry"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 0 }",
+        "pallet_cnight_observation::Error::MaxCardanoAddrLengthExceeded"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/1",
+      "name": "MaxRegistrationsExceeded",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Too many registrations were submitted in a single inherent for the bounded vector capacity.",
+      "fixes": [
+        "Reduce the number of registrations per block or check that the inherent producer is not duplicating entries"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 1 }",
+        "pallet_cnight_observation::Error::MaxRegistrationsExceeded"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/2",
+      "name": "InherentAlreadyExecuted",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "The cNIGHT observation inherent was attempted twice in the same block; only one inherent execution is permitted per block.",
+      "fixes": [
+        "Ensure only one inherent is provided per block — duplicate inclusion indicates a bug in the inherent provider",
+        "Compare with the same variant in pallet_federated_authority_observation (45/2) — these are independent per-pallet limits"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 2 }",
+        "pallet_cnight_observation::Error::InherentAlreadyExecuted"
+      ],
+      "severity": "error",
+      "see_also": [
+        "45/2"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/3",
+      "name": "CardanoPositionRegression",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "The next Cardano position in the inherent does not advance beyond the current stored position.",
+      "fixes": [
+        "Indicates a stale or replayed observation; check the inherent producer's bookmark for Cardano stream consumption"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 3 }",
+        "pallet_cnight_observation::Error::CardanoPositionRegression"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/4",
+      "name": "TooManyUtxos",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "The observed UTXO count exceeds CardanoTxCapacityPerBlock × UTXO_PER_TX_OVERESTIMATE.",
+      "fixes": [
+        "The inherent producer is over-submitting; reduce per-block batch size or raise the runtime's CardanoTxCapacityPerBlock"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 4 }",
+        "pallet_cnight_observation::Error::TooManyUtxos"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/5",
+      "name": "Deserialization",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Wraps a flattened DeserializationError from LedgerApiError; the inner u8 identifies which artifact failed to deserialize.",
+      "fixes": [
+        "Decodes a DeserializationError u8 in the 0–11 range; look up that u8 with `lookup.sh --code <N>`"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 5 }",
+        "pallet_cnight_observation::Error::Deserialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/1",
+        "6/2",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/6",
+      "name": "Serialization",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Wraps a flattened SerializationError from LedgerApiError; the inner u8 identifies which artifact failed to serialize.",
+      "fixes": [
+        "Decodes a SerializationError u8 in the 50–63 range; look up that u8 with `lookup.sh --code <N>`"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 6 }",
+        "pallet_cnight_observation::Error::Serialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/2",
+        "6/3",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62",
+        "63"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/7",
+      "name": "Transaction",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Wraps a flattened TransactionError from LedgerApiError; the inner u8 identifies the specific ledger transaction failure.",
+      "fixes": [
+        "Decodes a TransactionError u8 in the 100–210 or 212–250 range; look up that u8 with `lookup.sh --code <N>`"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 7 }",
+        "pallet_cnight_observation::Error::Transaction"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/3",
+        "6/4"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/8",
+      "name": "LedgerCacheError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::LedgerCacheError — the in-memory ledger cache is poisoned or could not be acquired.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 150 — look up `lookup.sh --code 150`",
+        "Restart the node; if reproducible, capture logs and file an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 8 }",
+        "pallet_cnight_observation::Error::LedgerCacheError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "150",
+        "5/4",
+        "6/5"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/9",
+      "name": "NoLedgerState",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::NoLedgerState — no ledger state is present at the expected storage key.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 151 — look up `lookup.sh --code 151`",
+        "Check that the node has finished initial sync and that genesis was applied"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 9 }",
+        "pallet_cnight_observation::Error::NoLedgerState"
+      ],
+      "severity": "error",
+      "see_also": [
+        "151",
+        "5/5",
+        "6/6"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/10",
+      "name": "LedgerStateScaleDecodingError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::LedgerStateScaleDecodingError — the on-chain ledger state could not be SCALE-decoded.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 152 — look up `lookup.sh --code 152`",
+        "Verify node binary matches the runtime's ledger version"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 10 }",
+        "pallet_cnight_observation::Error::LedgerStateScaleDecodingError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "152",
+        "5/6",
+        "6/7"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/11",
+      "name": "ContractCallCostError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::ContractCallCostError — the cost calculation for a contract call failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 153 — look up `lookup.sh --code 153`"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 11 }",
+        "pallet_cnight_observation::Error::ContractCallCostError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "153",
+        "5/7",
+        "6/8"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/12",
+      "name": "BlockLimitExceededError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::BlockLimitExceededError — the inherent would exceed the block's resource limit.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 154 — look up `lookup.sh --code 154`",
+        "Reduce inherent batch size or wait and retry"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 12 }",
+        "pallet_cnight_observation::Error::BlockLimitExceededError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "154",
+        "5/8",
+        "6/9"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/13",
+      "name": "FeeCalculationError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::FeeCalculationError — fee calculation failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 155 — look up `lookup.sh --code 155`"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 13 }",
+        "pallet_cnight_observation::Error::FeeCalculationError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "155",
+        "5/9",
+        "6/10"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/14",
+      "name": "HostApiError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::HostApiError — a host API call into the runtime failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 255 — look up `lookup.sh --code 255`",
+        "Inspect node logs around the failure; usually worth filing as an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 14 }",
+        "pallet_cnight_observation::Error::HostApiError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "255",
+        "5/10",
+        "6/11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/15",
+      "name": "GetTransactionContextError",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::GetTransactionContextError — failed to retrieve the transaction context required for ledger application.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 165 — look up `lookup.sh --code 165`"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 15 }",
+        "pallet_cnight_observation::Error::GetTransactionContextError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "165",
+        "5/12",
+        "6/12"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/16",
+      "name": "ContractNotPresent",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::ContractNotPresent — the inherent targets a contract address that does not exist on chain.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 156 — look up `lookup.sh --code 156`",
+        "Verify the contract address is correct for the network"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 16 }",
+        "pallet_cnight_observation::Error::ContractNotPresent"
+      ],
+      "severity": "error",
+      "see_also": [
+        "156",
+        "5/13",
+        "6/13"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "13/17",
+      "name": "BeneficiaryNotFound",
+      "source": "midnight-node",
+      "category": "cnight-observation",
+      "group": {
+        "name": "pallet_cnight_observation Errors (index 13)",
+        "description": "Errors emitted by pallet_cnight_observation, which observes Cardano-side cNIGHT bridge events. Indices 0–4 are observation-specific; 5–17 are flattened LedgerApiError variants."
+      },
+      "description": "Flattened LedgerApiError::BeneficiaryNotFound — the reward beneficiary referenced was not found.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 157 — look up `lookup.sh --code 157`",
+        "Ensure the beneficiary account is registered before claiming rewards"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 13, error: 17 }",
+        "pallet_cnight_observation::Error::BeneficiaryNotFound"
+      ],
+      "severity": "error",
+      "see_also": [
+        "157",
+        "5/14",
+        "6/14"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/cnight-observation/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/0",
+      "name": "MotionAlreadyApproved",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion has already been approved by this authority body.",
+      "fixes": [
+        "Each authority body may approve a motion only once; check whether the same auth_id has already submitted approval"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 0 }",
+        "pallet_federated_authority::Error::MotionAlreadyApproved"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/1",
+      "name": "MotionApprovalMissing",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The authority attempting to revoke or kill a motion was not in the list of approvers.",
+      "fixes": [
+        "Verify that the calling authority body actually approved the motion before trying to revoke or remove its approval"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 1 }",
+        "pallet_federated_authority::Error::MotionApprovalMissing"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/2",
+      "name": "MotionApprovalExceedsBounds",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion approval count would exceed T::MaxAuthorityBodies.",
+      "fixes": [
+        "The bounded vector of approvers is full; check the runtime's MaxAuthorityBodies setting against the actual authority set size"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 2 }",
+        "pallet_federated_authority::Error::MotionApprovalExceedsBounds"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/3",
+      "name": "MotionNotFound",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "No motion exists under the supplied motion hash.",
+      "fixes": [
+        "Verify the motion hash is correct; the motion may have already been dispatched, removed, or expired"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 3 }",
+        "pallet_federated_authority::Error::MotionNotFound"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/4",
+      "name": "MotionNotEnded",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "Motion voting has not yet completed; an action requiring a finished motion was attempted too early.",
+      "fixes": [
+        "Wait until the motion's approval window has elapsed before invoking the operation"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 4 }",
+        "pallet_federated_authority::Error::MotionNotEnded"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/6"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/5",
+      "name": "MotionHasEnded",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion has already ended and cannot accept further changes.",
+      "fixes": [
+        "If a new vote is required, propose a fresh motion; ended motions are immutable"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 5 }",
+        "pallet_federated_authority::Error::MotionHasEnded"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/8"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/6",
+      "name": "MotionTooEarlyToClose",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion is approved but the approval period has not yet ended; closing is not yet permitted.",
+      "fixes": [
+        "Wait for the approval period to elapse before closing the motion"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 6 }",
+        "pallet_federated_authority::Error::MotionTooEarlyToClose"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/4"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/7",
+      "name": "MotionAlreadyExists",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "A motion with the same hash already exists.",
+      "fixes": [
+        "Either reuse the existing motion or modify the proposed call so it produces a different hash"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 7 }",
+        "pallet_federated_authority::Error::MotionAlreadyExists"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/8",
+      "name": "MotionExpired",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion expired without gathering enough approvals.",
+      "fixes": [
+        "Re-propose the motion if it is still relevant; expired motions cannot be revived in place"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 8 }",
+        "pallet_federated_authority::Error::MotionExpired"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/5"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/9",
+      "name": "MotionWeightBoundTooLow",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The supplied weight bound is below the motion call's actual weight requirement.",
+      "fixes": [
+        "Recompute the motion call's weight and resubmit with a sufficiently large weight bound"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 9 }",
+        "pallet_federated_authority::Error::MotionWeightBoundTooLow"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "45/0",
+      "name": "EmptyMembers",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority_observation Errors (index 45)",
+        "description": "Errors emitted by pallet_federated_authority_observation, which observes authority membership changes."
+      },
+      "description": "The proposed authority membership set is empty.",
+      "fixes": [
+        "Provide a non-empty membership set; the runtime requires at least one authority body"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 45, error: 0 }",
+        "pallet_federated_authority_observation::Error::EmptyMembers"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority-observation/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "45/1",
+      "name": "DuplicatedMembers",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority_observation Errors (index 45)",
+        "description": "Errors emitted by pallet_federated_authority_observation, which observes authority membership changes."
+      },
+      "description": "The proposed authority membership set contains duplicate members.",
+      "fixes": [
+        "Deduplicate the membership set before submitting; the runtime rejects duplicate auth_ids"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 45, error: 1 }",
+        "pallet_federated_authority_observation::Error::DuplicatedMembers"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority-observation/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "45/2",
+      "name": "InherentAlreadyExecuted",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority_observation Errors (index 45)",
+        "description": "Errors emitted by pallet_federated_authority_observation, which observes authority membership changes."
+      },
+      "description": "The federated-authority observation inherent was attempted twice in the same block; only one inherent execution is permitted per block.",
+      "fixes": [
+        "Ensure only one inherent is provided per block — duplicate inclusion indicates a bug in the inherent provider",
+        "Compare with the same variant in pallet_cnight_observation (13/2) — these are independent per-pallet limits"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 45, error: 2 }",
+        "pallet_federated_authority_observation::Error::InherentAlreadyExecuted"
+      ],
+      "severity": "error",
+      "see_also": [
+        "13/2"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority-observation/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "50/0",
+      "name": "UrlTooLong",
+      "source": "midnight-node",
+      "category": "system-parameters",
+      "group": {
+        "name": "pallet_system_parameters Errors (index 50)",
+        "description": "Errors emitted by pallet_system_parameters, which manages chain-wide system parameters such as Terms-and-Conditions URLs."
+      },
+      "description": "The provided URL exceeds the maximum allowed length for a system parameter.",
+      "fixes": [
+        "Shorten the URL or host the document at a shorter address; the runtime enforces a hard upper bound on URL length"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 50, error: 0 }",
+        "pallet_system_parameters::Error::UrlTooLong"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/system-parameters/src/lib.rs",
+        "anchor_modified": "2026-03-11",
         "verified_at": "2026-05-04"
       }
     }
