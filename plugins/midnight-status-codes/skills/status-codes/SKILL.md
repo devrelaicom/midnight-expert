@@ -57,37 +57,43 @@ Read `references/compiler-errors.md`
 
 **Recognise by:** Error messages with file path, line number, and character position (e.g., `/path/to/file.compact line 42 char 5:`). Also compiler exit codes (0, 1, 254, 255) and messages like "unbound identifier", "parse error: found X looking for Y", "potential witness-value disclosure".
 
-### 6. ZK proof error mentioning PLONK, circuit, ZKIR, or verification
+### 6. Runtime error from compiled contract execution
+
+Read `references/runtime-errors.md`
+
+**Recognise by:** `CompactError` class name in the stack frame, or message prefixes `"failed assert:"`, `"type error:"`, `"range error at"`, `"expected ..."`, `"Version mismatch:"`, `"Maximum field mismatch:"`, `"State map ..."`, `"State ... cannot be cast to"`, or `"Expected 32-byte string"`. Notably *no* file/line/char source location — these come from `@midnight-ntwrk/compact-runtime`, not the compiler.
+
+### 7. ZK proof error mentioning PLONK, circuit, ZKIR, or verification
 
 Read `references/zk-errors.md`
 
 **Recognise by:** Error messages containing "Synthesis error", "constraint system", "NotEnoughRowsAvailable", "wrong arity", PLONK-related terms, or proof verification failures.
 
-### 7. Transaction validation or malformed transaction error (Rust-level)
+### 8. Transaction validation or malformed transaction error (Rust-level)
 
 Read `references/ledger-errors.md`
 
 **Recognise by:** Rust error names like `MalformedTransaction`, `TransactionInvalid`, `OnchainProgramError`, `TranscriptRejected`, `MalformedOffer`, or messages about binding commitments, sequencing checks, effects mismatches.
 
-### 8. HTTP status code from the proof server
+### 9. HTTP status code from the proof server
 
 Read `references/proof-server-errors.md`
 
 **Recognise by:** HTTP status codes (400, 428, 429, 500, 503) from requests to port 6300 or a proof server URL. Also job status messages like "job queue full" or "bad input".
 
-### 9. GraphQL error or HTTP status from the indexer
+### 10. GraphQL error or HTTP status from the indexer
 
 Read `references/indexer-errors.md`
 
 **Recognise by:** GraphQL error responses from port 8088 or an indexer URL. Messages like "invalid block hash", "invalid viewing key", "indexer has not yet caught up with the node". HTTP status codes 400, 413, 503 from the indexer API.
 
-### 10. DApp Connector `APIError`
+### 11. DApp Connector `APIError`
 
 Read `references/dapp-connector-errors.md`
 
 **Recognise by:** Error objects with `type: 'DAppConnectorAPIError'` and a `code` field matching `Disconnected`, `InternalError`, `InvalidRequest`, `PermissionRejected`, or `Rejected`.
 
-### 11. Not sure which source
+### 12. Not sure which source
 
 If the error doesn't clearly match any category above:
 
