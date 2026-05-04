@@ -32,8 +32,64 @@ USAGE
 
 # --- Output helpers ---
 print_detailed() {
-  # Reads JSON array from stdin, prints detailed blocks
-  jq -r '.[] | "=== MATCH: \(.source) / \(.code) ===\nCode: \(.code)\nName: \(.name)\nSource: \(.source)\nCategory: \(.group.name)\nCategory Description: \(.group.description)\nSeverity: \(.severity)\nDescription: \(.description)\nFixes:\n\(.fixes | map("  - " + .) | join("\n"))\nAliases: \(.aliases | join(", "))\nSee Also: \(.see_also | join(", "))\nVerified: \(.verified_against.source_repo // "?")@\(.verified_against.ref // "?") · anchor: \(.verified_against.anchor // "?") (modified \(.verified_against.anchor_modified // "?")) · audit \(.verified_against.verified_at // "?")\n==="'
+  # Reads JSON array from stdin, prints detailed blocks per entry, then resolves
+  # any reference_anchor to verbatim markdown via resolve-anchor.sh.
+  local resolver="$SCRIPT_DIR/resolve-anchor.sh"
+  local plugin_root
+  plugin_root="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  local input
+  input=$(cat)
+
+  local count
+  count=$(jq 'length' <<<"$input")
+  local i=0
+  while [[ "$i" -lt "$count" ]]; do
+    local entry
+    entry=$(jq ".[$i]" <<<"$input")
+    jq -r '
+      "=== MATCH: \(.source) / \(.code) ===",
+      "Code: \(.code)",
+      "Name: \(.name)",
+      "Source: \(.source)",
+      (if .phase then "Phase: \(.phase)" else empty end),
+      (if .id then "ID: \(.id)" else empty end),
+      "Category: \(.group.name)",
+      "Category Description: \(.group.description)",
+      "Severity: \(.severity)",
+      "Description: \(.description)",
+      "Fixes:",
+      (.fixes // [] | map("  - " + .) | .[]),
+      "Aliases: \((.aliases // []) | join(", "))",
+      "See Also: \((.see_also // []) | join(", "))",
+      "Verified: \(.verified_against.source_repo // "?")@\(.verified_against.ref // "?") · anchor: \(.verified_against.anchor // "?") (modified \(.verified_against.anchor_modified // "?")) · audit \(.verified_against.verified_at // "?")"
+    ' <<<"$entry"
+
+    local ra
+    ra=$(jq -r '.reference_anchor // empty' <<<"$entry")
+    if [[ -n "$ra" ]]; then
+      local md_path="${ra%%#*}"
+      local slug="${ra#*#}"
+      local target_file
+      if [[ -f "$plugin_root/$md_path" ]]; then
+        target_file="$plugin_root/$md_path"
+      elif [[ -f "$SCRIPT_DIR/$md_path" ]]; then
+        target_file="$SCRIPT_DIR/$md_path"
+      else
+        echo "Reference: BROKEN ($ra) — file not found"
+        echo "==="
+        i=$((i+1))
+        continue
+      fi
+      echo "Reference: $ra"
+      echo "--- Begin reference section ---"
+      if ! "$resolver" --extract "$target_file" "$slug"; then
+        echo "(anchor resolution failed: $slug)"
+      fi
+      echo "--- End reference section ---"
+    fi
+    echo "==="
+    i=$((i+1))
+  done
 }
 
 print_compact() {
