@@ -91,12 +91,12 @@ These strings are returned verbatim inside GraphQL error responses (`errors[].me
 
 ### InvalidNetworkIdError
 
-Returned when a network ID value fails validation.
+Returned when a network ID value fails validation. Display strings are verbatim from `#[error(...)]`:
 
-| Variant | Meaning | Fix |
-|---------|---------|-----|
-| `Empty` | Network ID must not be empty | Provide a non-empty network ID string |
-| `NotLowercase` | Network ID must be all lowercase | Convert the network ID to lowercase before use |
+| Variant | Display string | Fix |
+|---------|----------------|-----|
+| `Empty` | `"network ID must not be empty"` | Provide a non-empty network ID string |
+| `NotLowercase(String)` | `"network ID must be all lowercase (was:{0})"` | Convert the network ID to lowercase before use |
 
 ### ProtocolVersionError
 
