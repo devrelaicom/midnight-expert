@@ -9364,6 +9364,284 @@
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "44/0",
+      "name": "MotionAlreadyApproved",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion has already been approved by this authority body.",
+      "fixes": [
+        "Each authority body may approve a motion only once; check whether the same auth_id has already submitted approval"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 0 }",
+        "pallet_federated_authority::Error::MotionAlreadyApproved"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/1",
+      "name": "MotionApprovalMissing",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The authority attempting to revoke or kill a motion was not in the list of approvers.",
+      "fixes": [
+        "Verify that the calling authority body actually approved the motion before trying to revoke or remove its approval"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 1 }",
+        "pallet_federated_authority::Error::MotionApprovalMissing"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/2",
+      "name": "MotionApprovalExceedsBounds",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion approval count would exceed T::MaxAuthorityBodies.",
+      "fixes": [
+        "The bounded vector of approvers is full; check the runtime's MaxAuthorityBodies setting against the actual authority set size"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 2 }",
+        "pallet_federated_authority::Error::MotionApprovalExceedsBounds"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/3",
+      "name": "MotionNotFound",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "No motion exists under the supplied motion hash.",
+      "fixes": [
+        "Verify the motion hash is correct; the motion may have already been dispatched, removed, or expired"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 3 }",
+        "pallet_federated_authority::Error::MotionNotFound"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/4",
+      "name": "MotionNotEnded",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "Motion voting has not yet completed; an action requiring a finished motion was attempted too early.",
+      "fixes": [
+        "Wait until the motion's approval window has elapsed before invoking the operation"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 4 }",
+        "pallet_federated_authority::Error::MotionNotEnded"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/6"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/5",
+      "name": "MotionHasEnded",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion has already ended and cannot accept further changes.",
+      "fixes": [
+        "If a new vote is required, propose a fresh motion; ended motions are immutable"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 5 }",
+        "pallet_federated_authority::Error::MotionHasEnded"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/8"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/6",
+      "name": "MotionTooEarlyToClose",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion is approved but the approval period has not yet ended; closing is not yet permitted.",
+      "fixes": [
+        "Wait for the approval period to elapse before closing the motion"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 6 }",
+        "pallet_federated_authority::Error::MotionTooEarlyToClose"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/4"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/7",
+      "name": "MotionAlreadyExists",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "A motion with the same hash already exists.",
+      "fixes": [
+        "Either reuse the existing motion or modify the proposed call so it produces a different hash"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 7 }",
+        "pallet_federated_authority::Error::MotionAlreadyExists"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/8",
+      "name": "MotionExpired",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The motion expired without gathering enough approvals.",
+      "fixes": [
+        "Re-propose the motion if it is still relevant; expired motions cannot be revived in place"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 8 }",
+        "pallet_federated_authority::Error::MotionExpired"
+      ],
+      "severity": "error",
+      "see_also": [
+        "44/5"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "44/9",
+      "name": "MotionWeightBoundTooLow",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority Errors (index 44)",
+        "description": "Errors emitted by pallet_federated_authority, the on-chain governance authority pallet."
+      },
+      "description": "The supplied weight bound is below the motion call's actual weight requirement.",
+      "fixes": [
+        "Recompute the motion call's weight and resubmit with a sufficiently large weight bound"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 44, error: 9 }",
+        "pallet_federated_authority::Error::MotionWeightBoundTooLow"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority/src/lib.rs",
+        "anchor_modified": "2026-04-13",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
