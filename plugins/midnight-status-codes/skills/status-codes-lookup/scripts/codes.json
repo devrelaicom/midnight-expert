@@ -8229,6 +8229,262 @@
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "JsUtils.AssertDefinedFailed",
+      "name": "AssertDefinedFailed",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertDefined()` in assertion-utils.ts when the value is null or undefined and no custom message was supplied.",
+      "fixes": [
+        "Ensure the value is non-null before calling assertDefined, or pass a descriptive custom message to identify the failing call site."
+      ],
+      "aliases": [
+        "Expected value to be defined"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/assertion-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.AssertUndefinedFailed",
+      "name": "AssertUndefinedFailed",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertUndefined()` in assertion-utils.ts when the value is truthy (i.e. neither null nor undefined) and no custom message was supplied.",
+      "fixes": [
+        "Ensure the value is null/undefined before calling assertUndefined, or pass a descriptive custom message to identify the failing call site."
+      ],
+      "aliases": [
+        "Expected value to be null or undefined"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/assertion-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexEmptyInput",
+      "name": "HexEmptyInput",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` in hex-utils.ts when the input string is empty (or otherwise falsy).",
+      "fixes": [
+        "Pass a non-empty string to assertIsHex; validate input upstream so empty values do not reach the assertion."
+      ],
+      "aliases": [
+        "Input string must have non-zero length."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexInvalidByteLength",
+      "name": "HexInvalidByteLength",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` in hex-utils.ts when the optional `byteLen` argument is provided but is zero or negative.",
+      "fixes": [
+        "Pass a positive integer for `byteLen`, or omit it to allow any length."
+      ],
+      "aliases": [
+        "Expected byte length must be greater than zero."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexIncompleteLastByte",
+      "name": "HexIncompleteLastByte",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when the input string has an odd number of trailing characters, meaning the final byte is incomplete (one nibble instead of two). Message includes the source string.",
+      "fixes": [
+        "Pad the hex string so its byte portion has an even number of characters, or fix the upstream encoder."
+      ],
+      "aliases": [
+        "The last byte of input string '",
+        "is incomplete."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexInvalidDigit",
+      "name": "HexInvalidDigit",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when a non-hex character is found in the input string. Message includes the offending character and its index.",
+      "fixes": [
+        "Sanitise the input to contain only `[0-9A-Fa-f]` characters (with optional `0x` prefix); the message identifies the position of the first invalid character."
+      ],
+      "aliases": [
+        "Invalid hex-digit '",
+        "found in input string at index"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexNotValidHexString",
+      "name": "HexNotValidHexString",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when the input has no parsable byte characters (e.g. only the `0x` prefix or only invalid characters with no leading bytes captured).",
+      "fixes": [
+        "Provide a hex string that contains at least one whole byte (two hex characters) of content."
+      ],
+      "aliases": [
+        "is not a valid hex-string."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexByteLengthMismatch",
+      "name": "HexByteLengthMismatch",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when the input parses as valid hex but its byte length does not equal the expected `byteLen` argument. Message includes both the expected and actual byte lengths.",
+      "fixes": [
+        "Ensure the hex input represents exactly `byteLen` bytes (i.e. `byteLen * 2` hex characters), or pass the correct expected length."
+      ],
+      "aliases": [
+        "Expected an input string with byte length of"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.ContractAddressUnexpectedHexPrefix",
+      "name": "ContractAddressUnexpectedHexPrefix",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsContractAddress()` in type-utils.ts when the contract address string carries a `0x` prefix; contract addresses are required to be unprefixed 32-byte hex.",
+      "fixes": [
+        "Strip the leading `0x` from the contract address before passing it to assertIsContractAddress or any API that expects a ContractAddress."
+      ],
+      "aliases": [
+        "Unexpected '0x' prefix in contract address '"
+      ],
+      "severity": "error",
+      "see_also": [
+        "JsUtils.HexByteLengthMismatch"
+      ],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/type-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
     }
   ]
 }

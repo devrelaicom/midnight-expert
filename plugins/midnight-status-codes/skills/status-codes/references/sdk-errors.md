@@ -326,6 +326,28 @@ Fix: Ensure the key exists and the wallet is in a state that permits key export.
 
 ---
 
+## midnight-js-utils Inline Throws
+
+Package: `@midnight-ntwrk/midnight-js-utils` (v4.0.4)
+
+These utility helpers raise plain `Error` and `TypeError` instances inline — no `_tag`, no class hierarchy beyond the JS built-ins. Catch with `try/catch` and match by message substring.
+
+| File | Throw Type | Message | Fix |
+|------|------------|---------|-----|
+| `assertion-utils.ts` | `Error` | `"Expected value to be defined"` (default; `assertDefined` accepts an override) | Ensure the value is non-null before calling, or pass a descriptive custom message. |
+| `assertion-utils.ts` | `Error` | `"Expected value to be null or undefined"` (default; `assertUndefined` accepts an override) | Ensure the value is null/undefined before calling, or pass a descriptive custom message. |
+| `hex-utils.ts` | `TypeError` | `"Input string must have non-zero length."` | Pass a non-empty string to `assertIsHex`; validate input upstream so empty values do not reach the assertion. |
+| `hex-utils.ts` | `Error` | `"Expected byte length must be greater than zero."` | Pass a positive integer for `byteLen`, or omit it to allow any length. |
+| `hex-utils.ts` | `TypeError` | `` `The last byte of input string '${source}' is incomplete.` `` | Pad the hex string so its byte portion has an even number of characters, or fix the upstream encoder. |
+| `hex-utils.ts` | `TypeError` | `` `Invalid hex-digit '${char}' found in input string at index ${pos}.` `` | Sanitise the input to contain only `[0-9A-Fa-f]` characters (with optional `0x` prefix); the message identifies the position. |
+| `hex-utils.ts` | `TypeError` | `` `Input string '${source}' is not a valid hex-string.` `` | Provide a hex string that contains at least one whole byte (two hex characters) of content. |
+| `hex-utils.ts` | `TypeError` | `` `Expected an input string with byte length of ${byteLen}, got ${actualByteLen}.` `` | Ensure the hex input represents exactly `byteLen` bytes (`byteLen * 2` hex characters), or pass the correct expected length. |
+| `type-utils.ts` | `TypeError` | `` `Unexpected '0x' prefix in contract address '${contractAddress}'` `` | Strip the leading `0x` from the contract address before passing it to `assertIsContractAddress` or any API expecting a `ContractAddress`. |
+
+Source paths are relative to `packages/utils/src/` in `midnightntwrk/midnight-js`. All entries are catalogued in `codes.json` under the `JsUtils.*` code namespace and grouped as `"midnight-js-utils inline throws"`.
+
+---
+
 ## midnight-js-indexer-public-data-provider Errors
 
 Package: `@midnight-ntwrk/midnight-js-indexer-public-data-provider`
