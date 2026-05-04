@@ -491,8 +491,8 @@ Defined in `substrate/primitives/runtime/src/transaction_validity.rs`. These app
 | `BadMandatory` | Mandatory call errored | Mandatory inherent/extension call errored. Should not surface to a DApp dev. |
 | `MandatoryValidation` | Mandatory dispatch reached validation | Mandatory inherent reached the validate path. Should not surface. |
 | `BadSigner` | Invalid signing address | Signer is not valid for this extrinsic. |
-| `IndeterminateImplicit` | Implicit data couldn't be calculated | Newer FRAME extensions: implicit metadata (era, genesis hash, etc.) couldn't be computed. |
-| `UnknownOrigin` | Tx extension didn't authorize any origin | Newer FRAME extensions: no transaction extension ended up authorizing the origin. |
+| `IndeterminateImplicit` | "The implicit data was unable to be calculated" | A `TransactionExtension`'s implicit metadata (era, genesis hash, spec version, etc.) couldn't be computed for the tx. |
+| `UnknownOrigin` | "The transaction extension did not authorize any origin" | None of the runtime's `TransactionExtension`s ended up authorizing an origin for the tx. |
 
 ### Standard `UnknownTransaction` variants
 

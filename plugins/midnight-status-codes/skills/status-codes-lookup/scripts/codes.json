@@ -7398,6 +7398,92 @@
       }
     },
     {
+      "code": "InvalidTransaction.IndeterminateImplicit",
+      "name": "IndeterminateImplicit",
+      "source": "substrate",
+      "category": "invalid-transaction-variant",
+      "group": {
+        "name": "Standard InvalidTransaction Variants",
+        "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
+      },
+      "description": "The implicit data was unable to be calculated — a TransactionExtension's implicit metadata (era, genesis hash, spec version, etc.) couldn't be computed for this transaction.",
+      "fixes": [
+        "Verify the transaction's signed extensions match the runtime's expected TransactionExtension list",
+        "Re-fetch chain metadata and rebuild the transaction with current spec/transaction version values"
+      ],
+      "aliases": [
+        "InvalidTransaction::IndeterminateImplicit"
+      ],
+      "severity": "error",
+      "see_also": [
+        "1010"
+      ],
+      "verified_against": {
+        "source_repo": "paritytech/polkadot-sdk",
+        "ref": "polkadot-stable2603",
+        "anchor": "substrate/primitives/runtime/src/transaction_validity.rs",
+        "anchor_modified": "2026-02-06",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "InvalidTransaction.UnknownOrigin",
+      "name": "UnknownOrigin",
+      "source": "substrate",
+      "category": "invalid-transaction-variant",
+      "group": {
+        "name": "Standard InvalidTransaction Variants",
+        "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
+      },
+      "description": "The transaction extension did not authorize any origin — none of the runtime's TransactionExtensions ended up authorizing an origin for this transaction.",
+      "fixes": [
+        "Ensure the transaction is signed with a key that at least one TransactionExtension in the runtime accepts",
+        "Verify the call is permitted by the runtime's authorization extensions (signature, governance filter, etc.)"
+      ],
+      "aliases": [
+        "InvalidTransaction::UnknownOrigin"
+      ],
+      "severity": "error",
+      "see_also": [
+        "1010"
+      ],
+      "verified_against": {
+        "source_repo": "paritytech/polkadot-sdk",
+        "ref": "polkadot-stable2603",
+        "anchor": "substrate/primitives/runtime/src/transaction_validity.rs",
+        "anchor_modified": "2026-02-06",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "DispatchError.Trie",
+      "name": "Trie",
+      "source": "substrate",
+      "category": "dispatch-error-variant",
+      "group": {
+        "name": "Standard DispatchError Variants",
+        "description": "Structured error returned in the system.ExtrinsicFailed event when an extrinsic fails after passing validation. Defined in substrate/primitives/runtime/src/lib.rs."
+      },
+      "description": "Trie-level error during a storage operation. Wraps a sp_runtime::TrieError variant indicating a storage trie failure (missing node, invalid hash, decode error, etc.).",
+      "fixes": [
+        "Internal storage corruption or pruned-state access — retry against an archive node if querying historical state",
+        "Inspect node logs for the inner TrieError variant; storage-trie errors usually indicate a node-level bug or db corruption, not a user-fixable issue"
+      ],
+      "aliases": [
+        "DispatchError::Trie",
+        "DispatchError::Trie(TrieError)"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "paritytech/polkadot-sdk",
+        "ref": "polkadot-stable2603",
+        "anchor": "substrate/primitives/runtime/src/lib.rs",
+        "anchor_modified": "2026-02-23",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
       "code": "UnknownTransaction.CannotLookup",
       "name": "CannotLookup",
       "source": "substrate",
