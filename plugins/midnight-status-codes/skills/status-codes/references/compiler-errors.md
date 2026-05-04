@@ -58,9 +58,13 @@ These errors occur during tokenization, before any parsing takes place.
 
 ### Invalid leading zero in numeric literal
 
-**Message (verbatim from compiler):** `"unsupported numeric syntax syntax: leading 0 must be followed by b, B, o, O, x, X"`
+**Compiler emits:**
 
-> The doubled "syntax syntax" is an upstream typo in `compiler/lexer.ss`. Match this string verbatim if grepping compiler output.
+```text
+unsupported numeric syntax syntax: leading 0 must be followed by b, B, o, O, x, X
+```
+
+> Note: the duplicated word "syntax" matches upstream as of `compactc-v0.31.0`. The lookup catalogue stores both the duplicated and de-duplicated forms in `aliases`.
 
 **Triggers:** Writing a number like `0123` where a digit follows the leading zero.
 
@@ -165,6 +169,14 @@ import CompactStandardLibrary;
 ```
 
 Do not use `include` for standard library modules.
+
+**`std`-specific variant.** When the missing file is named `std`:
+
+```text
+failed to locate file "std": possibly replace include with import CompactStandardLibrary
+```
+
+The lookup catalogue carries this as a separate entry with its own Fix.
 
 ---
 
@@ -331,6 +343,8 @@ These errors occur during type inference and type checking. They are among the m
 
 **Message:** `"no compatible function named <name> is in scope at this call"`
 
+> Up to three optional context decorations may be appended (e.g. `; consider importing X`, `; defined as private`). The lookup catalogue stores the bare phrase as `code` and matches by substring.
+
 **Triggers:** A function call cannot be resolved because no overload in scope matches the argument types provided.
 
 **Fix:**
@@ -355,7 +369,9 @@ These errors occur during type inference and type checking. They are among the m
 
 **Message:** `"mismatch between type <A> and type <B> of condition branches"`
 
-**Triggers:** The `then` and `else` branches of an `if` expression return different types.
+Fires for both `if` expressions and `select` expressions.
+
+**Triggers:** The `then` and `else` branches of an `if` expression (or the arms of a `select` expression) return different types.
 
 **Fix:** Both branches must have the same type. Add explicit casts, or restructure so both branches produce the same type.
 
@@ -365,7 +381,13 @@ These errors occur during type inference and type checking. They are among the m
 
 **Message:** `"expected test to have type Boolean, received <type>"`
 
-**Triggers:** The condition of an `if`, `while`, or other conditional is not a `Boolean` expression.
+For `select` expressions:
+
+```text
+expected select test to have type Boolean, received <type>
+```
+
+**Triggers:** The condition of an `if`, `while`, `select`, or other conditional is not a `Boolean` expression.
 
 **Fix:** Add an explicit comparison. For example, instead of `if x`, write `if x != 0`.
 
@@ -413,7 +435,13 @@ These errors occur during type inference and type checking. They are among the m
 
 ### Uint width out of range
 
-**Message:** `"Uint width <N> is not between 1 and the maximum Uint width 248"`
+**Compiler emits:**
+
+```text
+Uint width <N> is not between 1 and the maximum Uint width <M> (inclusive)
+```
+
+> `<M>` is computed as `field-bytes * 8` and is currently 248 in `compactc-v0.31.0`. It will change if `field-bytes` changes upstream.
 
 **Triggers:** A `Uint<N>` type is declared with `N` outside the valid range.
 
@@ -423,7 +451,15 @@ These errors occur during type inference and type checking. They are among the m
 
 ### Vector or Bytes length too large
 
-**Message:** `"<kind> length <N> exceeds the maximum supported length 16777216"`
+**Compiler emits:**
+
+```text
+<kind> length
+  <N>
+  exceeds the maximum supported length <M>
+```
+
+> `<kind>` is `vector type` or `bytes type` (not `Vector`/`Bytes`); `<M>` is currently `16777216` in `compactc-v0.31.0`.
 
 **Triggers:** A `Vector` or `Bytes` type is declared with a length greater than 2^24 (16,777,216).
 
@@ -437,7 +473,16 @@ These errors enforce Compact's privacy model around witness values.
 
 ### Undeclared witness disclosure (critical)
 
-**Message:** `"potential witness-value disclosure must be declared but is not"`
+**Compiler emits:**
+
+```text
+potential witness-value disclosure must be declared but is not:
+    witness value potentially disclosed:
+      <expr><tail>
+```
+
+> Emitted via `pending-errorf` (batched). Multiple disclosure errors in the same
+> compile may be reported together at end-of-pass rather than at first occurrence.
 
 **Triggers:** A witness value flows to the ledger or a public output without being wrapped in `disclose()`. This is Compact's core privacy enforcement mechanism.
 
@@ -473,6 +518,12 @@ These errors enforce restrictions on circuit purity and access to sealed ledger 
 
 **Fix:** Move the sealed-field modification into an internal (non-exported) circuit, and call that from the exported circuit if needed.
 
+**Indirect-call variant:**
+
+```text
+exported circuits cannot modify sealed ledger fields but <circuit> calls (directly or indirectly) <other>, which <reason> at <loc>
+```
+
 ---
 
 ### Constructor calls external contract
@@ -483,6 +534,12 @@ These errors enforce restrictions on circuit purity and access to sealed ledger 
 
 **Fix:** Move external contract calls into a circuit. The constructor may only set up initial ledger state.
 
+**Indirect-call variant:**
+
+```text
+constructor cannot call external contracts but calls (directly or indirectly) <other>, which <reason> at <loc>
+```
+
 ---
 
 ### Pure circuit is actually impure
@@ -492,6 +549,12 @@ These errors enforce restrictions on circuit purity and access to sealed ledger 
 **Triggers:** A circuit annotated as `pure` contains an operation that is impure: writing to the ledger, calling an external contract, etc.
 
 **Fix:** Either remove the `pure` annotation, or eliminate the impure operations from the circuit body.
+
+**Indirect-call variant.** When the impurity is via a transitive call:
+
+```text
+circuit <name> is marked pure but is actually impure because it calls (directly or indirectly) impure circuit <other> at <loc>
+```
 
 ---
 
