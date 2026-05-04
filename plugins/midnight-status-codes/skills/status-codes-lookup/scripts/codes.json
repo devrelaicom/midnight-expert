@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "generated": "2026-05-04",
   "entries": [
     {
@@ -7746,6 +7746,87 @@
         "ref": "private",
         "anchor": "platform-js@2.2.4 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "8/0",
+      "name": "InvalidEpoch",
+      "source": "partner-chains",
+      "category": "session-management",
+      "group": {
+        "name": "Session Committee Management Errors (pallet 8)",
+        "description": "Errors from pallet_session_validator_management, the partner-chains committee selection inherent."
+      },
+      "description": "The committee-selection inherent (Pallet::set) was called with an epoch number that is not current_epoch + 1.",
+      "fixes": [
+        "Block-production-side error, not user-actionable. If seen in node logs, check committee rotation timing and verify the node's epoch tracking is in sync with the main chain."
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 8, error: 0 }",
+        "pallet_session_validator_management::Error::InvalidEpoch"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "partner-chains/toolkit/committee-selection/pallet/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "8/1",
+      "name": "NextCommitteeAlreadySet",
+      "source": "partner-chains",
+      "category": "session-management",
+      "group": {
+        "name": "Session Committee Management Errors (pallet 8)",
+        "description": "Errors from pallet_session_validator_management, the partner-chains committee selection inherent."
+      },
+      "description": "The committee-selection inherent was called twice for the same next epoch in one block.",
+      "fixes": [
+        "Block-production-side error, not user-actionable. If reproducible, it indicates duplicate inherent submission in a single block — check node logs for re-entrant inherent execution."
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 8, error: 1 }",
+        "pallet_session_validator_management::Error::NextCommitteeAlreadySet"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "partner-chains/toolkit/committee-selection/pallet/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "32/0",
+      "name": "InherentAlreadyExecuted",
+      "source": "partner-chains",
+      "category": "bridge-inherent",
+      "group": {
+        "name": "Bridge Inherent Errors (pallet 32)",
+        "description": "Errors from pallet_partner_chains_bridge, the partner-chains main-chain bridge inherent."
+      },
+      "description": "The bridge inherent (handle_transfers) was called more than once in a single block.",
+      "fixes": [
+        "Block-production-side error, not user-actionable. Check node logs for duplicate inherent submission; this should not be reachable from a user-submitted extrinsic."
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 32, error: 0 }",
+        "pallet_partner_chains_bridge::Error::InherentAlreadyExecuted"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "partner-chains/toolkit/bridge/pallet/src/lib.rs",
+        "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
       }
     }
