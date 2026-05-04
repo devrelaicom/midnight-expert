@@ -8097,6 +8097,33 @@
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "WalletAbstractions.InvalidProtocolVersionRange",
+      "name": "InvalidProtocolVersionRange",
+      "source": "midnight-wallet",
+      "category": "wallet-abstractions",
+      "group": {
+        "name": "Wallet Abstractions native throws",
+        "description": "Native `Error` / `TypeError` throws from @midnight-ntwrk/wallet-sdk-abstractions."
+      },
+      "description": "ProtocolVersion constructor received a range whose `from` is greater than its `to`.",
+      "fixes": [
+        "Pass a range with `from <= to` to the ProtocolVersion constructor."
+      ],
+      "aliases": [
+        "Invalid protocol version range."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-abstractions/dist/ProtocolVersion.js",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
