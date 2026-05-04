@@ -1,5 +1,7 @@
 # Compact Compiler Errors Reference
 
+> **Last verified:** 2026-05-04 against `LFDT-Minokawa/compact@main` — toolchain compiler `0.31.101`, language `0.23.101` (anchor: `compiler/compactc.ss`, modified 2026-04-23).
+
 Compact compiler diagnostics organized by compiler phase. The compiler is written in Chez Scheme and uses a condition-based error system.
 
 ---
@@ -56,7 +58,9 @@ These errors occur during tokenization, before any parsing takes place.
 
 ### Invalid leading zero in numeric literal
 
-**Message:** `"unsupported numeric syntax: leading 0 must be followed by b, B, o, O, x, X"`
+**Message (verbatim from compiler):** `"unsupported numeric syntax syntax: leading 0 must be followed by b, B, o, O, x, X"`
+
+> The doubled "syntax syntax" is an upstream typo in `compiler/lexer.ss`. Match this string verbatim if grepping compiler output.
 
 **Triggers:** Writing a number like `0123` where a digit follows the leading zero.
 
@@ -552,3 +556,135 @@ These errors originate from compiled contracts executing in the Midnight runtime
 **Triggers:** The contract was compiled with one version of the Compact compiler but is being executed against a different version of `@midnight-ntwrk/compact-runtime`.
 
 **Fix:** Update `@midnight-ntwrk/compact-runtime` in your project to the version that matches the compiler used to build the contract, or recompile the contract with the compiler version that matches your runtime.
+
+---
+
+## Recently Added Diagnostics (compiler 0.26+ → 0.31)
+
+The following diagnostics were added (or refined) in recent compiler releases. They are not exhaustive — see `LFDT-Minokawa/compact` for the complete list — but cover the highest-impact additions since the original compiler-errors reference was written.
+
+### Merkle tree depth out of bounds (added in compiler 0.26.105)
+
+**Message (template):** `"<kind> depth <D> does not fall in <min> <= depth <= <max>"`
+
+**Triggers:** A `MerkleTree` or `HistoricMerkleTree` is declared with a depth outside the protocol-defined bounds (typically 1..=32).
+
+**Fix:** Choose a depth within the allowed range. For most application scenarios, 32 is the right default.
+
+---
+
+### Opaque-JS persistentHash / persistentCommit (added in compiler 0.29.113)
+
+**Triggers:** Calling `persistentHash` or `persistentCommit` on `Opaque<'string'>` or `Opaque<'Uint8Array'>` JS values, or indirectly via `merkleTreePathRoot` and `MerkleTree` insertion of opaque-JS values.
+
+**Fix:** Hash these in TypeScript before they enter Compact, or restructure to use ledger-native types. This is a hard error, not a warning — the previous behavior allowed unsound hashing across JS-side opacity.
+
+---
+
+### `event` and `log` reserved keywords (added in compiler 0.31.101)
+
+**Triggers:** Using `event` or `log` as an identifier (variable, function, type name).
+
+**Fix:** Rename the identifier. These are reserved for future language features.
+
+---
+
+### Multiple top-level exports for the same name
+
+**Message:** `"multiple top-level exports for ~s"`
+
+**Triggers:** The same identifier is exported more than once at the top level of a Compact program.
+
+**Fix:** Remove the duplicate export. Each name can be exported at most once.
+
+---
+
+### Indirect-call sealed/pure/constructor variants
+
+**Triggers:** A circuit calls (directly or indirectly) another circuit that violates a contract:
+
+- **Pure circuit transitively calls impure code:** `"circuit ~a is marked pure but is actually impure because it calls (directly or indirectly) impure circuit ~a at ~a"`
+- **Exported circuit transitively modifies sealed field:** `"exported circuits cannot modify sealed ledger fields but ~a calls (directly or indirectly) ~a, which ~a at ~a"`
+- **Constructor transitively calls external contract:** `"constructor cannot call external contracts but ~a calls (directly or indirectly) ~a, which ~a at ~a"`
+
+**Fix:** Trace the call chain from the offending circuit. Either remove the contract violation in the inner circuit, or remove the call from the constraining outer one.
+
+> The plugin previously documented only the **direct** form of each error. Indirect (transitive) variants are a separate diagnostic with a longer message that includes the call chain.
+
+---
+
+### Contract-info file mismatch family
+
+When a `.compact` file declares an external contract that no longer matches its `contract-info` JSON file:
+
+- `"declared circuit ~s not present in contract-info file ~a"`
+- `"pure-flag mismatch for circuit ~s in ~a: declared ~a, actual ~a"`
+- `"mismatch between actual number ~s and declared number ~s of generic parameters for ~s"`
+- `"~a depth ~d does not fall in ~d <= depth <= ~d"` (also covered above)
+- `"~a has been modified more recently than ~a; try recompiling ~a"` — staleness check
+- `"malformed contract-info file ~a for ~s: ~a; try recompiling ~a"` — `external-errorf`
+
+**Fix:** Recompile the upstream contract or update the calling contract's external declarations to match.
+
+---
+
+### Uint range bounds
+
+**Messages:**
+- `"range start for Uint type is ~d but must be 0"`
+- `"range end for Uint type is ~d but must be …"`
+- `"constant ~d is larger than the largest representable Uint; use…"`
+
+**Triggers:** Declaring a `Uint` with an out-of-range start, end, or literal value.
+
+**Fix:** Use `0` as the start (Uint is always nonnegative), and choose an end ≤ the maximum the bit width supports.
+
+---
+
+### For-loop range bound errors
+
+**Messages:**
+- `"start bound ~d is greater than the maximum unsigned integer"`
+- `"end bound ~d is less than start bound"`
+- `"the difference … exceeds the maximum vector size"`
+
+**Triggers:** A `for` loop over an explicit range with start/end values that produce an unrepresentable iteration set.
+
+**Fix:** Adjust the bounds so the loop's iteration count fits within `2^24` (the maximum vector size).
+
+---
+
+### Witness-disclosure (pending-errorf nature)
+
+**Message (multi-line, verbatim):**
+```
+potential witness-value disclosure must be declared but is not:
+    witness value potentially disclosed:
+      <name>{<context>}
+```
+
+**Triggers:** A witness value flows into a position visible from the public transcript without an explicit `disclose(...)` call.
+
+**Fix:** Either wrap the disclosing expression in `disclose(...)` to make the disclosure explicit, or restructure the circuit so the witness value does not reach a public position.
+
+> This is one of the few `pending-errorf` diagnostics — the compiler defers and batches these so multiple disclosure issues report together rather than aborting on the first one. Severity is still fatal.
+
+---
+
+### Reserved-word used as identifier
+
+**Message (template):** `"~s is a reserved word and may not be used as an identifier"`
+
+**Triggers:** Using a reserved Compact keyword (including newly-reserved `event` and `log` from compiler 0.31.101) as an identifier name.
+
+**Fix:** Rename the identifier.
+
+---
+
+### "expected select test" — Boolean condition variant
+
+**Message:** `"expected select test to have type Boolean, received ~a"`
+
+**Triggers:** A `select` expression's test position has a non-Boolean type.
+
+**Fix:** Wrap the test in a comparison or boolean operation. Same root cause as the existing "Condition is not Boolean" entry, but the message wording differs for `select` vs `if`.

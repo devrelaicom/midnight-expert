@@ -1,5 +1,7 @@
 # ZK Errors Reference
 
+> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-zk@midnight-proofs-v0.7.0` (the latest published proofs tag). At this tag the directory layout is `aggregator/`, `circuits/`, `curves/`, `proofs/`, `zk_stdlib/`, `zkir/` — **ZKIR is present**. The `next` branch removes ZKIR and adds `IvcError::InvalidWitness`; consumers tracking that branch should apply those changes themselves.
+
 Errors from the zero-knowledge proof system used by Midnight (midnight-zk repo). Covers PLONK proving/verification, ZKIR circuit compilation, IVC aggregation, and dev/test tools. These errors surface during proof generation, proof verification, circuit compilation, or development testing.
 
 ## PLONK Errors
@@ -16,13 +18,13 @@ Primary proof system errors:
 | `BoundsFailure` | "An out-of-bounds index was passed to the backend" | Internal error in permutation keygen |
 | `Opening` | "Multi-opening proof was invalid" | Proof data may be corrupted; regenerate |
 | `Transcript(io::Error)` | "Transcript error: {e}" | I/O error reading/writing proof transcript |
-| `NotEnoughRowsAvailable { current_k }` | "k = {k} is too small for the given circuit" | Increase k value; circuit needs more rows |
+| `NotEnoughRowsAvailable { current_k }` | "k = {current_k} is too small for the given circuit. Try using a larger value of k" | Increase k value; circuit needs more rows |
 | `InstanceTooLarge` | "Instance vectors are larger than the circuit" | Reduce instance size or increase circuit capacity |
-| `NotEnoughColumnsForConstants` | "Too few fixed columns are enabled for global constants" | Enable more fixed columns in circuit config |
-| `ColumnNotInPermutation(Column)` | "Column must be included in the permutation" | Add `meta.enable_equality()` on the column |
+| `NotEnoughColumnsForConstants` | "Too few fixed columns are enabled for global constants usage" | Enable more fixed columns in circuit config |
+| `ColumnNotInPermutation(Column)` | "Column {column:?} must be included in the permutation. Help: try applying \`meta.enable_equalty\` on the column" *(note upstream typo: source says `enable_equalty`, missing an `i`; the actual API method is `enable_equality()`)* | Add `meta.enable_equality()` on the column |
 | `TableError(TableError)` | Delegates to TableError | See Table Errors below |
 | `SrsError(usize, usize)` | "The SRS does not match for the given circuit" | SRS size doesn't match circuit; regenerate keys with correct SRS |
-| `CompletenessFailure` | "Completeness failure due to bad luck in random sampling" | Extremely rare; retry the proof generation |
+| `CompletenessFailure` | "Completeness failure due to bad luck in random sampling. This error is expected to be almost impossible to trigger." | Extremely rare; retry the proof generation |
 
 ## Table Errors
 
@@ -47,19 +49,21 @@ Source: `proofs/src/poly/mod.rs`
 
 ## ZKIR Errors
 
-Source: `zkir/src/error.rs`
+Source: `zkir/src/error.rs` (present on `main` and at the `midnight-proofs-v0.7.0` tag; **removed on `next`**).
 
-| Variant | Display | Fixes |
-|---------|---------|-------|
-| `InvalidArity(Operation)` | "wrong arity: '{op}'" | Operation received wrong number of inputs/outputs |
-| `ParsingError(IrType, String)` | "'{s}' cannot be parsed as a {type}" | Value doesn't match expected type (Bool, Native, JubjubScalar) |
+> **Note:** the ZKIR enum implements only `fmt::Debug`, **not `fmt::Display`**. The strings below are Debug-formatter outputs, not user-facing Display strings. When ZKIR errors flow through `From<Error> for plonk::Error`, they become `plonk::Error::Synthesis(format!("{error:?}"))`.
+
+| Variant | Debug format | Fixes |
+|---------|--------------|-------|
+| `InvalidArity(Operation)` | "wrong arity: '{op:?}'" | Operation received wrong number of inputs/outputs |
+| `ParsingError(IrType, String)` | "'{s:?}' cannot be parsed as a {t:?}" | Value doesn't match expected type (Bool, Native, JubjubScalar) |
 | `NotFound(Name)` | "'{s}' not found" | Variable or witness not in memory; check circuit definitions |
 | `DuplicatedName(Name)` | "'{s}' already exists" | Variable name collision; rename to avoid shadowing |
-| `ExpectingType(IrType, IrType)` | "type {expected} was expected instead of {actual}" | Type mismatch in circuit IR |
-| `Unsupported(Operation, Vec<IrType>)` | "{op} is not supported on {types}" | Operation not supported for these types |
-| `Other(String)` | Various | Catch-all; check message for specifics |
+| `ExpectingType(IrType, IrType)` | "type {e:?} was expected instead of {t:?}" | Type mismatch in circuit IR |
+| `Unsupported(Operation, Vec<IrType>)` | "{op:?} is not supported on {t:?}" | Operation not supported for these types |
+| `Other(String)` | "{s}" | Catch-all; check message for specifics |
 
-Common `Other` messages: "invalid length", "cannot convert {x} to Bytes({n})", "underflow subtracting {b} from {a}"
+Common `Other` messages observed in practice (not exhaustively verified against source): "invalid length", "cannot convert {x} to Bytes({n})", "underflow subtracting {b} from {a}"
 
 ## IVC Errors
 
@@ -82,9 +86,9 @@ Dev/testing infrastructure for debugging circuit issues. All types implement Dis
 
 | Variant | Description | Fixes |
 |---------|-------------|-------|
-| `CellNotAssigned { gate, region, column, offset }` | Required cell not assigned in region | Assign a value to the cell at the specified offset |
-| `InstanceCellNotAssigned { gate, region, column, row }` | Required instance cell not assigned | Provide the instance value at the specified row |
-| `ConstraintNotSatisfied { constraint, location }` | Gate constraint evaluates to non-zero | Check constraint logic; review witness assignments |
+| `CellNotAssigned { gate, region, gate_offset, column, offset }` | Display: "{region} uses {gate} at offset {gate_offset}, which requires cell in column {column:?} at offset {offset} with annotation {…} to be assigned." | Assign a value to the cell at the specified offset |
+| `InstanceCellNotAssigned { gate, region, gate_offset, column, row }` | Required instance cell not assigned | Provide the instance value at the specified row |
+| `ConstraintNotSatisfied { constraint, location, cell_values }` | Gate constraint evaluates to non-zero. `cell_values` carries the offending witness values for diagnostics. | Check constraint logic; review witness assignments |
 | `ConstraintPoisoned { constraint }` | Constraint active on unusable row | Missing selector; gate is accidentally enabled |
 | `Lookup { name, lookup_index, location }` | Lookup table entry not found | Input value not in the lookup table |
 | `Permutation { column, location }` | Equality constraint not satisfied | Values that should be equal aren't; check copy constraints |

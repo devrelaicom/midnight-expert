@@ -86,7 +86,9 @@ Or hand it freeform — the command will interpret and route:
 
 The catalog spans these sources:
 
-- `midnight-node` — numeric `LedgerApiError` codes
+- `midnight-node` — numeric `LedgerApiError` codes (`InvalidTransaction::Custom(u8)`)
+- `substrate` — upstream Substrate JSON-RPC envelopes (`AUTHOR`/`SYSTEM`/`CHAIN`/`STATE` 1xxx–8xxx) and DispatchError envelopes
+- `jsonrpc-2.0` — JSON-RPC standard `-326XX` codes
 - `midnight-ledger` — Rust transaction validation errors
 - `midnight-indexer` — GraphQL and HTTP errors
 - `midnight-wallet` — Effect tagged wallet errors
@@ -96,6 +98,16 @@ The catalog spans these sources:
 - `midnight-zk` — PLONK, ZKIR, and proof verification errors
 - `proof-server` — HTTP status and job queue errors
 - `dapp-connector` — DApp Connector `APIError` codes
+
+## Provenance (`verified_against`)
+
+Every entry in `codes.json` carries a `verified_against` block recording the
+source repo, ref, anchor file, that anchor's last-modified date, and the
+audit date this entry was last checked. Lookup output surfaces this as a
+`Verified:` line so users know how fresh the data is. Reference markdown
+files carry a matching banner block under their first heading. To re-verify
+an entry, refetch the anchor and confirm the variant/code is still present
+at the recorded path.
 
 ## Install
 

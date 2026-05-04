@@ -1,10 +1,12 @@
 # Midnight Wallet SDK — Error Reference
 
+> **Last verified:** 2026-05-04 against published npm tarballs of `@midnight-ntwrk/wallet-sdk-*` packages (source repo `midnight-ntwrk/artifacts` is private; package versions per section). Most packages last published 2026-04-23.
+
 All errors in the Midnight wallet SDK are Effect `Data.TaggedError` instances unless noted otherwise. Catch them with `Effect.catchTag` using the `_tag` field shown for each error. Union types can be caught with `Effect.catchTags`.
 
 ---
 
-## Node Client (`packages/node-client`)
+## Node Client (`@midnight-ntwrk/wallet-sdk-node-client`)
 
 These 7 errors form the `NodeClientError` union type.
 
@@ -128,9 +130,20 @@ Effect.catchTag('TransactionInvalidError', (e) => ...)
 
 ---
 
-## Shielded Wallet (`packages/shielded-wallet`)
+## Shielded Wallet (`@midnight-ntwrk/wallet-sdk-shielded`)
 
-These 8 errors form the `WalletError` union type.
+> **Package version:** 3.0.0.
+
+The exported `WalletError` union has **8 members** — 7 wallet-specific errors plus the shared `LedgerError` from the utilities package:
+
+```ts
+export type WalletError =
+  | OtherWalletError | InsufficientFundsError | SubmissionError
+  | AddressError | SyncWalletError | InvalidCoinHashesError
+  | TransactingError | LedgerOps.LedgerError;
+```
+
+`TransactionHistoryError` is also exported by the package but is **not a member of the union type**.
 
 ### `OtherWalletError`
 
@@ -185,7 +198,7 @@ Effect.catchTag('Wallet.SubmissionWalletError', (e) => ...)
 | Field | Value |
 |-------|-------|
 | `_tag` | `'Wallet.InsufficientFunds'` |
-| Fields | `tokenType: string`, `amount: bigint` |
+| Fields | `message: string`, `tokenType: ledger.RawTokenType`, `amount: bigint` |
 
 The wallet does not hold enough tokens of the specified type to complete the operation.
 
@@ -204,11 +217,11 @@ Effect.catchTag('Wallet.InsufficientFunds', (e) => {
 | Field | Value |
 |-------|-------|
 | `_tag` | `'Wallet.Address'` |
-| Fields | `originalAddress: string` |
+| Fields | `message: string`, `originalAddress: string`, `cause?: unknown` |
 
 The provided address is invalid.
 
-**Fix:** Validate the address format before use. See `packages/address-format` for format rules. The `originalAddress` field contains the rejected input.
+**Fix:** Validate the address format before use. See `@midnight-ntwrk/wallet-sdk-address-format` for format rules. The `originalAddress` field contains the rejected input.
 
 ```ts
 Effect.catchTag('Wallet.Address', (e) => ...)
@@ -221,7 +234,7 @@ Effect.catchTag('Wallet.Address', (e) => ...)
 | Field | Value |
 |-------|-------|
 | `_tag` | `'Wallet.InvalidCoinHashes'` |
-| Fields | `missingNonces: unknown[]` |
+| Fields | `missingNonces: Set<ledger.Nonce>` |
 
 One or more coins are missing their required nonce hashes.
 
@@ -265,9 +278,20 @@ Effect.catchTag('Wallet.TransactionHistory', (e) => ...)
 
 ---
 
-## Unshielded Wallet (`packages/unshielded-wallet`)
+## Unshielded Wallet (`@midnight-ntwrk/wallet-sdk-unshielded-wallet`)
 
-The unshielded wallet exposes 11 error types: all 8 from the shielded wallet (same `_tag` values) plus 5 additional types below.
+> **Package version:** 3.0.0.
+
+The exported `WalletError` union has **9 members** (note: this differs from the shielded wallet — `SubmissionError`, `InvalidCoinHashesError`, and `TransactionHistoryError` are NOT in the unshielded union):
+
+```ts
+export type WalletError =
+  | OtherWalletError | InsufficientFundsError | AddressError | SyncWalletError
+  | TransactingError | SignError | ApplyTransactionError
+  | RollbackUtxoError | SpendUtxoError;
+```
+
+In addition, the package exports `UtxoNotFoundError` and `TransactionHistoryError` as standalone classes — they are not members of the union but can be thrown by package APIs.
 
 ### `SignError`
 
@@ -349,9 +373,17 @@ Effect.catchTag('UtxoNotFoundError', (e) => ...)
 
 ---
 
-## Dust Wallet (`packages/dust-wallet`)
+## Dust Wallet (`@midnight-ntwrk/wallet-sdk-dust-wallet`)
 
-The dust wallet exposes 4 error types, all shared with the shielded wallet:
+> **Package version:** 4.0.0.
+
+The exported `WalletError` union has **6 members**:
+
+```ts
+export type WalletError =
+  | OtherWalletError | SyncWalletError | TransactingError
+  | InsufficientFundsError | TransactionHistoryError | LedgerOps.LedgerError;
+```
 
 | Error | `_tag` |
 |-------|--------|
@@ -359,12 +391,14 @@ The dust wallet exposes 4 error types, all shared with the shielded wallet:
 | `SyncWalletError` | `'Wallet.Sync'` |
 | `TransactingError` | `'Wallet.Transacting'` |
 | `InsufficientFundsError` | `'Wallet.InsufficientFunds'` |
+| `TransactionHistoryError` | `'Wallet.TransactionHistory'` |
+| `LedgerError` | `'LedgerError'` (from utilities) |
 
-See the [Shielded Wallet](#shielded-wallet-packageshielded-wallet) section for field details and fixes.
+See the [Shielded Wallet](#shielded-wallet-midnight-ntwrkwallet-sdk-shielded) section for field details and fixes.
 
 ---
 
-## Capabilities (`packages/capabilities`)
+## Capabilities (`@midnight-ntwrk/wallet-sdk-capabilities`)
 
 ### `ProvingError`
 
@@ -409,7 +443,7 @@ This is a plain JavaScript `Error`, **not** a `Data.TaggedError`. It is thrown (
 
 ---
 
-## Utilities (`packages/utilities`)
+## Utilities (`@midnight-ntwrk/wallet-sdk-utilities`)
 
 ### `LedgerError`
 
@@ -509,7 +543,7 @@ Effect.catchTag('ServerError', (e) => ...)
 
 ---
 
-## Runtime (`packages/runtime`)
+## Runtime (`@midnight-ntwrk/wallet-sdk-runtime`)
 
 ### `WalletRuntimeError`
 
@@ -522,6 +556,7 @@ A configuration error in the wallet runtime.
 **Known messages:**
 - `"No variant to init"` — no wallet variant was provided during initialisation
 - `"Empty variants list"` — the variants list supplied to the runtime is empty
+- `"NumericRange error"` — emitted from `dist/testing/variants.js` for numeric range failures
 
 **Fix:** Ensure at least one wallet variant is configured before initialising the runtime.
 
@@ -531,15 +566,16 @@ Effect.catchTag('WalletRuntimeError', (e) => ...)
 
 ---
 
-## Address Format (`packages/address-format`)
+## Address Format (`@midnight-ntwrk/wallet-sdk-address-format`)
 
 These are plain JavaScript `Error` throws, not `Data.TaggedError` instances. Catch with standard `try/catch`.
 
-| Message | Cause |
+| Message (verbatim) | Cause |
 |---------|-------|
-| `"Expected prefix mn"` | Address does not start with the `mn` prefix |
-| `"Segment contains disallowed characters"` | Address segment has characters outside the allowed set |
+| `` `Expected prefix ${MidnightBech32m.prefix}` `` | Address does not start with the configured prefix. The prefix is dynamic (`mn` for mainnet; `mn_<network>` for non-mainnet) — the message inlines the actual expected value. |
+| `` `Segment ${segmentName}: ${segment} contains disallowed characters. Allowed characters are only numbers, latin letters and a hyphen` `` | Named address segment has characters outside the allowed set |
 | `"Expected type <expected>, got <actual>"` | Address type byte does not match the expected type |
+| `` `Expected ${networkId} address, got ${other} one` `` | Address belongs to a different network than expected |
 | `"Coin public key needs to be 32 bytes long"` | Public key component is the wrong length |
 | `"Unshielded address needs to be 32 bytes long"` | Unshielded address payload is the wrong length |
 | `"Dust address is too large"` | Dust address exceeds the maximum allowed size |
@@ -603,3 +639,34 @@ All 29 `_tag` values, alphabetically:
 | `'WalletRuntimeError'` | runtime | `WalletRuntimeError` |
 
 > Note: The two tags not shown in the 28 above — `'FailedToDeriveWebSocketUrlError'` and `'InvalidProtocolSchemeError'` — bring the total to 29 distinct tags. The `InsufficientFundsError` in `capabilities` is a native `Error` with no `_tag` and is excluded from this registry.
+
+---
+
+## Wallet Facade (`@midnight-ntwrk/wallet-sdk-facade`)
+
+> **Package version:** 4.0.0.
+
+The facade orchestration layer throws **plain `Error` instances** (not `Data.TaggedError`). Catch with `try/catch` and inspect `error.message`:
+
+| Message | Meaning | Fix |
+|---------|---------|-----|
+| `"Missing required configuration: 'provingServerUrl' must be set in config, or provide a custom provingService in init parameters."` | Init was called without a proving service or proving-server URL | Either pass `provingServerUrl` in the config or supply a custom `provingService` |
+| `"Terms and Conditions are not currently set on the network."` | The chain has no T&C state set | Operator/governance must set the T&C before this flow can proceed |
+| `"Dust generation transaction is missing intent segment 1."` | Dust generation tx missing required intent segment | Internal SDK error; rebuild the dust generation tx via the facade |
+| `"No balancing transaction was created. Please check your transaction."` | Balancer produced no balancing tx (raised from 2 sites) | Check that inputs and outputs need balancing; verify the source tx |
+| `"At least one shielded or unshielded output is required."` | Tx has no outputs | Add at least one output before submission |
+| `"At least one shielded or unshielded swap is required."` | Swap tx has no swap entries | Add at least one swap entry |
+| `"Unexpected transaction state."` | State machine in a transitional state it doesn't expect | Internal SDK error; report with reproduction |
+| `"At least one Night UTXO is required."` | Operation requires at least one NIGHT UTXO | Acquire NIGHT before submitting |
+
+## Other Packages (no own tagged errors)
+
+These packages are part of the wallet SDK but expose no `Data.TaggedError` types of their own — failures surface via utilities `ClientError`/`ServerError` or as native `Error`/`TypeError`:
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| `@midnight-ntwrk/wallet-sdk` | 1.0.0 | Barrel re-export only; the recommended entry point. |
+| `@midnight-ntwrk/wallet-sdk-indexer-client` | 1.2.1 | Uses utilities `ClientError`/`ServerError`. |
+| `@midnight-ntwrk/wallet-sdk-prover-client` | 1.2.1 | Used by `ProvingError` in capabilities. Surfaces utilities client/server errors. |
+| `@midnight-ntwrk/wallet-sdk-abstractions` | 2.1.0 | Throws `new TypeError('Invalid protocol version range.')` from `dist/ProtocolVersion.js`. Native `TypeError`, not tagged. |
+| `@midnight-ntwrk/wallet-sdk-hd` | 3.0.2 | No errors. |
