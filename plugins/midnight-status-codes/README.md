@@ -19,9 +19,9 @@ Decision-tree router for identifying Midnight errors. Given an error
 code, message, or type, it routes to the correct reference file based
 on the error's source and shape. Covers numeric node error codes
 (0-255), TypeScript SDK error classes, Effect tagged wallet errors,
-Compact compiler diagnostics, ZK proof errors, ledger validation
-errors, proof server HTTP errors, indexer GraphQL errors, and DApp
-Connector API errors.
+Compact compiler diagnostics, Compact runtime `CompactError` throws,
+ZK proof errors, ledger validation errors, proof server HTTP errors,
+indexer GraphQL errors, and DApp Connector API errors.
 
 #### References
 
@@ -63,11 +63,14 @@ Each entry in `codes.json` has the following fields:
 | `aliases` | array of string | yes | Alternative names the lookup matches against. |
 | `severity` | string | yes | `error` \| `warning` \| `info`. |
 | `see_also` | array of string | yes | Related entry codes. |
-| `verified_against` | object | yes | `{ source_repo, ref, anchor, anchor_modified, verified_at }`. |
+| `verified_against` | object | yes | `{ source_repo, ref, anchor, anchor_modified, verified_at }`. May also carry optional `toolchain` and `package_version` fields documenting the exact build the entry was checked against. |
 | `verified_against.extra_refs` | array of `{ source_repo, ref, anchor, anchor_modified }` | no | Additional upstream sources cross-referenced when an entry's behavior is co-determined by more than one repo (e.g. an indexer entry whose 400 paths come from `async-graphql-axum`). |
 | `status` | string | no | `"active"` (default, may be omitted) or `"retired"`. A retired entry is one no current emitter produces but older deployed components may still surface; lookup continues to return it. |
 | `superseded_by` | array of string | no | Code values that replaced a retired umbrella. Lookup output prints `Superseded by:` when present. |
 | `class` | string \| null | no | For SDK/JS sources only: the JS class name (`"TaggedError:WalletError"`, `"Error"`, `"TypeError"`, or `null` for untagged throws). |
+| `phase` | string | conditional | Required for `compact-compiler` entries. One of `lexer`, `parser`, `frontend`, `name-res`, `type-check`, `witness`, `purity`, `zkir`, `exit`, `runtime`, `external`. Validated by `check-schema.sh`. |
+| `id` | string | no | Stable identifier slug. For `compact-compiler` entries the format is `compiler.<phase>.<slug>` and is validated for shape and uniqueness by `check-schema.sh`. |
+| `reference_anchor` | string | no | `<plugin-relative-path>#<slug>` pointing at a heading in a reference markdown file (e.g. `skills/status-codes/references/runtime-errors.md#compacterror`). Lookup output stitches the section's body verbatim into the match. The slug must round-trip through `resolve-anchor.sh --slug`; use `bin/anchor-for-heading.sh` to compute it (the algorithm diverges from GitHub's slugger). |
 
 ## Command
 
@@ -77,6 +80,16 @@ Wrapper command around the lookup script. Accepts either structured
 flags (`--code`, `--search`, `--source`, `--sources`, `--category`) or
 freeform natural language, which the command interprets and routes to
 the right flag.
+
+Two global flags work across every mode:
+
+- `--json` — emit a JSON array of matched entries verbatim from
+  `codes.json` instead of the human/agent-friendly `=== MATCH ===`
+  format. Intended for downstream tooling.
+- `--status active|retired|all` — filter by entry `.status`
+  (default: `all`). Use `active` to suppress retired umbrella entries
+  when working on new code paths. Entries without a `.status` field
+  are treated as active.
 
 ## Example usage
 
