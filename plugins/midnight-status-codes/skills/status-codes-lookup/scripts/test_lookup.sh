@@ -51,6 +51,26 @@ cat > "$TMP/codes.json" <<'JSON'
         "anchor_modified": "2026-05-04",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "JsTest",
+      "name": "JsTestError",
+      "source": "midnight-js",
+      "category": "sdk",
+      "group": { "name": "SDK", "description": "..." },
+      "description": "Entry that carries a class field",
+      "fixes": ["fix it"],
+      "aliases": [],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "x",
+        "ref": "main",
+        "anchor": "x",
+        "anchor_modified": "2026-05-04",
+        "verified_at": "2026-05-04"
+      },
+      "class": "Error"
     }
   ]
 }
@@ -79,4 +99,13 @@ if echo "$out_active" | grep -Eq '^Superseded by:'; then
   fail "entry without superseded_by should not print Superseded by: line"
 fi
 
-echo "OK: all lookup.sh status/superseded_by tests passed"
+# Test 4: entry with class field prints Class: <value>
+out_class=$(bash "$TEST_LOOKUP" --code JsTest)
+echo "$out_class" | grep -Eq '^Class: Error$' || fail "expected 'Class: Error' for code JsTest"
+
+# Test 5: entry without class field does NOT print Class: line
+if echo "$out" | grep -Eq '^Class:'; then
+  fail "entry without class field (code 186) should not print Class: line"
+fi
+
+echo "OK: all lookup.sh status/superseded_by/class tests passed"
