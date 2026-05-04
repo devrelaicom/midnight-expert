@@ -4735,6 +4735,232 @@
       }
     },
     {
+      "code": "failed to locate file",
+      "name": "Failed to locate included file",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.failed-to-locate-include",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "The compiler could not locate a file referenced by an `include` directive.",
+      "fixes": [
+        "Verify the include path is correct and the file exists",
+        "Check that include search paths cover the file's directory",
+        "If including the standard library, replace `include` with `import CompactStandardLibrary`"
+      ],
+      "aliases": [
+        "failed to locate file ~s",
+        "failed to locate file"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.failed-to-locate-include-std"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-to-locate-included-file",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:38",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "failed to locate file \"std\": possibly replace include with import CompactStandardLibrary",
+      "name": "Failed to locate included file (std-specific)",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.failed-to-locate-include-std",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "An `include` directive referenced a file named `std`. The compiler emits a tailored hint suggesting you replace the `include` with `import CompactStandardLibrary`.",
+      "fixes": [
+        "Replace `include \"std\"` with `import CompactStandardLibrary;` at the top of your contract",
+        "Do not use `include` for standard-library modules — use `import` instead",
+        "Confirm the language version pragma matches a compiler that ships the standard library"
+      ],
+      "aliases": [
+        "failed to locate file ~s: possibly replace include with import CompactStandardLibrary",
+        "failed to locate file \"std\": possibly replace include with import CompactStandardLibrary",
+        "possibly replace include with import CompactStandardLibrary"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.failed-to-locate-include"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-to-locate-included-file",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:37",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "include cycle involving",
+      "name": "Include cycle",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.include-cycle",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "Two or more files include each other directly or transitively, forming a cycle the compiler cannot resolve.",
+      "fixes": [
+        "Identify the cycle from the reported path and remove one of the offending `include` directives",
+        "Refactor shared declarations into a third file that neither cyclic file includes",
+        "Prefer `import` for module-style sharing where the included file exposes only `export`-ed names"
+      ],
+      "aliases": [
+        "include cycle involving ~s",
+        "include cycle involving",
+        "include cycle"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.failed-to-locate-include"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#include-cycle",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:40",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "unreachable statement",
+      "name": "Unreachable statement",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.unreachable",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "A statement appears in a position the compiler has proven cannot be reached — typically after a `return` in the same block.",
+      "fixes": [
+        "Delete the dead code that follows the early `return`",
+        "Reorder statements so the `return` is the last statement in the block",
+        "If the dead branch was intentional, refactor the control flow (e.g. move the work into the branch that should run)"
+      ],
+      "aliases": [
+        "unreachable statement"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.return-in-for"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#unreachable-statement",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:158",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "const binding found in a single-statement context",
+      "name": "Const binding in single-statement context",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.const-in-single-stmt",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "A `const` declaration appears where only a single statement is allowed (for example, directly as the body of an `if` without braces). `const` bindings need a block scope.",
+      "fixes": [
+        "Wrap the body in `{ … }` so the `const` lives in a block",
+        "If the value is used only in the next expression, inline it instead of binding it",
+        "Move the `const` declaration outside the single-statement context"
+      ],
+      "aliases": [
+        "const binding found in a single-statement context"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.duplicate-binding"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#const-binding-in-single-statement-context",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:228",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "found multiple bindings for",
+      "name": "Duplicate binding in the same block",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.duplicate-binding",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "Two `const` declarations introduce the same name in the same block scope. Compact does not allow shadowing within a single block.",
+      "fixes": [
+        "Rename one of the duplicate bindings",
+        "If the second binding was meant to overwrite the first, drop the redundant declaration",
+        "Move one of the bindings into a nested block if you need the same name in different scopes"
+      ],
+      "aliases": [
+        "found multiple bindings for ~s in the same block",
+        "found multiple bindings for"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.duplicate-decl"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-binding-in-the-same-block",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:235",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "duplicate",
+      "name": "Duplicate declaration",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "frontend",
+      "id": "compiler.frontend.duplicate-decl",
+      "group": {
+        "name": "Frontend Pass Errors",
+        "description": "Errors raised after parsing during include resolution, control-flow checks, and binding analysis."
+      },
+      "description": "A field, parameter, or other named element is declared more than once in the same declaration context (for example, two struct fields with the same name, or two parameters with the same name).",
+      "fixes": [
+        "Rename one of the duplicate declarations",
+        "Remove the redundant declaration if it was unintentional",
+        "If the duplicates came from a merge, resolve to a single canonical declaration"
+      ],
+      "aliases": [
+        "duplicate ~a ~s",
+        "duplicate field",
+        "duplicate parameter",
+        "duplicate declaration"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.duplicate-binding"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-declaration",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:264",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
       "code": "cross-contract calls not yet supported",
       "name": "cross-contract calls not yet supported",
       "source": "compact-compiler",
