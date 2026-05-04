@@ -4300,7 +4300,9 @@
         "ok"
       ],
       "severity": "info",
-      "see_also": ["exit:255"],
+      "see_also": [
+        "exit:255"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4332,7 +4334,9 @@
         "bad arguments"
       ],
       "severity": "error",
-      "see_also": ["exit:255"],
+      "see_also": [
+        "exit:255"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4364,7 +4368,9 @@
         "Internal error (please report)"
       ],
       "severity": "error",
-      "see_also": ["exit:255"],
+      "see_also": [
+        "exit:255"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4396,7 +4402,10 @@
         "source error"
       ],
       "severity": "error",
-      "see_also": ["exit:254", "parse error"],
+      "see_also": [
+        "exit:254",
+        "parse error"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4432,7 +4441,10 @@
         "unbound name"
       ],
       "severity": "error",
-      "see_also": ["parse error", "no compatible function"],
+      "see_also": [
+        "parse error",
+        "no compatible function"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unbound-identifier-very-common",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4466,7 +4478,10 @@
         "parse error: found <token> looking for <expected>"
       ],
       "severity": "error",
-      "see_also": ["unbound identifier", "exit:255"],
+      "see_also": [
+        "unbound identifier",
+        "exit:255"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#parse-error-most-common-compiler-error",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4500,7 +4515,9 @@
         "no compatible function named <name> is in scope at this call"
       ],
       "severity": "error",
-      "see_also": ["unbound identifier"],
+      "see_also": [
+        "unbound identifier"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-compatible-function-in-scope-very-common",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4533,7 +4550,9 @@
         "witness disclosure"
       ],
       "severity": "error",
-      "see_also": ["circuit is marked pure but is actually impure"],
+      "see_also": [
+        "circuit is marked pure but is actually impure"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#undeclared-witness-disclosure-critical",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4565,7 +4584,10 @@
         "mismatch between type <A> and type <B> of condition branches"
       ],
       "severity": "error",
-      "see_also": ["expected test to have type Boolean", "cannot cast from type"],
+      "see_also": [
+        "expected test to have type Boolean",
+        "cannot cast from type"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#mismatched-branch-types",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4597,7 +4619,9 @@
         "enum ~s has no field named ~s"
       ],
       "severity": "error",
-      "see_also": ["unbound identifier"],
+      "see_also": [
+        "unbound identifier"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4630,7 +4654,9 @@
         "expected select test to have type Boolean, received <type>"
       ],
       "severity": "error",
-      "see_also": ["mismatch between type"],
+      "see_also": [
+        "mismatch between type"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#condition-is-not-boolean",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4661,7 +4687,9 @@
         "cannot cast from type <A> to type <B>"
       ],
       "severity": "error",
-      "see_also": ["mismatch between type"],
+      "see_also": [
+        "mismatch between type"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-cast",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4691,7 +4719,9 @@
         "Uint width <N> is not between 1 and the maximum Uint width <M> (inclusive)"
       ],
       "severity": "error",
-      "see_also": ["cannot cast from type"],
+      "see_also": [
+        "cannot cast from type"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-width-out-of-range",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4720,7 +4750,9 @@
         "return is not supported within for loops"
       ],
       "severity": "error",
-      "see_also": ["parse error"],
+      "see_also": [
+        "parse error"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#return-inside-for-loop",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4756,7 +4788,9 @@
         "failed to locate file"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.failed-to-locate-include-std"],
+      "see_also": [
+        "compiler.frontend.failed-to-locate-include-std"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-to-locate-included-file",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4789,7 +4823,9 @@
         "possibly replace include with import CompactStandardLibrary"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.failed-to-locate-include"],
+      "see_also": [
+        "compiler.frontend.failed-to-locate-include"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-to-locate-included-file",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4822,7 +4858,9 @@
         "include cycle"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.failed-to-locate-include"],
+      "see_also": [
+        "compiler.frontend.failed-to-locate-include"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#include-cycle",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4853,7 +4891,9 @@
         "unreachable statement"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.return-in-for"],
+      "see_also": [
+        "compiler.frontend.return-in-for"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unreachable-statement",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4884,7 +4924,9 @@
         "const binding found in a single-statement context"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.duplicate-binding"],
+      "see_also": [
+        "compiler.frontend.duplicate-binding"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#const-binding-in-single-statement-context",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4916,7 +4958,9 @@
         "found multiple bindings for"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.duplicate-decl"],
+      "see_also": [
+        "compiler.frontend.duplicate-decl"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-binding-in-the-same-block",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4950,7 +4994,9 @@
         "duplicate declaration"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.duplicate-binding"],
+      "see_also": [
+        "compiler.frontend.duplicate-binding"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-declaration",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -4975,7 +5021,9 @@
         "cross-contract calls are not yet supported"
       ],
       "severity": "error",
-      "see_also": ["exit:255"],
+      "see_also": [
+        "exit:255"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#cross-contract-calls-not-yet-supported",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5007,7 +5055,9 @@
         "CompactError: Version mismatch"
       ],
       "severity": "error",
-      "see_also": ["failed assert"],
+      "see_also": [
+        "failed assert"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#version-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5039,7 +5089,9 @@
         "CompactError: failed assert"
       ],
       "severity": "error",
-      "see_also": ["Version mismatch"],
+      "see_also": [
+        "Version mismatch"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-assertion",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5072,7 +5124,10 @@
         "circuit <name> is marked pure but is actually impure"
       ],
       "severity": "error",
-      "see_also": ["exported circuits cannot modify sealed ledger fields", "potential witness-value disclosure"],
+      "see_also": [
+        "exported circuits cannot modify sealed ledger fields",
+        "potential witness-value disclosure"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#pure-circuit-is-actually-impure",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5104,7 +5159,9 @@
         "exported circuits cannot modify sealed ledger fields but <circuit> at <location>"
       ],
       "severity": "error",
-      "see_also": ["circuit is marked pure but is actually impure"],
+      "see_also": [
+        "circuit is marked pure but is actually impure"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exported-circuit-modifies-sealed-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5143,7 +5200,9 @@
         "unexpected character ~a"
       ],
       "severity": "error",
-      "see_also": ["parse error"],
+      "see_also": [
+        "parse error"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unexpected-end-of-file-newline-character",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5178,7 +5237,9 @@
         "attempt to nest block comment"
       ],
       "severity": "error",
-      "see_also": ["compiler.lexer.unexpected-eof-newline-character"],
+      "see_also": [
+        "compiler.lexer.unexpected-eof-newline-character"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#nested-block-comment",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5216,7 +5277,10 @@
         "leading 0 must be followed by b, B, o, O, x, X"
       ],
       "severity": "error",
-      "see_also": ["compiler.lexer.invalid-binary-octal-digit", "compiler.lexer.numeric-out-of-field-range"],
+      "see_also": [
+        "compiler.lexer.invalid-binary-octal-digit",
+        "compiler.lexer.numeric-out-of-field-range"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-leading-zero-in-numeric-literal",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5253,7 +5317,9 @@
         "is out of Field range"
       ],
       "severity": "error",
-      "see_also": ["compiler.lexer.numeric-leading-zero"],
+      "see_also": [
+        "compiler.lexer.numeric-leading-zero"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#numeric-literal-out-of-field-range",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5291,7 +5357,9 @@
         "unexpected digit <d> (expected 0 through 7)"
       ],
       "severity": "error",
-      "see_also": ["compiler.lexer.numeric-leading-zero"],
+      "see_also": [
+        "compiler.lexer.numeric-leading-zero"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-digit-in-binary-literal",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5328,7 +5396,9 @@
         "unrecognized pragma setting"
       ],
       "severity": "error",
-      "see_also": ["parse error"],
+      "see_also": [
+        "parse error"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unrecognized-pragma-setting",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5366,7 +5436,10 @@
         "error closing source file"
       ],
       "severity": "error",
-      "see_also": ["compiler.parser.is-directory", "compiler.frontend.failed-to-locate-include"],
+      "see_also": [
+        "compiler.parser.is-directory",
+        "compiler.frontend.failed-to-locate-include"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5403,7 +5476,9 @@
         "is a directory"
       ],
       "severity": "error",
-      "see_also": ["compiler.parser.file-io-error"],
+      "see_also": [
+        "compiler.parser.file-io-error"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5440,7 +5515,10 @@
         "another binding found"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.duplicate-binding", "compiler.name-res.unbound-identifier"],
+      "see_also": [
+        "compiler.frontend.duplicate-binding",
+        "compiler.name-res.unbound-identifier"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#shadowing-conflict",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5474,7 +5552,9 @@
         "cycle involving"
       ],
       "severity": "error",
-      "see_also": ["compiler.name-res.invalid-context"],
+      "see_also": [
+        "compiler.name-res.invalid-context"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#circular-type-alias",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5507,7 +5587,10 @@
         "invalid context for reference"
       ],
       "severity": "error",
-      "see_also": ["compiler.name-res.unbound-identifier", "compiler.name-res.no-such-export"],
+      "see_also": [
+        "compiler.name-res.unbound-identifier",
+        "compiler.name-res.no-such-export"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-context-for-name",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5541,7 +5624,9 @@
         "no such export"
       ],
       "severity": "error",
-      "see_also": ["compiler.name-res.unbound-identifier"],
+      "see_also": [
+        "compiler.name-res.unbound-identifier"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-export",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5576,7 +5661,9 @@
         "mismatch between actual number"
       ],
       "severity": "error",
-      "see_also": ["compiler.name-res.invalid-context"],
+      "see_also": [
+        "compiler.name-res.invalid-context"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#wrong-number-of-generic-parameters",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -5610,7 +5697,9 @@
         "possibly uninitialized variable"
       ],
       "severity": "error",
-      "see_also": ["compiler.name-res.unbound-identifier"],
+      "see_also": [
+        "compiler.name-res.unbound-identifier"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#possibly-uninitialized-variable",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8641,7 +8730,9 @@
         "call site ambiguity (multiple compatible functions) in call to <name>"
       ],
       "severity": "error",
-      "see_also": ["no compatible function"],
+      "see_also": [
+        "no compatible function"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#ambiguous-overload",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8679,7 +8770,10 @@
         "mismatch between actual return types ~a and declared return types ~a in ~a"
       ],
       "severity": "error",
-      "see_also": ["mismatch between type", "cannot cast from type"],
+      "see_also": [
+        "mismatch between type",
+        "cannot cast from type"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#return-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8715,7 +8809,10 @@
         "expected right-hand side of <op> to have type <A> but received <B>"
       ],
       "severity": "error",
-      "see_also": ["mismatch between type", "cannot cast from type"],
+      "see_also": [
+        "mismatch between type",
+        "cannot cast from type"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#assignment-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8751,7 +8848,9 @@
         "constant <n> is larger than the largest representable Uint; use <n> as Field to treat as a value of type Field"
       ],
       "severity": "error",
-      "see_also": ["Uint width not between 1 and 248"],
+      "see_also": [
+        "Uint width not between 1 and 248"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-range-bounds",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8788,7 +8887,10 @@
         "range end\n    ~d\n  for Uint type exceeds the limit of\n    ~d (2^~d)\n  (the range end is exclusive)"
       ],
       "severity": "error",
-      "see_also": ["Uint width not between 1 and 248", "compiler.type-check.literal-out-of-range"],
+      "see_also": [
+        "Uint width not between 1 and 248",
+        "compiler.type-check.literal-out-of-range"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-range-bounds",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8826,7 +8928,10 @@
         "the difference ~d between end and start bounds exceeds the maximum vector size ~d"
       ],
       "severity": "error",
-      "see_also": ["compiler.frontend.return-in-for", "Vector or Bytes length too large"],
+      "see_also": [
+        "compiler.frontend.return-in-for",
+        "Vector or Bytes length too large"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#for-loop-range-bound-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8864,7 +8969,10 @@
         "pad length ~d exceeds the maximum supported length ~d"
       ],
       "severity": "error",
-      "see_also": ["compiler.type-check.for-loop-bounds", "compiler.type-check.spread-construction-size"],
+      "see_also": [
+        "compiler.type-check.for-loop-bounds",
+        "compiler.type-check.spread-construction-size"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8904,7 +9012,9 @@
         "index ~d plus length ~d is out-of-bounds for a tuple or vector of length ~d"
       ],
       "severity": "error",
-      "see_also": ["Vector or Bytes length too large"],
+      "see_also": [
+        "Vector or Bytes length too large"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8941,7 +9051,10 @@
         "Bytes construction length\n    ~d exceeds the maximum bytes length allowed\n    ~d"
       ],
       "severity": "error",
-      "see_also": ["Vector or Bytes length too large", "compiler.type-check.tuple-vector-index-oob"],
+      "see_also": [
+        "Vector or Bytes length too large",
+        "compiler.type-check.tuple-vector-index-oob"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -8984,7 +9097,9 @@
         "the type of the spread structure:\n    ~a\n  does match the declared type of the structure to be created:\n    ~a"
       ],
       "severity": "error",
-      "see_also": ["structure has no field"],
+      "see_also": [
+        "structure has no field"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -9020,7 +9135,9 @@
         "<kind> depth <D> does not fall in <min> <= depth <= <max>"
       ],
       "severity": "error",
-      "see_also": ["compiler.type-check.uint-range-bounds"],
+      "see_also": [
+        "compiler.type-check.uint-range-bounds"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#merkle-tree-depth-out-of-bounds-added-in-compiler-026105",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -9057,7 +9174,9 @@
         "persistentCommit cannot be applied to a first argument containing opaque JavaScript values, received <type>"
       ],
       "severity": "error",
-      "see_also": ["no compatible function"],
+      "see_also": [
+        "no compatible function"
+      ],
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#opaque-js-persistenthash-persistentcommit-added-in-compiler-029113",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
@@ -9069,6 +9188,490 @@
           "compiler": "0.31.101",
           "language": "0.23.101"
         }
+      }
+    },
+    {
+      "code": "invalid type for witness return value",
+      "name": "Invalid witness return type",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "witness",
+      "id": "compiler.witness.invalid-return-type",
+      "group": {
+        "name": "Witness and Disclosure Errors",
+        "description": "Errors raised during witness-declaration analysis and the disclosure pass."
+      },
+      "description": "A witness function is declared to return a type that includes a contract-typed value. Witnesses must produce primitive values only; contract handles cannot cross the witness boundary.",
+      "fixes": [
+        "Restrict the witness return type to primitive Compact types (Field, Bytes<N>, Uint, Boolean, Vector, Tuple, structs of these)",
+        "If you need contract data, pass it through as primitive fields and reconstruct the contract reference inside the circuit",
+        "Confirm the TypeScript witness implementation matches the simplified return type"
+      ],
+      "aliases": [
+        "invalid type ~a for witness ~a return value",
+        "invalid type ~a for witness ~a return value:\n  witness return values cannot include contract values"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.witness.disclosure"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#witness-returns-contract-typed-value",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2204",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "duplicate witness declaration",
+      "name": "Duplicate witness parameter",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "witness",
+      "id": "compiler.witness.duplicate-witness-decl",
+      "group": {
+        "name": "Witness and Disclosure Errors",
+        "description": "Errors raised during witness-declaration analysis and the disclosure pass."
+      },
+      "description": "A witness declaration repeats the same generic-parameter or argument name. Each name in a witness signature must be unique, just like circuit signatures.",
+      "fixes": [
+        "Rename the duplicate generic parameter so each appears once in the witness signature",
+        "Rename the duplicate argument so each parameter has a distinct name",
+        "If the duplication is unintentional, check whether one of the names was meant to refer to an outer binding"
+      ],
+      "aliases": [
+        "duplicate generic parameter name ~s",
+        "duplicate parameter name ~s"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.frontend.duplicate-decl",
+        "compiler.frontend.duplicate-binding"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-witness-declaration",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/frontend-passes.ss:264",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "constructor cannot call external contracts",
+      "name": "Constructor calls external contract",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "purity",
+      "id": "compiler.purity.constructor-calls-external",
+      "group": {
+        "name": "Purity and Sealed Field Errors",
+        "description": "Errors enforcing restrictions on circuit purity, sealed ledger fields, and constructor scope."
+      },
+      "description": "The contract constructor calls an external contract, either directly or transitively through another circuit. The constructor may only set up local ledger state; external calls are restricted to circuits.",
+      "fixes": [
+        "Move the external contract call out of the constructor into a regular circuit",
+        "If the violation is transitive, trace the call chain and either remove the external call from the inner circuit or stop the constructor from calling that circuit",
+        "Initialize state from the external contract lazily, on the first circuit invocation, instead of in the constructor"
+      ],
+      "aliases": [
+        "constructor cannot call external contracts but ~a at ~a",
+        "constructor cannot call external contracts but calls (directly or indirectly) ~a, which ~a at ~a"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.purity.export-modifies-sealed",
+        "compiler.purity.pure-is-impure"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#constructor-calls-external-contract",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:4361",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "runtime-only method invoked in-circuit",
+      "name": "Runtime-only method invoked in-circuit",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "purity",
+      "id": "compiler.purity.runtime-method-in-circuit",
+      "group": {
+        "name": "Purity and Sealed Field Errors",
+        "description": "Errors enforcing restrictions on circuit purity, sealed ledger fields, and constructor scope."
+      },
+      "description": "A circuit body invokes a method that only exists in the runtime/JS-side execution path. Such methods have no ZKIR encoding and cannot run inside the constraint system.",
+      "fixes": [
+        "Move the call out of the circuit into the surrounding TypeScript or witness code",
+        "Substitute a circuit-safe API that has the equivalent in-circuit semantics",
+        "If the value the method produces is needed in-circuit, compute it ahead of time and pass it in as a witness"
+      ],
+      "aliases": [
+        "~s ~s is a runtime-only method, but was invoked in-circuit"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.purity.pure-is-impure"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#runtime-only-method-invoked-in-circuit",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2143",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "exported impure circuit name modulo case",
+      "name": "Impure export name collision modulo case",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "purity",
+      "id": "compiler.purity.impure-export-name-collision",
+      "group": {
+        "name": "Purity and Sealed Field Errors",
+        "description": "Errors enforcing restrictions on circuit purity, sealed ledger fields, and constructor scope."
+      },
+      "description": "Two exported circuits have names that differ only in case. The compiler emits per-circuit `.zkir` and prover-key files keyed by name; case-only differences would clash on case-insensitive filesystems (macOS, Windows).",
+      "fixes": [
+        "Rename one of the circuits so the names differ by more than case",
+        "Pick names that are also visually distinct to avoid the same hazard in JS/TS callers"
+      ],
+      "aliases": [
+        "the exported impure circuit name ~a is identical to the exported circuit name ~s at ~a modulo case",
+        "the exported impure circuit name ~a is identical to the exported circuit name ~s at ~a modulo case; please rename to avoid zkir and prover-key filename clashes on case-insensitive filesystems"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.frontend.duplicate-decl"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#impure-export-name-collision-case-insensitive-filesystems",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/passes.ss:195",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "unrecognized native circuit",
+      "name": "Unrecognized native circuit",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "zkir",
+      "id": "compiler.zkir.unrecognized-native-circuit",
+      "group": {
+        "name": "ZKIR Generation Errors",
+        "description": "Errors raised during the ZKIR lowering passes."
+      },
+      "description": "The ZKIR pass encountered a reference to a built-in circuit that is not registered in this compiler version.",
+      "fixes": [
+        "Confirm the language version pragma matches the installed compiler",
+        "Update the compiler to a version that supports the named primitive",
+        "If the call is to user-defined code, verify it is not shadowing a future built-in name"
+      ],
+      "aliases": [
+        "unrecognized native circuit ~a"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.zkir.cross-contract-not-supported"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#unrecognized-native-circuit",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/zkir-passes.ss:367",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "zkir returned a non-zero exit status",
+      "name": "ZKIR non-zero exit status",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "zkir",
+      "id": "compiler.zkir.non-zero-exit",
+      "group": {
+        "name": "ZKIR Generation Errors",
+        "description": "Errors raised during the ZKIR lowering passes."
+      },
+      "description": "The external ZKIR backend exited with a non-zero status. Raised via `external-errorf`, so the compiler exits with the external-error code rather than reporting a source-level diagnostic.",
+      "fixes": [
+        "Inspect the ZKIR backend output for the underlying failure; the exit status alone does not name the unsupported operation",
+        "Reduce the offending circuit (often by removing or replacing operations the backend does not yet support) and retry",
+        "Confirm the ZKIR toolchain version is compatible with the compiler version in use"
+      ],
+      "aliases": [
+        "zkir returned a non-zero exit status ~d"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.zkir.cross-contract-not-supported",
+        "compiler.exit.compilation-failed"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#zkir-non-zero-exit-status",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/passes.ss:165",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "malformed contract-info file",
+      "name": "Malformed contract-info file",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.external.contract-info-malformed",
+      "group": {
+        "name": "External Contract Reference Errors",
+        "description": "Errors involving external contract metadata, contract-info JSON files, and module imports."
+      },
+      "description": "The compiler could not parse a `contract-info` JSON file referenced by an external contract declaration. Raised via `external-errorf`, so this exits with the external-error code rather than reporting at a specific source location.",
+      "fixes": [
+        "Recompile the upstream contract — `try recompiling <path>` is suggested in the message",
+        "If the file was hand-edited or partially written, delete it and regenerate it via a fresh compile",
+        "Verify the upstream contract's compiler version is compatible with the calling contract's compiler"
+      ],
+      "aliases": [
+        "malformed contract-info file ~a for ~s: ~a; try recompiling ~a"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.external.contract-info-stale",
+        "compiler.external.contract-decl-mismatch"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-info-file-mismatch-family",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1256",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "has been modified more recently than",
+      "name": "Stale contract-info file",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.external.contract-info-stale",
+      "group": {
+        "name": "External Contract Reference Errors",
+        "description": "Errors involving external contract metadata, contract-info JSON files, and module imports."
+      },
+      "description": "The Compact source for an external contract is newer than its cached `contract-info` JSON file. The cache is stale and may not reflect the actual contract definition.",
+      "fixes": [
+        "Recompile the upstream contract so the `contract-info` file is regenerated from the current source",
+        "If the upstream source was reverted, touch the contract-info file or rebuild to refresh the timestamps",
+        "Make recompilation part of the build pipeline so this drift cannot accumulate silently"
+      ],
+      "aliases": [
+        "~a has been modified more recently than ~a; try recompiling ~a"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.external.contract-info-malformed",
+        "compiler.external.contract-decl-mismatch"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-info-file-mismatch-family",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1276",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "contract declaration mismatch",
+      "name": "Contract declaration mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.external.contract-decl-mismatch",
+      "group": {
+        "name": "External Contract Reference Errors",
+        "description": "Errors involving external contract metadata, contract-info JSON files, and module imports."
+      },
+      "description": "The calling contract's external declaration disagrees with the actual contract definition. The family covers presence (a declared circuit is missing or an extra one is declared), purity (the pure flag does not match), arity (different argument counts), argument types, and return type.",
+      "fixes": [
+        "Update the calling contract's external declarations so argument count, types, return type, purity, and circuit names match the actual definition",
+        "Or recompile and update the upstream contract to match the calling contract's declared shape",
+        "If the contract has changed, treat this as a breaking change and propagate it to all callers"
+      ],
+      "aliases": [
+        "contract ~s has no circuit declaration named ~s",
+        "contract declaration claims circuit ~s is pure, but it is not in the actual contract definition",
+        "contract declaration claims circuit ~s has ~s argument~:*~p, but in the actual contract definition it has ~s",
+        "contract declaration claims the type of circuit ~s argument ~s is ~a, but in the actual contract definition it is ~a",
+        "contract declaration claims the return type of circuit ~s is ~a, but in the actual contract definition it is ~a",
+        "contract declaration has a circuit named ~a, but it is not present in the actual contract definition"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.external.contract-info-malformed",
+        "compiler.external.contract-info-stale"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-info-file-mismatch-family",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1647",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "defines module rather than expected module",
+      "name": "Module name mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.external.module-name-mismatch",
+      "group": {
+        "name": "External Contract Reference Errors",
+        "description": "Errors involving external contract metadata, contract-info JSON files, and module imports."
+      },
+      "description": "A Compact source file is imported under one module name, but its top-level `module` declaration uses a different name.",
+      "fixes": [
+        "Rename the file's `module` declaration to match the import path, or rename the import to match the file's actual module name",
+        "If the file was renamed on disk, update both ends to keep them consistent",
+        "Standardize on a single module name per file across the project"
+      ],
+      "aliases": [
+        "~a defines module ~s rather than expected module ~s"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.frontend.failed-to-locate-include"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#module-name-mismatch-in-imported-file",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:670",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "keyword reserved for future use",
+      "name": "event/log reserved for future use",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.external.event-log-reserved-keyword",
+      "group": {
+        "name": "External Contract Reference Errors",
+        "description": "Errors involving external contract metadata, contract-info JSON files, and module imports."
+      },
+      "description": "The identifiers `event` and `log` were added to Compact's reserved-for-future-use keyword group in compiler 0.31.101. Using either as a variable, function, or type name now produces a parse error.",
+      "fixes": [
+        "Rename the identifier — `event` and `log` are reserved for future Compact language features",
+        "Choose a more specific name (e.g. `eventName`, `logEntry`) to avoid future reservations",
+        "Audit the rest of the file for other reserved-for-future-use names: await, break, case, catch, class, continue, debugger, delete, do, extends, finally, function, implements, in, instanceof, interface, let, null, package, private, protected, public, static, super"
+      ],
+      "aliases": [
+        "keyword ~s (which is reserved for future use)",
+        "event",
+        "log"
+      ],
+      "severity": "error",
+      "see_also": [
+        "compiler.parser.parse-error"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#event-and-log-reserved-keywords-added-in-compiler-031101",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/parser.ss:128",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "Uint range end expressed as a reference to generic size",
+      "name": "Uint range end may need manual update",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.warning.uint-may-exceed",
+      "group": {
+        "name": "Compiler Warnings",
+        "description": "Non-fatal diagnostics emitted via source-warningf."
+      },
+      "description": "A `Uint` range end is expressed as a reference to a generic size symbol. When the generic size is later bound to a concrete value, the compiler cannot rewrite the range end automatically — the resulting range may be too narrow or too wide for the bound size. This is a deferred warning, surfaced after the size resolution pass.",
+      "fixes": [
+        "After the generic size is resolved, audit Uint range ends that referenced the generic and update them by hand",
+        "Replace the generic-size reference with a concrete value if the binding is known at the declaration site",
+        "Compilation still succeeds — this is informational, not fatal"
+      ],
+      "aliases": [
+        "Uint range end expressed as a reference to generic size ~a is left unchanged and must be updated manually"
+      ],
+      "severity": "warning",
+      "see_also": [
+        "compiler.type-check.uint-range-bounds"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-uint-range-end-may-be-left-unchanged-after-generic-size-update",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/fixup.ss:83",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "not renaming reference",
+      "name": "Rename not applied (binding-aware rewrite skipped)",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "external",
+      "id": "compiler.warning.rename-not-applied",
+      "group": {
+        "name": "Compiler Warnings",
+        "description": "Non-fatal diagnostics emitted via source-warningf."
+      },
+      "description": "The compiler attempted a deprecation-driven rename (typically the old standard-library / ledger operator name to its new form) but skipped it because applying the rename would either shadow an existing in-scope binding or cause variable capture.",
+      "fixes": [
+        "Rename the conflicting local binding first, then re-run the compile so the rename can apply",
+        "Update the call site manually to the new name if the local binding cannot be moved",
+        "Compilation still succeeds — but the reference points at the old (possibly soon-to-be-removed) name"
+      ],
+      "aliases": [
+        "not renaming reference of ~s to ~s because ~1:*~s has other bindings in scope",
+        "not renaming reference of ~s to ~s because ~2:*~s has other bindings in scope",
+        "not renaming reference of ~s to ~s because this would cause the reference to be captured by an existing local binding for ~:*~s"
+      ],
+      "severity": "warning",
+      "see_also": [
+        "compiler.name-res.shadowing-conflict"
+      ],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-renaming-reference-not-applied-binding-aware-rewrite-skipped",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:509",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
       }
     }
   ]

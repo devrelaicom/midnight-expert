@@ -513,6 +513,18 @@ This makes the disclosure of private data explicit and auditable in the contract
 
 ---
 
+### Duplicate witness declaration
+
+**Messages (templates):**
+- `"duplicate generic parameter name <sym>"`
+- `"duplicate parameter name <sym>"`
+
+**Triggers:** A `witness` declaration repeats the same generic-parameter name or parameter name within a single declaration.
+
+**Fix:** Rename the duplicate parameter so each name is unique inside the witness signature. Witness signatures, like circuit signatures, must have distinct names for every type parameter and every argument.
+
+---
+
 ## Purity and Sealed Field Errors
 
 These errors enforce restrictions on circuit purity and access to sealed ledger state.
@@ -565,6 +577,31 @@ circuit <name> is marked pure but is actually impure because it calls (directly 
 
 ---
 
+### Runtime-only method invoked in-circuit
+
+**Message (template):** `"<receiver> <method> is a runtime-only method, but was invoked in-circuit"`
+
+**Triggers:** A circuit body invokes a method that is only legal in the runtime/JS-side execution path. These methods are unavailable inside the constraint system: they have no ZKIR encoding.
+
+**Fix:** Move the call out of the circuit (into the surrounding TypeScript or witness code), or substitute the corresponding circuit-safe API. Common offenders include methods that mutate JS-side state or that rely on host I/O.
+
+---
+
+### Impure export name collision (case-insensitive filesystems)
+
+**Message (template):**
+
+```text
+the exported impure circuit name <a> is identical to the exported circuit name <b> at <loc> modulo case;
+please rename to avoid zkir and prover-key filename clashes on case-insensitive filesystems
+```
+
+**Triggers:** Two exported circuits resolve to the same name modulo case (one impure, one pure or another impure). The compiler writes per-circuit `.zkir` and prover-key files keyed by name, and case-only differences would clash on macOS/Windows filesystems.
+
+**Fix:** Rename one of the circuits so the names differ by more than case. The compiler enforces this even on case-sensitive Linux filesystems to keep generated artifacts portable.
+
+---
+
 ## ZKIR Generation Errors
 
 These errors occur when the compiler generates the ZK Intermediate Representation from the type-checked AST.
@@ -576,6 +613,20 @@ These errors occur when the compiler generates the ZK Intermediate Representatio
 **Triggers:** The contract attempts a cross-contract call, which has not yet been implemented in the ZKIR output stage.
 
 **Fix:** This is a current compiler limitation. Restructure to avoid cross-contract calls until the feature is available.
+
+---
+
+### Unrecognized native circuit
+
+**Message (template):** `"unrecognized native circuit <name>"`
+
+**Triggers:** During ZKIR lowering the compiler encountered a reference to a built-in (native) circuit name that is not registered in this compiler version. This usually means the language version pragma in the source asks for a primitive that the installed compiler does not implement, or a user-defined name shadows a future-built-in primitive.
+
+**Fix:**
+
+- Confirm the language-version pragma matches the installed compiler.
+- Update the compiler to a version that supports the named primitive.
+- If the call resolves to user-defined code, verify it is not shadowing a future-built-in name (e.g. by renaming it).
 
 ---
 
@@ -683,18 +734,40 @@ The following diagnostics were added (or refined) in recent compiler releases. T
 
 ---
 
+### Module name mismatch in imported file
+
+**Message (template):** `"<pathname> defines module <actual> rather than expected module <expected>"`
+
+**Triggers:** A Compact source file is imported under a module name, but the file's top-level `module` declaration uses a different name.
+
+**Fix:** Either rename the file's `module` declaration to match the import, or change the import to refer to the actual module name in the file.
+
+---
+
 ### Contract-info file mismatch family
 
-When a `.compact` file declares an external contract that no longer matches its `contract-info` JSON file:
+When a `.compact` file declares an external contract that no longer matches its `contract-info` JSON file, the compiler emits one of the following templates. They split into three groups:
 
-- `"declared circuit ~s not present in contract-info file ~a"`
-- `"pure-flag mismatch for circuit ~s in ~a: declared ~a, actual ~a"`
-- `"mismatch between actual number ~s and declared number ~s of generic parameters for ~s"`
-- `"~a depth ~d does not fall in ~d <= depth <= ~d"` (also covered above)
-- `"~a has been modified more recently than ~a; try recompiling ~a"` — staleness check
-- `"malformed contract-info file ~a for ~s: ~a; try recompiling ~a"` — `external-errorf`
+**Malformed file** (raised via `external-errorf` — fatal, exits with the external-error code):
 
-**Fix:** Recompile the upstream contract or update the calling contract's external declarations to match.
+- `"malformed contract-info file <path> for <name>: <reason>; try recompiling <path>"`
+
+**Stale file** (the source `.compact` is newer than the cached `contract-info`):
+
+- `"<source> has been modified more recently than <contract-info>; try recompiling <source>"`
+
+**Declaration mismatch** (the calling `.compact` and the upstream contract definition disagree):
+
+- `"contract <C> has no circuit declaration named <name>"`
+- `"contract <C> has no circuit declaration named <name>"` (transposed forms)
+- `"contract declaration claims circuit <name> is pure, but it is not in the actual contract definition"`
+- `"contract declaration claims circuit <name> has <n> argument(s), but in the actual contract definition it has <m>"`
+- `"contract declaration claims the type of circuit <name> argument <i> is <T>, but in the actual contract definition it is <U>"`
+- `"contract declaration claims the return type of circuit <name> is <T>, but in the actual contract definition it is <U>"`
+- `"contract declaration has a circuit named <name>, but it is not present in the actual contract definition"`
+- Other historical templates: `"declared circuit ~s not present in contract-info file ~a"`, `"pure-flag mismatch for circuit ~s in ~a: declared ~a, actual ~a"`, `"mismatch between actual number ~s and declared number ~s of generic parameters for ~s"`.
+
+**Fix:** Recompile the upstream contract so the `contract-info` JSON matches its source, or update the calling contract's external declarations (argument count, types, return type, purity, generic-parameter count) to match the actual definition. If the file is malformed (corrupted, hand-edited, version mismatch), delete and regenerate it via a fresh compile.
 
 ---
 
@@ -758,3 +831,29 @@ potential witness-value disclosure must be declared but is not:
 **Triggers:** A `select` expression's test position has a non-Boolean type.
 
 **Fix:** Wrap the test in a comparison or boolean operation. Same root cause as the existing "Condition is not Boolean" entry, but the message wording differs for `select` vs `if`.
+
+---
+
+## Compiler Warnings (non-fatal)
+
+These diagnostics are emitted via `source-warningf` (or its deferred-warning sibling). They do not fail compilation, but they flag situations where the user's intent may not match what the compiler is doing.
+
+### Warning: Uint range end may be left unchanged after generic-size update
+
+**Message (template):** `"Uint range end expressed as a reference to generic size <name> is left unchanged and must be updated manually"`
+
+**Triggers:** A `Uint` range end is expressed as a reference to a generic size symbol. When that generic size is later resolved to a concrete value, the compiler cannot rewrite the range end automatically — the range may then be too narrow or too wide for the resolved size.
+
+**Fix:** After the generic size is bound to a concrete value, audit any `Uint` range ends that referenced the generic and update them to match. The warning is informational; the compile still succeeds.
+
+---
+
+### Warning: Renaming reference not applied (binding-aware rewrite skipped)
+
+**Messages (templates):**
+- `"not renaming reference of <old> to <new> because <old> has other bindings in scope"`
+- `"not renaming reference of <old> to <new> because this would cause the reference to be captured by an existing local binding for <new>"`
+
+**Triggers:** The compiler attempted a deprecation-driven rename (typically the old standard-library / ledger operator name to its new form) but skipped it because applying the rename would either shadow an existing in-scope binding or cause variable capture. Common after upgrading the standard library to a version that renames operators.
+
+**Fix:** Rename the conflicting local binding first, then re-run the compile so the rename can apply, or update the call site manually to the new name. This is a warning, not an error — the compile succeeds, but the reference points at the old (possibly removed) name.
