@@ -1,5 +1,7 @@
 # Midnight SDK Error Reference
 
+> **Last verified:** 2026-05-04 — class-based family against `midnightntwrk/midnight-js@main` (`@midnight-ntwrk/midnight-js` and friends, all v4.0.4); Effect-based family against published npm tarballs of `@midnight-ntwrk/compact-js@2.5.0`, `@midnight-ntwrk/compact-js-command@2.5.0`, `@midnight-ntwrk/platform-js@2.2.4`, `@midnight-ntwrk/compact-runtime@0.16.0` (sourced from private repo `midnight-ntwrk/artifacts`).
+
 ## Overview
 
 This reference covers errors from two SDK families:
@@ -53,9 +55,9 @@ Fields:
 |---|---|---|
 | `"Failed to initialize contract"` | Contract could not be instantiated | Check contract address, network connectivity, and provider state |
 | `"Error executing circuit '${id}'"` | Circuit execution threw or returned an error | Inspect `cause` for the underlying error; check circuit inputs |
-| `"Unexpected error converting runtime contract state"` | State shape mismatch during deserialization | Check for SDK version mismatch between contract and client |
-| `"Failed to apply maintenance operation"` | Maintenance transaction rejected or failed | Check authority keys and node connectivity |
-| `"Invalid number of arguments"` | Wrong number of arguments passed to a circuit call | Verify circuit signature and argument count |
+| `String(err)` (stringified inner error) | Lazy `getContract()` instantiation failed; the message is just the inner error stringified | Inspect `cause` for the underlying error |
+
+> The previous reference listed three additional messages — `"Unexpected error converting runtime contract state"`, `"Failed to apply maintenance operation"`, `"Invalid number of arguments"` — that are **not present in `compact-js@2.5.0`**. They may have been retired or never existed in this exact form. Removed pending source confirmation.
 
 ---
 
@@ -68,7 +70,7 @@ Raised when a ZK asset (verifier key, ZKIR, or prover key) cannot be read from t
 Guard function: `isReadError(e)`
 
 Fields:
-- `message: string` — auto-generated: `"Failed to read ${assetType} for ${tag}#${circuitId}"`
+- `message: string` — auto-generated: `` `Failed to read ${assetType.replaceAll('-', ' ')} for ${contractTag}#${provableCircuitId}` ``. Note dashes in `assetType` are replaced with spaces, so the rendered message reads e.g. `"Failed to read verifier key for ..."` (not `"verifier-key"`).
 - `cause?: unknown`
 - `contractTag: string`
 - `provableCircuitId: string`
@@ -141,6 +143,8 @@ TypeId: `platform-js/effect/ParseError`
 
 Raised when a hex string fails to parse.
 
+Guard function: `isParseError(e)`
+
 Fields:
 - `message: string`
 - `source: string`
@@ -152,7 +156,7 @@ Fields:
 | `"Source string must have non-zero length"` | Empty string passed | Ensure input is non-empty before parsing |
 | `"Source string '${s}' is not a valid hex-string"` | String contains non-hex characters | Validate input is a hex-encoded string |
 | `"Last byte of source string '${s}' is incomplete"` | Odd-length hex string | Hex strings must have an even number of characters |
-| `"Invalid hex-digit '${c}' found at index ${pos}"` | A non-hex character at a specific position | Inspect character at `pos` in the source string |
+| `"Invalid hex-digit '${c}' found in source string at index ${pos}"` | A non-hex character at a specific position (verbatim from `platform-js/dist/esm/effect/internal/hex.js`) | Inspect character at `pos` in the source string |
 
 ---
 
@@ -170,7 +174,9 @@ Base class for all transaction-not-applied errors. A transaction was submitted a
 
 Fields:
 - `finalizedTxData` — finalized transaction data from the node
-- `circuitId?: string` — present on subclasses that carry a circuit context
+- `circuitId?: AnyProvableCircuitId | AnyProvableCircuitId[]` — present on subclasses that carry circuit context. Note this is **not** a plain `string` — it can be a single id or an array of ids.
+
+> **Message format:** `super('Transaction failed')` is called, but the constructor immediately overwrites `this.message` with `JSON.stringify({ circuitId?, ...finalizedTxData })`. So `error.message` is a JSON-stringified payload, not the literal string `"Transaction failed"`.
 
 Subclasses:
 
@@ -186,13 +192,53 @@ Fix: Inspect `finalizedTxData` for the transaction result and segment statuses. 
 
 ---
 
+### ScopedTransactionIdentityMismatchError
+
+**Added in `@midnight-ntwrk/midnight-js-contracts` v3.2.0.**
+
+Extends: `Error`
+
+Raised when cached states from one contract are used for a different contract or with a different `privateStateId`. Scoped transactions must target the same contract address and private-state identity throughout their lifecycle.
+
+Fields:
+- `cached: { contractAddress: string; privateStateId?: PrivateStateId }`
+- `requested: { contractAddress: string; privateStateId?: PrivateStateId }`
+
+Message: `Cannot use cached states from contract '${cached.contractAddress}' (privateStateId: '${cached.privateStateId}') for contract '${requested.contractAddress}' (privateStateId: '${requested.privateStateId}'). Scoped transactions must target the same contract and private state identity.`
+
+Fix: Either re-fetch state for the requested contract or restart the scoped transaction flow.
+
+---
+
+### isEffectContractError (interop predicate)
+
+`@midnight-ntwrk/midnight-js-contracts` exports an interop predicate that lets class-based callers detect Effect-thrown errors that have leaked into the class-based world:
+
+```ts
+interface EffectContractError {
+  readonly _tag: string;
+  readonly cause: { readonly name: string; readonly message: string };
+}
+export const isEffectContractError = (error: unknown): error is EffectContractError => ...
+```
+
+Use it as a bridge between the Effect-based `compact-js` family and the class-based `midnight-js` family.
+
+---
+
 ### ContractTypeError
 
 Extends: `TypeError`
 
-Raised when the supplied contract type does not match the deployed contract state. This typically occurs when a contract address is reused with an incompatible contract definition.
+Raised when one or more operations are undefined or have mismatched verifier keys for the deployed contract state.
 
-Fix: Verify the contract address corresponds to the contract type being used. Re-deploy if the contract was replaced.
+Fields:
+- `contractState: ContractState`
+- `circuitIds: AnyProvableCircuitId[]` — the circuits that did not resolve
+
+Message format: `` `Following operations: ${circuitIds.join(', ')}, are undefined or have mismatched verifier keys for contract state ${contractState.toString(false)}` ``
+
+Fix: Verify the contract address corresponds to the contract type being used. The actual trigger is verifier-key mismatch on operation lookup — re-deploy if the contract was replaced, or check that you're calling the right operations for this contract version.
 
 ---
 
@@ -201,6 +247,8 @@ Fix: Verify the contract address corresponds to the contract type being used. Re
 Extends: `Error`
 
 Raised when `privateStateId` is set in a call transaction config but `privateStateProvider` is not provided.
+
+Message: `"'privateStateId' was defined for call transaction while 'privateStateProvider' was undefined"`
 
 Fix: Either provide both `privateStateId` and `privateStateProvider`, or omit `privateStateId` entirely.
 
@@ -211,6 +259,8 @@ Fix: Either provide both `privateStateId` and `privateStateProvider`, or omit `p
 Extends: `Error`
 
 Raised when `initialPrivateState` is set in a find-contract config but `privateStateId` is not provided.
+
+Message: `"'initialPrivateState' was defined for contract find while 'privateStateId' was undefined"`
 
 Fix: Provide `privateStateId` when supplying `initialPrivateState`, so the state can be stored and retrieved consistently.
 
@@ -230,6 +280,8 @@ Fields:
 - `invalidScheme: string` — the scheme that was found
 - `allowableSchemes: string[]` — the schemes that are accepted
 
+Message format: `` `Invalid protocol scheme: '${invalidScheme}'. Allowable schemes are one of: ${allowableSchemes.join(',')}` ``
+
 Fix: Update the URL to use one of the `allowableSchemes`. Common cases: using `http://` where `https://` is required, or `ws://` where `wss://` is required.
 
 ---
@@ -241,7 +293,7 @@ Extends: `Error`
 Base class for private state import failures.
 
 Fields:
-- `cause: 'decryption_failed' | 'invalid_format' | 'conflict'`
+- `cause?: PrivateStateImportErrorCause` — **optional** in current source, with type `'decryption_failed' | 'invalid_format' | 'conflict' | 'unknown'`
 
 Subclasses:
 
@@ -250,6 +302,7 @@ Subclasses:
 | `ExportDecryptionError` | `'decryption_failed'` | Decryption failed — wrong password or corrupt export | Verify the password used during export matches the one used for import |
 | `InvalidExportFormatError` | `'invalid_format'` | Export data has an unrecognized format | Ensure the export file has not been modified or truncated |
 | `ImportConflictError` | `'conflict'` | Import data conflicts with existing private state; carries `conflictCount` | Resolve or clear the conflicting state before importing, or use a merge strategy |
+| (base only) | `'unknown'` or absent | Catch-all when the cause cannot be determined | Inspect the underlying error for context |
 
 ---
 

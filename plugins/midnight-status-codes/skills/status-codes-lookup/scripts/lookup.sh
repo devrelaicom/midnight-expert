@@ -33,7 +33,7 @@ USAGE
 # --- Output helpers ---
 print_detailed() {
   # Reads JSON array from stdin, prints detailed blocks
-  jq -r '.[] | "=== MATCH: \(.source) / \(.code) ===\nCode: \(.code)\nName: \(.name)\nSource: \(.source)\nCategory: \(.group.name)\nCategory Description: \(.group.description)\nSeverity: \(.severity)\nDescription: \(.description)\nFixes:\n\(.fixes | map("  - " + .) | join("\n"))\nAliases: \(.aliases | join(", "))\nSee Also: \(.see_also | join(", "))\n==="'
+  jq -r '.[] | "=== MATCH: \(.source) / \(.code) ===\nCode: \(.code)\nName: \(.name)\nSource: \(.source)\nCategory: \(.group.name)\nCategory Description: \(.group.description)\nSeverity: \(.severity)\nDescription: \(.description)\nFixes:\n\(.fixes | map("  - " + .) | join("\n"))\nAliases: \(.aliases | join(", "))\nSee Also: \(.see_also | join(", "))\nVerified: \(.verified_against.source_repo // "?")@\(.verified_against.ref // "?") · anchor: \(.verified_against.anchor // "?") (modified \(.verified_against.anchor_modified // "?")) · audit \(.verified_against.verified_at // "?")\n==="'
 }
 
 print_compact() {

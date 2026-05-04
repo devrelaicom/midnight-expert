@@ -1,5 +1,7 @@
 # DApp Connector API Errors
 
+> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-dapp-connector-api@v4.0.1` (anchor: `src/errors.ts`, modified 2025-11-18; spec: `SPECIFICATION.md`, modified 2026-02-17).
+
 Errors from the Midnight DApp Connector — the browser-based API that connects DApps to the Midnight Lace wallet extension.
 
 ## Source
@@ -10,7 +12,7 @@ These errors are returned by the DApp Connector API when a DApp interacts with t
 
 | Code | Description | Semantic | Fixes |
 |------|-------------|----------|-------|
-| `Disconnected` | Connection to the wallet was lost mid-session | Session-level — the WebSocket or communication channel dropped | Re-establish connection; call `enable()` again |
+| `Disconnected` | Connection to the wallet was lost mid-session | Session-level — the WebSocket or communication channel dropped | Re-establish connection by calling `connect(networkId)` (use `getConnectionStatus()` to observe state). The legacy v3 `enable()` method was removed in v4.0.0. |
 | `InternalError` | Connector could not process the request internally | Internal wallet/connector failure | Retry the operation; check Lace wallet logs; update wallet extension |
 | `InvalidRequest` | Malformed transaction or invalid request parameters | Client error — the DApp sent bad data | Verify transaction structure; check parameter types and formats |
 | `PermissionRejected` | Session-level denial — user's general preference to deny this DApp | Persistent — user has blocked this DApp | Inform the user; they must unblock the DApp in wallet settings |
