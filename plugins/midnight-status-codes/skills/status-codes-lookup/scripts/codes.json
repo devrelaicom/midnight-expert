@@ -5593,7 +5593,7 @@
         "name": "Transaction Invalid Errors (100-109, 193-200)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Top-level LedgerApiError::ContractNotPresent — a contract lookup outside of transaction validation found no contract at the address. Distinct from the transaction-time codes 102 (Invalid::ContractNotPresent) and 114 (Malformed::ContractNotPresent).",
+      "description": "Error,contract is not present",
       "fixes": [
         "Verify the contract address; deploy the contract first",
         "If the lookup happens during a non-transaction RPC, ensure the address is correctly serialized"
@@ -5625,7 +5625,7 @@
         "name": "Infrastructure Errors (150-157, 165)",
         "description": "Node-side infrastructure failures unrelated to the transaction itself."
       },
-      "description": "Top-level LedgerApiError::BeneficiaryNotFound — a referenced reward beneficiary was not found.",
+      "description": "Error,beneficiary is not found",
       "fixes": [
         "Confirm the beneficiary address has been registered before referencing it"
       ],
@@ -5654,7 +5654,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "SystemTransactionError::MerkleTreeError — a Merkle tree update failed during system transaction processing.",
+      "description": "Transaction Error:SystemTransaction(MerkleTreeError)",
       "fixes": [
         "Internal protocol error; check node logs for the wrapped InvalidUpdate cause"
       ],
@@ -5685,7 +5685,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual real calls are not a subset of declared real calls. Replaces the old opaque 186 EffectsCheckFailure with a specific subcase.",
+      "description": "Transaction Error:Malformed(EffectsCheck(RealCallsSubsetCheckFailure))",
       "fixes": [
         "Rebuild the transaction so declared effects exactly match the real call set"
       ],
@@ -5715,7 +5715,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual commitment set is not a subset of declared commitments.",
+      "description": "Transaction Error:Malformed(EffectsCheck(AllCommitmentsSubsetCheckFailure))",
       "fixes": [
         "Verify all coin commitments produced by the transaction are declared in its effects"
       ],
@@ -5745,7 +5745,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: real unshielded spends are not a subset of declared unshielded spends.",
+      "description": "Transaction Error:Malformed(EffectsCheck(RealUnshieldedSpendsSubsetCheckFailure))",
       "fixes": [
         "Ensure declared unshielded spends in effects cover all actual spends"
       ],
@@ -5775,7 +5775,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: claimed unshielded spends are not unique (duplicates detected).",
+      "description": "Transaction Error:Malformed(EffectsCheck(ClaimedUnshieldedSpendsUniquenessFailure))",
       "fixes": [
         "Deduplicate claimed unshielded spend entries before submitting"
       ],
@@ -5805,7 +5805,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: claimed contract calls are not unique.",
+      "description": "Transaction Error:Malformed(EffectsCheck(ClaimedCallsUniquenessFailure))",
       "fixes": [
         "Deduplicate claimed call entries"
       ],
@@ -5835,7 +5835,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual nullifier set differs from claimed nullifiers.",
+      "description": "Transaction Error:Malformed(EffectsCheck(NullifiersNeqClaimedNullifiers))",
       "fixes": [
         "Ensure claimed nullifiers exactly match the nullifiers produced by the transaction"
       ],
@@ -5865,7 +5865,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual commitments differ from claimed shielded receives.",
+      "description": "Transaction Error:Malformed(EffectsCheck(CommitmentsNeqClaimedShieldedReceives))",
       "fixes": [
         "Ensure claimed shielded receives match the commitments the transaction emits"
       ],
@@ -5895,7 +5895,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: contract call ordering violates the call graph constraints. Replaces the old opaque 188 SequencingCheckFailure with a specific subcase.",
+      "description": "Transaction Error:Malformed(SequencingCheck(CallSequencingViolation))",
       "fixes": [
         "Reorder contract calls so dependent calls execute after their prerequisites"
       ],
@@ -5925,7 +5925,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: cross-call correlation invariant violated.",
+      "description": "Transaction Error:Malformed(SequencingCheck(SequencingCorrelationViolation))",
       "fixes": [
         "Ensure correlated calls reference each other consistently across the transcript"
       ],
@@ -5955,7 +5955,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a guaranteed call appeared in a fallible context.",
+      "description": "Transaction Error:Malformed(SequencingCheck(GuaranteedInFallibleContextViolation))",
       "fixes": [
         "Move the guaranteed segment of the call out of the fallible block"
       ],
@@ -5985,7 +5985,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a fallible call appeared in a guaranteed context.",
+      "description": "Transaction Error:Malformed(SequencingCheck(FallibleInGuaranteedContextViolation))",
       "fixes": [
         "Move fallible operations to a fallible segment after kernel.checkpoint()"
       ],
@@ -6015,7 +6015,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a causality constraint between calls was violated.",
+      "description": "Transaction Error:Malformed(SequencingCheck(CausalityConstraintViolation))",
       "fixes": [
         "Ensure earlier calls' outputs precede later calls' uses in the transcript"
       ],
@@ -6045,7 +6045,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a contract call has empty transcripts.",
+      "description": "Transaction Error:Malformed(SequencingCheck(CallHasEmptyTranscripts))",
       "fixes": [
         "Remove empty calls from the transaction, or ensure they have at least one transcript entry"
       ],
@@ -6075,7 +6075,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "DisjointCheck failed: shielded inputs are not disjoint across segments. Replaces the old opaque 187 DisjointCheckFailure with a specific subcase.",
+      "description": "Transaction Error:Malformed(DisjointCheck(ShieldedInputsDisjointFailure))",
       "fixes": [
         "Ensure each shielded input appears in exactly one segment of the transaction"
       ],
@@ -6105,7 +6105,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "DisjointCheck failed: shielded outputs overlap across segments.",
+      "description": "Transaction Error:Malformed(DisjointCheck(ShieldedOutputsDisjointFailure))",
       "fixes": [
         "Ensure each shielded output appears in exactly one segment"
       ],
@@ -6135,7 +6135,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "DisjointCheck failed: unshielded inputs are not disjoint across segments.",
+      "description": "Transaction Error:Malformed(DisjointCheck(UnshieldedInputsDisjointFailure))",
       "fixes": [
         "Ensure each unshielded input is referenced in exactly one segment"
       ],
@@ -6165,7 +6165,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Malformed-side TransactionApplicationError: intent TTL has already expired. Replaces the old opaque 182 TransactionApplicationError with a specific subcase.",
+      "description": "Transaction Error:Malformed(TransactionApplication(IntentTtlExpired))",
       "fixes": [
         "Set the intent TTL further in the future before signing",
         "Ensure node clock skew is small enough that the intent doesn't expire in flight"
@@ -6197,7 +6197,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Malformed-side TransactionApplicationError: intent TTL is set further into the future than the protocol allows.",
+      "description": "Transaction Error:Malformed(TransactionApplication(IntentTtlTooFarInFuture))",
       "fixes": [
         "Reduce the intent TTL to within the protocol's allowed window"
       ],
@@ -6228,7 +6228,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Malformed-side TransactionApplicationError: an intent with the same identifier already exists in the replay-protection set.",
+      "description": "Transaction Error:Malformed(TransactionApplication(IntentAlreadyExists))",
       "fixes": [
         "Generate a fresh intent identifier; do not resubmit the same intent twice"
       ],
@@ -6259,7 +6259,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Fee calculation failed: the transaction's time-to-dismiss is outside the allowed window for its size.",
+      "description": "Transaction Error:Malformed(FeeCalculation(OutsideTimeToDismiss))",
       "fixes": [
         "Adjust the time-to-dismiss for the transaction so it falls within the size-dependent allowed range"
       ],
@@ -6289,7 +6289,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Fee calculation failed: the transaction would exceed the block resource limit (size, weight, etc.).",
+      "description": "Transaction Error:Malformed(FeeCalculation(BlockLimitExceeded))",
       "fixes": [
         "Reduce transaction size or split into multiple transactions",
         "Wait for a less congested block"
@@ -6320,7 +6320,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Contract deployment carries non-zero balance entries on the contract account. Contracts must deploy with empty balances.",
+      "description": "Transaction Error:Malformed(MalformedContractDeploy(NonZeroBalance))",
       "fixes": [
         "Remove balance entries from the deploy intent — newly deployed contracts must start with zero balances"
       ],
@@ -6350,7 +6350,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Contract deployment carries an incorrectly computed charged-state map.",
+      "description": "Transaction Error:Malformed(MalformedContractDeploy(IncorrectChargedState))",
       "fixes": [
         "Rebuild the deploy with the SDK so the charged-state map matches the contract's declared schema"
       ],
@@ -6380,7 +6380,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: inner proof verification failed.",
+      "description": "Transaction Error:Malformed(Zswap(InvalidProof))",
       "fixes": [
         "Regenerate the Zswap offer's proof; ensure the proof server is on a compatible version"
       ],
@@ -6411,7 +6411,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: a contract attempted to send ciphertext to itself, which is forbidden.",
+      "description": "Transaction Error:Malformed(Zswap(ContractSentCiphertext))",
       "fixes": [
         "Restructure the contract logic so it does not emit ciphertext to its own address"
       ],
@@ -6441,7 +6441,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: attempted to merge offers whose coin sets are not disjoint.",
+      "description": "Transaction Error:Malformed(Zswap(NonDisjointCoinMerge))",
       "fixes": [
         "Ensure offers being merged operate on disjoint coin sets"
       ],
@@ -6471,7 +6471,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: the offer is not in normal form.",
+      "description": "Transaction Error:Malformed(Zswap(NotNormalized))",
       "fixes": [
         "Re-normalize the Zswap offer with the SDK before submission"
       ],
@@ -6502,7 +6502,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Zswap double-spend: nullifier already exists in the chain. Specific subcase split out from the older opaque 103 Zswap(Unknown).",
+      "description": "Transaction Error:Invalid(Zswap(NullifierAlreadyPresent))",
       "fixes": [
         "The coin has already been spent — refresh wallet state and try a different coin"
       ],
@@ -6532,7 +6532,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Zswap commitment already in the tree (faerie-gold double-commit attempt).",
+      "description": "Transaction Error:Invalid(Zswap(CommitmentAlreadyPresent))",
       "fixes": [
         "Generate a fresh nonce so the resulting commitment differs"
       ],
@@ -6563,7 +6563,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Zswap input references a Merkle root the chain does not recognize (state too old, or wallet looking at a fork).",
+      "description": "Transaction Error:Invalid(Zswap(UnknownMerkleRoot))",
       "fixes": [
         "Resync the wallet against the current chain head",
         "Rebuild the transaction using a recent Merkle root"
@@ -6594,7 +6594,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Invalid-side replay-protection: intent TTL expired between submission and validation. Specific subcase split out from the older opaque 193.",
+      "description": "Transaction Error:Invalid(ReplayProtectionViolation(IntentTtlExpired))",
       "fixes": [
         "Submit transactions promptly after building them",
         "Increase the intent TTL"
@@ -6627,7 +6627,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Invalid-side replay-protection: intent TTL too far in the future (Invalid path).",
+      "description": "Transaction Error:Invalid(ReplayProtectionViolation(IntentTtlTooFarInFuture))",
       "fixes": [
         "Use a TTL within the protocol's allowed range"
       ],
@@ -6659,7 +6659,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Invalid-side replay-protection: intent identifier already exists (Invalid path).",
+      "description": "Transaction Error:Invalid(ReplayProtectionViolation(IntentAlreadyExists))",
       "fixes": [
         "Generate a fresh intent identifier; do not resubmit the same intent"
       ],
@@ -6691,7 +6691,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "System-transaction replay-protection: intent TTL expired. Specific subcase split out from the older opaque 205 ReplayProtectionFailure.",
+      "description": "Transaction Error:SystemTransaction(ReplayProtectionFailure(IntentTtlExpired))",
       "fixes": [
         "System transactions are submitted by governance — operators must resubmit with a fresh TTL"
       ],
@@ -6723,7 +6723,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "System-transaction replay-protection: intent TTL too far in the future.",
+      "description": "Transaction Error:SystemTransaction(ReplayProtectionFailure(IntentTtlTooFarInFuture))",
       "fixes": [
         "Adjust the system transaction's TTL to within the allowed window"
       ],
@@ -6755,7 +6755,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "System-transaction replay-protection: intent identifier already exists.",
+      "description": "Transaction Error:SystemTransaction(ReplayProtectionFailure(IntentAlreadyExists))",
       "fixes": [
         "Use a fresh intent identifier for the system transaction"
       ],
@@ -6787,7 +6787,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "InvalidError::DivideByZero — a contract circuit attempted division by zero during ledger-side validation.",
+      "description": "Transaction Error:Invalid(DivideByZero)",
       "fixes": [
         "Add a non-zero check before the division in the contract's witness logic"
       ],
@@ -6816,7 +6816,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "InvalidError::MerkleTreeError — a Merkle tree update failed during transaction validation.",
+      "description": "Transaction Error:Invalid(MerkleTreeError)",
       "fixes": [
         "Internal protocol error; check node logs for the wrapped InvalidUpdate cause"
       ],
@@ -6847,7 +6847,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "ZswapInvalid: a Merkle tree update failed inside Zswap state application.",
+      "description": "Transaction Error:Invalid(Zswap(MerkleTreeError))",
       "fixes": [
         "Internal Zswap error; rebuild the transaction"
       ],

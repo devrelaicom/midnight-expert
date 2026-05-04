@@ -358,8 +358,8 @@ Hand-rolled `Display` (not `thiserror`); 2 variants:
 | `RealUnshieldedSpendsSubsetCheckFailure` | Real unshielded spends not a subset of declared. |
 | `ClaimedUnshieldedSpendsUniquenessFailure` | Claimed unshielded spends not unique. |
 | `ClaimedCallsUniquenessFailure` | Claimed calls not unique. |
-| `NullifiersNEClaimedNullifiers` | Actual nullifiers ≠ claimed nullifiers. |
-| `CommitmentsNEClaimedShieldedReceives` | Actual commitments ≠ claimed shielded receives. |
+| `NullifiersNeqClaimedNullifiers` | Actual nullifiers ≠ claimed nullifiers. |
+| `CommitmentsNeqClaimedShieldedReceives` | Actual commitments ≠ claimed shielded receives. |
 
 #### `SequencingCheckError`
 
