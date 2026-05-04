@@ -421,6 +421,8 @@ expected select test to have type Boolean, received <type>
 
 **Fix:** Check the struct definition for the correct field name. Look for typos.
 
+> The same section also covers the family of struct creation-syntax diagnostics — `"positional initializer found after spread or named initializer in struct creation syntax"`, `"spread initializer found after positional or named initializers in struct creation syntax"`, `"more positional initializers (~d) supplied than the number of fields (~d) of ~a"`, `"value of field ~s is already given at ~a"` / `"…is already specified positionally at ~a"`, `"value for element ~s is missing in creation syntax for ~a"`, and `"value for unrecognized field named ~a appears in creation syntax for ~a"`. All originate from the struct initializer pass and are typically fixed by aligning the initializer order/shape with the struct declaration.
+
 ---
 
 ### Invalid cast
@@ -464,6 +466,11 @@ Uint width <N> is not between 1 and the maximum Uint width <M> (inclusive)
 **Triggers:** A `Vector` or `Bytes` type is declared with a length greater than 2^24 (16,777,216).
 
 **Fix:** Use a smaller length. Redesign the data layout if you need to handle more elements.
+
+> Two related families share this section:
+>
+> - **Tuple/Vector index out-of-bounds** — `"index ~d is out-of-bounds for a ~a of length ~d"` (and the slice variant `"slice index ~d plus length ~d is out-of-bounds for a ~a of length ~d"`), plus the upstream guards `"index ~d exceeds maximum allowed index ~d for a tuple or vector reference"` and `"index ~d exceeds maximum index allowed ~d for a slice"`. Fix: keep the constant index strictly less than the static length, or restructure to use a non-constant index against a vector type.
+> - **Spread construction size** — `"the size of tuple/vector construction expression with vector-typed spread\n    ~d\n  exceeds the maximum vector size allowed\n    ~d"`, the parallel `…tuple-typed spread…exceeds the maximum tuple size allowed…`, and `"Bytes construction length\n    ~d exceeds the maximum bytes length allowed\n    ~d"`. Fix: shrink the input(s) to the spread/concatenation so the resulting size stays within `2^24`.
 
 ---
 

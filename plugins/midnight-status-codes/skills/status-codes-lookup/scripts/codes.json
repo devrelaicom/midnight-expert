@@ -8618,6 +8618,458 @@
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "ambiguous overload",
+      "name": "Ambiguous overload",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.ambiguous-overload",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "Multiple overloads of a function are equally compatible with the call's argument types, so the compiler cannot pick one.",
+      "fixes": [
+        "Add a type annotation to one or more arguments to disambiguate",
+        "Cast a literal to the desired numeric type explicitly",
+        "Rename one of the conflicting declarations if you control them"
+      ],
+      "aliases": [
+        "call site ambiguity (multiple compatible functions) in call to ~a",
+        "call site ambiguity (multiple compatible functions) in call to <name>"
+      ],
+      "severity": "error",
+      "see_also": ["no compatible function"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#ambiguous-overload",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1824",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "mismatch between actual return type",
+      "name": "Return type mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.return-type-mismatch",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "The type inferred for the body of a function or circuit does not match its declared return type.",
+      "fixes": [
+        "Update the return expression to produce the declared type",
+        "Update the return type annotation to match what the body actually produces",
+        "Add an explicit cast at the return site if the conversion is supported"
+      ],
+      "aliases": [
+        "mismatch between actual return type ~a and declared return type ~a",
+        "mismatch between actual return type ~a and declared return type ~a of ~a",
+        "mismatch between actual return type ~a and declared return type ~a in ~a",
+        "mismatch between actual return types ~a and declared return types ~a in ~a"
+      ],
+      "severity": "error",
+      "see_also": ["mismatch between type", "cannot cast from type"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#return-type-mismatch",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1691",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "expected right-hand side of",
+      "name": "Assignment type mismatch",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.assignment-type-mismatch",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "The right-hand side of an assignment, compound-assignment (`+=`, `-=`, etc.), or binding has a different type than the left-hand side.",
+      "fixes": [
+        "Cast the right-hand side so its type matches the left-hand side",
+        "Restructure the expression so both sides agree on type",
+        "Change the declared type of the left-hand side if the RHS shape is intentional"
+      ],
+      "aliases": [
+        "expected right-hand side of ~a to have type ~a but received ~a",
+        "expected right-hand side of <op> to have type <A> but received <B>"
+      ],
+      "severity": "error",
+      "see_also": ["mismatch between type", "cannot cast from type"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#assignment-type-mismatch",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2121",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "is larger than the largest representable Uint",
+      "name": "Numeric literal out of Uint range",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.literal-out-of-range",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A numeric literal exceeds the largest value representable as a Uint at the current bit width. The compiler suggests rewriting it as `<n> as Field` if a Field-typed value is what was intended.",
+      "fixes": [
+        "Use `<n> as Field` to treat the literal as a Field value",
+        "Choose a smaller literal that fits the target Uint width",
+        "Widen the surrounding Uint type so the literal fits"
+      ],
+      "aliases": [
+        "constant ~d is larger than the largest representable Uint; use\n    ~:*~d as Field\n  to treat as a value of type Field",
+        "constant <n> is larger than the largest representable Uint; use <n> as Field to treat as a value of type Field"
+      ],
+      "severity": "error",
+      "see_also": ["Uint width not between 1 and 248"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-range-bounds",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2424",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "range start for Uint type",
+      "name": "Uint range bounds",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.uint-range-bounds",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A `Uint<start..end>` type was declared with an invalid start (must be 0), an invalid end (must be at least 1, range end is exclusive), or an end that exceeds the maximum representable Uint for the current field size.",
+      "fixes": [
+        "Use 0 as the range start (Uint is always nonnegative)",
+        "Choose an exclusive range end that is at least 1 and within the maximum representable Uint",
+        "If you need values larger than the Uint maximum, use Field instead"
+      ],
+      "aliases": [
+        "range start for Uint type is ~d but must be 0",
+        "range end for Uint type is ~d but must be at least 1 (the range end is exclusive)",
+        "range end\n    ~d\n  for Uint type exceeds the limit of\n    ~d (2^~d)\n  (the range end is exclusive)"
+      ],
+      "severity": "error",
+      "see_also": ["Uint width not between 1 and 248", "compiler.type-check.literal-out-of-range"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-range-bounds",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1199",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "is greater than the maximum unsigned integer",
+      "name": "For-loop range bound errors",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.for-loop-bounds",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A `for` loop with explicit numeric bounds has a start or end greater than the maximum unsigned integer, an end less than the start, or a range whose size exceeds the maximum vector size (2^24).",
+      "fixes": [
+        "Reduce the start or end so each fits in the maximum unsigned integer",
+        "Ensure end >= start",
+        "Keep the difference between end and start within the maximum vector size (2^24)"
+      ],
+      "aliases": [
+        "start bound ~d is greater than the maximum unsigned integer ~d",
+        "end bound ~d is greater than the maximum unsigned integer ~d",
+        "end bound ~d is less than start bound ~s",
+        "the difference ~d between end and start bounds exceeds the maximum vector size ~d"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.return-in-for", "Vector or Bytes length too large"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#for-loop-range-bound-errors",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1134",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "exceeds the maximum supported length",
+      "name": "Vector or Bytes length too large",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.vector-bytes-length",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A `Vector` or `Bytes` type — or the UTF-8 representation of a string constant, or a pad length — was declared with a length exceeding the maximum supported size (currently 16,777,216 = 2^24 in `compactc-v0.31.0`).",
+      "fixes": [
+        "Use a smaller length",
+        "Redesign the data layout so it does not need to exceed 2^24 elements",
+        "Truncate or split string constants whose UTF-8 form is too long"
+      ],
+      "aliases": [
+        "~a length\n  ~d\n  exceeds the maximum supported length ~d",
+        "<kind> length\n  <N>\n  exceeds the maximum supported length <M>",
+        "length ~d of the UTF-8 representation of string constant exceeds the maximum supported length ~d",
+        "pad length ~d exceeds the maximum supported length ~d"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.type-check.for-loop-bounds", "compiler.type-check.spread-construction-size"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:923",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "is out-of-bounds for",
+      "name": "Tuple or vector index out of bounds",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.tuple-vector-index-oob",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A constant tuple, vector, Bytes, or slice index is statically known to be outside the valid range, or exceeds the maximum index allowed for tuple/vector references at the current vector-size limit.",
+      "fixes": [
+        "Use an index strictly less than the type's static length",
+        "For a slice, ensure `index + length <= input length`",
+        "Switch to a non-constant index against a Vector type if the index needs to vary"
+      ],
+      "aliases": [
+        "index ~d is out-of-bounds for a ~a of length ~d",
+        "slice index ~d plus length ~d is out-of-bounds for a ~a of length ~d",
+        "index ~d exceeds maximum allowed index ~d for a tuple or vector reference",
+        "index ~d exceeds maximum index allowed ~d for a slice",
+        "index ~s is out-of-bounds for tuple or vector of length ~s",
+        "index ~d plus length ~d is out-of-bounds for a tuple or vector of length ~d"
+      ],
+      "severity": "error",
+      "see_also": ["Vector or Bytes length too large"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2622",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "exceeds the maximum vector size allowed",
+      "name": "Spread construction size exceeds limit",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.spread-construction-size",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A tuple, vector, or Bytes construction expression that uses a spread (`...x`) produces a value whose total size exceeds the maximum allowed (`2^24` for tuple/vector, the same for Bytes).",
+      "fixes": [
+        "Reduce the length of the spread input or one of the explicit elements",
+        "Restructure to compose smaller pieces in stages",
+        "Avoid spreading the largest values into another aggregate"
+      ],
+      "aliases": [
+        "the size of tuple/vector construction expression with vector-typed spread\n    ~d\n  exceeds the maximum vector size allowed\n    ~d",
+        "the size of tuple/vector construction expression with tuple-typed spread\n    ~d\n  exceeds the maximum tuple size allowed\n    ~d",
+        "Bytes construction length\n    ~d exceeds the maximum bytes length allowed\n    ~d"
+      ],
+      "severity": "error",
+      "see_also": ["Vector or Bytes length too large", "compiler.type-check.tuple-vector-index-oob"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2562",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "in struct creation syntax",
+      "name": "Struct initializer malformed",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.struct-initializer-malformed",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A struct creation expression mixes positional, named, and spread initializers in an invalid order; supplies more positional values than the struct has fields; specifies the same field twice (positionally + named or named twice); leaves a field unset; or names a field that does not exist in the target struct.",
+      "fixes": [
+        "Put any spread first, then positional initializers, then named initializers",
+        "Supply at most one initializer per field — either positional or named, not both",
+        "Ensure every field is covered by exactly one initializer or by the spread",
+        "Remove or correct the unrecognized field name in the initializer"
+      ],
+      "aliases": [
+        "positional initializer found after spread or named initializer in struct creation syntax",
+        "spread initializer found after positional or named initializers in struct creation syntax",
+        "more positional initializers (~d) supplied than the number of fields (~d) of ~a",
+        "value of field ~s is already specified positionally at ~a",
+        "value of field ~s is already given at ~a",
+        "value for element ~s is missing in creation syntax for ~a",
+        "value for unrecognized field named ~a appears in creation syntax for ~a",
+        "the type of the spread structure:\n    ~a\n  does match the declared type of the structure to be created:\n    ~a"
+      ],
+      "severity": "error",
+      "see_also": ["structure has no field"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-field",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2872",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "does not fall in",
+      "name": "MerkleTree depth out of bounds",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.merkle-tree-depth-out-of-bounds",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "A `MerkleTree` or `HistoricMerkleTree` is declared with a depth outside the protocol-defined bounds (typically 1..=32). Added in compiler 0.26.105.",
+      "fixes": [
+        "Choose a depth within the allowed range (1..=32 in the current protocol)",
+        "For most application scenarios, 32 is the right default",
+        "If you need a deeper tree, restructure the data to use multiple trees instead"
+      ],
+      "aliases": [
+        "~a depth ~d does not fall in ~d <= depth <= ~d",
+        "<kind> depth <D> does not fall in <min> <= depth <= <max>"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.type-check.uint-range-bounds"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#merkle-tree-depth-out-of-bounds-added-in-compiler-026105",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:2311",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
+    },
+    {
+      "code": "cannot be applied to a first argument containing opaque JavaScript values",
+      "name": "Opaque-JS persistentHash / persistentCommit",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "type-check",
+      "id": "compiler.type-check.opaque-js-persistent-hash",
+      "group": {
+        "name": "Type Checking Errors",
+        "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
+      },
+      "description": "Calling `persistentHash` or `persistentCommit` on a value containing `Opaque<'string'>` or `Opaque<'Uint8Array'>` is unsound because the JS-side opacity hides the byte representation from Compact. The compiler now rejects these calls outright (and the indirect uses via `merkleTreePathRoot` and MerkleTree insertion). Added in compiler 0.29.113 — this is a hard error, not a warning.",
+      "fixes": [
+        "Hash the opaque-JS value in TypeScript before it enters Compact",
+        "Restructure to use ledger-native types (e.g. `Bytes<N>`, `Field`) instead of `Opaque<'string'>` / `Opaque<'Uint8Array'>`",
+        "If the value is already a digest, re-type it as `Bytes<32>` rather than `Opaque<'Uint8Array'>`"
+      ],
+      "aliases": [
+        "~a cannot be applied to a first argument containing opaque JavaScript values, received ~a",
+        "persistentHash cannot be applied to a first argument containing opaque JavaScript values, received <type>",
+        "persistentCommit cannot be applied to a first argument containing opaque JavaScript values, received <type>"
+      ],
+      "severity": "error",
+      "see_also": ["no compatible function"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#opaque-js-persistenthash-persistentcommit-added-in-compiler-029113",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1813",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04",
+        "toolchain": {
+          "compiler": "0.31.101",
+          "language": "0.23.101"
+        }
+      }
     }
   ]
 }
