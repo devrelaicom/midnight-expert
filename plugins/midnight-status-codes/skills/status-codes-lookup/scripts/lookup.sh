@@ -32,8 +32,23 @@ USAGE
 
 # --- Output helpers ---
 print_detailed() {
-  # Reads JSON array from stdin, prints detailed blocks
-  jq -r '.[] | "=== MATCH: \(.source) / \(.code) ===\nCode: \(.code)\nName: \(.name)\nSource: \(.source)\nCategory: \(.group.name)\nCategory Description: \(.group.description)\nSeverity: \(.severity)\nDescription: \(.description)\nFixes:\n\(.fixes | map("  - " + .) | join("\n"))\nAliases: \(.aliases | join(", "))\nSee Also: \(.see_also | join(", "))\nVerified: \(.verified_against.source_repo // "?")@\(.verified_against.ref // "?") · anchor: \(.verified_against.anchor // "?") (modified \(.verified_against.anchor_modified // "?")) · audit \(.verified_against.verified_at // "?")\n==="'
+  jq -r '.[] |
+    "=== MATCH: \(.source) / \(.code) ===\n" +
+    "Code: \(.code)\n" +
+    "Name: \(.name)\n" +
+    "Source: \(.source)\n" +
+    "Category: \(.group.name)\n" +
+    "Category Description: \(.group.description)\n" +
+    "Severity: \(.severity)\n" +
+    (if .status then "Status: \(.status)\n" else "" end) +
+    (if .superseded_by and (.superseded_by | length) > 0 then "Superseded by: \(.superseded_by | join(", "))\n" else "" end) +
+    (if .class then "Class: \(.class)\n" else "" end) +
+    "Description: \(.description)\n" +
+    "Fixes:\n\(.fixes | map("  - " + .) | join("\n"))\n" +
+    "Aliases: \(.aliases | join(", "))\n" +
+    "See Also: \(.see_also | join(", "))\n" +
+    "Verified: \(.verified_against.source_repo // "?")@\(.verified_against.ref // "?") · anchor: \(.verified_against.anchor // "?") (modified \(.verified_against.anchor_modified // "?")) · audit \(.verified_against.verified_at // "?")\n" +
+    "==="'
 }
 
 print_compact() {
