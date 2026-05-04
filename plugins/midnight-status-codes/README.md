@@ -105,20 +105,25 @@ Or hand it freeform — the command will interpret and route:
 
 ## Coverage
 
-The catalog spans these sources:
+The catalog spans these sources (the values that appear in each entry's
+`source` field in `codes.json`):
 
-- `midnight-node` — numeric `LedgerApiError` codes (`InvalidTransaction::Custom(u8)`)
+- `midnight-node` — numeric `LedgerApiError` codes (`InvalidTransaction::Custom(u8)`) and Rust-level transaction-validation errors
 - `substrate` — upstream Substrate JSON-RPC envelopes (`AUTHOR`/`SYSTEM`/`CHAIN`/`STATE` 1xxx–8xxx) and DispatchError envelopes
 - `jsonrpc-2.0` — JSON-RPC standard `-326XX` codes
-- `midnight-ledger` — Rust transaction validation errors
 - `midnight-indexer` — GraphQL and HTTP errors
 - `midnight-wallet` — Effect tagged wallet errors
 - `compact-js-sdk` — `@midnight-ntwrk/compact-js` Effect errors
 - `midnight-js` — `@midnight-ntwrk/midnight-js-*` error classes
-- `compact-compiler` — Compact compiler diagnostics and exit codes
-- `midnight-zk` — PLONK, ZKIR, and proof verification errors
-- `proof-server` — HTTP status and job queue errors
+- `compact-compiler` — Compact compiler diagnostics, exit codes, and ZK/PLONK/ZKIR proof errors surfaced at compile time
+- `proof-server` — HTTP status and job queue errors (including proof-generation failures)
 - `dapp-connector` — DApp Connector `APIError` codes
+
+Note: the reference markdown files (`ledger-errors.md`, `zk-errors.md`,
+etc.) are organised by topic for human readers and do not map 1:1 to
+`source` enum values — for example, ledger validation errors are sourced
+from `midnight-node`, and ZK proof errors are sourced from
+`compact-compiler` or `proof-server` depending on where they surface.
 
 ## Provenance (`verified_against`)
 
