@@ -780,7 +780,10 @@
         "InvalidTransaction::Custom(102)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "114",
+        "156"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
         "ref": "main",
@@ -1341,7 +1344,10 @@
         "InvalidTransaction::Custom(114)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "102",
+        "156"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
         "ref": "main",
@@ -5582,10 +5588,10 @@
       "code": "156",
       "name": "ContractNotPresent",
       "source": "midnight-node",
-      "category": "infrastructure",
+      "category": "transaction_invalid",
       "group": {
-        "name": "Infrastructure Errors (150-157, 165)",
-        "description": "Node-side infrastructure failures unrelated to the transaction itself."
+        "name": "Transaction Invalid Errors (100-109, 193-200)",
+        "description": "Transactions that are structurally valid but fail semantic validation."
       },
       "description": "Top-level LedgerApiError::ContractNotPresent — a contract lookup outside of transaction validation found no contract at the address. Distinct from the transaction-time codes 102 (Invalid::ContractNotPresent) and 114 (Malformed::ContractNotPresent).",
       "fixes": [
@@ -5598,9 +5604,9 @@
       ],
       "severity": "error",
       "see_also": [
+        "1010",
         "102",
-        "114",
-        "1010"
+        "114"
       ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
