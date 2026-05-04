@@ -4679,30 +4679,6 @@
       }
     },
     {
-      "code": "failed assert",
-      "name": "failed assert",
-      "source": "compact-compiler",
-      "category": "diagnostic",
-      "description": "A runtime assertion in the contract failed.",
-      "fixes": [
-        "Check the assertion condition and ensure the inputs satisfy it"
-      ],
-      "aliases": [],
-      "severity": "error",
-      "see_also": [],
-      "verified_against": {
-        "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
-        "anchor": "compiler/compactc.ss",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "toolchain": {
-          "compiler": "0.31.101",
-          "language": "0.23.101"
-        }
-      }
-    },
-    {
       "code": "circuit is marked pure but is actually impure",
       "name": "circuit is marked pure but is actually impure",
       "source": "compact-compiler",
