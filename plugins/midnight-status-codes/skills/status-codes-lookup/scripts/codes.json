@@ -9726,6 +9726,33 @@
         "anchor_modified": "2026-03-11",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "50/0",
+      "name": "UrlTooLong",
+      "source": "midnight-node",
+      "category": "system-parameters",
+      "group": {
+        "name": "pallet_system_parameters Errors (index 50)",
+        "description": "Errors emitted by pallet_system_parameters, which manages chain-wide system parameters such as Terms-and-Conditions URLs."
+      },
+      "description": "The provided URL exceeds the maximum allowed length for a system parameter.",
+      "fixes": [
+        "Shorten the URL or host the document at a shorter address; the runtime enforces a hard upper bound on URL length"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 50, error: 0 }",
+        "pallet_system_parameters::Error::UrlTooLong"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/system-parameters/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
