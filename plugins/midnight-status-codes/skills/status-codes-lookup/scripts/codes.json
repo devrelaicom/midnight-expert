@@ -7880,6 +7880,223 @@
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "WalletFacade.MissingProvingService",
+      "name": "MissingProvingService",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Init was called without a proving service or proving-server URL.",
+      "fixes": [
+        "Pass `provingServerUrl` in the config, or supply a custom `provingService` to init."
+      ],
+      "aliases": [
+        "Missing required configuration: 'provingServerUrl'"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.TermsAndConditionsNotSet",
+      "name": "TermsAndConditionsNotSet",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "The chain has no Terms and Conditions state set.",
+      "fixes": [
+        "Operator/governance must set the T&C on-chain before this flow can proceed."
+      ],
+      "aliases": [
+        "Terms and Conditions are not currently set on the network."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.MissingDustIntentSegment",
+      "name": "MissingDustIntentSegment",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Dust generation tx is missing the required intent segment 1.",
+      "fixes": [
+        "Internal SDK error; rebuild the dust generation tx via the facade and report a reproduction if it persists."
+      ],
+      "aliases": [
+        "Dust generation transaction is missing intent segment 1."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoBalancingTransaction",
+      "name": "NoBalancingTransaction",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Balancer produced no balancing transaction.",
+      "fixes": [
+        "Verify that the source transaction has unbalanced inputs/outputs requiring a balancing tx.",
+        "Confirm the source transaction is well-formed."
+      ],
+      "aliases": [
+        "No balancing transaction was created. Please check your transaction."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoOutputsRequired",
+      "name": "NoOutputsRequired",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Transaction has no shielded or unshielded outputs.",
+      "fixes": [
+        "Add at least one output before submitting the transaction."
+      ],
+      "aliases": [
+        "At least one shielded or unshielded output is required."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoSwapsRequired",
+      "name": "NoSwapsRequired",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Swap transaction has no swap entries.",
+      "fixes": [
+        "Add at least one swap entry before submitting the transaction."
+      ],
+      "aliases": [
+        "At least one shielded or unshielded swap is required."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.UnexpectedTransactionState",
+      "name": "UnexpectedTransactionState",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "State machine reached a transitional state it does not expect.",
+      "fixes": [
+        "Internal SDK error; report with a reproduction."
+      ],
+      "aliases": [
+        "Unexpected transaction state."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoNightUtxo",
+      "name": "NoNightUtxo",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Operation requires at least one NIGHT UTXO.",
+      "fixes": [
+        "Acquire NIGHT before submitting this operation."
+      ],
+      "aliases": [
+        "At least one Night UTXO is required."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
