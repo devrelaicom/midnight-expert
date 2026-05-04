@@ -521,41 +521,9 @@ These errors occur when the compiler generates the ZK Intermediate Representatio
 
 ## Runtime Errors
 
-These errors originate from compiled contracts executing in the Midnight runtime, not from the compiler itself.
+Runtime errors thrown by `@midnight-ntwrk/compact-runtime` (`CompactError`, `failed assert`, `type error`, `Version mismatch`, `Maximum field mismatch`, and the type-validation / cast / state-dependency errors) live in their own reference: see [`runtime-errors.md`](runtime-errors.md).
 
-### CompactError base class
-
-`CompactError` is the base class for all contract runtime errors. Catch this type to handle any Compact contract error generically.
-
----
-
-### Failed assertion
-
-**Message:** `"failed assert: <message>"`
-
-**Triggers:** A Compact `assert` expression evaluated to `false` at runtime.
-
-**Fix:** Investigate the assertion condition. The `<message>` text is the string provided to `assert`; use it to locate the assertion in your contract source and determine why the condition was not satisfied.
-
----
-
-### Runtime type error
-
-**Message:** `"type error: <who> <what> at <where>; expected value of type <type> but received <value>"`
-
-**Triggers:** A runtime type mismatch in the generated code, typically caused by a mismatch between declared witness return types and the actual values produced at runtime.
-
-**Fix:** Check witness return types. Ensure that the TypeScript witness implementation returns values that conform to the types declared in the Compact contract.
-
----
-
-### Version mismatch
-
-**Message:** `"Version mismatch: compiled code expects X.Y.Z, runtime is A.B.C"`
-
-**Triggers:** The contract was compiled with one version of the Compact compiler but is being executed against a different version of `@midnight-ntwrk/compact-runtime`.
-
-**Fix:** Update `@midnight-ntwrk/compact-runtime` in your project to the version that matches the compiler used to build the contract, or recompile the contract with the compiler version that matches your runtime.
+The compiler is the *origin* of some of these errors (it generates the runtime code that throws them), but the *surface* — the package whose stack frame appears in user errors — is `@midnight-ntwrk/compact-runtime`. Look up these errors there.
 
 ---
 
