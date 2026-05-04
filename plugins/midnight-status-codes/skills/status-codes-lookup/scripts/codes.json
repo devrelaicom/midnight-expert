@@ -5418,6 +5418,209 @@
       }
     },
     {
+      "code": "another binding found",
+      "name": "Shadowing conflict",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.shadowing-conflict",
+      "group": {
+        "name": "Name Resolution Errors",
+        "description": "Errors raised when the compiler cannot resolve a name to a definition in scope."
+      },
+      "description": "A new binding shadows an existing binding in the same scope in a way the compiler flags as a conflict.",
+      "fixes": [
+        "Rename one of the conflicting bindings so the new declaration does not shadow the existing one",
+        "Move the new binding to an inner scope if shadowing is intentional and permitted there",
+        "Inspect the location reported for the existing binding to determine which declaration to change"
+      ],
+      "aliases": [
+        "another binding found for ~s in the same scope at ~a",
+        "another binding found for <name> in the same scope at <location>",
+        "another binding found"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.frontend.duplicate-binding", "compiler.name-res.unbound-identifier"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#shadowing-conflict",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:215",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "cycle involving",
+      "name": "Circular type alias",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.circular-type-alias",
+      "group": {
+        "name": "Name Resolution Errors",
+        "description": "Errors raised when the compiler cannot resolve a name to a definition in scope."
+      },
+      "description": "Type aliases form a cycle (e.g. `type A = B; type B = A;`) so the compiler cannot resolve them to a concrete type.",
+      "fixes": [
+        "Break the cycle by restructuring the type definitions so one alias resolves to a concrete type",
+        "Replace one of the aliases with the structural type it should expand to",
+        "If the cycle was unintentional, look for a misnamed alias that should reference a different type"
+      ],
+      "aliases": [
+        "cycle involving ~a~?",
+        "cycle involving type ~a",
+        "cycle involving types ~a and ~a",
+        "cycle involving"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.name-res.invalid-context"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#circular-type-alias",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:366",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "invalid context for reference",
+      "name": "Invalid context for name",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.invalid-context",
+      "group": {
+        "name": "Name Resolution Errors",
+        "description": "Errors raised when the compiler cannot resolve a name to a definition in scope."
+      },
+      "description": "A name was used in a position that does not match its kind — typically a type name where a value is expected, or a value name where a type is expected.",
+      "fixes": [
+        "Ensure type names appear in type positions and value names appear in value positions",
+        "If you intended to reference a type, check that the name resolves to a type (struct, enum, alias) and not a function or variable",
+        "If you intended to reference a value, check that the name resolves to a binding rather than a type or generic parameter"
+      ],
+      "aliases": [
+        "invalid context for reference to ~a name ~s",
+        "invalid context for reference to <kind> name <name>",
+        "invalid context for reference"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.name-res.unbound-identifier", "compiler.name-res.no-such-export"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-context-for-name",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:604",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "no such export",
+      "name": "No such export",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.no-such-export",
+      "group": {
+        "name": "Name Resolution Errors",
+        "description": "Errors raised when the compiler cannot resolve a name to a definition in scope."
+      },
+      "description": "An import refers to a name that the imported module does not export.",
+      "fixes": [
+        "Verify the imported name is spelled correctly and exported by the source module",
+        "If the source is your own module, add `export` to the declaration",
+        "If the import is from CompactStandardLibrary, check the API surface of the current language version"
+      ],
+      "aliases": [
+        "no export named ~a in module ~a",
+        "no such export ~s in ~a",
+        "module ~a does not export ~s",
+        "no such export"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.name-res.unbound-identifier"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-export",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:711",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "mismatch between actual number",
+      "name": "Wrong number of generic parameters",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.generic-param-count",
+      "group": {
+        "name": "Name Resolution Errors",
+        "description": "Errors raised when the compiler cannot resolve a name to a definition in scope."
+      },
+      "description": "A generic type or function was applied with the wrong number of type arguments — the actual count does not match the declared count of generic parameters.",
+      "fixes": [
+        "Supply exactly the number of type parameters the declaration requires",
+        "Check the declaration site to confirm the expected arity of generic parameters",
+        "If the call uses inferred type arguments, add explicit ones at the call site to surface the mismatch"
+      ],
+      "aliases": [
+        "mismatch between actual number ~s and declared number ~s of generic parameters for ~s",
+        "mismatch between actual number ~s and declared number ~s of import generic parameters for ~s",
+        "mismatch between actual number ~s and declared number ~s of ADT parameters for ~s",
+        "wrong number of generic parameters",
+        "mismatch between actual number"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.name-res.invalid-context"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#wrong-number-of-generic-parameters",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:846",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "might be referenced before it is assigned",
+      "name": "Possibly uninitialized variable",
+      "source": "compact-compiler",
+      "category": "diagnostic",
+      "phase": "name-res",
+      "id": "compiler.name-res.possibly-uninitialized",
+      "group": {
+        "name": "Name Resolution Errors",
+        "description": "Errors raised when the compiler cannot resolve a name to a definition in scope."
+      },
+      "description": "The compiler's data-flow analysis determined that a variable may be used before it is definitively assigned on all control-flow paths.",
+      "fixes": [
+        "Reorder bindings or add an initialization so the variable is always assigned before use",
+        "Initialize the variable at its declaration site with a default value",
+        "Restructure conditional branches so every path assigns the variable before it is read"
+      ],
+      "aliases": [
+        "identifier ~s might be referenced before it is assigned",
+        "identifier <name> might be referenced before it is assigned",
+        "might be referenced before it is assigned",
+        "possibly uninitialized variable"
+      ],
+      "severity": "error",
+      "see_also": ["compiler.name-res.unbound-identifier"],
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#possibly-uninitialized-variable",
+      "verified_against": {
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "compactc-v0.31.0",
+        "anchor": "compiler/analysis-passes.ss:1118",
+        "anchor_modified": "2026-04-29",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
       "code": "dapp-connector/Disconnected",
       "name": "Disconnected",
       "source": "dapp-connector",
