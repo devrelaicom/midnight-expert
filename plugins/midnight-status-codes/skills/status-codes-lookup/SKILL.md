@@ -83,6 +83,8 @@ bash ${CLAUDE_SKILL_DIR}/scripts/lookup.sh --category deserialization
 Code: <code>
 Name: <name>
 Source: <source>
+Phase: <pipeline phase>            # compact-compiler entries only
+ID: <stable slug>
 Category: <group name>
 Category Description: <group description>
 Severity: <error|warning|info>
@@ -92,8 +94,15 @@ Fixes:
   - <another suggestion>
 Aliases: <comma-separated alternative names>
 See Also: <related codes>
+Verified: <repo>@<ref> · anchor: <file:line>
+Reference: <plugin-relative path>#<heading-slug>
+--- Begin reference section ---
+<resolved anchor body from the referenced markdown file>
+--- End reference section ---
 ===
 ```
+
+The reference body between the `--- Begin reference section ---` and `--- End reference section ---` markers is resolved mechanically by `resolve-anchor.sh`: the script locates the heading whose slug matches the URL fragment in `reference_anchor` and copies the bytes from that heading down to (but not including) the next heading at the same or shallower depth. There is no LLM summarisation in this path. If the anchor cannot be resolved, lookup output prints `Reference: BROKEN` (or `(anchor resolution failed: <reason>)` inside the section block) instead of silently producing prose -- treat that as a data bug to fix in `codes.json`, not as an answer.
 
 ### Compact Table (from `--source`, `--category`, or `--search` with >5 results)
 
@@ -114,6 +123,38 @@ Code | Name | Category | Severity
 - **Aliases** are alternative names the same error is known by in different contexts (e.g., the Rust path vs. the Substrate encoding).
 - **See Also** points to related errors that often co-occur or share root causes.
 - **Severity**: `error` = must be resolved, `warning` = should investigate, `info` = informational status.
+
+## Phase axis (compact-compiler entries)
+
+Compact-compiler entries carry an additional `phase` field naming the pipeline stage that produced the diagnostic. Phases narrow investigation to a small set of upstream source files in `LFDT-Minokawa/compact`:
+
+| Phase | Source files | Examples |
+|---|---|---|
+| `lexer` | `compiler/lexer.ss` | unexpected EOF, invalid leading zero |
+| `parser` | `compiler/parser.ss` | parse error, unrecognized pragma |
+| `frontend` | `compiler/frontend-passes.ss` | include cycle, return in for |
+| `name-res` | `compiler/analysis-passes.ss` (early) | unbound identifier, no such export |
+| `type-check` | `compiler/analysis-passes.ss`, `circuit-passes.ss` | branch type mismatch, no compatible function |
+| `witness` | `compiler/analysis-passes.ss` | undeclared witness disclosure |
+| `purity` | `compiler/analysis-passes.ss` | exported circuit modifies sealed field |
+| `zkir` | `compiler/zkir-passes.ss`, `zkir-v3-passes.ss`, `passes.ss` | cross-contract not supported, ZKIR non-zero exit |
+| `exit` | `compiler/program-common.ss` | exit:0 / exit:1 / exit:254 / exit:255 |
+| `runtime` | `runtime/src/error.ts` | failed assert, version mismatch |
+| `external` | various | malformed contract-info file, source-file I/O |
+
+Diagnostics from other components do not use `phase`.
+
+## Coverage audit
+
+`audit-compiler-coverage.sh` is the regression guard for compiler bumps. It walks the upstream compiler tree pinned to `verified_against.ref` (currently `compactc-v0.31.0`), extracts every diagnostic template the compiler can emit, and reports any template that is not covered by some entry's `code`/`aliases` and not explicitly waived in `coverage-allowlist.txt`.
+
+Run it with:
+
+```bash
+bash ${CLAUDE_SKILL_DIR}/scripts/audit-compiler-coverage.sh
+```
+
+The script clones the upstream compiler into `/tmp/compact-stable-<ref>` if no local clone is present, so the first run on a fresh machine takes longer. The expected future bump workflow is: bump `verified_against.ref` on a representative compiler entry, re-run the audit, then hand-curate the delta of newly-uncovered templates into fresh entries (or onto the allowlist with justification).
 
 ## When to Use This vs. Reference Files
 
