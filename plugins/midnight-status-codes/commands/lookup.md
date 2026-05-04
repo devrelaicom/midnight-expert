@@ -22,6 +22,8 @@ Parse `$ARGUMENTS` to determine the lookup mode. The script supports these flags
 | `--source <name>` | List all codes from a source |
 | `--sources` | List all available sources |
 | `--category <name>` | List all codes in a category |
+| `--status active\|retired\|all` | Global filter on entry `.status` (default: `all`). Use `active` to suppress retired umbrella entries when working on new code paths. |
+| `--json` | Global flag — emit a JSON array of matched entries verbatim from `codes.json` instead of the `=== MATCH ===` text format. |
 
 ### Structured Input
 
@@ -40,20 +42,24 @@ If `$ARGUMENTS` does not contain a recognized flag, interpret it:
 | Contains "find", "search", "about", "related to", "involving" | `--search <extracted-keywords-as-regex>` |
 | Anything else | `--search <arguments-as-regex>` |
 
-**Source name matching:** Match freeform names to canonical source names:
+**Source name matching:** Match freeform names to canonical sources. The canonical source enum is fixed (see `--sources`). When a user names something that is not its own source — e.g. "ledger errors" or "zk codes" are surfaced *by* the node, compiler, runtime, and SDK rather than published as a standalone source — fall through to `--search` instead of inventing a source.
 
-| Freeform | Canonical Source |
-|----------|-----------------|
-| node, midnight node, midnight-node | `midnight-node` |
-| sdk, compact-js, compact js | `compact-js-sdk` |
-| js, midnight-js, midnight js | `midnight-js` |
-| wallet, midnight-wallet | `midnight-wallet` |
-| compiler, compact compiler | `compact-compiler` |
-| zk, proof, zero knowledge, midnight-zk | `midnight-zk` |
-| ledger, midnight-ledger | `midnight-ledger` |
-| proof server, prover, proof-server | `proof-server` |
-| indexer, midnight-indexer, graphql | `midnight-indexer` |
-| dapp connector, lace, dapp-connector | `dapp-connector` |
+| Freeform | Route |
+|----------|-------|
+| node, midnight node, midnight-node | `--source midnight-node` |
+| sdk, compact-js, compact js | `--source compact-js-sdk` |
+| js, midnight-js, midnight js | `--source midnight-js` |
+| wallet, midnight-wallet | `--source midnight-wallet` |
+| compiler, compact compiler | `--source compact-compiler` |
+| runtime, compact runtime, compact-runtime | `--source compact-runtime` |
+| proof server, prover, proof-server | `--source proof-server` |
+| indexer, midnight-indexer, graphql | `--source midnight-indexer` |
+| dapp connector, lace, dapp-connector | `--source dapp-connector` |
+| substrate | `--source substrate` |
+| jsonrpc, json-rpc, jsonrpc-2.0 | `--source jsonrpc-2.0` |
+| partner chains, partner-chains | `--source partner-chains` |
+| zk, proof, zero knowledge, midnight-zk | `--search '(?i)\bzk\|zero[- ]?knowledge\|proof\b'` *(no standalone `midnight-zk` source — ZK codes live across compact-compiler, compact-js-sdk, midnight-node)* |
+| ledger, midnight-ledger | `--search '(?i)ledger'` *(no standalone `midnight-ledger` source — ledger codes live in midnight-node, midnight-wallet, compact-compiler)* |
 
 ## Step 3: Execute Lookup
 

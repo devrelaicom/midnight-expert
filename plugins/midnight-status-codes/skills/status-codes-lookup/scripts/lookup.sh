@@ -18,7 +18,7 @@ fi
 # --- Usage ---
 usage() {
   cat <<'USAGE'
-Usage: lookup.sh <mode> <value>
+Usage: lookup.sh [global flags] <mode> [value]
 
 Modes:
   --code <value>       Exact match on code, name, or aliases (case-insensitive)
@@ -26,11 +26,83 @@ Modes:
   --source <name>      List all codes for a source
   --sources            List all available sources with counts
   --category <name>    List all codes in a category
+
+Global flags (any mode):
+  --json                  Emit a JSON array of matched entries (verbatim from codes.json)
+                          instead of the human/agent-friendly === MATCH === format.
+  --status <value>        Filter by entry .status. One of: active | retired | all (default).
+                          Entries with no .status field are treated as "active".
 USAGE
   exit 1
 }
 
+# --- Argument parsing ---
+JSON=0
+STATUS_FILTER="all"
+ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --json)   JSON=1; shift ;;
+    --status)
+      [[ $# -ge 2 ]] || { echo "ERROR: --status requires a value (active|retired|all)" >&2; exit 1; }
+      case "$2" in
+        active|retired|all) STATUS_FILTER="$2" ;;
+        *) echo "ERROR: --status must be one of: active, retired, all (got: $2)" >&2; exit 1 ;;
+      esac
+      shift 2
+      ;;
+    -h|--help) usage ;;
+    *) ARGS+=("$1"); shift ;;
+  esac
+done
+
+set -- "${ARGS[@]:-}"
+
+if [[ $# -lt 1 ]]; then
+  usage
+fi
+
+MODE="$1"
+VALUE="${2:-}"
+
+# --- Status filter helper ---
+# Reads a JSON array from stdin and filters entries by their .status field
+# (treating absent .status as "active") according to $STATUS_FILTER.
+apply_status_filter() {
+  jq --arg mode "$STATUS_FILTER" '
+    if $mode == "all" then .
+    else
+      [ .[] | select(((.status // "active")) == $mode) ]
+    end
+  '
+}
+
 # --- Output helpers ---
+emit_results() {
+  # Reads JSON array from stdin and either prints --json verbatim or the
+  # === MATCH === detail block via print_detailed.
+  local input
+  input=$(cat)
+  if [[ "$JSON" -eq 1 ]]; then
+    echo "$input" | jq '.'
+  else
+    echo "$input" | print_detailed
+  fi
+}
+
+emit_compact_or_json() {
+  # Used by list-style modes (--source, --category). With --json, emit the
+  # filtered array verbatim; otherwise render the existing compact table.
+  local header="$1"
+  local input
+  input=$(cat)
+  if [[ "$JSON" -eq 1 ]]; then
+    echo "$input" | jq '.'
+  else
+    echo "$input" | print_compact "$header"
+  fi
+}
+
 print_detailed() {
   # Reads JSON array from stdin, prints detailed blocks per entry, then resolves
   # any reference_anchor to verbatim markdown via resolve-anchor.sh.
@@ -104,14 +176,6 @@ print_compact() {
   echo "==="
 }
 
-# --- Argument parsing ---
-if [[ $# -lt 1 ]]; then
-  usage
-fi
-
-MODE="$1"
-VALUE="${2:-}"
-
 case "$MODE" in
   --code)
     [[ -z "$VALUE" ]] && { echo "ERROR: --code requires a value" >&2; exit 1; }
@@ -121,12 +185,17 @@ case "$MODE" in
       (.name | ascii_downcase) == $val or
       (.aliases | map(ascii_downcase) | any(. == $val))
     )]' "$CODES_FILE")
+    RESULTS=$(echo "$RESULTS" | apply_status_filter)
     COUNT=$(echo "$RESULTS" | jq 'length')
     if [[ "$COUNT" -eq 0 ]]; then
-      echo "No match found for code: $VALUE"
+      if [[ "$JSON" -eq 1 ]]; then
+        echo "[]"
+      else
+        echo "No match found for code: $VALUE"
+      fi
       exit 0
     fi
-    echo "$RESULTS" | print_detailed
+    echo "$RESULTS" | emit_results
     ;;
 
   --search)
@@ -138,12 +207,19 @@ case "$MODE" in
       (.category | test($pat; "i")) or
       (.aliases | any(test($pat; "i")))
     )]' "$CODES_FILE")
+    RESULTS=$(echo "$RESULTS" | apply_status_filter)
     COUNT=$(echo "$RESULTS" | jq 'length')
     if [[ "$COUNT" -eq 0 ]]; then
-      echo "No matches found for search: $VALUE"
+      if [[ "$JSON" -eq 1 ]]; then
+        echo "[]"
+      else
+        echo "No matches found for search: $VALUE"
+      fi
       exit 0
     fi
-    if [[ "$COUNT" -le 5 ]]; then
+    if [[ "$JSON" -eq 1 ]]; then
+      echo "$RESULTS" | jq '.'
+    elif [[ "$COUNT" -le 5 ]]; then
       echo "$RESULTS" | print_detailed
     else
       echo "$RESULTS" | print_compact "=== SEARCH: \"$VALUE\" ($COUNT entries) ==="
@@ -153,27 +229,57 @@ case "$MODE" in
   --source)
     [[ -z "$VALUE" ]] && { echo "ERROR: --source requires a value" >&2; exit 1; }
     RESULTS=$(jq --arg src "$VALUE" '[.entries[] | select(.source == $src)]' "$CODES_FILE")
+    RESULTS=$(echo "$RESULTS" | apply_status_filter)
     COUNT=$(echo "$RESULTS" | jq 'length')
     if [[ "$COUNT" -eq 0 ]]; then
-      echo "No entries found for source: $VALUE"
+      if [[ "$JSON" -eq 1 ]]; then
+        echo "[]"
+      else
+        echo "No entries found for source: $VALUE"
+      fi
       exit 0
     fi
-    echo "$RESULTS" | print_compact "=== SOURCE: $VALUE ($COUNT entries) ==="
+    echo "$RESULTS" | emit_compact_or_json "=== SOURCE: $VALUE ($COUNT entries) ==="
     ;;
 
   --sources)
-    jq -r '[.entries[].source] | group_by(.) | map({source: .[0], count: length}) | sort_by(.source) | .[] | "\(.source): \(.count) entries"' "$CODES_FILE"
+    if [[ "$JSON" -eq 1 ]]; then
+      jq --arg mode "$STATUS_FILTER" '
+        [ .entries[]
+          | select($mode == "all" or ((.status // "active") == $mode))
+          | .source ]
+        | group_by(.)
+        | map({source: .[0], count: length})
+        | sort_by(.source)
+      ' "$CODES_FILE"
+    else
+      jq --arg mode "$STATUS_FILTER" -r '
+        [ .entries[]
+          | select($mode == "all" or ((.status // "active") == $mode))
+          | .source ]
+        | group_by(.)
+        | map({source: .[0], count: length})
+        | sort_by(.source)
+        | .[]
+        | "\(.source): \(.count) entries"
+      ' "$CODES_FILE"
+    fi
     ;;
 
   --category)
     [[ -z "$VALUE" ]] && { echo "ERROR: --category requires a value" >&2; exit 1; }
     RESULTS=$(jq --arg cat "$VALUE" '[.entries[] | select(.category == $cat)]' "$CODES_FILE")
+    RESULTS=$(echo "$RESULTS" | apply_status_filter)
     COUNT=$(echo "$RESULTS" | jq 'length')
     if [[ "$COUNT" -eq 0 ]]; then
-      echo "No entries found for category: $VALUE"
+      if [[ "$JSON" -eq 1 ]]; then
+        echo "[]"
+      else
+        echo "No entries found for category: $VALUE"
+      fi
       exit 0
     fi
-    echo "$RESULTS" | print_compact "=== CATEGORY: $VALUE ($COUNT entries) ==="
+    echo "$RESULTS" | emit_compact_or_json "=== CATEGORY: $VALUE ($COUNT entries) ==="
     ;;
 
   *)

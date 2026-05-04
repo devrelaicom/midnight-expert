@@ -1,0 +1,9 @@
+# Claude Code working state — never commit into a plugin tree
+.claude/
+
+# Plugin-local settings (per-project overrides)
+.midnight-expert/settings.local.json
+
+# OS / editor cruft
+.DS_Store
+*.swp

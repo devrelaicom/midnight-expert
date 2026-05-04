@@ -6,7 +6,7 @@
 
 Catalog and lookup for all Midnight ecosystem error codes, status codes,
 and error types across the node, ledger, indexer, wallet, SDK, compiler,
-proof server, and DApp connector. Use it when you hit a bare numeric
+compact runtime, proof server, and DApp connector. Use it when you hit a bare numeric
 code, a tagged Effect error, a compiler diagnostic, or an HTTP status
 from a Midnight service and need to know what produced it and how to
 fix it — without grepping nine repos by hand.
@@ -33,6 +33,7 @@ Connector API errors.
 | [compiler-errors.md](skills/status-codes/references/compiler-errors.md) | Compact compiler diagnostics, exit codes, and source-located messages |
 | [zk-errors.md](skills/status-codes/references/zk-errors.md) | PLONK, ZKIR, constraint system, and proof verification errors |
 | [ledger-errors.md](skills/status-codes/references/ledger-errors.md) | Rust-level transaction validation and malformed-transaction errors |
+| [runtime-errors.md](skills/status-codes/references/runtime-errors.md) | `@midnight-ntwrk/compact-runtime` `CompactError` subclasses and assertion / type-error throws at contract execution time |
 | [proof-server-errors.md](skills/status-codes/references/proof-server-errors.md) | HTTP status codes and job queue errors from the proof server (port 6300) |
 | [indexer-errors.md](skills/status-codes/references/indexer-errors.md) | GraphQL and HTTP errors from the Midnight indexer (port 8088) |
 | [dapp-connector-errors.md](skills/status-codes/references/dapp-connector-errors.md) | DApp Connector `APIError` codes (`Disconnected`, `Rejected`, etc.) |
@@ -54,7 +55,7 @@ Each entry in `codes.json` has the following fields:
 |---|---|---|---|
 | `code` | string | yes | The code, name, or identifier the user pastes (e.g. `"166"`, `"400/JobNotPending"`, `"InvalidNetworkIdError"`). |
 | `name` | string | yes | Canonical name. |
-| `source` | string | yes | One of `midnight-node`, `substrate`, `jsonrpc-2.0`, `compact-compiler`, `compact-js-sdk`, `midnight-js`, `midnight-wallet`, `midnight-indexer`, `proof-server`, `dapp-connector`. |
+| `source` | string | yes | One of `midnight-node`, `substrate`, `jsonrpc-2.0`, `partner-chains`, `compact-compiler`, `compact-runtime`, `compact-js-sdk`, `midnight-js`, `midnight-wallet`, `midnight-indexer`, `proof-server`, `dapp-connector`. |
 | `category` | string | yes | Used by `--category` filter. |
 | `group` | object | yes | `{ name, description }` shown in detailed match output. |
 | `description` | string | yes | What the error means. |
@@ -112,11 +113,13 @@ The catalog spans these sources (the values that appear in each entry's
 - `midnight-node` — numeric `LedgerApiError` codes (`InvalidTransaction::Custom(u8)`) and Rust-level transaction-validation errors
 - `substrate` — upstream Substrate JSON-RPC envelopes (`AUTHOR`/`SYSTEM`/`CHAIN`/`STATE` 1xxx–8xxx) and DispatchError envelopes
 - `jsonrpc-2.0` — JSON-RPC standard `-326XX` codes
+- `partner-chains` — partner-chain bridge inherent and federated-authority errors surfaced through the node runtime
 - `midnight-indexer` — GraphQL and HTTP errors
 - `midnight-wallet` — Effect tagged wallet errors
 - `compact-js-sdk` — `@midnight-ntwrk/compact-js` Effect errors
 - `midnight-js` — `@midnight-ntwrk/midnight-js-*` error classes
 - `compact-compiler` — Compact compiler diagnostics, exit codes, and ZK/PLONK/ZKIR proof errors surfaced at compile time
+- `compact-runtime` — `@midnight-ntwrk/compact-runtime` `CompactError` subclasses and assertion / type-error throws raised when a contract executes
 - `proof-server` — HTTP status and job queue errors (including proof-generation failures)
 - `dapp-connector` — DApp Connector `APIError` codes
 
@@ -125,6 +128,36 @@ etc.) are organised by topic for human readers and do not map 1:1 to
 `source` enum values — for example, ledger validation errors are sourced
 from `midnight-node`, and ZK proof errors are sourced from
 `compact-compiler` or `proof-server` depending on where they surface.
+
+## Authoring `reference_anchor` values
+
+The slug algorithm in `resolve-anchor.sh` deliberately diverges from GitHub's
+slugger (drops underscores, em-dashes, slashes; collapses runs of hyphens).
+Compute slugs through the helper rather than guessing:
+
+```
+skills/status-codes-lookup/scripts/bin/anchor-for-heading.sh "Heading text"
+# -> heading-text
+
+skills/status-codes-lookup/scripts/bin/anchor-for-heading.sh \
+  skills/status-codes/references/foo.md "Heading text"
+# -> skills/status-codes/references/foo.md#heading-text
+```
+
+`check-schema.sh` round-trips every `reference_anchor` through the resolver and
+fails CI if a slug doesn't reproduce from its target heading.
+
+## Tests
+
+Run all fast checks (schema, lookup, resolver, renderer) with the single entry
+point:
+
+```
+bash skills/status-codes-lookup/scripts/tests/run.sh
+```
+
+Add `--with-coverage` to also run `tests/test-coverage.sh`, which clones the
+upstream compiler (multi-MB).
 
 ## Provenance (`verified_against`)
 

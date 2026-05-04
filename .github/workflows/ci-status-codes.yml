@@ -1,0 +1,34 @@
+name: CI - Status Codes
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'plugins/midnight-status-codes/**'
+      - '.github/workflows/ci-status-codes.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'plugins/midnight-status-codes/**'
+      - '.github/workflows/ci-status-codes.yml'
+
+jobs:
+  schema-and-resolver:
+    name: Schema + resolver/renderer tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run test suite
+        # tests/run.sh sequences:
+        #   - check-schema.sh
+        #   - test_lookup.sh
+        #   - tests/test-resolve-anchor.sh
+        #   - tests/test-lookup-renders-anchor.sh
+        # The opt-in tests/test-coverage.sh (which clones the upstream compiler)
+        # is intentionally NOT run here.
+        run: bash plugins/midnight-status-codes/skills/status-codes-lookup/scripts/tests/run.sh

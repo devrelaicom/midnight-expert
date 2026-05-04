@@ -11402,7 +11402,7 @@
       ],
       "severity": "error",
       "see_also": [],
-      "reference_anchor": "skills/status-codes/references/compiler-errors.md#fold-first-argument--return-type-mismatch",
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#fold-first-argument-return-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "compactc-v0.31.0",
@@ -11662,7 +11662,7 @@
       "see_also": [
         "compiler.warning.rename-not-applied"
       ],
-      "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-old-standard-library--ledger-operator-name",
+      "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-old-standard-library-ledger-operator-name",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
         "ref": "compactc-v0.31.0",

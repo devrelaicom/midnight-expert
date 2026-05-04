@@ -4,7 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CODES_FILE="$SCRIPT_DIR/codes.json"
 ALLOWLIST="$SCRIPT_DIR/coverage-allowlist.txt"
-DEFAULT_CLONE_DIR="${COMPACT_CLONE_DIR:-/tmp/compact-stable}"
+# Persistent cache survives reboots and avoids re-cloning. Honours XDG_CACHE_HOME
+# and an explicit COMPACT_CLONE_DIR override (back-compat with old /tmp paths).
+CACHE_ROOT="${XDG_CACHE_HOME:-$HOME/.cache}/midnight-status-codes"
+DEFAULT_CLONE_DIR="${COMPACT_CLONE_DIR:-$CACHE_ROOT/compact-stable}"
 
 if ! command -v jq >/dev/null; then
   echo "ERROR: jq required" >&2; exit 1
@@ -22,7 +25,8 @@ fi
 if [[ -d "$DEFAULT_CLONE_DIR/compiler" ]]; then
   CLONE_DIR="$DEFAULT_CLONE_DIR"
 else
-  CLONE_DIR="/tmp/compact-stable-$REF"
+  CLONE_DIR="$CACHE_ROOT/compact-$REF"
+  mkdir -p "$CACHE_ROOT"
   if [[ ! -d "$CLONE_DIR/compiler" ]]; then
     echo "Cloning $REF into $CLONE_DIR ..." >&2
     git clone --depth 1 --branch "$REF" https://github.com/LFDT-Minokawa/compact "$CLONE_DIR" >&2
@@ -38,9 +42,9 @@ normalize() {
 }
 
 extract_templates() {
-  local files
-  files=$(find "$CLONE_DIR/compiler" "$CLONE_DIR/runtime" -type f \( -name '*.ss' -o -name '*.ts' \) 2>/dev/null)
-  for f in $files; do
+  # NUL-delimited iteration so paths containing whitespace, newlines, or other
+  # awkward characters survive intact.
+  while IFS= read -r -d '' f; do
     # Join continuation lines so each macro invocation lives on a single
     # logical line. We look forward up to 3 lines after a target macro name
     # and stop once we have seen a quoted string — that captures the common
@@ -60,7 +64,7 @@ extract_templates() {
       }
       { print }
     ' "$f"
-  done \
+  done < <(find "$CLONE_DIR/compiler" "$CLONE_DIR/runtime" -type f \( -name '*.ss' -o -name '*.ts' \) -print0 2>/dev/null) \
     | grep -Eo '\((source-errorf|pending-errorf|external-errorf|source-warningf|error-accessing-file)[^"]*"[^"]*"' \
     | sed -E 's/^[^"]*"([^"]*)".*$/\1/' \
     | normalize \
