@@ -26,3 +26,20 @@ Inside third.
 ## Section with `code` and (parens)
 
 Body for code/parens.
+
+## Section with fenced code block
+
+Some intro text.
+
+```python
+# this is a comment, not a heading
+## still not a heading
+def foo():
+    pass
+```
+
+Trailing prose after the fence.
+
+## Section after fenced
+
+Body of section after fenced.

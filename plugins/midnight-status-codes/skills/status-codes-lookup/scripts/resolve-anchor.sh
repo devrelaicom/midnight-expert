@@ -7,13 +7,16 @@ Usage:
   resolve-anchor.sh --slug <heading-text>
   resolve-anchor.sh --extract <markdown-path> <slug>
 
---slug      Print the GitHub-style slug for a heading text.
+--slug      Print the slug for a heading text (see slugify() docstring).
 --extract   Print the section under <slug> in <markdown-path>, up to the next
             heading at the same or higher level. Exits non-zero if not found.
 EOF
   exit 2
 }
 
+# Internal slug algorithm — round-trip contract with --slug mode.
+# Diverges from GitHub's slugger (drops underscores, em-dashes, slashes).
+# Generate reference_anchor values via this script, not from rendered HTML.
 slugify() {
   awk '
     {
@@ -43,6 +46,15 @@ extract_section() {
       sub(/^-+/, "", s)
       sub(/-+$/, "", s)
       return s
+    }
+    /^[ \t]{0,3}(```|~~~)/ {
+      in_fence = !in_fence
+      if (capturing) print
+      next
+    }
+    in_fence {
+      if (capturing) print
+      next
     }
     {
       line = $0
