@@ -46,6 +46,28 @@ counts. Detailed matches include severity, ordered fix suggestions,
 aliases, and cross-references; large result sets fall back to a compact
 table. Requires `jq`.
 
+## `codes.json` schema
+
+Each entry in `codes.json` has the following fields:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `code` | string | yes | The code, name, or identifier the user pastes (e.g. `"166"`, `"400/JobNotPending"`, `"InvalidNetworkIdError"`). |
+| `name` | string | yes | Canonical name. |
+| `source` | string | yes | One of `midnight-node`, `substrate`, `jsonrpc-2.0`, `compact-compiler`, `compact-js-sdk`, `midnight-js`, `midnight-wallet`, `midnight-indexer`, `proof-server`, `dapp-connector`. |
+| `category` | string | yes | Used by `--category` filter. |
+| `group` | object | yes | `{ name, description }` shown in detailed match output. |
+| `description` | string | yes | What the error means. |
+| `fixes` | array of string | yes | Ordered remediation suggestions. |
+| `aliases` | array of string | yes | Alternative names the lookup matches against. |
+| `severity` | string | yes | `error` \| `warning` \| `info`. |
+| `see_also` | array of string | yes | Related entry codes. |
+| `verified_against` | object | yes | `{ source_repo, ref, anchor, anchor_modified, verified_at }`. |
+| `verified_against.extra_refs` | array of `{ source_repo, ref, anchor, anchor_modified }` | no | Additional upstream sources cross-referenced when an entry's behavior is co-determined by more than one repo (e.g. an indexer entry whose 400 paths come from `async-graphql-axum`). |
+| `status` | string | no | `"active"` (default, may be omitted) or `"retired"`. A retired entry is one no current emitter produces but older deployed components may still surface; lookup continues to return it. |
+| `superseded_by` | array of string | no | Code values that replaced a retired umbrella. Lookup output prints `Superseded by:` when present. |
+| `class` | string \| null | no | For SDK/JS sources only: the JS class name (`"TaggedError:WalletError"`, `"Error"`, `"TypeError"`, or `null` for untagged throws). |
+
 ## Command
 
 ### /midnight-status-codes:lookup
@@ -84,20 +106,25 @@ Or hand it freeform — the command will interpret and route:
 
 ## Coverage
 
-The catalog spans these sources:
+The catalog spans these sources (the values that appear in each entry's
+`source` field in `codes.json`):
 
-- `midnight-node` — numeric `LedgerApiError` codes (`InvalidTransaction::Custom(u8)`)
+- `midnight-node` — numeric `LedgerApiError` codes (`InvalidTransaction::Custom(u8)`) and Rust-level transaction-validation errors
 - `substrate` — upstream Substrate JSON-RPC envelopes (`AUTHOR`/`SYSTEM`/`CHAIN`/`STATE` 1xxx–8xxx) and DispatchError envelopes
 - `jsonrpc-2.0` — JSON-RPC standard `-326XX` codes
-- `midnight-ledger` — Rust transaction validation errors
 - `midnight-indexer` — GraphQL and HTTP errors
 - `midnight-wallet` — Effect tagged wallet errors
 - `compact-js-sdk` — `@midnight-ntwrk/compact-js` Effect errors
 - `midnight-js` — `@midnight-ntwrk/midnight-js-*` error classes
-- `compact-compiler` — Compact compiler diagnostics and exit codes
-- `midnight-zk` — PLONK, ZKIR, and proof verification errors
-- `proof-server` — HTTP status and job queue errors
+- `compact-compiler` — Compact compiler diagnostics, exit codes, and ZK/PLONK/ZKIR proof errors surfaced at compile time
+- `proof-server` — HTTP status and job queue errors (including proof-generation failures)
 - `dapp-connector` — DApp Connector `APIError` codes
+
+Note: the reference markdown files (`ledger-errors.md`, `zk-errors.md`,
+etc.) are organised by topic for human readers and do not map 1:1 to
+`source` enum values — for example, ledger validation errors are sourced
+from `midnight-node`, and ZK proof errors are sourced from
+`compact-compiler` or `proof-server` depending on where they surface.
 
 ## Provenance (`verified_against`)
 

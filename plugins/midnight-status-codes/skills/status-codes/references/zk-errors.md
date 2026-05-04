@@ -63,7 +63,22 @@ Source: `zkir/src/error.rs` (present on `main` and at the `midnight-proofs-v0.7.
 | `Unsupported(Operation, Vec<IrType>)` | "{op:?} is not supported on {t:?}" | Operation not supported for these types |
 | `Other(String)` | "{s}" | Catch-all; check message for specifics |
 
-Common `Other` messages observed in practice (not exhaustively verified against source): "invalid length", "cannot convert {x} to Bytes({n})", "underflow subtracting {b} from {a}"
+Verified `Other` messages constructed at `midnight-proofs-v0.7.0` (full enumeration of `Error::Other(...)` constructor sites in the `zkir` crate):
+
+| Message (verbatim format-string) | Source file |
+|----------------------------------|-------------|
+| `"cannot convert {:?} to {:?}"` (e.g. `cannot convert Bool to "Native"`, `cannot convert BigUint(7) to "Native"`, `cannot convert Native to "Bytes"`) — emitted by the `TryFrom<IrValue>` macro for every typed extractor | `zkir/src/types.rs` |
+| `"invalid length"` (off-circuit and in-circuit inner-product when `v.len() != w.len()` or empty) | `zkir/src/instructions/operations/inner_product.rs` |
+| `"underflow subtracting {b} from {a}"` (BigUint subtraction when `a < b`) | `zkir/src/instructions/operations/sub.rs` |
+| `"cannot convert {x} to Bytes({n})"` and `"cannot convert {big} to Bytes({n})"` | `zkir/src/instructions/operations/into_bytes.rs` |
+| `"cannot convert {bytes:?} to JubjubPoint"` and `"expecting Bytes(n), got {:?}"` (from-bytes-incircuit) | `zkir/src/instructions/operations/from_bytes.rs` |
+| `"assertion violated: {:?} == {:?}"` (off-circuit `AssertEqual` failure) | `zkir/src/parser/offcircuit.rs` |
+| `"assertion violated: {:?} != {:?}"` (off-circuit `AssertNotEqual` failure) | `zkir/src/parser/offcircuit.rs` |
+| `"expecting Bytes(n), got {:?}"` (off-circuit `FromBytes` input not Bytes) | `zkir/src/parser/offcircuit.rs` |
+| `"invalid format: {value}"` (constant parsing in `parse_constant`) | `zkir/src/utils/constants.rs` |
+| `"{e}"` (serde_json error during `ZkirRelation::read`) | `zkir/src/zkir.rs` |
+
+Plus the implicit `From<plonk::Error> for Error` conversion in `zkir/src/error.rs` wraps any PLONK error as `Error::Other(format!("{error:?}"))` — so any PLONK failure surfaced through ZKIR will appear here with the Debug-format of the underlying `plonk::Error`.
 
 ## IVC Errors
 

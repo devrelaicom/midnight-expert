@@ -780,7 +780,10 @@
         "InvalidTransaction::Custom(102)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "114",
+        "156"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
         "ref": "main",
@@ -814,7 +817,14 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "239",
+        "240",
+        "241",
+        "250"
+      ]
     },
     {
       "code": "104",
@@ -1010,7 +1020,13 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "242",
+        "243",
+        "244"
+      ]
     },
     {
       "code": "194",
@@ -1328,7 +1344,10 @@
         "InvalidTransaction::Custom(114)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "102",
+        "156"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
         "ref": "main",
@@ -1687,7 +1706,14 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "235",
+        "236",
+        "237",
+        "238"
+      ]
     },
     {
       "code": "128",
@@ -2259,7 +2285,12 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "233",
+        "234"
+      ]
     },
     {
       "code": "175",
@@ -2481,7 +2512,13 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "228",
+        "229",
+        "230"
+      ]
     },
     {
       "code": "183",
@@ -2592,7 +2629,17 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "212",
+        "213",
+        "214",
+        "215",
+        "216",
+        "217",
+        "218"
+      ]
     },
     {
       "code": "187",
@@ -2622,7 +2669,13 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "225",
+        "226",
+        "227"
+      ]
     },
     {
       "code": "188",
@@ -2652,7 +2705,16 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "219",
+        "220",
+        "221",
+        "222",
+        "223",
+        "224"
+      ]
     },
     {
       "code": "189",
@@ -3097,7 +3159,13 @@
         "anchor": "ledger/src/versions/common/types.rs",
         "anchor_modified": "2026-05-01",
         "verified_at": "2026-05-04"
-      }
+      },
+      "status": "retired",
+      "superseded_by": [
+        "245",
+        "246",
+        "247"
+      ]
     },
     {
       "code": "206",
@@ -5970,21 +6038,40 @@
       "name": "BadRequest",
       "source": "midnight-indexer",
       "category": "http-status",
-      "description": "The indexer received a malformed or invalid request.",
+      "description": "Returned by async-graphql-axum's GraphQLRequest extractor when the request body cannot be parsed into a GraphQL request. Triggers: malformed JSON body (InvalidRequest), JSON-array batch sent to the single-request endpoint (UnsupportedBatch), body-stream I/O failure (Io), or — if Content-Type is multipart/form-data — multipart parse failures (InvalidMultipart, MissingOperatorsPart, MissingMapPart, MissingFiles, NotUpload, InvalidFilesMap). Response body is the Rust Debug repr of the underlying ParseRequestError variant. The indexer's transform_lentgh_limit_exceeded middleware rewrites only the body-limit-overflow case to 413; all other 400s pass through unchanged. Note: GraphQL semantic/validation errors do NOT produce 400 — they return HTTP 200 with errors[] inside the response body.",
       "fixes": [
-        "Review the request format and correct any invalid fields or parameters"
+        "Inspect the response body — it identifies the ParseRequestError variant in Debug format (e.g. 'InvalidRequest(...)', 'UnsupportedBatch')",
+        "Send well-formed JSON shaped as { \"query\": \"...\", \"variables\": {...}, \"operationName\": \"...\" }",
+        "Use Content-Type: application/json — the indexer does not expose multipart upload routes",
+        "Send one query per request; the single-request endpoint does not accept JSON-array batches"
       ],
       "aliases": [
         "HTTP 400"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "413/PayloadTooLarge"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-indexer",
         "ref": "main",
         "anchor": "indexer-api/src/infra/api.rs",
-        "anchor_modified": "2026-04-15",
-        "verified_at": "2026-05-04"
+        "anchor_modified": "2026-04-30",
+        "verified_at": "2026-05-04",
+        "extra_refs": [
+          {
+            "source_repo": "async-graphql/async-graphql",
+            "ref": "82cd1f15c2a66c6134be6b93e3ac6331847934c6",
+            "anchor": "integrations/axum/src/extract.rs",
+            "anchor_modified": "2025-05-24"
+          },
+          {
+            "source_repo": "async-graphql/async-graphql",
+            "ref": "82cd1f15c2a66c6134be6b93e3ac6331847934c6",
+            "anchor": "src/error.rs",
+            "anchor_modified": "2026-02-04"
+          }
+        ]
       }
     },
     {
@@ -6452,12 +6539,12 @@
       "code": "156",
       "name": "ContractNotPresent",
       "source": "midnight-node",
-      "category": "infrastructure",
+      "category": "transaction_invalid",
       "group": {
-        "name": "Infrastructure Errors (150-157, 165)",
-        "description": "Node-side infrastructure failures unrelated to the transaction itself."
+        "name": "Transaction Invalid Errors (100-109, 193-200)",
+        "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Top-level LedgerApiError::ContractNotPresent — a contract lookup outside of transaction validation found no contract at the address. Distinct from the transaction-time codes 102 (Invalid::ContractNotPresent) and 114 (Malformed::ContractNotPresent).",
+      "description": "Error,contract is not present",
       "fixes": [
         "Verify the contract address; deploy the contract first",
         "If the lookup happens during a non-transaction RPC, ensure the address is correctly serialized"
@@ -6468,9 +6555,9 @@
       ],
       "severity": "error",
       "see_also": [
+        "1010",
         "102",
-        "114",
-        "1010"
+        "114"
       ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
@@ -6489,7 +6576,7 @@
         "name": "Infrastructure Errors (150-157, 165)",
         "description": "Node-side infrastructure failures unrelated to the transaction itself."
       },
-      "description": "Top-level LedgerApiError::BeneficiaryNotFound — a referenced reward beneficiary was not found.",
+      "description": "Error,beneficiary is not found",
       "fixes": [
         "Confirm the beneficiary address has been registered before referencing it"
       ],
@@ -6518,7 +6605,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "SystemTransactionError::MerkleTreeError — a Merkle tree update failed during system transaction processing.",
+      "description": "Transaction Error:SystemTransaction(MerkleTreeError)",
       "fixes": [
         "Internal protocol error; check node logs for the wrapped InvalidUpdate cause"
       ],
@@ -6549,7 +6636,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual real calls are not a subset of declared real calls. Replaces the old opaque 186 EffectsCheckFailure with a specific subcase.",
+      "description": "Transaction Error:Malformed(EffectsCheck(RealCallsSubsetCheckFailure))",
       "fixes": [
         "Rebuild the transaction so declared effects exactly match the real call set"
       ],
@@ -6579,7 +6666,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual commitment set is not a subset of declared commitments.",
+      "description": "Transaction Error:Malformed(EffectsCheck(AllCommitmentsSubsetCheckFailure))",
       "fixes": [
         "Verify all coin commitments produced by the transaction are declared in its effects"
       ],
@@ -6609,7 +6696,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: real unshielded spends are not a subset of declared unshielded spends.",
+      "description": "Transaction Error:Malformed(EffectsCheck(RealUnshieldedSpendsSubsetCheckFailure))",
       "fixes": [
         "Ensure declared unshielded spends in effects cover all actual spends"
       ],
@@ -6639,7 +6726,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: claimed unshielded spends are not unique (duplicates detected).",
+      "description": "Transaction Error:Malformed(EffectsCheck(ClaimedUnshieldedSpendsUniquenessFailure))",
       "fixes": [
         "Deduplicate claimed unshielded spend entries before submitting"
       ],
@@ -6669,7 +6756,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: claimed contract calls are not unique.",
+      "description": "Transaction Error:Malformed(EffectsCheck(ClaimedCallsUniquenessFailure))",
       "fixes": [
         "Deduplicate claimed call entries"
       ],
@@ -6699,7 +6786,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual nullifier set differs from claimed nullifiers.",
+      "description": "Transaction Error:Malformed(EffectsCheck(NullifiersNeqClaimedNullifiers))",
       "fixes": [
         "Ensure claimed nullifiers exactly match the nullifiers produced by the transaction"
       ],
@@ -6729,7 +6816,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "EffectsCheck failed: actual commitments differ from claimed shielded receives.",
+      "description": "Transaction Error:Malformed(EffectsCheck(CommitmentsNeqClaimedShieldedReceives))",
       "fixes": [
         "Ensure claimed shielded receives match the commitments the transaction emits"
       ],
@@ -6759,7 +6846,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: contract call ordering violates the call graph constraints. Replaces the old opaque 188 SequencingCheckFailure with a specific subcase.",
+      "description": "Transaction Error:Malformed(SequencingCheck(CallSequencingViolation))",
       "fixes": [
         "Reorder contract calls so dependent calls execute after their prerequisites"
       ],
@@ -6789,7 +6876,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: cross-call correlation invariant violated.",
+      "description": "Transaction Error:Malformed(SequencingCheck(SequencingCorrelationViolation))",
       "fixes": [
         "Ensure correlated calls reference each other consistently across the transcript"
       ],
@@ -6819,7 +6906,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a guaranteed call appeared in a fallible context.",
+      "description": "Transaction Error:Malformed(SequencingCheck(GuaranteedInFallibleContextViolation))",
       "fixes": [
         "Move the guaranteed segment of the call out of the fallible block"
       ],
@@ -6849,7 +6936,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a fallible call appeared in a guaranteed context.",
+      "description": "Transaction Error:Malformed(SequencingCheck(FallibleInGuaranteedContextViolation))",
       "fixes": [
         "Move fallible operations to a fallible segment after kernel.checkpoint()"
       ],
@@ -6879,7 +6966,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a causality constraint between calls was violated.",
+      "description": "Transaction Error:Malformed(SequencingCheck(CausalityConstraintViolation))",
       "fixes": [
         "Ensure earlier calls' outputs precede later calls' uses in the transcript"
       ],
@@ -6909,7 +6996,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "SequencingCheck failed: a contract call has empty transcripts.",
+      "description": "Transaction Error:Malformed(SequencingCheck(CallHasEmptyTranscripts))",
       "fixes": [
         "Remove empty calls from the transaction, or ensure they have at least one transcript entry"
       ],
@@ -6939,7 +7026,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "DisjointCheck failed: shielded inputs are not disjoint across segments. Replaces the old opaque 187 DisjointCheckFailure with a specific subcase.",
+      "description": "Transaction Error:Malformed(DisjointCheck(ShieldedInputsDisjointFailure))",
       "fixes": [
         "Ensure each shielded input appears in exactly one segment of the transaction"
       ],
@@ -6969,7 +7056,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "DisjointCheck failed: shielded outputs overlap across segments.",
+      "description": "Transaction Error:Malformed(DisjointCheck(ShieldedOutputsDisjointFailure))",
       "fixes": [
         "Ensure each shielded output appears in exactly one segment"
       ],
@@ -6999,7 +7086,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "DisjointCheck failed: unshielded inputs are not disjoint across segments.",
+      "description": "Transaction Error:Malformed(DisjointCheck(UnshieldedInputsDisjointFailure))",
       "fixes": [
         "Ensure each unshielded input is referenced in exactly one segment"
       ],
@@ -7029,7 +7116,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Malformed-side TransactionApplicationError: intent TTL has already expired. Replaces the old opaque 182 TransactionApplicationError with a specific subcase.",
+      "description": "Transaction Error:Malformed(TransactionApplication(IntentTtlExpired))",
       "fixes": [
         "Set the intent TTL further in the future before signing",
         "Ensure node clock skew is small enough that the intent doesn't expire in flight"
@@ -7061,7 +7148,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Malformed-side TransactionApplicationError: intent TTL is set further into the future than the protocol allows.",
+      "description": "Transaction Error:Malformed(TransactionApplication(IntentTtlTooFarInFuture))",
       "fixes": [
         "Reduce the intent TTL to within the protocol's allowed window"
       ],
@@ -7092,7 +7179,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Malformed-side TransactionApplicationError: an intent with the same identifier already exists in the replay-protection set.",
+      "description": "Transaction Error:Malformed(TransactionApplication(IntentAlreadyExists))",
       "fixes": [
         "Generate a fresh intent identifier; do not resubmit the same intent twice"
       ],
@@ -7123,7 +7210,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Fee calculation failed: the transaction's time-to-dismiss is outside the allowed window for its size.",
+      "description": "Transaction Error:Malformed(FeeCalculation(OutsideTimeToDismiss))",
       "fixes": [
         "Adjust the time-to-dismiss for the transaction so it falls within the size-dependent allowed range"
       ],
@@ -7153,7 +7240,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Fee calculation failed: the transaction would exceed the block resource limit (size, weight, etc.).",
+      "description": "Transaction Error:Malformed(FeeCalculation(BlockLimitExceeded))",
       "fixes": [
         "Reduce transaction size or split into multiple transactions",
         "Wait for a less congested block"
@@ -7184,7 +7271,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Contract deployment carries non-zero balance entries on the contract account. Contracts must deploy with empty balances.",
+      "description": "Transaction Error:Malformed(MalformedContractDeploy(NonZeroBalance))",
       "fixes": [
         "Remove balance entries from the deploy intent — newly deployed contracts must start with zero balances"
       ],
@@ -7214,7 +7301,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Contract deployment carries an incorrectly computed charged-state map.",
+      "description": "Transaction Error:Malformed(MalformedContractDeploy(IncorrectChargedState))",
       "fixes": [
         "Rebuild the deploy with the SDK so the charged-state map matches the contract's declared schema"
       ],
@@ -7244,7 +7331,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: inner proof verification failed.",
+      "description": "Transaction Error:Malformed(Zswap(InvalidProof))",
       "fixes": [
         "Regenerate the Zswap offer's proof; ensure the proof server is on a compatible version"
       ],
@@ -7275,7 +7362,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: a contract attempted to send ciphertext to itself, which is forbidden.",
+      "description": "Transaction Error:Malformed(Zswap(ContractSentCiphertext))",
       "fixes": [
         "Restructure the contract logic so it does not emit ciphertext to its own address"
       ],
@@ -7305,7 +7392,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: attempted to merge offers whose coin sets are not disjoint.",
+      "description": "Transaction Error:Malformed(Zswap(NonDisjointCoinMerge))",
       "fixes": [
         "Ensure offers being merged operate on disjoint coin sets"
       ],
@@ -7335,7 +7422,7 @@
         "name": "Transaction Malformed Errors (110-139, 166-181, 183-185, 189-192, 212-238)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "Zswap-malformed: the offer is not in normal form.",
+      "description": "Transaction Error:Malformed(Zswap(NotNormalized))",
       "fixes": [
         "Re-normalize the Zswap offer with the SDK before submission"
       ],
@@ -7366,7 +7453,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Zswap double-spend: nullifier already exists in the chain. Specific subcase split out from the older opaque 103 Zswap(Unknown).",
+      "description": "Transaction Error:Invalid(Zswap(NullifierAlreadyPresent))",
       "fixes": [
         "The coin has already been spent — refresh wallet state and try a different coin"
       ],
@@ -7396,7 +7483,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Zswap commitment already in the tree (faerie-gold double-commit attempt).",
+      "description": "Transaction Error:Invalid(Zswap(CommitmentAlreadyPresent))",
       "fixes": [
         "Generate a fresh nonce so the resulting commitment differs"
       ],
@@ -7427,7 +7514,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Zswap input references a Merkle root the chain does not recognize (state too old, or wallet looking at a fork).",
+      "description": "Transaction Error:Invalid(Zswap(UnknownMerkleRoot))",
       "fixes": [
         "Resync the wallet against the current chain head",
         "Rebuild the transaction using a recent Merkle root"
@@ -7458,7 +7545,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Invalid-side replay-protection: intent TTL expired between submission and validation. Specific subcase split out from the older opaque 193.",
+      "description": "Transaction Error:Invalid(ReplayProtectionViolation(IntentTtlExpired))",
       "fixes": [
         "Submit transactions promptly after building them",
         "Increase the intent TTL"
@@ -7491,7 +7578,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Invalid-side replay-protection: intent TTL too far in the future (Invalid path).",
+      "description": "Transaction Error:Invalid(ReplayProtectionViolation(IntentTtlTooFarInFuture))",
       "fixes": [
         "Use a TTL within the protocol's allowed range"
       ],
@@ -7523,7 +7610,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "Invalid-side replay-protection: intent identifier already exists (Invalid path).",
+      "description": "Transaction Error:Invalid(ReplayProtectionViolation(IntentAlreadyExists))",
       "fixes": [
         "Generate a fresh intent identifier; do not resubmit the same intent"
       ],
@@ -7555,7 +7642,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "System-transaction replay-protection: intent TTL expired. Specific subcase split out from the older opaque 205 ReplayProtectionFailure.",
+      "description": "Transaction Error:SystemTransaction(ReplayProtectionFailure(IntentTtlExpired))",
       "fixes": [
         "System transactions are submitted by governance — operators must resubmit with a fresh TTL"
       ],
@@ -7587,7 +7674,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "System-transaction replay-protection: intent TTL too far in the future.",
+      "description": "Transaction Error:SystemTransaction(ReplayProtectionFailure(IntentTtlTooFarInFuture))",
       "fixes": [
         "Adjust the system transaction's TTL to within the allowed window"
       ],
@@ -7619,7 +7706,7 @@
         "name": "System Transaction Errors (201-204, 206-211, 245-247)",
         "description": "Errors specific to system-level transactions (governance, reward distribution, bridge)."
       },
-      "description": "System-transaction replay-protection: intent identifier already exists.",
+      "description": "Transaction Error:SystemTransaction(ReplayProtectionFailure(IntentAlreadyExists))",
       "fixes": [
         "Use a fresh intent identifier for the system transaction"
       ],
@@ -7651,7 +7738,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "InvalidError::DivideByZero — a contract circuit attempted division by zero during ledger-side validation.",
+      "description": "Transaction Error:Invalid(DivideByZero)",
       "fixes": [
         "Add a non-zero check before the division in the contract's witness logic"
       ],
@@ -7680,7 +7767,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "InvalidError::MerkleTreeError — a Merkle tree update failed during transaction validation.",
+      "description": "Transaction Error:Invalid(MerkleTreeError)",
       "fixes": [
         "Internal protocol error; check node logs for the wrapped InvalidUpdate cause"
       ],
@@ -7711,7 +7798,7 @@
         "name": "Transaction Invalid Errors (100-109, 194-200, 239-244, 248-250)",
         "description": "Transactions that are structurally valid but fail semantic validation."
       },
-      "description": "ZswapInvalid: a Merkle tree update failed inside Zswap state application.",
+      "description": "Transaction Error:Invalid(Zswap(MerkleTreeError))",
       "fixes": [
         "Internal Zswap error; rebuild the transaction"
       ],
@@ -8239,6 +8326,92 @@
         "ref": "master",
         "anchor": "substrate/primitives/runtime/src/transaction_validity.rs",
         "anchor_modified": "2026-02-06",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "InvalidTransaction.IndeterminateImplicit",
+      "name": "IndeterminateImplicit",
+      "source": "substrate",
+      "category": "invalid-transaction-variant",
+      "group": {
+        "name": "Standard InvalidTransaction Variants",
+        "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
+      },
+      "description": "The implicit data was unable to be calculated — a TransactionExtension's implicit metadata (era, genesis hash, spec version, etc.) couldn't be computed for this transaction.",
+      "fixes": [
+        "Verify the transaction's signed extensions match the runtime's expected TransactionExtension list",
+        "Re-fetch chain metadata and rebuild the transaction with current spec/transaction version values"
+      ],
+      "aliases": [
+        "InvalidTransaction::IndeterminateImplicit"
+      ],
+      "severity": "error",
+      "see_also": [
+        "1010"
+      ],
+      "verified_against": {
+        "source_repo": "paritytech/polkadot-sdk",
+        "ref": "polkadot-stable2603",
+        "anchor": "substrate/primitives/runtime/src/transaction_validity.rs",
+        "anchor_modified": "2026-02-06",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "InvalidTransaction.UnknownOrigin",
+      "name": "UnknownOrigin",
+      "source": "substrate",
+      "category": "invalid-transaction-variant",
+      "group": {
+        "name": "Standard InvalidTransaction Variants",
+        "description": "Transaction-pool rejection reasons defined in substrate/primitives/runtime/src/transaction_validity.rs. Surface as the structured InvalidTransaction enum, often inside the data field of a 1010 POOL_INVALID_TX response."
+      },
+      "description": "The transaction extension did not authorize any origin — none of the runtime's TransactionExtensions ended up authorizing an origin for this transaction.",
+      "fixes": [
+        "Ensure the transaction is signed with a key that at least one TransactionExtension in the runtime accepts",
+        "Verify the call is permitted by the runtime's authorization extensions (signature, governance filter, etc.)"
+      ],
+      "aliases": [
+        "InvalidTransaction::UnknownOrigin"
+      ],
+      "severity": "error",
+      "see_also": [
+        "1010"
+      ],
+      "verified_against": {
+        "source_repo": "paritytech/polkadot-sdk",
+        "ref": "polkadot-stable2603",
+        "anchor": "substrate/primitives/runtime/src/transaction_validity.rs",
+        "anchor_modified": "2026-02-06",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "DispatchError.Trie",
+      "name": "Trie",
+      "source": "substrate",
+      "category": "dispatch-error-variant",
+      "group": {
+        "name": "Standard DispatchError Variants",
+        "description": "Structured error returned in the system.ExtrinsicFailed event when an extrinsic fails after passing validation. Defined in substrate/primitives/runtime/src/lib.rs."
+      },
+      "description": "Trie-level error during a storage operation. Wraps a sp_runtime::TrieError variant indicating a storage trie failure (missing node, invalid hash, decode error, etc.).",
+      "fixes": [
+        "Internal storage corruption or pruned-state access — retry against an archive node if querying historical state",
+        "Inspect node logs for the inner TrieError variant; storage-trie errors usually indicate a node-level bug or db corruption, not a user-fixable issue"
+      ],
+      "aliases": [
+        "DispatchError::Trie",
+        "DispatchError::Trie(TrieError)"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "paritytech/polkadot-sdk",
+        "ref": "polkadot-stable2603",
+        "anchor": "substrate/primitives/runtime/src/lib.rs",
+        "anchor_modified": "2026-02-23",
         "verified_at": "2026-05-04"
       }
     },
@@ -9301,6 +9474,570 @@
         "anchor": "platform-js@2.2.4 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "400/BodyDeserialization",
+      "name": "BodyDeserialization",
+      "source": "proof-server",
+      "category": "request-validation",
+      "group": {
+        "name": "Request Validation (proof-server)",
+        "description": "HTTP 400 responses returned when the proof-server fails to deserialize a request body against the expected schema."
+      },
+      "description": "The request body sent to the proof-server failed to deserialize against the expected schema. Affects /check, /prove, /prove-tx, /k, and /fetch-params/{k}.",
+      "fixes": [
+        "Confirm the request body is valid for the endpoint (correct field names, types, and binary encoding).",
+        "Check that the SDK version used to construct the body matches the proof-server version.",
+        "Inspect the response body for a serde / axum error message identifying the failing field."
+      ],
+      "aliases": [
+        "HTTP 400",
+        "400 BadInput",
+        "deserialization failure",
+        "proof-server: invalid request body"
+      ],
+      "severity": "error",
+      "see_also": [
+        "400/BadInput"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-proof-server",
+        "ref": "main",
+        "anchor": "src/main.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "400/FetchParamsKOutOfRange",
+      "name": "FetchParamsKOutOfRange",
+      "source": "proof-server",
+      "category": "request-validation",
+      "group": {
+        "name": "Request Validation (proof-server)",
+        "description": "HTTP 400 responses returned when the proof-server fails to deserialize a request body against the expected schema."
+      },
+      "description": "GET /fetch-params/{k} was called with a k value outside the supported range. Distinct from BodyDeserialization: the body is well-formed but the k value is rejected by validation.",
+      "fixes": [
+        "Use a supported k value for the proof-server build you are running.",
+        "Check the proof-server release notes for the supported k range."
+      ],
+      "aliases": [
+        "/fetch-params: k out of range",
+        "k out-of-range",
+        "HTTP 400"
+      ],
+      "severity": "error",
+      "see_also": [
+        "400/BodyDeserialization"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-proof-server",
+        "ref": "main",
+        "anchor": "src/main.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.MissingProvingService",
+      "name": "MissingProvingService",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Init was called without a proving service or proving-server URL.",
+      "fixes": [
+        "Pass `provingServerUrl` in the config, or supply a custom `provingService` to init."
+      ],
+      "aliases": [
+        "Missing required configuration: 'provingServerUrl'"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.TermsAndConditionsNotSet",
+      "name": "TermsAndConditionsNotSet",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "The chain has no Terms and Conditions state set.",
+      "fixes": [
+        "Operator/governance must set the T&C on-chain before this flow can proceed."
+      ],
+      "aliases": [
+        "Terms and Conditions are not currently set on the network."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.MissingDustIntentSegment",
+      "name": "MissingDustIntentSegment",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Dust generation tx is missing the required intent segment 1.",
+      "fixes": [
+        "Internal SDK error; rebuild the dust generation tx via the facade and report a reproduction if it persists."
+      ],
+      "aliases": [
+        "Dust generation transaction is missing intent segment 1."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoBalancingTransaction",
+      "name": "NoBalancingTransaction",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Balancer produced no balancing transaction.",
+      "fixes": [
+        "Verify that the source transaction has unbalanced inputs/outputs requiring a balancing tx.",
+        "Confirm the source transaction is well-formed."
+      ],
+      "aliases": [
+        "No balancing transaction was created. Please check your transaction."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoOutputsRequired",
+      "name": "NoOutputsRequired",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Transaction has no shielded or unshielded outputs.",
+      "fixes": [
+        "Add at least one output before submitting the transaction."
+      ],
+      "aliases": [
+        "At least one shielded or unshielded output is required."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoSwapsRequired",
+      "name": "NoSwapsRequired",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Swap transaction has no swap entries.",
+      "fixes": [
+        "Add at least one swap entry before submitting the transaction."
+      ],
+      "aliases": [
+        "At least one shielded or unshielded swap is required."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.UnexpectedTransactionState",
+      "name": "UnexpectedTransactionState",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "State machine reached a transitional state it does not expect.",
+      "fixes": [
+        "Internal SDK error; report with a reproduction."
+      ],
+      "aliases": [
+        "Unexpected transaction state."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletFacade.NoNightUtxo",
+      "name": "NoNightUtxo",
+      "source": "midnight-wallet",
+      "category": "wallet-facade",
+      "group": {
+        "name": "Wallet Facade plain-Error throws",
+        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+      },
+      "description": "Operation requires at least one NIGHT UTXO.",
+      "fixes": [
+        "Acquire NIGHT before submitting this operation."
+      ],
+      "aliases": [
+        "At least one Night UTXO is required."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-facade/src",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "WalletAbstractions.InvalidProtocolVersionRange",
+      "name": "InvalidProtocolVersionRange",
+      "source": "midnight-wallet",
+      "category": "wallet-abstractions",
+      "group": {
+        "name": "Wallet Abstractions native throws",
+        "description": "Native `Error` / `TypeError` throws from @midnight-ntwrk/wallet-sdk-abstractions."
+      },
+      "description": "ProtocolVersion constructor received a range whose `from` is greater than its `to`.",
+      "fixes": [
+        "Pass a range with `from <= to` to the ProtocolVersion constructor."
+      ],
+      "aliases": [
+        "Invalid protocol version range."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-wallet",
+        "ref": "main",
+        "anchor": "wallet-sdk-abstractions/dist/ProtocolVersion.js",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "JsUtils.AssertDefinedFailed",
+      "name": "AssertDefinedFailed",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertDefined()` in assertion-utils.ts when the value is null or undefined and no custom message was supplied.",
+      "fixes": [
+        "Ensure the value is non-null before calling assertDefined, or pass a descriptive custom message to identify the failing call site."
+      ],
+      "aliases": [
+        "Expected value to be defined"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/assertion-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.AssertUndefinedFailed",
+      "name": "AssertUndefinedFailed",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertUndefined()` in assertion-utils.ts when the value is truthy (i.e. neither null nor undefined) and no custom message was supplied.",
+      "fixes": [
+        "Ensure the value is null/undefined before calling assertUndefined, or pass a descriptive custom message to identify the failing call site."
+      ],
+      "aliases": [
+        "Expected value to be null or undefined"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/assertion-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexEmptyInput",
+      "name": "HexEmptyInput",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` in hex-utils.ts when the input string is empty (or otherwise falsy).",
+      "fixes": [
+        "Pass a non-empty string to assertIsHex; validate input upstream so empty values do not reach the assertion."
+      ],
+      "aliases": [
+        "Input string must have non-zero length."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexInvalidByteLength",
+      "name": "HexInvalidByteLength",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` in hex-utils.ts when the optional `byteLen` argument is provided but is zero or negative.",
+      "fixes": [
+        "Pass a positive integer for `byteLen`, or omit it to allow any length."
+      ],
+      "aliases": [
+        "Expected byte length must be greater than zero."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "Error",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexIncompleteLastByte",
+      "name": "HexIncompleteLastByte",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when the input string has an odd number of trailing characters, meaning the final byte is incomplete (one nibble instead of two). Message includes the source string.",
+      "fixes": [
+        "Pad the hex string so its byte portion has an even number of characters, or fix the upstream encoder."
+      ],
+      "aliases": [
+        "The last byte of input string '",
+        "is incomplete."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexInvalidDigit",
+      "name": "HexInvalidDigit",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when a non-hex character is found in the input string. Message includes the offending character and its index.",
+      "fixes": [
+        "Sanitise the input to contain only `[0-9A-Fa-f]` characters (with optional `0x` prefix); the message identifies the position of the first invalid character."
+      ],
+      "aliases": [
+        "Invalid hex-digit '",
+        "found in input string at index"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexNotValidHexString",
+      "name": "HexNotValidHexString",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when the input has no parsable byte characters (e.g. only the `0x` prefix or only invalid characters with no leading bytes captured).",
+      "fixes": [
+        "Provide a hex string that contains at least one whole byte (two hex characters) of content."
+      ],
+      "aliases": [
+        "is not a valid hex-string."
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.HexByteLengthMismatch",
+      "name": "HexByteLengthMismatch",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsHex()` when the input parses as valid hex but its byte length does not equal the expected `byteLen` argument. Message includes both the expected and actual byte lengths.",
+      "fixes": [
+        "Ensure the hex input represents exactly `byteLen` bytes (i.e. `byteLen * 2` hex characters), or pass the correct expected length."
+      ],
+      "aliases": [
+        "Expected an input string with byte length of"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/hex-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
+      }
+    },
+    {
+      "code": "JsUtils.ContractAddressUnexpectedHexPrefix",
+      "name": "ContractAddressUnexpectedHexPrefix",
+      "source": "midnight-js",
+      "category": "js-utils",
+      "group": {
+        "name": "midnight-js-utils inline throws",
+        "description": "Native Error/TypeError throws from @midnight-ntwrk/midnight-js-utils. No class identity beyond Error/TypeError. Match by message substring."
+      },
+      "description": "Thrown by `assertIsContractAddress()` in type-utils.ts when the contract address string carries a `0x` prefix; contract addresses are required to be unprefixed 32-byte hex.",
+      "fixes": [
+        "Strip the leading `0x` from the contract address before passing it to assertIsContractAddress or any API that expects a ContractAddress."
+      ],
+      "aliases": [
+        "Unexpected '0x' prefix in contract address '"
+      ],
+      "severity": "error",
+      "see_also": [
+        "JsUtils.HexByteLengthMismatch"
+      ],
+      "class": "TypeError",
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "midnight-js-utils-4.0.4",
+        "anchor": "packages/utils/src/type-utils.ts",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "4.0.4"
       }
     },
     {
