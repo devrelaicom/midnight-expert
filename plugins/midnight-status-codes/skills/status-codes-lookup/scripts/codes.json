@@ -4298,7 +4298,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4325,7 +4325,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4351,7 +4351,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4377,7 +4377,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4402,7 +4402,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4427,7 +4427,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4452,7 +4452,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4476,7 +4476,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4500,7 +4500,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4524,7 +4524,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4548,7 +4548,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4572,7 +4572,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4596,7 +4596,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4620,7 +4620,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4644,7 +4644,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4668,7 +4668,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4692,7 +4692,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4716,7 +4716,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",
@@ -4740,7 +4740,7 @@
       "see_also": [],
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "main",
+        "ref": "compactc-v0.31.0",
         "anchor": "compiler/compactc.ss",
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04",

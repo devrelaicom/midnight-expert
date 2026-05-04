@@ -1,0 +1,6 @@
+# Coverage allowlist — explicit templates intentionally NOT covered as user-facing entries.
+# One regex per line (extended POSIX). Lines starting with '#' are ignored.
+# Templates here are typically internal-errorf paths or messages users only see as exit 254.
+#
+# To add: paste the canonical message template (with ~a/~s/~d placeholders preserved),
+# escape regex metacharacters, and prefix with reason in a leading comment.
