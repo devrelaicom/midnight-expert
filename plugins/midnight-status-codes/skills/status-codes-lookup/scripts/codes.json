@@ -7816,6 +7816,70 @@
         "anchor_modified": "2026-04-23",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "400/BodyDeserialization",
+      "name": "BodyDeserialization",
+      "source": "proof-server",
+      "category": "request-validation",
+      "group": {
+        "name": "Request Validation (proof-server)",
+        "description": "HTTP 400 responses returned when the proof-server fails to deserialize a request body against the expected schema."
+      },
+      "description": "The request body sent to the proof-server failed to deserialize against the expected schema. Affects /check, /prove, /prove-tx, /k, and /fetch-params/{k}.",
+      "fixes": [
+        "Confirm the request body is valid for the endpoint (correct field names, types, and binary encoding).",
+        "Check that the SDK version used to construct the body matches the proof-server version.",
+        "Inspect the response body for a serde / axum error message identifying the failing field."
+      ],
+      "aliases": [
+        "HTTP 400",
+        "400 BadInput",
+        "deserialization failure",
+        "proof-server: invalid request body"
+      ],
+      "severity": "error",
+      "see_also": [
+        "400/BadInput"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-proof-server",
+        "ref": "main",
+        "anchor": "src/main.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "400/FetchParamsKOutOfRange",
+      "name": "FetchParamsKOutOfRange",
+      "source": "proof-server",
+      "category": "request-validation",
+      "group": {
+        "name": "Request Validation (proof-server)",
+        "description": "HTTP 400 responses returned when the proof-server fails to deserialize a request body against the expected schema."
+      },
+      "description": "GET /fetch-params/{k} was called with a k value outside the supported range. Distinct from BodyDeserialization: the body is well-formed but the k value is rejected by validation.",
+      "fixes": [
+        "Use a supported k value for the proof-server build you are running.",
+        "Check the proof-server release notes for the supported k range."
+      ],
+      "aliases": [
+        "/fetch-params: k out of range",
+        "k out-of-range",
+        "HTTP 400"
+      ],
+      "severity": "error",
+      "see_also": [
+        "400/BodyDeserialization"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-proof-server",
+        "ref": "main",
+        "anchor": "src/main.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
