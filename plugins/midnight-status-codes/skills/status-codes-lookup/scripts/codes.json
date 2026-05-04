@@ -8326,6 +8326,473 @@
         "anchor_modified": "2026-04-30",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "6/1",
+      "name": "SystemTransactionNotAllowedForGovernance",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "The system transaction is not permitted under the current governance configuration.",
+      "fixes": [
+        "Confirm the call is allowed by the active governance policy — system transactions are gated to specific origins",
+        "If invoking from a governance motion, ensure the motion call kind matches the system tx category"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 1 }",
+        "pallet_midnight_system::Error::SystemTransactionNotAllowedForGovernance"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/2",
+      "name": "Deserialization",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Wraps a flattened DeserializationError from LedgerApiError; the inner u8 identifies which artifact failed to deserialize.",
+      "fixes": [
+        "Decodes a DeserializationError u8 in the 0–11 range; look up that u8 with `lookup.sh --code <N>`",
+        "Most common cause: SDK/node version drift on the system-tx encoding"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 2 }",
+        "pallet_midnight_system::Error::Deserialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/1",
+        "13/5",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/3",
+      "name": "Serialization",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Wraps a flattened SerializationError from LedgerApiError; the inner u8 identifies which artifact failed to serialize.",
+      "fixes": [
+        "Decodes a SerializationError u8 in the 50–63 range; look up that u8 with `lookup.sh --code <N>`",
+        "Indicates an encoding mismatch between node and ledger versions"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 3 }",
+        "pallet_midnight_system::Error::Serialization"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/2",
+        "13/6",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62",
+        "63"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/4",
+      "name": "Transaction",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Wraps a flattened TransactionError from LedgerApiError; the inner u8 identifies the specific ledger transaction failure.",
+      "fixes": [
+        "Decodes a TransactionError u8 in the 100–210 or 212–250 range; look up that u8 with `lookup.sh --code <N>`",
+        "System tx failures usually originate from malformed governance/system payloads — check the encoded body"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 4 }",
+        "pallet_midnight_system::Error::Transaction"
+      ],
+      "severity": "error",
+      "see_also": [
+        "5/3",
+        "13/7"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/5",
+      "name": "LedgerCacheError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::LedgerCacheError — the in-memory ledger cache is poisoned or could not be acquired.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 150 — look up `lookup.sh --code 150`",
+        "Restart the node; if reproducible, capture logs and file an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 5 }",
+        "pallet_midnight_system::Error::LedgerCacheError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "150",
+        "5/4",
+        "13/8"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/6",
+      "name": "NoLedgerState",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::NoLedgerState — no ledger state is present at the expected storage key.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 151 — look up `lookup.sh --code 151`",
+        "Check that the node has finished initial sync and that genesis was applied"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 6 }",
+        "pallet_midnight_system::Error::NoLedgerState"
+      ],
+      "severity": "error",
+      "see_also": [
+        "151",
+        "5/5",
+        "13/9"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/7",
+      "name": "LedgerStateScaleDecodingError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::LedgerStateScaleDecodingError — the on-chain ledger state could not be SCALE-decoded.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 152 — look up `lookup.sh --code 152`",
+        "Verify node binary matches the runtime's ledger version"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 7 }",
+        "pallet_midnight_system::Error::LedgerStateScaleDecodingError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "152",
+        "5/6",
+        "13/10"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/8",
+      "name": "ContractCallCostError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::ContractCallCostError — the cost calculation for a contract call failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 153 — look up `lookup.sh --code 153`",
+        "Inspect the system tx's contract-call cost metadata"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 8 }",
+        "pallet_midnight_system::Error::ContractCallCostError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "153",
+        "5/7",
+        "13/11"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/9",
+      "name": "BlockLimitExceededError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::BlockLimitExceededError — the system transaction would exceed the block's resource limit.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 154 — look up `lookup.sh --code 154`",
+        "Reduce system tx size or wait and retry"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 9 }",
+        "pallet_midnight_system::Error::BlockLimitExceededError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "154",
+        "5/8",
+        "13/12"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/10",
+      "name": "FeeCalculationError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::FeeCalculationError — fee calculation failed for the system transaction.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 155 — look up `lookup.sh --code 155`",
+        "Verify fee inputs against the runtime's fee model"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 10 }",
+        "pallet_midnight_system::Error::FeeCalculationError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "155",
+        "5/9",
+        "13/13"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/11",
+      "name": "HostApiError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::HostApiError — a host API call into the runtime failed.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 255 — look up `lookup.sh --code 255`",
+        "Inspect node logs around the failure; usually worth filing as an issue"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 11 }",
+        "pallet_midnight_system::Error::HostApiError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "255",
+        "5/10",
+        "13/14"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/12",
+      "name": "GetTransactionContextError",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::GetTransactionContextError — failed to retrieve the transaction context required for ledger application.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 165 — look up `lookup.sh --code 165`",
+        "Usually indicates a missing or stale block context"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 12 }",
+        "pallet_midnight_system::Error::GetTransactionContextError"
+      ],
+      "severity": "error",
+      "see_also": [
+        "165",
+        "5/12",
+        "13/15"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/13",
+      "name": "ContractNotPresent",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::ContractNotPresent — the system transaction targets a contract address that does not exist on chain.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 156 — look up `lookup.sh --code 156`",
+        "Verify the contract address is correct for the network"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 13 }",
+        "pallet_midnight_system::Error::ContractNotPresent"
+      ],
+      "severity": "error",
+      "see_also": [
+        "156",
+        "5/13",
+        "13/16"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "6/14",
+      "name": "BeneficiaryNotFound",
+      "source": "midnight-node",
+      "category": "pallet-midnight-system",
+      "group": {
+        "name": "pallet_midnight_system Errors (index 6)",
+        "description": "Errors emitted by pallet_midnight_system, which dispatches privileged system transactions. Index 0 is intentionally unused."
+      },
+      "description": "Flattened LedgerApiError::BeneficiaryNotFound — the reward beneficiary referenced by the system transaction was not found.",
+      "fixes": [
+        "Equivalent to LedgerApiError u8 157 — look up `lookup.sh --code 157`",
+        "Ensure the beneficiary account is registered before claiming rewards"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 6, error: 14 }",
+        "pallet_midnight_system::Error::BeneficiaryNotFound"
+      ],
+      "severity": "error",
+      "see_also": [
+        "157",
+        "5/14",
+        "13/17"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/midnight-system/src/lib.rs",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
