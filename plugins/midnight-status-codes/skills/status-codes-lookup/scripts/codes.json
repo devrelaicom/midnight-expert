@@ -7587,7 +7587,7 @@
     {
       "code": "CompactError",
       "name": "CompactError",
-      "source": "compact-js-sdk",
+      "source": "compact-runtime",
       "category": "compact-runtime-error",
       "group": {
         "name": "compact-runtime errors",
@@ -7604,17 +7604,18 @@
         "typeError"
       ],
       "verified_against": {
-        "source_repo": "midnight-ntwrk/artifacts",
-        "ref": "private",
-        "anchor": "compact-runtime@0.16.0 (verified via npm pack)",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04"
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
+        "anchor": "runtime/src/error.ts:21",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "0.16.0"
       }
     },
     {
       "code": "assert",
       "name": "assert",
-      "source": "compact-js-sdk",
+      "source": "compact-runtime",
       "category": "compact-runtime-error",
       "group": {
         "name": "compact-runtime errors",
@@ -7633,17 +7634,18 @@
         "typeError"
       ],
       "verified_against": {
-        "source_repo": "midnight-ntwrk/artifacts",
-        "ref": "private",
-        "anchor": "compact-runtime@0.16.0 (verified via npm pack)",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04"
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
+        "anchor": "runtime/src/error.ts:33",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "0.16.0"
       }
     },
     {
       "code": "typeError",
       "name": "typeError",
-      "source": "compact-js-sdk",
+      "source": "compact-runtime",
       "category": "compact-runtime-error",
       "group": {
         "name": "compact-runtime errors",
@@ -7662,11 +7664,12 @@
         "assert"
       ],
       "verified_against": {
-        "source_repo": "midnight-ntwrk/artifacts",
-        "ref": "private",
-        "anchor": "compact-runtime@0.16.0 (verified via npm pack)",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04"
+        "source_repo": "LFDT-Minokawa/compact",
+        "ref": "42b43a25be1eecb62400229bb5f94a830fe14d31",
+        "anchor": "runtime/src/error.ts:43",
+        "anchor_modified": "2026-05-01",
+        "verified_at": "2026-05-04",
+        "package_version": "0.16.0"
       }
     },
     {
