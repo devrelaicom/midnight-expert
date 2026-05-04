@@ -9642,6 +9642,90 @@
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-05-04"
       }
+    },
+    {
+      "code": "45/0",
+      "name": "EmptyMembers",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority_observation Errors (index 45)",
+        "description": "Errors emitted by pallet_federated_authority_observation, which observes authority membership changes."
+      },
+      "description": "The proposed authority membership set is empty.",
+      "fixes": [
+        "Provide a non-empty membership set; the runtime requires at least one authority body"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 45, error: 0 }",
+        "pallet_federated_authority_observation::Error::EmptyMembers"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority-observation/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "45/1",
+      "name": "DuplicatedMembers",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority_observation Errors (index 45)",
+        "description": "Errors emitted by pallet_federated_authority_observation, which observes authority membership changes."
+      },
+      "description": "The proposed authority membership set contains duplicate members.",
+      "fixes": [
+        "Deduplicate the membership set before submitting; the runtime rejects duplicate auth_ids"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 45, error: 1 }",
+        "pallet_federated_authority_observation::Error::DuplicatedMembers"
+      ],
+      "severity": "error",
+      "see_also": [],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority-observation/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
+    },
+    {
+      "code": "45/2",
+      "name": "InherentAlreadyExecuted",
+      "source": "midnight-node",
+      "category": "federated-authority",
+      "group": {
+        "name": "pallet_federated_authority_observation Errors (index 45)",
+        "description": "Errors emitted by pallet_federated_authority_observation, which observes authority membership changes."
+      },
+      "description": "The federated-authority observation inherent was attempted twice in the same block; only one inherent execution is permitted per block.",
+      "fixes": [
+        "Ensure only one inherent is provided per block — duplicate inclusion indicates a bug in the inherent provider",
+        "Compare with the same variant in pallet_cnight_observation (13/2) — these are independent per-pallet limits"
+      ],
+      "aliases": [
+        "DispatchError::Module { index: 45, error: 2 }",
+        "pallet_federated_authority_observation::Error::InherentAlreadyExecuted"
+      ],
+      "severity": "error",
+      "see_also": [
+        "13/2"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-node",
+        "ref": "main",
+        "anchor": "pallets/federated-authority-observation/src/lib.rs",
+        "anchor_modified": "2026-03-11",
+        "verified_at": "2026-05-04"
+      }
     }
   ]
 }
