@@ -86,6 +86,9 @@ Source: <source>
 Category: <group name>
 Category Description: <group description>
 Severity: <error|warning|info>
+Status: <retired>                       # only present when status == "retired"
+Superseded by: <codes>                  # only present when superseded_by is non-empty
+Class: <Error|TypeError|TaggedError:*>  # only present on SDK/JS entries with a class field
 Description: <what this error means>
 Fixes:
   - <actionable fix suggestion>
@@ -114,6 +117,8 @@ Code | Name | Category | Severity
 - **Aliases** are alternative names the same error is known by in different contexts (e.g., the Rust path vs. the Substrate encoding).
 - **See Also** points to related errors that often co-occur or share root causes.
 - **Severity**: `error` = must be resolved, `warning` = should investigate, `info` = informational status.
+- **Status: retired** means the code is no longer emitted by current source but older deployed components may still surface it; the linked `Superseded by` codes are the current replacements and are the right targets for new error handling.
+- **Class** appears only for JavaScript/TypeScript SDK entries. `null` or absence means the throw site uses a bare `Error` / `TypeError` with no class identity, so message-substring matching is the only way to disambiguate.
 
 ## When to Use This vs. Reference Files
 
