@@ -1,6 +1,6 @@
 # Midnight Node Error Codes
 
-> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-node@main` (anchors: `ledger/src/versions/common/types.rs`, modified 2026-05-01; `runtime/src/lib.rs`, modified 2026-04-27).
+> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-node@main` (anchors: `ledger/src/versions/common/types.rs`, modified 2026-05-01; `runtime/src/lib.rs`, modified 2026-04-27; `partner-chains/toolkit/committee-selection/pallet/src/lib.rs` and `partner-chains/toolkit/bridge/pallet/src/lib.rs`, both modified 2026-05-01, partner-chains v1.8.0 vendored).
 
 ## Source
 
@@ -306,14 +306,20 @@ The runtime now uses the `#[frame_support::runtime]` macro (replacing `construct
 |-------|--------|-------------|
 | 5 | pallet_midnight | Core Midnight ledger pallet |
 | 6 | pallet_midnight_system | System transaction pallet |
+| 8 | pallet_session_validator_management | Partner-chains committee selection inherent (upstream `input-output-hk/partner-chains`) |
 | 13 | pallet_cnight_observation | cNIGHT bridge observation |
+| 32 | pallet_partner_chains_bridge | Partner-chains main-chain bridge inherent (upstream `input-output-hk/partner-chains`) |
 | 33 | pallet_c2m_bridge | Cardano-to-Midnight bridge — **no `#[pallet::error]`**; failures surface via system tx |
 | 44 | pallet_federated_authority | Governance authority |
 | 45 | pallet_federated_authority_observation | Authority observation |
 | 50 | pallet_system_parameters | System parameters |
 | 51 | pallet_throttle | Transaction throttling — no error variants; failures surface as `InvalidTransaction::ExhaustsResources` from the `CheckThrottle` signed extension |
 
-> Other indices in the runtime composition (Sidechain @ 4, SessionCommitteeManagement @ 8, NodeVersion @ 11, Preimage @ 15, MultiBlockMigrations @ 16, PalletSession @ 17, Scheduler @ 18, TxPause @ 19, Beefy @ 21, Mmr @ 22, BeefyMmrLeaf @ 23, Session @ 30, Bridge @ 32, Council @ 40, CouncilMembership @ 41, TechnicalCommittee @ 42, TechnicalCommitteeMembership @ 43) belong to upstream Substrate or partner-chains pallets and are not enumerated here. A user receiving `DispatchError::Module { index, error }` from one of those indices should consult the relevant upstream pallet's `Error` enum.
+> Indices 8 (`pallet_session_validator_management`) and 32 (`pallet_partner_chains_bridge`) are upstream `input-output-hk/partner-chains` pallets vendored into the Midnight runtime; their error variants are documented below alongside the Midnight-authored pallets.
+>
+> Indices 4 (`pallet_sidechain`) and 30 (`pallet_partner_chains_session`) are also partner-chains pallets but do **not** define a `#[pallet::error]` enum, so they cannot produce `DispatchError::Module { index, error }`. Their failure modes surface as inherent errors at block production, not as decodable Module errors.
+>
+> Other indices in the runtime composition (NodeVersion @ 11, Preimage @ 15, MultiBlockMigrations @ 16, PalletSession @ 17, Scheduler @ 18, TxPause @ 19, Beefy @ 21, Mmr @ 22, BeefyMmrLeaf @ 23, Council @ 40, CouncilMembership @ 41, TechnicalCommittee @ 42, TechnicalCommitteeMembership @ 43) belong to upstream Substrate pallets and are not enumerated here. A user receiving `DispatchError::Module { index, error }` from one of those indices should consult the relevant upstream pallet's `Error` enum.
 
 ### pallet_midnight (index 5)
 
@@ -357,6 +363,17 @@ The runtime now uses the `#[frame_support::runtime]` macro (replacing `construct
 | 12 | GetTransactionContextError | Transaction context retrieval error |
 | 13 | ContractNotPresent | Top-level contract-not-present |
 | 14 | BeneficiaryNotFound | Reward beneficiary not found |
+
+### pallet_session_validator_management (index 8)
+
+Upstream partner-chains pallet. `Error<T>` enum (no `#[codec(index)]` attributes — SCALE assigns sequential indices in declaration order):
+
+| Codec idx | Name | Description |
+|-----------|------|-------------|
+| 0 | InvalidEpoch | `Pallet::set` called with an epoch number that is not `current_epoch + 1` |
+| 1 | NextCommitteeAlreadySet | `Pallet::set` called twice for the same next epoch |
+
+Source: `partner-chains/toolkit/committee-selection/pallet/src/lib.rs` (vendored from `input-output-hk/partner-chains` v1.8.0). These errors are emitted by the committee selection inherent and surface block-production-side, not from user-submitted extrinsics.
 
 ### pallet_federated_authority (index 44)
 
@@ -411,6 +428,16 @@ The runtime now uses the `#[frame_support::runtime]` macro (replacing `construct
 | Variant | Name | Description |
 |---------|------|-------------|
 | 0 | UrlTooLong | URL exceeds maximum allowed length |
+
+### pallet_partner_chains_bridge (index 32)
+
+Upstream partner-chains pallet. `Error<T>` enum (no `#[codec(index)]` attributes — SCALE assigns sequential indices in declaration order):
+
+| Codec idx | Name | Description |
+|-----------|------|-------------|
+| 0 | InherentAlreadyExecuted | The bridge inherent (`handle_transfers`) was called more than once in a single block |
+
+Source: `partner-chains/toolkit/bridge/pallet/src/lib.rs` (vendored from `input-output-hk/partner-chains` v1.8.0). This error is emitted by the bridge inherent and is not reachable from user-submitted extrinsics.
 
 ---
 
