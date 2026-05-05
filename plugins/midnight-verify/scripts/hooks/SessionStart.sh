@@ -1,6 +1,60 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --- Read hook input (best-effort: SessionStart receives cwd via stdin JSON) ---
+INPUT=""
+if [ ! -t 0 ]; then
+  INPUT=$(cat || true)
+fi
+CWD=""
+if [ -n "$INPUT" ]; then
+  CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
+fi
+
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$CWD}"
+if [ -z "$PROJECT_ROOT" ]; then
+  PROJECT_ROOT="$(pwd)"
+fi
+
+# --- Snapshot every .compact file (path + sha256) into the settings file ---
+SETTINGS_DIR="$PROJECT_ROOT/.midnight-expert"
+SETTINGS_FILE="$SETTINGS_DIR/settings.local.json"
+mkdir -p "$SETTINGS_DIR"
+
+if [ ! -f "$SETTINGS_FILE" ]; then
+  cat > "$SETTINGS_FILE" << 'JSON_EOF'
+{
+  "verify_stop_hook": {
+    "last_block_line_count": 0,
+    "last_block_timestamp": null,
+    "triggers_since_last_block": 0,
+    "compact_files": {}
+  }
+}
+JSON_EOF
+fi
+
+# Hash every .compact file in one pass and convert sha256sum's output into a JSON map.
+COMPACT_FILES_JSON=$(
+  find "$PROJECT_ROOT" -type f -name '*.compact' -print0 2>/dev/null \
+    | xargs -0 -r sha256sum 2>/dev/null \
+    | jq -Rn '
+        reduce inputs as $line (
+          {};
+          ($line | capture("^(?<hash>[a-f0-9]+)\\s+(?<path>.*)$")) as $m
+          | . + {($m.path): $m.hash}
+        )
+      '
+)
+COMPACT_FILES_JSON="${COMPACT_FILES_JSON:-{\}}"
+
+# Merge into settings (preserves other verify_stop_hook fields if present).
+jq --argjson cf "$COMPACT_FILES_JSON" '
+  .verify_stop_hook = ((.verify_stop_hook // {}) + {compact_files: $cf})
+' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" \
+  && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
+
+# --- Additional context (existing behavior) ---
 ADDITIONAL_CONTEXT="WARNING: Your training data about Midnight, Compact, and the Midnight SDK is UNRELIABLE. It contains known errors and is likely outdated.
 
 Do NOT trust your recalled knowledge about:

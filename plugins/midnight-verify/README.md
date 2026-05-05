@@ -180,11 +180,11 @@ Dispatched by /verify when a claim is about opcode semantics, constraint behavio
 
 ### SessionStart
 
-Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification.
+Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification. Also snapshots SHA-256 hashes of every `*.compact` file in the project under `.midnight-expert/settings.local.json` for the Stop hook to diff against.
 
 ### Stop
 
-Scans new transcript lines for Compact code patterns and reminds about /verify with cooldown logic to avoid repeated prompts.
+Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time. Blocks only if at least one modified contract has no matching compile call, and reports the unchecked files. Skips silently on Stop reattempts and respects the existing trigger-count + 30 minute cooldown.
 
 ### SubagentStop
 
