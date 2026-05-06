@@ -263,4 +263,22 @@ Not intended for direct user invocation. Automatically dispatched by the review-
 
 ### SessionStart
 
-Runs a shell script on session start that checks Compact CLI availability, compiler version, and language version. Injects context about the current compiler state and reminds the agent about Midnight ecosystem practices (public npm packages, version checking commands). Falls back to static context if the compact CLI is not installed.
+Two scripts run at session start:
+
+- **CLI version check** (`scripts/SessionStart.sh`) -- checks Compact CLI availability, compiler version, and language version. Injects context about the current compiler state and reminds the agent about Midnight ecosystem practices (public npm packages, version checking commands). Falls back to static context if the compact CLI is not installed.
+- **`.compact` baseline snapshot** (`scripts/hooks/SessionStart-compact-check.sh`) -- snapshots SHA-256 hashes of every `*.compact` file under the project root into `.midnight-expert/settings.local.json` so the Stop hook can diff against them. If the previous SessionEnd persisted an unchecked-contracts list, prepends a warning naming those contracts to the additional context and clears the list in the same write.
+
+### SessionEnd
+
+Runs the same hash + compile-found check as the Stop hook against the ending session's transcript and persists any unchecked `*.compact` files under `compact_compilation_check_hook.unchecked_from_previous_session` for the next SessionStart to surface, then drops the SessionStart hash baseline. Configured `async: true` in `hooks.json` so it does not delay session shutdown.
+
+### Stop
+
+Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time.
+
+The check runs on **every** Stop event. Whether the agent is BLOCKED on the result is gated by a 5-trigger + 2-hour cooldown plus the `stop_hook_active` reattempt flag:
+
+- **Block path** (cooldown clear, not a reattempt): emits `{decision: "block", reason: ...}` on stderr and exits 2.
+- **Defer path** (cooldown active OR Stop reattempt): does not block, but writes the unchecked file list to `on_next_user_prompt[type == "compact-not-compiled"]` in `.midnight-expert/settings.local.json`. The `midnight-expert` plugin's `UserPromptSubmit` hook surfaces and drains that queue on the next user turn, so the warning still reaches the conversation without preventing the agent from stopping.
+
+When the check is clean, any stale `compact-not-compiled` queue entry left from a prior turn is removed.

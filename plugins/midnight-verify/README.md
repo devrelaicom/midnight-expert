@@ -182,10 +182,8 @@ Dispatched by /verify when a claim is about opcode semantics, constraint behavio
 
 Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification.
 
-### Stop
-
-Scans new transcript lines for Compact code patterns and reminds about /verify with cooldown logic to avoid repeated prompts.
+The `.compact` hash-baseline snapshot used by the SubagentStop checks below is taken by the `compact-core` plugin's `SessionStart-compact-check.sh`. The two plugins share the file `.midnight-expert/settings.local.json` (key: `compact_compilation_check_hook`).
 
 ### SubagentStop
 
-Validates that each verification sub-agent completed its work correctly before allowing it to stop. Separate hooks exist for each agent: contract-writer, source-investigator, type-checker, cli-tester, sdk-tester, witness-verifier, and zkir-checker.
+Validates that each verification sub-agent completed its work correctly before allowing it to stop. Separate hooks exist for each agent: contract-writer, source-investigator, type-checker, cli-tester, sdk-tester, witness-verifier, and zkir-checker. The contract-writer, witness-verifier, zkir-checker, and cli-tester hooks reuse a `*.compact` hash-diff + compile-found check (against the agent's own transcript), in addition to their agent-specific verifications (npm install, tsc, etc.). The shared helper `scripts/hooks/_compact-check.sh` is duplicated from `compact-core`; CI (`.github/workflows/ci-compact-core-hooks.yml`) enforces that the two copies stay byte-identical.

@@ -12,18 +12,6 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop-check.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "SubagentStop": [
       {
         "matcher": "midnight-verify:contract-writer",

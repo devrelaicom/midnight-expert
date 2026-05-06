@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# SessionStart hook: inject a "training data is unreliable" warning so the
+# model treats recalled Midnight/Compact/SDK knowledge as suspect and prefers
+# verification. The .compact hash-baseline + Stop/SessionEnd compile-check
+# logic that used to live alongside this script has moved to the compact-core
+# plugin (plugins/compact-core/scripts/hooks/).
+
 ADDITIONAL_CONTEXT="WARNING: Your training data about Midnight, Compact, and the Midnight SDK is UNRELIABLE. It contains known errors and is likely outdated.
 
 Do NOT trust your recalled knowledge about:
