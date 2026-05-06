@@ -3,9 +3,10 @@ set -euo pipefail
 
 # SessionEnd hook: run the same .compact hash + compile-found check as the
 # Stop hook. Persist any unchecked files under
-# verify_stop_hook.unchecked_from_previous_session so the next session's
-# SessionStart can surface them, then drop the SessionStart hash baseline.
-# Configured async in hooks.json so it does not delay session shutdown.
+# compact_compilation_check_hook.unchecked_from_previous_session so the next
+# session's SessionStart can surface them, then drop the SessionStart hash
+# baseline. Configured async in hooks.json so it does not delay session
+# shutdown.
 
 INPUT=""
 if [ ! -t 0 ]; then
@@ -43,9 +44,9 @@ fi
 
 # Persist the unchecked list and drop the SessionStart baseline atomically.
 jq --argjson u "$UNCHECKED_JSON" '
-  .verify_stop_hook = (.verify_stop_hook // {})
-  | .verify_stop_hook.unchecked_from_previous_session = $u
-  | del(.verify_stop_hook.compact_files)
+  .compact_compilation_check_hook = (.compact_compilation_check_hook // {})
+  | .compact_compilation_check_hook.unchecked_from_previous_session = $u
+  | del(.compact_compilation_check_hook.compact_files)
 ' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" \
   && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
 

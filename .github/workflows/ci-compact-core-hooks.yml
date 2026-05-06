@@ -1,0 +1,55 @@
+name: CI - compact-core hooks
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'plugins/compact-core/scripts/hooks/**'
+      - 'plugins/compact-core/hooks/hooks.json'
+      - 'plugins/midnight-verify/scripts/hooks/_compact-check.sh'
+      - 'plugins/midnight-verify/scripts/hooks/subagent-stop-*.sh'
+      - 'plugins/midnight-verify/hooks/hooks.json'
+      - '.github/workflows/ci-compact-core-hooks.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'plugins/compact-core/scripts/hooks/**'
+      - 'plugins/compact-core/hooks/hooks.json'
+      - 'plugins/midnight-verify/scripts/hooks/_compact-check.sh'
+      - 'plugins/midnight-verify/scripts/hooks/subagent-stop-*.sh'
+      - 'plugins/midnight-verify/hooks/hooks.json'
+      - '.github/workflows/ci-compact-core-hooks.yml'
+
+jobs:
+  hook-tests:
+    name: Drift check + functional hook tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Drift check — _compact-check.sh copies must be byte-identical
+        # The helper is duplicated in compact-core (canonical) and midnight-verify
+        # (used by the four SubagentStop hooks). Both copies must stay in lockstep
+        # so the rename / behavior changes can never diverge silently.
+        run: |
+          a=$(sha256sum plugins/compact-core/scripts/hooks/_compact-check.sh | cut -d' ' -f1)
+          b=$(sha256sum plugins/midnight-verify/scripts/hooks/_compact-check.sh | cut -d' ' -f1)
+          echo "compact-core:    $a"
+          echo "midnight-verify: $b"
+          if [ "$a" != "$b" ]; then
+            echo "::error::_compact-check.sh has drifted between compact-core and midnight-verify."
+            echo "::error::Sync the two copies (cp the canonical compact-core file over the midnight-verify one)."
+            exit 1
+          fi
+
+      - name: Validate hooks.json files
+        run: |
+          jq . plugins/compact-core/hooks/hooks.json > /dev/null
+          jq . plugins/midnight-verify/hooks/hooks.json > /dev/null
+
+      - name: Run hook test suite
+        run: bash plugins/compact-core/scripts/hooks/tests/run.sh

@@ -263,4 +263,15 @@ Not intended for direct user invocation. Automatically dispatched by the review-
 
 ### SessionStart
 
-Runs a shell script on session start that checks Compact CLI availability, compiler version, and language version. Injects context about the current compiler state and reminds the agent about Midnight ecosystem practices (public npm packages, version checking commands). Falls back to static context if the compact CLI is not installed.
+Two scripts run at session start:
+
+- **CLI version check** (`scripts/SessionStart.sh`) -- checks Compact CLI availability, compiler version, and language version. Injects context about the current compiler state and reminds the agent about Midnight ecosystem practices (public npm packages, version checking commands). Falls back to static context if the compact CLI is not installed.
+- **`.compact` baseline snapshot** (`scripts/hooks/SessionStart-compact-check.sh`) -- snapshots SHA-256 hashes of every `*.compact` file under the project root into `.midnight-expert/settings.local.json` so the Stop hook can diff against them. If the previous SessionEnd persisted an unchecked-contracts list, prepends a warning naming those contracts to the additional context and clears the list in the same write.
+
+### SessionEnd
+
+Runs the same hash + compile-found check as the Stop hook against the ending session's transcript and persists any unchecked `*.compact` files under `compact_compilation_check_hook.unchecked_from_previous_session` for the next SessionStart to surface, then drops the SessionStart hash baseline. Configured `async: true` in `hooks.json` so it does not delay session shutdown.
+
+### Stop
+
+Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time. Blocks only if at least one modified contract has no matching compile call, and reports the unchecked files. Skips silently on Stop reattempts and respects a trigger-count + 2 hour cooldown.

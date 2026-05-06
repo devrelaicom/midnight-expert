@@ -180,16 +180,10 @@ Dispatched by /verify when a claim is about opcode semantics, constraint behavio
 
 ### SessionStart
 
-Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification. Also snapshots SHA-256 hashes of every `*.compact` file in the project under `.midnight-expert/settings.local.json` for the Stop hook to diff against. If the previous SessionEnd persisted an unchecked-contracts list, prepends a warning naming those contracts to the additional context and clears the list in the same write.
+Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification.
 
-### SessionEnd
-
-Runs the same hash + compile-found check as the Stop hook against the ending session's transcript and persists any unchecked `*.compact` files under `verify_stop_hook.unchecked_from_previous_session` for the next SessionStart to surface, then drops the SessionStart hash baseline. Configured `async: true` in `hooks.json` so it does not delay session shutdown.
-
-### Stop
-
-Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time. Blocks only if at least one modified contract has no matching compile call, and reports the unchecked files. Skips silently on Stop reattempts and respects a trigger-count + 2 hour cooldown.
+The `.compact` hash-baseline snapshot used by the SubagentStop checks below is taken by the `compact-core` plugin's `SessionStart-compact-check.sh`. The two plugins share the file `.midnight-expert/settings.local.json` (key: `compact_compilation_check_hook`).
 
 ### SubagentStop
 
-Validates that each verification sub-agent completed its work correctly before allowing it to stop. Separate hooks exist for each agent: contract-writer, source-investigator, type-checker, cli-tester, sdk-tester, witness-verifier, and zkir-checker. The contract-writer, witness-verifier, zkir-checker, and cli-tester hooks reuse the same `*.compact` hash-diff + compile-found check as the Stop hook (against the agent's own transcript), in addition to their agent-specific verifications (npm install, tsc, etc.).
+Validates that each verification sub-agent completed its work correctly before allowing it to stop. Separate hooks exist for each agent: contract-writer, source-investigator, type-checker, cli-tester, sdk-tester, witness-verifier, and zkir-checker. The contract-writer, witness-verifier, zkir-checker, and cli-tester hooks reuse a `*.compact` hash-diff + compile-found check (against the agent's own transcript), in addition to their agent-specific verifications (npm install, tsc, etc.). The shared helper `scripts/hooks/_compact-check.sh` is duplicated from `compact-core`; CI (`.github/workflows/ci-compact-core-hooks.yml`) enforces that the two copies stay byte-identical.

@@ -8,6 +8,36 @@
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/SessionStart.sh",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/SessionStart-compact-check.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/Stop.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/SessionEnd.sh",
+            "async": true,
+            "timeout": 30
           }
         ]
       }

@@ -31,7 +31,7 @@ if [ ! -f "$SETTINGS_FILE" ]; then
   mkdir -p "$SETTINGS_DIR"
   cat > "$SETTINGS_FILE" << 'JSON_EOF'
 {
-  "verify_stop_hook": {
+  "compact_compilation_check_hook": {
     "last_block_line_count": 0,
     "last_block_timestamp": null,
     "triggers_since_last_block": 0,
@@ -42,12 +42,12 @@ JSON_EOF
 fi
 
 # --- Read state ---
-TRIGGERS=$(jq -r '.verify_stop_hook.triggers_since_last_block // 0' "$SETTINGS_FILE")
-LAST_TIMESTAMP=$(jq -r '.verify_stop_hook.last_block_timestamp // null' "$SETTINGS_FILE")
+TRIGGERS=$(jq -r '.compact_compilation_check_hook.triggers_since_last_block // 0' "$SETTINGS_FILE")
+LAST_TIMESTAMP=$(jq -r '.compact_compilation_check_hook.last_block_timestamp // null' "$SETTINGS_FILE")
 
 # --- Increment trigger count ---
 TRIGGERS=$((TRIGGERS + 1))
-jq --argjson t "$TRIGGERS" '.verify_stop_hook.triggers_since_last_block = $t' \
+jq --argjson t "$TRIGGERS" '.compact_compilation_check_hook.triggers_since_last_block = $t' \
   "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" \
   && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
 
@@ -83,9 +83,9 @@ NOW_ISO=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
 
 jq --argjson lc "$CURRENT_LINES" \
    --arg ts "$NOW_ISO" \
-   '.verify_stop_hook.last_block_line_count = $lc |
-    .verify_stop_hook.last_block_timestamp = $ts |
-    .verify_stop_hook.triggers_since_last_block = 0' \
+   '.compact_compilation_check_hook.last_block_line_count = $lc |
+    .compact_compilation_check_hook.last_block_timestamp = $ts |
+    .compact_compilation_check_hook.triggers_since_last_block = 0' \
    "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" \
   && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
 

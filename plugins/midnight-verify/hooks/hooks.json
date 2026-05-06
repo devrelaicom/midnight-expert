@@ -12,31 +12,6 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop-check.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/SessionEnd.sh",
-            "async": true,
-            "timeout": 30
-          }
-        ]
-      }
-    ],
     "SubagentStop": [
       {
         "matcher": "midnight-verify:contract-writer",
