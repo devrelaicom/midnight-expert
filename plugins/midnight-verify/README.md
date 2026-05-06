@@ -180,7 +180,11 @@ Dispatched by /verify when a claim is about opcode semantics, constraint behavio
 
 ### SessionStart
 
-Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification. Also snapshots SHA-256 hashes of every `*.compact` file in the project under `.midnight-expert/settings.local.json` for the Stop hook to diff against.
+Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification. Also snapshots SHA-256 hashes of every `*.compact` file in the project under `.midnight-expert/settings.local.json` for the Stop hook to diff against. If the previous SessionEnd persisted an unchecked-contracts list, prepends a warning naming those contracts to the additional context and clears the list in the same write.
+
+### SessionEnd
+
+Runs the same hash + compile-found check as the Stop hook against the ending session's transcript and persists any unchecked `*.compact` files under `verify_stop_hook.unchecked_from_previous_session` for the next SessionStart to surface, then drops the SessionStart hash baseline. Configured `async: true` in `hooks.json` so it does not delay session shutdown.
 
 ### Stop
 

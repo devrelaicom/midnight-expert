@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-# Sourced helper. Defines compact_changed_check() used by Stop and SubagentStop
-# hooks. Compares every *.compact file in the project against the SessionStart
-# baseline. For each new or modified file, looks for a Bash tool_use whose
-# command runs `compact compile` or `compactc` and contains the file's
-# basename, with timestamp >= the file's mtime. Writes a {decision:"block"...}
-# JSON object to stdout iff one or more files are unverified; otherwise writes
-# nothing. Always returns 0 -- callers branch on whether stdout is empty.
+# Sourced helper. Exposes:
 #
-# Args: $1 = project root, $2 = transcript path, $3 = settings file
+#   compact_unchecked_files <project_root> <transcript> <settings>
+#     Prints every *.compact file that is new or has changed hash since the
+#     SessionStart snapshot AND is not covered by a Bash `compact compile` /
+#     `compactc` tool call (containing the file's basename, with timestamp >=
+#     the file's mtime) in <transcript>. One path per line; empty if none.
+#
+#   compact_changed_check <project_root> <transcript> <settings>
+#     Wraps compact_unchecked_files. Prints a {decision:"block",reason:...}
+#     JSON object to stdout iff one or more files are unverified; otherwise
+#     prints nothing. Always returns 0 -- callers branch on stdout being empty.
 
-compact_changed_check() {
+compact_unchecked_files() {
   local project_root="$1"
   local transcript_path="$2"
   local settings_file="$3"
@@ -25,7 +28,6 @@ compact_changed_check() {
   fi
 
   local file current_hash stored_hash filename file_mtime latest_compile_ts compile_epoch ts
-  local -a unchecked=()
 
   while IFS= read -r -d '' file; do
     current_hash=$(sha256sum "$file" | awk '{print $1}')
@@ -63,18 +65,23 @@ compact_changed_check() {
       fi
     fi
 
-    unchecked+=("$file")
+    printf '%s\n' "$file"
   done < <(find "$project_root" -type f -name '*.compact' -print0 2>/dev/null)
+}
 
-  if [ ${#unchecked[@]} -eq 0 ]; then
+compact_changed_check() {
+  local files
+  files=$(compact_unchecked_files "$1" "$2" "$3")
+
+  if [ -z "$files" ]; then
     return 0
   fi
 
-  local list=""
-  local f
-  for f in "${unchecked[@]}"; do
+  local list="" f
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
     list+="- ${f}"$'\n'
-  done
+  done <<< "$files"
 
   local reason="The following Compact contracts were created or modified in this session but were not compiled (no \`compact compile\` or \`compactc\` invocation including the file name was found in the transcript after the file's last modification):
 
