@@ -14,6 +14,17 @@ Privacy is the default in Compact. All witness-derived data is private unless ex
 
 `disclose()` is a compiler annotation, not a runtime operation. It does not encrypt, hash, or transform the value. Placing `disclose(x)` simply marks `x` as "okay to make public." The programmer is asserting: "I understand this value will be visible on-chain, and that is intentional."
 
+## Visibility vs. Taint (Two Different Properties)
+
+These are routinely conflated and must be kept separate:
+
+- **Witness taint** (compile-time concept). The compiler tags every value returned from a `witness` function, every exported circuit parameter, and every constructor parameter as "potentially private." Taint propagates through arithmetic, struct construction, circuit calls, casts, lambda captures. The compiler enforces taint at every public boundary, where `disclose()` is the only way to clear it.
+- **Public transcript visibility** (on-chain reality). A value only enters the public transaction transcript if the source code crosses a public boundary with that value while it is still tainted (or via an unprotected return / ledger write / cross-contract call / public conditional). Values that are not disclosed remain PLONK *private inputs* to the proof and are never observable on-chain.
+
+**Exported circuit parameters are private by default.** They are PLONK private inputs. They become publicly visible only when the circuit body crosses a public boundary with them. A parameter that is consumed only by witness calls, commitments, internal hashes, or private asserts is never observable on-chain. Verified empirically: a contract with `export circuit addPrivately(amount, rand) { lastHash = persistentCommit(amount, rand); }` produces a transaction whose `publicTranscript` contains only the 32-byte commitment hash — the raw `amount` value is absent.
+
+The corollary: a value being "tagged with witness taint" does NOT mean it is publicly visible — it means the compiler is watching it. Tagging is a safety mechanism; visibility is what actually reaches the chain.
+
 ## Privacy Decision Tree
 
 | What to Protect | Approach | Key Primitives |
@@ -47,6 +58,7 @@ Privacy is the default in Compact. All witness-derived data is private unless ex
 | Internal circuit calls | `helper(witness_val)` | Non-exported, stays in proof |
 | Intermediate variables | `const x = a + b` | No public boundary crossed |
 | Commitment inputs | `persistentCommit<Field>(secret, rand)` | Commitment cryptographically hides input |
+| Exported circuit parameter used only internally | `lastHash = persistentCommit(amount, rand)` where `amount` is a circuit param | Param is a PLONK private input; raw value never enters the public transcript unless disclosed at a boundary |
 
 ## Safe Stdlib Routines
 

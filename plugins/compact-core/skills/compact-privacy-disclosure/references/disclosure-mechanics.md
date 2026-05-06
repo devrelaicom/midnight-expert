@@ -52,6 +52,8 @@ Witness data enters a circuit from three sources. Any value derived from these s
 
 Because witness functions are implemented off-chain in TypeScript, not in the Compact source, their return values are inherently untrusted. The compiler treats all witness outputs as potentially private data that must be explicitly disclosed before crossing a public boundary.
 
+> **Note: tagging is not visibility.** "Witness data" in this table means the compiler tags these values for taint tracking — it does NOT mean they are publicly visible. All three sources (witness returns, exported circuit parameters, constructor parameters) start their lives as PLONK *private inputs* to the proof. They only enter the public transaction transcript if the source code crosses a public boundary while the value is still tainted (i.e., via `disclose()` at a ledger write, a return from an exported circuit, a public conditional, or a cross-contract call). An exported circuit parameter consumed only by an internal commitment, hash, or private assert never appears on-chain. Empirically confirmed via `compact compile` + ZKIR inspection: PLONK private inputs include every untouched parameter; the public transcript reflects only the disclosed boundary points.
+
 ## The Witness Protection Program
 
 The Witness Protection Program is the compiler's abstract interpreter. Instead of evaluating a program with actual runtime values, it evaluates using abstract values that track whether each value contains witness data.
