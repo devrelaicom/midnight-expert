@@ -11,7 +11,9 @@
 set -euo pipefail
 
 HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export HOOKS_DIR
+PLUGINS_DIR="$(cd "$HOOKS_DIR/../../.." && pwd)"
+MIDNIGHT_EXPERT_HOOKS_DIR="$PLUGINS_DIR/midnight-expert/scripts/hooks"
+export HOOKS_DIR PLUGINS_DIR MIDNIGHT_EXPERT_HOOKS_DIR
 
 # --- Test infrastructure ----------------------------------------------------
 
@@ -115,21 +117,26 @@ transcript_with_compile() {
 # Run a hook script, piping the given JSON object on stdin. Captures stdout,
 # stderr, and exit code into the named variables (passed by name).
 #
-# usage: run_hook <script_basename> <stdin_json> <stdout_var> <stderr_var> <rc_var>
-run_hook() {
-  local script="$1" payload="$2"
+# usage: run_hook_at <full_script_path> <stdin_json> <stdout_var> <stderr_var> <rc_var>
+run_hook_at() {
+  local script_path="$1" payload="$2"
   local out_var="$3" err_var="$4" rc_var="$5"
   local out err rc=0
 
   local tmp_err
   tmp_err=$(mktemp)
-  out=$(printf '%s' "$payload" | bash "$HOOKS_DIR/$script" 2>"$tmp_err") || rc=$?
+  out=$(printf '%s' "$payload" | bash "$script_path" 2>"$tmp_err") || rc=$?
   err=$(cat "$tmp_err")
   rm -f "$tmp_err"
 
   printf -v "$out_var" '%s' "$out"
   printf -v "$err_var" '%s' "$err"
   printf -v "$rc_var" '%s' "$rc"
+}
+
+# usage: run_hook <script_basename_in_HOOKS_DIR> <stdin_json> <stdout_var> <stderr_var> <rc_var>
+run_hook() {
+  run_hook_at "$HOOKS_DIR/$1" "$2" "$3" "$4" "$5"
 }
 
 # Initialize a settings file with a baseline matching SessionStart's defaults

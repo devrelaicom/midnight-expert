@@ -274,4 +274,11 @@ Runs the same hash + compile-found check as the Stop hook against the ending ses
 
 ### Stop
 
-Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time. Blocks only if at least one modified contract has no matching compile call, and reports the unchecked files. Skips silently on Stop reattempts and respects a trigger-count + 2 hour cooldown.
+Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time.
+
+The check runs on **every** Stop event. Whether the agent is BLOCKED on the result is gated by a 5-trigger + 2-hour cooldown plus the `stop_hook_active` reattempt flag:
+
+- **Block path** (cooldown clear, not a reattempt): emits `{decision: "block", reason: ...}` on stderr and exits 2.
+- **Defer path** (cooldown active OR Stop reattempt): does not block, but writes the unchecked file list to `on_next_user_prompt[type == "compact-not-compiled"]` in `.midnight-expert/settings.local.json`. The `midnight-expert` plugin's `UserPromptSubmit` hook surfaces and drains that queue on the next user turn, so the warning still reaches the conversation without preventing the agent from stopping.
+
+When the check is clean, any stale `compact-not-compiled` queue entry left from a prior turn is removed.

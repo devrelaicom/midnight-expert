@@ -33,18 +33,27 @@ run_hook "Stop.sh" "$PAYLOAD" OUT ERR RC
 
 chk_eq "1h-ago cooldown: Stop exits 0" "0" "$RC"
 chk_eq "1h-ago cooldown: no stderr"    "" "$ERR"
+chk_jq "1h-ago cooldown: queues compact-not-compiled" "$SETTINGS" \
+  '[.on_next_user_prompt[]? | select(.type == "compact-not-compiled")] | length' "1"
+chk_jq "1h-ago cooldown: queue names a.compact" "$SETTINGS" \
+  '[.on_next_user_prompt[]? | select(.type == "compact-not-compiled") | .files[]] | .[0]' \
+  "$ROOT/a.compact"
 
 # --- Case 2: last block 3 hours ago, triggers high. Stop SHOULD block. ---
+# Reset triggers since case 1 incremented them to 11 (stays >= 5 anyway).
 THREE_HOURS_AGO=$(date -u -d "3 hours ago" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
               || date -u -v-3H "+%Y-%m-%dT%H:%M:%SZ")
 jq --arg ts "$THREE_HOURS_AGO" \
    '.compact_compilation_check_hook.triggers_since_last_block = 10
-    | .compact_compilation_check_hook.last_block_timestamp = $ts' \
+    | .compact_compilation_check_hook.last_block_timestamp = $ts
+    | del(.on_next_user_prompt)' \
    "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
 
 run_hook "Stop.sh" "$PAYLOAD" OUT ERR RC
 
 chk_eq       "3h-ago cooldown: Stop exits 2" "2" "$RC"
 chk_contains "3h-ago cooldown: blocks"       "$ERR" "a.compact"
+chk_jq       "3h-ago cooldown: block path does NOT queue" "$SETTINGS" \
+  '.on_next_user_prompt // "absent"' "absent"
 
 summary

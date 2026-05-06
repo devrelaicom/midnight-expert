@@ -40,5 +40,7 @@ chk_jq        "triggers reset to 0 after block"  "$SETTINGS" \
   '.compact_compilation_check_hook.triggers_since_last_block' "0"
 chk_jq        "last_block_timestamp recorded"    "$SETTINGS" \
   '.compact_compilation_check_hook.last_block_timestamp | type' "string"
+chk_jq        "block path does NOT also queue"   "$SETTINGS" \
+  '.on_next_user_prompt // "absent"' "absent"
 
 summary

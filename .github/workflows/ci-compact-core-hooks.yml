@@ -9,6 +9,8 @@ on:
       - 'plugins/midnight-verify/scripts/hooks/_compact-check.sh'
       - 'plugins/midnight-verify/scripts/hooks/subagent-stop-*.sh'
       - 'plugins/midnight-verify/hooks/hooks.json'
+      - 'plugins/midnight-expert/scripts/hooks/**'
+      - 'plugins/midnight-expert/hooks/hooks.json'
       - '.github/workflows/ci-compact-core-hooks.yml'
   push:
     branches:
@@ -19,6 +21,8 @@ on:
       - 'plugins/midnight-verify/scripts/hooks/_compact-check.sh'
       - 'plugins/midnight-verify/scripts/hooks/subagent-stop-*.sh'
       - 'plugins/midnight-verify/hooks/hooks.json'
+      - 'plugins/midnight-expert/scripts/hooks/**'
+      - 'plugins/midnight-expert/hooks/hooks.json'
       - '.github/workflows/ci-compact-core-hooks.yml'
 
 jobs:
@@ -50,6 +54,7 @@ jobs:
         run: |
           jq . plugins/compact-core/hooks/hooks.json > /dev/null
           jq . plugins/midnight-verify/hooks/hooks.json > /dev/null
+          jq . plugins/midnight-expert/hooks/hooks.json > /dev/null
 
       - name: Run hook test suite
         run: bash plugins/compact-core/scripts/hooks/tests/run.sh

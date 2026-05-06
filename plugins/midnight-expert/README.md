@@ -17,3 +17,13 @@ Runs comprehensive diagnostics across the midnight-expert ecosystem. Launches fi
 | Name | Description | When it is used |
 |------|-------------|-----------------|
 | [fix-table.md](skills/doctor/references/fix-table.md) | Maps diagnostic output to actionable fixes, including auto-fix classification for silent vs prompted resolution | When interpreting doctor results and determining how to resolve detected issues |
+
+## Hooks
+
+### UserPromptSubmit
+
+On every user prompt, drains the top-level `on_next_user_prompt` array in `.midnight-expert/settings.local.json` and surfaces its formatted contents as additional context for that turn. Each entry is an object with a `type` discriminator; the hook formats known types and silently skips unknown ones (forward-compat).
+
+Currently consumed: `compact-not-compiled` entries written by the `compact-core` Stop hook when it detected unchecked Compact contracts but couldn't block (Stop reattempt, or cooldown still active). The format names the contract paths and asks the agent to compile / verify them before treating any related claim as confirmed.
+
+The hook always exits 0; it never blocks prompt submission.
