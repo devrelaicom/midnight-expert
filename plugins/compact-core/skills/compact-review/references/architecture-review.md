@@ -258,7 +258,9 @@ Check the division of logic between circuit (on-chain verification) and witness 
   }
   ```
 
-- [ ] **Private data never passed directly to circuit parameters.** Circuits receive their private inputs through witness functions. If a circuit parameter appears to be a secret (e.g., a secret key), verify it arrives through a witness call within the circuit body, not as an `export circuit` parameter visible to the caller.
+- [ ] **Long-lived secrets fetched via `witness()` rather than passed as exported circuit parameters (clarity recommendation, NOT a privacy rule).** Both witness return values and exported circuit parameters are private by default — the compiler tags them with witness taint and they end up as PLONK private inputs to the proof. Neither is included in the public transaction transcript unless the circuit body explicitly crosses a public boundary with that value (`disclose()` to a ledger ADT, return from an exported circuit, public conditional, cross-contract call). Preferring `witness()` for long-lived secrets like a user's secret key is a *style* recommendation: it keeps the circuit's public API free of secret-looking parameter names and makes the data flow obvious to reviewers. It is NOT a privacy fix.
+
+  ⚠ **Common false positive to avoid.** Do not flag an exported circuit parameter as a privacy leak solely because the parameter *looks* private (e.g., `acceptGame(x1: Field, x2: Field)` taking ship coordinates). Identify the actual public-boundary crossings inside the circuit body. If the value is only consumed internally (passed to a witness, used as a commitment input, hashed for a nullifier, compared inside a private assert), it stays inside the ZK proof as a private input and is not observable on-chain. Verified empirically: contract-writer + zkir-checker confirm args are PLONK private inputs by default; raw values enter `publicTranscript` only at explicit disclosure points.
 
 ## State Initialization Checklist
 

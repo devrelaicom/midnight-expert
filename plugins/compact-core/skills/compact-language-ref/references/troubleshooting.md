@@ -134,7 +134,7 @@ export circuit check(guess: Field): Boolean {
 
 ### Ledger Write Disclosure
 
-Circuit parameters are witness values (provided by the caller/prover). Writing them to the ledger makes them public, so the compiler requires `disclose()`:
+Circuit parameters are tagged as witness data by the compiler — their taint propagates like witness function returns. The parameters themselves are PLONK private inputs to the proof and are not in the public transcript. Writing one to the ledger, however, crosses a public boundary, which is why the compiler requires `disclose()` at the write site (not at the parameter site):
 
 ```compact
 // Wrong -- potential witness-value disclosure must be declared

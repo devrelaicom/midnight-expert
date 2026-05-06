@@ -48,6 +48,10 @@ Check every `disclose()` call in the contract for necessity and placement.
 
 Check for private witness data escaping the zero-knowledge proof boundary.
 
+- [ ] **Before flagging an exported circuit parameter as a leak, identify the actual public-boundary crossing in the circuit body.** Exported circuit parameters are tagged as witness data by the compiler, but they are PLONK *private inputs* to the proof and are not observable on-chain unless the circuit body explicitly crosses a public boundary with them. A finding is only valid if the parameter flows to one of: a ledger write (the compiler enforces `disclose()` here), a return from the exported circuit, a public conditional, or a cross-contract call. A parameter consumed only by a witness call, a commitment input, an internal hash, or a private assert stays inside the proof and is NOT a privacy issue.
+
+  This rule guards against a common false positive: flagging private-looking parameters (e.g., `acceptGame(x1, x2)` taking ship coordinates) without checking whether the circuit body actually leaks them. Verified empirically — contract-writer + zkir-checker confirm that parameters not reached by `disclose()` never enter the public transcript; the verifier sees only PLONK public inputs the source code declared public.
+
 - [ ] **Witness-derived values written to public ledger without `disclose()`.** The compiler catches this as an error, but review the intent. If the developer added `disclose()` solely to silence the compiler without considering whether the value should actually be public, that is a privacy bug even though the code compiles.
 
 > **Tool:** `COMPILE_RESULT` shows `implicit disclosure of witness value` errors for these cases.
