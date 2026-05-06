@@ -184,8 +184,8 @@ Injects a warning at session start reminding the model that its training data ab
 
 ### Stop
 
-Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time. Blocks only if at least one modified contract has no matching compile call, and reports the unchecked files. Skips silently on Stop reattempts and respects the existing trigger-count + 30 minute cooldown.
+Diffs every `*.compact` file in the project against the SessionStart snapshot. For files that are new or whose hash has changed, scans the transcript for a Bash `compact compile` / `compactc` invocation that names the file and was issued after the file's last modification time. Blocks only if at least one modified contract has no matching compile call, and reports the unchecked files. Skips silently on Stop reattempts and respects a trigger-count + 2 hour cooldown.
 
 ### SubagentStop
 
-Validates that each verification sub-agent completed its work correctly before allowing it to stop. Separate hooks exist for each agent: contract-writer, source-investigator, type-checker, cli-tester, sdk-tester, witness-verifier, and zkir-checker.
+Validates that each verification sub-agent completed its work correctly before allowing it to stop. Separate hooks exist for each agent: contract-writer, source-investigator, type-checker, cli-tester, sdk-tester, witness-verifier, and zkir-checker. The contract-writer, witness-verifier, zkir-checker, and cli-tester hooks reuse the same `*.compact` hash-diff + compile-found check as the Stop hook (against the agent's own transcript), in addition to their agent-specific verifications (npm install, tsc, etc.).

@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # SubagentStop hook for midnight-verify:zkir-checker
-# Verifies the agent compiled a contract AND set up the ZKIR checker
+# Verifies the agent set up the ZKIR checker AND compiled any .compact files
+# it created or modified.
 
 INPUT=$(cat)
 STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
@@ -10,6 +11,7 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
 fi
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.agent_transcript_path // empty')
+CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 
 if [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ]; then
   exit 0  # No transcript available, allow
@@ -17,19 +19,24 @@ fi
 
 CONTENT=$(cat "$TRANSCRIPT")
 
-# Check 1: Verify compact compile was run
-if ! echo "$CONTENT" | grep -qE 'compact compile'; then
+# Check 1: Verify npm install or npm ls for zkir-v2
+if ! echo "$CONTENT" | grep -qE 'npm install @midnight-ntwrk/zkir-v2|npm ls @midnight-ntwrk/zkir-v2'; then
   cat >&2 <<'EOF'
 {"decision":"block","reason":"You must follow the process as described in the `midnight-verify:verify-by-zkir-checker` skill. Do not attempt to take shortcuts. Only verifications which have followed the process will be accepted and not blocked."}
 EOF
   exit 2
 fi
 
-# Check 2: Verify npm install or npm ls for zkir-v2
-if ! echo "$CONTENT" | grep -qE 'npm install @midnight-ntwrk/zkir-v2|npm ls @midnight-ntwrk/zkir-v2'; then
-  cat >&2 <<'EOF'
-{"decision":"block","reason":"You must follow the process as described in the `midnight-verify:verify-by-zkir-checker` skill. Do not attempt to take shortcuts. Only verifications which have followed the process will be accepted and not blocked."}
-EOF
+# Check 2: Any .compact file the agent touched must have been compiled
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$CWD}"
+SETTINGS_FILE="$PROJECT_ROOT/.midnight-expert/settings.local.json"
+
+# shellcheck source=_compact-check.sh
+source "$(dirname "$0")/_compact-check.sh"
+
+BLOCK_JSON=$(compact_changed_check "$PROJECT_ROOT" "$TRANSCRIPT" "$SETTINGS_FILE")
+if [ -n "$BLOCK_JSON" ]; then
+  printf '%s\n' "$BLOCK_JSON" >&2
   exit 2
 fi
 

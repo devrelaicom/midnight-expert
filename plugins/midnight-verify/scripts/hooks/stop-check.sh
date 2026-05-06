@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Stop hook: detect .compact files that have changed (or appeared) since the
 # SessionStart snapshot and have not been compiled in this session. Block only
-# if such files exist, with the same trigger-count + 30 minute cooldown as
-# before, and exit silently on Stop reattempts.
+# if such files exist, with a 5 trigger + 2 hour cooldown gate, and exit
+# silently on Stop reattempts.
 
 # --- Read hook input ---
 INPUT=$(cat)
@@ -56,78 +56,24 @@ if [ "$TRIGGERS" -lt 5 ]; then
   exit 0
 fi
 
-# --- Cooldown: blocked too recently (< 30 minutes ago) ---
+# --- Cooldown: blocked too recently (< 2 hours ago) ---
 if [ "$LAST_TIMESTAMP" != "null" ] && [ -n "$LAST_TIMESTAMP" ]; then
   LAST_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${LAST_TIMESTAMP%%.*}" "+%s" 2>/dev/null \
             || date -d "${LAST_TIMESTAMP}" "+%s" 2>/dev/null \
             || echo 0)
   NOW_EPOCH=$(date "+%s")
   DIFF=$(( NOW_EPOCH - LAST_EPOCH ))
-  if [ "$DIFF" -lt 1800 ]; then
+  if [ "$DIFF" -lt 7200 ]; then
     exit 0
   fi
 fi
 
-# --- Need a transcript to confirm any compile invocations ---
-if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
-  exit 0
-fi
+# --- Run the shared .compact change/compile check ---
+# shellcheck source=_compact-check.sh
+source "$(dirname "$0")/_compact-check.sh"
 
-# --- Helpers ---
-file_mtime() {
-  stat -c "%Y" "$1" 2>/dev/null \
-    || stat -f "%m" "$1" 2>/dev/null \
-    || echo 0
-}
-
-iso_to_epoch() {
-  local ts="${1%Z}"
-  ts="${ts%%.*}"
-  date -d "$ts" "+%s" 2>/dev/null \
-    || date -j -f "%Y-%m-%dT%H:%M:%S" "$ts" "+%s" 2>/dev/null \
-    || echo 0
-}
-
-# --- Compare each .compact file against its baseline hash ---
-UNCHECKED=()
-
-while IFS= read -r -d '' file; do
-  CURRENT_HASH=$(sha256sum "$file" | awk '{print $1}')
-  STORED_HASH=$(jq -r --arg f "$file" '.verify_stop_hook.compact_files[$f] // empty' \
-                "$SETTINGS_FILE")
-
-  # Unchanged since SessionStart -- nothing to verify here.
-  if [ -n "$STORED_HASH" ] && [ "$CURRENT_HASH" = "$STORED_HASH" ]; then
-    continue
-  fi
-
-  # New or modified: look for a Bash tool call that compiled this file.
-  FILENAME=$(basename "$file")
-  FILE_MTIME=$(file_mtime "$file")
-
-  LATEST_COMPILE_TS=$(jq -r --arg fn "$FILENAME" '
-    select((.message.content // []) | type == "array")
-    | select(any(.message.content[]?;
-        .type? == "tool_use"
-        and .name? == "Bash"
-        and ((.input.command? // "") | test("compact[[:space:]]+compile|compactc"))
-        and ((.input.command? // "") | contains($fn))
-      ))
-    | .timestamp // empty
-  ' "$TRANSCRIPT_PATH" 2>/dev/null | tail -1)
-
-  if [ -n "$LATEST_COMPILE_TS" ]; then
-    COMPILE_EPOCH=$(iso_to_epoch "$LATEST_COMPILE_TS")
-    if [ "$COMPILE_EPOCH" -ge "$FILE_MTIME" ]; then
-      continue
-    fi
-  fi
-
-  UNCHECKED+=("$file")
-done < <(find "$PROJECT_ROOT" -type f -name '*.compact' -print0 2>/dev/null)
-
-# --- Nothing to flag: approve silently ---
-if [ ${#UNCHECKED[@]} -eq 0 ]; then
+BLOCK_JSON=$(compact_changed_check "$PROJECT_ROOT" "$TRANSCRIPT_PATH" "$SETTINGS_FILE")
+if [ -z "$BLOCK_JSON" ]; then
   exit 0
 fi
 
@@ -143,15 +89,5 @@ jq --argjson lc "$CURRENT_LINES" \
    "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" \
   && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
 
-LIST=""
-for f in "${UNCHECKED[@]}"; do
-  LIST+="- ${f}"$'\n'
-done
-
-REASON="The following Compact contracts were created or modified in this session but were not compiled (no \`compact compile\` or \`compactc\` invocation including the file name was found in the transcript after the file's last modification):
-
-${LIST}
-Run /verify on these contracts -- or invoke \`compact compile\` / \`compactc\` against them -- before finishing. This is a reminder; you decide whether verification is needed here."
-
-jq -n --arg r "$REASON" '{decision: "block", reason: $r}' >&2
+printf '%s\n' "$BLOCK_JSON" >&2
 exit 2
