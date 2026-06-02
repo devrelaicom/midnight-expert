@@ -67,7 +67,7 @@ Read `references/runtime-errors.md`
 
 Read `references/zk-errors.md`
 
-**Recognise by:** Error messages containing "Synthesis error", "constraint system", "NotEnoughRowsAvailable", "wrong arity", PLONK-related terms, or proof verification failures.
+**Recognise by:** Error messages containing "Synthesis error", "constraint system", "NotEnoughRowsAvailable", "The SRS ... does not match for the given circuit", "invalid witness", PLONK-related terms, or proof verification failures.
 
 ### 8. Transaction validation or malformed transaction error (Rust-level)
 

@@ -8665,6 +8665,36 @@
       }
     },
     {
+      "code": "IndexerError",
+      "name": "IndexerError",
+      "source": "midnight-js",
+      "category": "midnight-js-indexer-error",
+      "group": {
+        "name": "midnight-js-indexer-public-data-provider errors",
+        "description": "Errors from @midnight-ntwrk/midnight-js-indexer-public-data-provider."
+      },
+      "description": "Abstract base class (added in v4.1.1) for all errors raised by the indexer public data provider. Catch with `instanceof IndexerError` to handle any indexer error; narrow to a subclass (IndexerFormattedError, IndexerQueryError, IndexerDataError, IndexerSubscriptionDataError, IndexerProviderConfigError) for specifics.",
+      "fixes": [
+        "Narrow to the specific subclass to determine the correct remediation"
+      ],
+      "aliases": [],
+      "severity": "error",
+      "see_also": [
+        "IndexerFormattedError",
+        "IndexerQueryError",
+        "IndexerDataError",
+        "IndexerSubscriptionDataError",
+        "IndexerProviderConfigError"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "main",
+        "anchor": "packages/indexer-public-data-provider/src/errors.ts",
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
+      }
+    },
+    {
       "code": "IndexerFormattedError",
       "name": "IndexerFormattedError",
       "source": "midnight-js",
@@ -8673,20 +8703,126 @@
         "name": "midnight-js-indexer-public-data-provider errors",
         "description": "Errors from @midnight-ntwrk/midnight-js-indexer-public-data-provider."
       },
-      "description": "GraphQL errors received from the Midnight indexer, surfaced as a wrapped class-based error.",
+      "description": "GraphQL errors received from the Midnight indexer, surfaced as a class-based error extending IndexerError. As of v4.1.1 the GraphQL error array is exposed via the `errors` field (readonly GraphQLFormattedError[]) — renamed from `cause` (BREAKING).",
       "fixes": [
-        "Inspect cause (readonly GraphQLFormattedError[]) for the underlying GraphQL errors"
+        "Inspect `errors` (readonly GraphQLFormattedError[]) for the underlying GraphQL errors — this field was named `cause` before v4.1.1"
       ],
       "aliases": [],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "IndexerError"
+      ],
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
-        "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "anchor": "packages/indexer-public-data-provider/src/errors.ts",
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
+      }
+    },
+    {
+      "code": "IndexerQueryError",
+      "name": "IndexerQueryError",
+      "source": "midnight-js",
+      "category": "midnight-js-indexer-error",
+      "group": {
+        "name": "midnight-js-indexer-public-data-provider errors",
+        "description": "Errors from @midnight-ntwrk/midnight-js-indexer-public-data-provider."
+      },
+      "description": "Raised (v4.1.1+) when an Apollo query or fetch fails at the transport layer (network failure, malformed response, Apollo client error) — distinct from IndexerFormattedError. Preserves the original Apollo error via the standard `Error.cause`.",
+      "fixes": [
+        "Check network connectivity and the indexer URL; inspect `cause` for the underlying transport error"
+      ],
+      "aliases": [],
+      "severity": "error",
+      "see_also": [
+        "IndexerError",
+        "IndexerFormattedError"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "main",
+        "anchor": "packages/indexer-public-data-provider/src/errors.ts",
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
+      }
+    },
+    {
+      "code": "IndexerDataError",
+      "name": "IndexerDataError",
+      "source": "midnight-js",
+      "category": "midnight-js-indexer-error",
+      "group": {
+        "name": "midnight-js-indexer-public-data-provider errors",
+        "description": "Errors from @midnight-ntwrk/midnight-js-indexer-public-data-provider."
+      },
+      "description": "Raised (v4.1.1+) when indexer-returned data is structurally inconsistent with the provider's expectations. Carries a discriminated `context` (kind: 'unknown-status' | 'missing-contract-action' | 'missing-identifier'); construct via static factories unknownStatus/missingContractAction/missingIdentifier.",
+      "fixes": [
+        "Branch on `error.context.kind`; usually an indexer/SDK schema mismatch or unindexed data — verify indexer compatibility and that the contract/transaction is fully indexed"
+      ],
+      "aliases": [],
+      "severity": "error",
+      "see_also": [
+        "IndexerError"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "main",
+        "anchor": "packages/indexer-public-data-provider/src/errors.ts",
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
+      }
+    },
+    {
+      "code": "IndexerSubscriptionDataError",
+      "name": "IndexerSubscriptionDataError",
+      "source": "midnight-js",
+      "category": "midnight-js-indexer-error",
+      "group": {
+        "name": "midnight-js-indexer-public-data-provider errors",
+        "description": "Errors from @midnight-ntwrk/midnight-js-indexer-public-data-provider."
+      },
+      "description": "Raised (v4.1.1+) when an indexer subscription payload is missing a top-level field the provider relies on. Carries `missingField` ('blocks' | 'contractActions'). Message: \"Expected '${missingField}' in indexer subscription data, got null/undefined\".",
+      "fixes": [
+        "Usually an indexer/SDK schema mismatch; verify indexer compatibility"
+      ],
+      "aliases": [],
+      "severity": "error",
+      "see_also": [
+        "IndexerError"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "main",
+        "anchor": "packages/indexer-public-data-provider/src/errors.ts",
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
+      }
+    },
+    {
+      "code": "IndexerProviderConfigError",
+      "name": "IndexerProviderConfigError",
+      "source": "midnight-js",
+      "category": "midnight-js-indexer-error",
+      "group": {
+        "name": "midnight-js-indexer-public-data-provider errors",
+        "description": "Errors from @midnight-ntwrk/midnight-js-indexer-public-data-provider."
+      },
+      "description": "Raised (v4.1.1+) when the consumer passes a configuration the provider does not support (e.g. an unservable observable mode). Signals API misuse, not a server-side issue.",
+      "fixes": [
+        "Review the provider configuration / observable mode against the supported options"
+      ],
+      "aliases": [],
+      "severity": "error",
+      "see_also": [
+        "IndexerError"
+      ],
+      "verified_against": {
+        "source_repo": "midnightntwrk/midnight-js",
+        "ref": "main",
+        "anchor": "packages/indexer-public-data-provider/src/errors.ts",
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
