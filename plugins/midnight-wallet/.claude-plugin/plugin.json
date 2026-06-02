@@ -1,6 +1,6 @@
 {
   "name": "midnight-wallet",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Wallet SDK reference, test-wallet management patterns, and SDK regression checking for Midnight Network development.",
   "author": {
     "name": "Aaron Bassett",
