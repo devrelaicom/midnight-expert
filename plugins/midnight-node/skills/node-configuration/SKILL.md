@@ -34,7 +34,7 @@ SHOW_CONFIG=1 midnight-node --chain preview
 | `cardano_security_parameter` | Config file | Network-specific | Cardano security parameter (k) for finality assumptions |
 | `block_stability_margin` | Config file | Network-specific | Number of blocks before a Cardano block is considered stable |
 | `ssl_root_cert` | Config file | (optional) | Path to the SSL root certificate for Cardano db-sync PostgreSQL connections. When set, connections use full certificate + hostname validation (`PgSslMode::VerifyFull`); when absent, connections are encrypted but unverified (`PgSslMode::Require`) |
-| `allow_non_ssl` | Config file | `false` | **Deprecated and ignored.** Plaintext database connections are no longer permitted — all connections now use TLS. The flag is retained for backward compatibility and will be removed in a future release |
+| `allow_non_ssl` | Config file | `false` | **Deprecated and ignored.** Plaintext database connections are no longer permitted — all connections now use TLS. The flag is retained for backward compatibility and will be removed in a future release. Setting it to `true` emits a startup warning but does not change connection behavior. |
 | `memory_threshold` | Config file | (optional) | Memory usage percentage that triggers graceful shutdown |
 | `storage_cache_size` | `--db-cache` | `1024` | Database cache size in MiB |
 | `trie_cache_size` | `--trie-cache-size` | `67108864` (64 MiB) | State trie cache size in bytes |

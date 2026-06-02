@@ -68,7 +68,7 @@ The runtime composes approximately 28 pallets organized by function. The exact c
 | `pallet_node_version` | On-chain node version tracking and compatibility checks |
 | `pallet_cnight_observation` | cNIGHT cross-chain observation and validation |
 | `pallet_system_parameters` | On-chain governance parameters — D-parameter, Terms & Conditions |
-| `pallet_throttle` | Per-account transaction rate limiting — max bytes and max transaction count over a sliding window |
+| `pallet_throttle` | Per-account transaction rate limiting — max bytes and max transaction count over a rolling block window |
 
 ### Governance
 
@@ -167,7 +167,7 @@ The node implements multi-layer transaction filtering to protect against spam an
 |-------|-----------|---------|
 | `FilteringTransactionPool` | Custom transaction pool implementation | Rejects transactions before they enter the pool |
 | `CheckCallFilter` | Transaction extension | Validates transaction calls against allow/deny rules |
-| `pallet_throttle` | Runtime pallet | Rate-limits each account by both total bytes and transaction count over a sliding window |
+| `pallet_throttle` | Runtime pallet | Rate-limits each account by both total bytes and transaction count over a rolling block window |
 
 The Throttle pallet enforces, per account, a configurable maximum number of transaction bytes (`MaxBytes`) and a maximum transaction count (`MaxTxs`) within a rolling block window (`WindowSize`), preventing any single account from overwhelming the network. Per-account usage is tracked in `AccountUsage` as a `UsageStats` record (`bytes_used`, `txs_used`, `window_start`).
 
