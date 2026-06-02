@@ -5,8 +5,8 @@ module Crypto {
   import CompactStandardLibrary;
 
   export struct Challenge {
-    r: CurvePoint;
-    pk: CurvePoint;
+    r: JubjubPoint;
+    pk: JubjubPoint;
     ch: Field;
   }
 
@@ -16,22 +16,22 @@ module Crypto {
   }
 
   export struct Signature {
-    r: CurvePoint;
+    r: JubjubPoint;
     s: Field;
   }
 
   export struct SignedCredential<T> {
     credential: T;
     signature: Signature;
-    pk: CurvePoint;
+    pk: JubjubPoint;
   }
 
-  export pure circuit derive_pk(sk: Field): CurvePoint {
-      const pk: CurvePoint = ecMulGenerator(sk);
+  export pure circuit derive_pk(sk: Field): JubjubPoint {
+      const pk: JubjubPoint = ecMulGenerator(sk);
       return pk;
   }
 
-  export pure circuit computeChallenge<T>(r: CurvePoint, pk: CurvePoint, credential: T): Field {
+  export pure circuit computeChallenge<T>(r: JubjubPoint, pk: JubjubPoint, credential: T): Field {
     const ch: Field = transientHash<T>(credential);
     const c: Field = transientHash<Challenge>(Challenge {
       r: r,
@@ -42,9 +42,9 @@ module Crypto {
   }
 
   export pure circuit sign<T>(credential: T, sk: Field): SignedCredential<T> {
-    const pk: CurvePoint = ecMulGenerator(sk);
+    const pk: JubjubPoint = ecMulGenerator(sk);
     const k: Field = transientHash<Nonce<T>>(Nonce<T> { sk: sk, credential: credential });
-    const r: CurvePoint = ecMulGenerator(k);
+    const r: JubjubPoint = ecMulGenerator(k);
     const c: Field = computeChallenge<T>(r, pk, credential);
     const s: Field = k + (c * sk);
     return SignedCredential<T> { credential: credential, signature: Signature { r: r, s: s }, pk: pk };
@@ -57,9 +57,9 @@ module Crypto {
 
   export pure circuit verify<T>(credential: SignedCredential<T>, challenge: Field): Boolean {
     const c: Field = challenge;
-    const lhs: CurvePoint = ecMulGenerator(credential.signature.s);
+    const lhs: JubjubPoint = ecMulGenerator(credential.signature.s);
     const c_pk =  ecMul(credential.pk, c);
-    const rhs: CurvePoint = ecAdd(credential.signature.r, c_pk);
+    const rhs: JubjubPoint = ecAdd(credential.signature.r, c_pk);
     return lhs == rhs;
   }
 }

@@ -41,7 +41,7 @@ module PassportIdentity {
     compositeCheckDigit: Field; // 1 byte
   }
 
-  export pure circuit computeChallengeForCredential(r: CurvePoint, pk: CurvePoint, credential: PassportData): Field {
+  export pure circuit computeChallengeForCredential(r: JubjubPoint, pk: JubjubPoint, credential: PassportData): Field {
     return computeChallenge<PassportData>(r, pk, credential);
   }
 

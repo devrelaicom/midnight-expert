@@ -71,7 +71,7 @@ All modules use `pragma language_version >= 0.22`. Most include TypeScript witne
 | Name | Path | Description | Witnesses | Tests | Complexity |
 |---|---|---|---|---|---|
 | schnorr | `modules/crypto/schnorr.compact` | Schnorr signature verification over the Jubjub curve (polyfill until `jubjubSchnorrVerify` is available in CompactStandardLibrary). Exports `SchnorrSignature` struct (`announcement: NativePoint`, `response: Field`). Key circuits: `schnorrVerify<#n>(msg, signature, pk)` — verifies using `ecMulGenerator`, `ecAdd`, `ecMul`; `schnorrChallenge(...)` — computes the hash challenge. Uses `getSchnorrReduction` witness to truncate the 255-bit challenge hash to 248 bits (Jubjub scalar field constraint). | `getSchnorrReduction` witness (inline declaration) | — | Advanced |
-| crypto | `modules/crypto/crypto.compact` | Generic elliptic curve crypto primitives over the Pallas/Vesta curve (`CurvePoint`, not `NativePoint`). Exports structs: `Challenge`, `Nonce<T>`, `Signature`, `SignedCredential<T>`. Pure circuits: `derive_pk(sk)`, `computeChallenge<T>(r, pk, credential)`, `sign<T>(credential, sk)`, `deterministicK<T>(nonce)`, `verify<T>(credential, challenge)`. Used by `PassportIdentity` and `midnight-rwa` application. | — | — | Advanced |
+| crypto | `modules/crypto/crypto.compact` | Generic elliptic curve crypto primitives over the Jubjub curve (uses `JubjubPoint`). Exports structs: `Challenge`, `Nonce<T>`, `Signature`, `SignedCredential<T>`. Pure circuits: `derive_pk(sk)`, `computeChallenge<T>(r, pk, credential)`, `sign<T>(credential, sk)`, `deterministicK<T>(nonce)`, `verify<T>(credential, challenge)`. Used by `PassportIdentity` and `midnight-rwa` application. | — | — | Advanced |
 
 ---
 
