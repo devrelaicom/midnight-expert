@@ -1,6 +1,6 @@
 # Midnight SDK Error Reference
 
-> **Last verified:** 2026-05-04 — class-based family against `midnightntwrk/midnight-js@main` (`@midnight-ntwrk/midnight-js` and friends, all v4.0.4); Effect-based family against published npm tarballs of `@midnight-ntwrk/compact-js@2.5.0`, `@midnight-ntwrk/compact-js-command@2.5.0`, `@midnight-ntwrk/platform-js@2.2.4`, `@midnight-ntwrk/compact-runtime@0.16.0` (sourced from private repo `midnight-ntwrk/artifacts`).
+> **Last verified:** 2026-06-02 — class-based family against `midnightntwrk/midnight-js@main` (`@midnight-ntwrk/midnight-js` and friends, all v4.1.1); Effect-based family against published npm tarballs of `@midnight-ntwrk/compact-js@2.5.1`, `@midnight-ntwrk/compact-js-command@2.5.1`, `@midnight-ntwrk/platform-js@2.2.4`, `@midnight-ntwrk/compact-runtime@0.16.0`.
 
 ## Overview
 
@@ -57,7 +57,7 @@ Fields:
 | `"Error executing circuit '${id}'"` | Circuit execution threw or returned an error | Inspect `cause` for the underlying error; check circuit inputs |
 | `String(err)` (stringified inner error) | Lazy `getContract()` instantiation failed; the message is just the inner error stringified | Inspect `cause` for the underlying error |
 
-> The previous reference listed three additional messages — `"Unexpected error converting runtime contract state"`, `"Failed to apply maintenance operation"`, `"Invalid number of arguments"` — that are **not present in `compact-js@2.5.0`**. They may have been retired or never existed in this exact form. Removed pending source confirmation.
+> The previous reference listed three additional messages — `"Unexpected error converting runtime contract state"`, `"Failed to apply maintenance operation"`, `"Invalid number of arguments"` — that are **not present in `compact-js@2.5.1`**. They may have been retired or never existed in this exact form. Removed pending source confirmation.
 
 ---
 
@@ -328,7 +328,7 @@ Fix: Ensure the key exists and the wallet is in a state that permits key export.
 
 ## midnight-js-utils Inline Throws
 
-Package: `@midnight-ntwrk/midnight-js-utils` (v4.0.4)
+Package: `@midnight-ntwrk/midnight-js-utils` (v4.1.1)
 
 These utility helpers raise plain `Error` and `TypeError` instances inline — no `_tag`, no class hierarchy beyond the JS built-ins. Catch with `try/catch` and match by message substring.
 
@@ -352,16 +352,94 @@ Source paths are relative to `packages/utils/src/` in `midnightntwrk/midnight-js
 
 Package: `@midnight-ntwrk/midnight-js-indexer-public-data-provider`
 
-### IndexerFormattedError
+As of v4.1.1 all errors raised by this provider derive from a single abstract base class, so consumers can catch any of them with one `instanceof IndexerError` check.
+
+### IndexerError (abstract base)
 
 Extends: `Error`
 
-Wraps one or more GraphQL errors returned by the indexer.
+Abstract base class for all errors raised by the indexer public data provider. Never thrown directly — catch it to handle any indexer error in one branch, or narrow to a specific subclass below.
+
+```ts
+import { IndexerError } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
+try { /* ... */ } catch (e) { if (e instanceof IndexerError) { /* any indexer error */ } }
+```
+
+---
+
+### IndexerFormattedError
+
+Extends: `IndexerError`
+
+Raised when a GraphQL response includes one or more `GraphQLFormattedError` entries. Aggregates all server-side errors into a single numbered message.
 
 Fields:
-- `cause: readonly GraphQLFormattedError[]`
+- `errors: readonly GraphQLFormattedError[]`
 
-Fix: Inspect each entry in `cause` for the specific GraphQL error messages. Common causes: invalid queries, indexer not synced, requested data not yet indexed. Check indexer logs if the error persists.
+> **BREAKING (v4.1.1):** the GraphQL error array moved off the ES2022 `Error.cause` slot to a dedicated field named **`errors`**. Code that previously read `error.cause` must now read **`error.errors`**. (`Error.cause` was contractually a single underlying error, not a peer collection; reusing it confused Node's `util.inspect` causal chain, Sentry, and other structured loggers.)
+
+Message format: `` `Indexer GraphQL error(s):\n\t${errors.map((e, idx) => `${idx + 1}. ${e.message}`).join('\n\t')}` ``
+
+Fix: Inspect each entry in `errors` for the specific GraphQL error messages. Common causes: invalid queries, indexer not synced, requested data not yet indexed. Check indexer logs if the error persists.
+
+---
+
+### IndexerQueryError
+
+Extends: `IndexerError`
+
+Raised when an Apollo query or fetch fails at the **transport layer** (network failure, malformed response, Apollo client error) — distinct from `IndexerFormattedError`, which is for well-formed responses that carry `GraphQLFormattedError` entries. Preserves the original Apollo error via the standard `Error.cause` so consumers can inspect network details and the original stack.
+
+Fix: Check network connectivity to the indexer endpoint and the indexer URL configuration; inspect `cause` for the underlying Apollo/transport error.
+
+---
+
+### IndexerDataError
+
+Extends: `IndexerError`
+
+Raised when indexer-returned data is structurally inconsistent with the provider's expectations: unknown enum values, broken referential integrity, or missing relations the schema implies should be present.
+
+Fields:
+- `context: IndexerDataErrorContext` — a discriminated union (tag on `kind`):
+
+| `kind` | Extra fields | Message | Static factory |
+|---|---|---|---|
+| `'unknown-status'` | `value: string` | `` `Unexpected transaction status value: ${value}` `` | `IndexerDataError.unknownStatus(value)` |
+| `'missing-contract-action'` | `contractAddress: string` | `` `Deploy transaction does not contain a contract action for address ${contractAddress}` `` | `IndexerDataError.missingContractAction(contractAddress)` |
+| `'missing-identifier'` | `contractAddress: string`, `actionIndex: number`, `identifiersLength: number` | `` `Transaction missing identifier for contract action at address ${contractAddress} (actionIndex=${actionIndex}, identifiers.length=${identifiersLength})` `` | `IndexerDataError.missingIdentifier(contractAddress, actionIndex, identifiersLength)` |
+
+Construct only via the static factory methods so the message and `context` stay in sync. Branch on `error.context.kind` to handle each failure mode without parsing the message.
+
+Fix: Indicates an indexer/SDK schema mismatch or unindexed data — verify the indexer version is compatible and the contract/transaction has been fully indexed.
+
+---
+
+### IndexerSubscriptionDataError
+
+Extends: `IndexerError`
+
+Raised when an indexer subscription payload is missing a top-level field the provider relies on (server returned `null`/`undefined`).
+
+Fields:
+- `missingField: IndexerSubscriptionField` — `'blocks' | 'contractActions'`
+
+Message: `` `Expected '${missingField}' in indexer subscription data, got null/undefined` ``
+
+Fix: Usually an indexer/SDK schema mismatch; verify indexer compatibility.
+
+---
+
+### IndexerProviderConfigError
+
+Extends: `IndexerError`
+
+Raised when the consumer passes a configuration the provider does not support (e.g. an observable mode that cannot be served by the indexer's query surface). Signals API misuse, not a server-side issue.
+
+Fields:
+- inherited `message: string` only
+
+Fix: Review the provider configuration / observable mode against the supported options.
 
 ---
 

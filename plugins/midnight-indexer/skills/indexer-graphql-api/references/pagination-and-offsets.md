@@ -4,19 +4,19 @@ The indexer GraphQL API uses offset-based addressing to specify starting points 
 
 ## BlockOffset
 
-A `BlockOffset` identifies a specific block. It accepts either form:
+A `BlockOffset` is a `@oneOf` input object: supply **exactly one** of `hash` or `height`.
 
-| Form | Type | Example |
-|------|------|---------|
-| Block hash | Hex string | `"0x1a2b3c..."` |
-| Block height | Integer | `42` |
+| Field | Type | Example |
+|-------|------|---------|
+| `hash` | HexEncoded | `{ hash: "1a2b3c..." }` |
+| `height` | Int | `{ height: 42 }` |
 
-When omitted, the query or subscription starts from the **latest** block.
+When the argument is omitted, the query or subscription starts from the **latest** block.
 
 ```graphql
 # By hash
 query {
-  block(offset: "0x1a2b3c4d5e6f...") {
+  block(offset: { hash: "1a2b3c4d5e6f..." }) {
     height
     timestamp
   }
@@ -24,7 +24,7 @@ query {
 
 # By height
 query {
-  block(offset: 42) {
+  block(offset: { height: 42 }) {
     hash
     timestamp
   }
@@ -41,33 +41,39 @@ query {
 
 ## TransactionOffset
 
-A `TransactionOffset` identifies a specific transaction. It accepts either form:
+A `TransactionOffset` is a `@oneOf` input object: supply **exactly one** of `hash` or `identifier`.
 
-| Form | Type | Example |
-|------|------|---------|
-| Transaction hash | Hex string | `"0xabc123..."` |
-| Transaction identifier | String | `"tx-identifier-string"` |
+| Field | Type | Example |
+|-------|------|---------|
+| `hash` | HexEncoded | `{ hash: "abc123..." }` |
+| `identifier` | HexEncoded | `{ identifier: "def456..." }` |
 
 This parameter is **required** for the `transactions` query.
 
 ```graphql
 # By hash
 query {
-  transactions(offset: "0xabc123...") {
+  transactions(offset: { hash: "abc123..." }) {
     hash
-    identifier
-    result
+    identifiers
+    transactionResult {
+      status
+    }
   }
 }
 
 # By identifier
 query {
-  transactions(offset: "my-tx-identifier") {
+  transactions(offset: { identifier: "def456..." }) {
     hash
-    result
+    transactionResult {
+      status
+    }
   }
 }
 ```
+
+> The `contractAction` query uses `ContractActionOffset`, a `@oneOf` input with either a `blockOffset: BlockOffset` or a `transactionOffset: TransactionOffset` (e.g. `offset: { blockOffset: { height: 10 } }`).
 
 ## Subscription Offsets for Resumption
 
@@ -75,11 +81,11 @@ Each subscription accepts an optional offset parameter to resume from a specific
 
 ### blocks
 
-Resume from a specific block height or hash:
+Resume from a specific block height or hash. `offset` is a `BlockOffset` (`@oneOf`):
 
 ```graphql
 subscription {
-  blocks(offset: 1000) {
+  blocks(offset: { height: 1000 }) {
     hash
     height
     timestamp
@@ -89,11 +95,11 @@ subscription {
 
 ### contractActions
 
-Resume from a block offset within a contract's action history:
+Resume from a block offset within a contract's action history. `offset` is a `BlockOffset` (note: the subscription uses `BlockOffset`, not `ContractActionOffset`):
 
 ```graphql
 subscription {
-  contractActions(address: "0x...", offset: 500) {
+  contractActions(address: "...", offset: { height: 500 }) {
     ... on ContractCall {
       entryPoint
       transaction { hash }
@@ -104,44 +110,61 @@ subscription {
 
 ### shieldedTransactions
 
-Resume from a transaction index within the wallet session:
+Resume from a zswap transaction `index` (`Int`) within the wallet session. The subscription emits a `ShieldedTransactionsEvent` union — use inline fragments:
 
 ```graphql
 subscription {
-  shieldedTransactions(sessionId: "session-uuid", index: 50) {
-    transaction { hash }
-    progress { current total }
+  shieldedTransactions(sessionId: "session-id-hex", index: 50) {
+    ... on RelevantTransaction {
+      transaction { hash }
+    }
+    ... on ShieldedTransactionsProgress {
+      highestZswapEndIndex
+      highestRelevantZswapEndIndex
+    }
   }
 }
 ```
 
 ### unshieldedTransactions
 
-Resume from a specific transaction ID:
+Resume from a specific transaction ID (`Int`, the indexer-internal BIGSERIAL). The subscription emits an `UnshieldedTransactionsEvent` union:
 
 ```graphql
 subscription {
-  unshieldedTransactions(address: "addr1...", transactionId: "0xtx-hash") {
-    transaction { hash }
-    progress { current total }
+  unshieldedTransactions(address: "mn_addr_test1...", transactionId: 1234) {
+    ... on UnshieldedTransaction {
+      transaction { hash }
+      createdUtxos { tokenType value }
+      spentUtxos { tokenType value }
+    }
+    ... on UnshieldedTransactionsProgress {
+      highestTransactionId
+    }
   }
 }
 ```
 
 ### dustLedgerEvents and zswapLedgerEvents
 
-Resume from a specific event ID:
+Resume from a specific event `id` (`Int`):
 
 ```graphql
 subscription {
-  dustLedgerEvents(id: "event-id-123") {
-    # event fields
+  dustLedgerEvents(id: 123) {
+    id
+    raw
+    maxId
+    protocolVersion
   }
 }
 
 subscription {
-  zswapLedgerEvents(id: "event-id-456") {
-    # event fields
+  zswapLedgerEvents(id: 456) {
+    id
+    raw
+    maxId
+    protocolVersion
   }
 }
 ```

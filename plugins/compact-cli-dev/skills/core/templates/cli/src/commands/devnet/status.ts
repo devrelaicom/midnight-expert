@@ -27,7 +27,7 @@ export default class DevnetStatus extends BaseCommand {
 	async run(): Promise<void> {
 		const services = await Promise.all([
 			checkService("node", "http://127.0.0.1:9944"),
-			checkService("indexer", "http://127.0.0.1:8088/api/v3/graphql"),
+			checkService("indexer", "http://127.0.0.1:8088/api/v4/graphql"),
 			checkService("proof-server", "http://127.0.0.1:6300"),
 		]);
 

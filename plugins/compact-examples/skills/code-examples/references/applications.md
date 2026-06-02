@@ -33,14 +33,17 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 | Path | `applications/zkloan/` |
 | Description | Privacy-preserving lending protocol. Applicants request loans without revealing their credit score, income, or tenure on-chain. Off-chain credit bureaus (providers) attest scores via Schnorr signatures. The contract verifies attestations in-circuit and makes loan decisions based on policy thresholds. |
 | Files | `zkloan-credit-scorer.compact`, `schnorr.compact`, `witnesses.ts` |
-| Witnesses | `witnesses.ts` — implements `getAttestedScoringWitness(): [Applicant, SchnorrSignature, providerId]` and `getSchnorrReduction(hash): [Field, Uint<248>]` |
+| Witnesses | `witnesses.ts` — implements `getAttestedScoringWitness(): [Applicant, SchnorrSignature, providerId]`, `getSchnorrReduction(hash): [Field, Uint<248>]`, and `getUserSecret(): UserSecretKey` |
 | Complexity | Advanced |
 
 **`zkloan-credit-scorer.compact`** defines:
 - `LoanStatus` enum (`Approved`, `Rejected`, `Proposed`, `NotAccepted`)
 - `LoanApplication` struct (`authorizedAmount: Uint<16>`, `status: LoanStatus`)
-- Ledgers: `blacklist: Set<ZswapCoinPublicKey>`, `loans: Map<Bytes<32>, Map<Uint<16>, LoanApplication>>`, `providers: Map<Uint<16>, JubjubPoint>`, `admin: ZswapCoinPublicKey`
-- Circuits: `requestLoan(amountRequested, secretPin)`, provider management, blacklist management
+- Identity structs: `UserSecretKey`, `UserPublicKey`, `AdminPublicKey` (all wrapping `Bytes<32>`)
+- Ledgers: `blacklist: Set<UserPublicKey>`, `loans: Map<Bytes<32>, Map<Uint<16>, LoanApplication>>`, `providers: Map<Uint<16>, JubjubPoint>`, `contractAdmin: AdminPublicKey`
+- Circuits: `requestLoan(amountRequested, secretPin)`, provider management, blacklist management, `rotateAdmin(newAdmin)`
+
+**Witness-derived identity (no `ownPublicKey()`):** all caller identity — both the per-user loan key and the admin role — is derived inside the circuit from a single 32-byte `userSecretKey` private-state field via the domain-separated pure circuits `deriveUserPublicKey(sk, pin)` and `deriveAdminPublicKey(sk)`. `ownPublicKey()` is deliberately never used: it returns a prover-claimed value that is not cryptographically bound to the transaction signer, so any authorization assertion that depends on it (e.g. `assert(ownPublicKey() == admin)` or `blacklist.member(ownPublicKey())`) is bypassable. The admin role is frozen at construction by pinning `deriveAdminPublicKey(getUserSecret())` into `contractAdmin`.
 
 **`schnorr.compact`** is a local copy of the `modules/crypto/schnorr` module.
 

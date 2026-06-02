@@ -76,6 +76,7 @@ export circuit adminAction(value: Field): [] {
 | `export ledger owner: Bytes<32>` | `export sealed ledger owner: Bytes<32>` | Without `sealed`, owner can be reassigned |
 | `assert(caller == owner, "msg")` | `assert(disclose(caller == owner), "msg")` | Witness-derived comparison needs `disclose()` |
 | `public_key(sk)` | `get_public_key(sk)` using `persistentHash` | `public_key` is not a builtin |
+| `assert(ownPublicKey() == owner, "msg")` | `assert(disclose(get_public_key(local_secret_key()) == owner), "msg")` | `ownPublicKey()` is prover-supplied (the circuit-context `coinPublicKey`), not bound to the transaction signer — any caller can supply any value, so it is bypassable for authorization. Derive identity from a witness secret. Its only safe use is routing shielded tokens *to* the caller. |
 
 ---
 

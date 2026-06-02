@@ -45,6 +45,7 @@ npm install \
   @midnight-ntwrk/midnight-js-node-zk-config-provider \
   @midnight-ntwrk/midnight-js-logger-provider \
   @midnight-ntwrk/midnight-js-dapp-connector-proof-provider \
+  @midnight-ntwrk/midnight-js-protocol \
   @midnight-ntwrk/midnight-js-compact \
   @midnight-ntwrk/testkit-js \
   typescript
