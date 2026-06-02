@@ -29,7 +29,19 @@ From all tags, the script selects only those matching the strict `X.Y.Z` semver 
 - Architecture-specific: `7.0.0-amd64`, `7.0.0-arm64`
 - Latest/other: `latest`, `nightly`, `dev`
 
-The highest version (by numeric semver comparison) is selected for each image.
+The highest version (by numeric semver comparison) is selected for each image, subject to per-image upper bounds (below).
+
+### Per-Image Upper Bounds
+
+Some published image tags are not usable for a self-contained local devnet, so the resolver caps each image below a known-bad version rather than blindly taking the newest tag:
+
+| Image | Cap | Why |
+|-------|-----|-----|
+| `midnight-node` | `< 1.0.0` (stays on the `0.22.x` line) | `1.0.0` is the mainnet GA node, not a local-devnet image. The local standalone devnet is built around `0.22.x` (`CFG_PRESET=dev`); the official `create-mn-app` scaffold pins `0.22.5`. |
+| `indexer-standalone` | `< 4.3.0` | From `4.3.0` the standalone indexer requires a Blockfrost API key and exits with code 1 without one, so it cannot run key-less in a local devnet. The official `create-mn-app` scaffold pins `4.2.1`. |
+| `proof-server` | none | The latest stable proof-server tag is usable for the local devnet. |
+
+These caps live in `resolve-versions.sh` (the `max_exclusive` column of its `IMAGES` table). To run a capped image deliberately, pass it explicitly via `--node-version` / `--indexer-version` (which skips resolution for that image).
 
 ### Verifying User-Specified Versions
 
