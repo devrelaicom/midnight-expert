@@ -146,9 +146,9 @@ const privateStateProvider: PrivateStateProvider = {
 
 ## DApp Connector API Types
 
-The Lace wallet extension exposes the DApp Connector API through
-`window.midnight.mnLace`. The API surface is defined in
-`@midnight-ntwrk/dapp-connector-api` (v4).
+Wallet extensions expose the DApp Connector API through `window.midnight`, each
+under its own key (Lace also aliases itself at `mnLace`). The API surface is
+defined in `@midnight-ntwrk/dapp-connector-api` (v4).
 
 ### InitialAPI
 
@@ -425,15 +425,15 @@ Midnight uses the Lace wallet exclusively. The setup requirements are:
    popup asking the user to approve the connection. The user must approve
    before the DApp can access `ConnectedAPI`.
 
-The Lace extension injects `window.midnight.mnLace` into the page. The DApp
-detects wallet availability by checking for this global:
+Each wallet injects an `InitialAPI` under its own key in `window.midnight` (a
+UUID; Lace also aliases itself at `mnLace`). Detect availability by enumerating
+the injected wallets rather than assuming a fixed key:
 
 ```typescript
 function isWalletAvailable(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "midnight" in window &&
-    "mnLace" in (window as any).midnight
+  if (typeof window === "undefined" || !window.midnight) return false;
+  return Object.values(window.midnight).some(
+    (w) => w != null && typeof w.connect === "function",
   );
 }
 ```

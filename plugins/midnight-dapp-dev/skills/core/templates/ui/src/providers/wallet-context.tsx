@@ -34,7 +34,12 @@ export const WalletContext = createContext<WalletContextValue | null>(null);
 
 function findWallet(): InitialAPI | undefined {
   if (typeof window === "undefined" || !window.midnight) return undefined;
-  return window.midnight.mnLace ?? Object.values(window.midnight)[0];
+  // Each wallet is injected under its own key (a UUID; Lace also aliases itself
+  // at `mnLace`). Enumerate and use the first valid wallet; to target a specific
+  // wallet, match on `rdns`/`name` instead.
+  return Object.values(window.midnight).find(
+    (w): w is InitialAPI => w != null && typeof w.connect === "function",
+  );
 }
 
 export function WalletProvider({ children }: { children: ReactNode }) {
