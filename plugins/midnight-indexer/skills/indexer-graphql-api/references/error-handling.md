@@ -37,7 +37,7 @@ Returned when a `sessionId` passed to `shieldedTransactions` or `disconnect` is 
 {
   "errors": [
     {
-      "message": "Invalid session ID: session-uuid-here",
+      "message": "Invalid session ID: session-id-hex",
       "extensions": {
         "code": "INVALID_SESSION"
       }
