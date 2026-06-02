@@ -92,8 +92,8 @@ These are the versions used by `create-mn-app` v0.3.26 hello-world template (ver
 
 | Package | Version |
 |---------|---------|
-| `@midnight-ntwrk/compact-runtime` | 0.15.0 |
-| `@midnight-ntwrk/compact-js` | 2.5.0 |
+| `@midnight-ntwrk/compact-runtime` | 0.16.0 |
+| `@midnight-ntwrk/compact-js` | 2.5.1 |
 | `@midnight-ntwrk/ledger-v8` | 8.0.3 |
 | `@midnight-ntwrk/midnight-js-contracts` | 4.0.2 |
 | `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.2 |

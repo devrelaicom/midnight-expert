@@ -305,9 +305,11 @@ struct ZswapCoinPublicKey { bytes: Bytes<32>; }
 
 | Obtained via | Context |
 |--------------|---------|
-| `ownPublicKey()` | Returns the transaction submitter's public key |
+| `ownPublicKey()` | Returns the Zswap coin public key the prover supplies for this transaction |
 
 Used as a recipient in `sendShielded`, `sendImmediateShielded`, and `createZswapOutput`.
+
+> **Security:** `ownPublicKey()` is *prover-supplied* (passed into the circuit context as `coinPublicKey`), **not** bound to the wallet that signs the transaction. Use it only to route shielded tokens *to* the caller — never for authorization (`assert(ownPublicKey() == admin)`) or identity gating, which a caller can trivially bypass by supplying any value. Derive caller identity from a witness secret instead. See `compact-tokens/references/token-operations.md` and `compact-patterns/references/access-control-patterns.md`.
 
 ### UserAddress
 

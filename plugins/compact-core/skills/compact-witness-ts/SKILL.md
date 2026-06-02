@@ -137,9 +137,14 @@ import { Contract, pureCircuits, ledger } from "./managed/mycontract/contract/in
 // Local testing only — instantiate Contract directly with witnesses
 const contractInstance = new Contract(witnesses);
 
-// Production — use CompiledContract.make() from @midnight-ntwrk/compact-js
+// Production — use CompiledContract.make() from @midnight-ntwrk/compact-js.
+// make() takes a tag and the Contract CLASS (not an instance); attach witnesses
+// and ZK assets via .pipe(). It is synchronous — do NOT `await` it.
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
-const compiledContract = await CompiledContract.make(contractInstance);
+const compiledContract = CompiledContract.make("mycontract", Contract).pipe(
+  CompiledContract.withWitnesses(witnesses),
+  CompiledContract.withCompiledFileAssets(zkConfigPath),
+);
 
 // Pure circuits — module-level export, local computation, no proof, no transaction
 const hash = pureCircuits.computeHash(inputData);
