@@ -63,8 +63,11 @@ export async function createBrowserProviders<ICK extends string, PSI extends str
   const walletProvider: WalletProvider = {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    balanceTx: async (tx, newCoins, ttl) => {
-      const result = await api.balanceUnsealedTransaction(tx, { newCoins, ttl });
+    // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+    // The DApp Connector handles fee/coin selection; pass an options object so
+    // the extension can append its {sender} argument in the right position.
+    balanceTx: async (tx, _ttl) => {
+      const result = await api.balanceUnsealedTransaction(tx, {});
       return result.tx;
     },
   };
@@ -73,8 +76,8 @@ export async function createBrowserProviders<ICK extends string, PSI extends str
   const midnightProvider: MidnightProvider = {
     submitTx: async (tx) => {
       await api.submitTransaction(tx);
-      // submitTransaction returns void; the txId is already known from the balanced tx
-      return tx.txId;
+      // submitTransaction returns void; recover the tx id from the transaction's identifiers()
+      return tx.identifiers()[0];
     },
   };
 
@@ -169,19 +172,31 @@ async function indexedDBPrivateStateProvider<PSI extends string, PS>(
 
 ## Wallet-Delegated Proving
 
-Instead of running a local proof server, the wallet can generate proofs:
+Instead of running a local proof server, the wallet can generate proofs. The dedicated `@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` package wraps this into a ready-to-use `ProofProvider`:
+
+```typescript
+import { dappConnectorProofProvider } from "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider";
+
+// `api` exposes getProvingProvider; costModel comes from the protocol/ledger types.
+const proofProvider = await dappConnectorProofProvider(
+  api,
+  zkConfigProvider,
+  costModel,
+);
+// Use this proofProvider in place of httpClientProofProvider when assembling
+// MidnightProviders — proving is delegated to the Lace wallet, with no separate
+// proof server connection from the browser.
+```
+
+Under the hood this calls the DApp Connector's `getProvingProvider(keyMaterialProvider)` to obtain the wallet's proving provider once, then reuses it for every `proveTx`. If you need lower-level access, you can still call `api.getProvingProvider(...)` directly:
 
 ```typescript
 const provingProvider = await api.getProvingProvider({
-  getKeyMaterial: async (circuitId: string) => {
-    // Return the ZK key material for the given circuit
-    const response = await fetch(`/managed/mycontract/keys/${circuitId}.bzkir`);
-    return new Uint8Array(await response.arrayBuffer());
-  },
+  getZKIR: async (loc) => new Uint8Array(await (await fetch(loc)).arrayBuffer()),
+  getProverKey: async (loc) => new Uint8Array(await (await fetch(loc)).arrayBuffer()),
+  getVerifierKey: async (loc) => new Uint8Array(await (await fetch(loc)).arrayBuffer()),
 });
 ```
-
-This delegates proof generation to the Lace wallet extension, removing the need for a separate proof server connection from the browser. The wallet manages proving internally.
 
 ## Full Integration Example
 

@@ -284,15 +284,23 @@ an object matching the corresponding provider interface from `@midnight-ntwrk/mi
 
 ```typescript
 function createMockPublicDataProvider(): PublicDataProvider {
-  return { contractStateObservable: vi.fn().mockReturnValue(new BehaviorSubject(null)) };
+  // contractStateObservable(address, config) — config is required at runtime.
+  return { contractStateObservable: vi.fn().mockReturnValue(new BehaviorSubject(null)) } as unknown as PublicDataProvider;
 }
 
-function createMockZkConfigProvider(): ZkConfigProvider {
-  return { getZkConfig: vi.fn().mockResolvedValue({ circuit: new Uint8Array() }) };
+function createMockZkConfigProvider(): ZKConfigProvider<string> {
+  // ZKConfigProvider exposes getZKIR / getProverKey / getVerifierKey / get(circuitId).
+  return {
+    get: vi.fn().mockResolvedValue({ circuit: new Uint8Array() }),
+    getZKIR: vi.fn().mockResolvedValue(new Uint8Array()),
+    getProverKey: vi.fn().mockResolvedValue(new Uint8Array()),
+    getVerifierKey: vi.fn().mockResolvedValue(new Uint8Array()),
+  } as unknown as ZKConfigProvider<string>;
 }
 
 function createMockProofProvider(): ProofProvider {
-  return { prove: vi.fn().mockResolvedValue(new Uint8Array()) };
+  // ProofProvider.proveTx(unprovenTx, config?) => Promise<UnboundTransaction>.
+  return { proveTx: vi.fn().mockResolvedValue(new Uint8Array()) } as unknown as ProofProvider;
 }
 
 function createMockWalletProvider(): WalletProvider {

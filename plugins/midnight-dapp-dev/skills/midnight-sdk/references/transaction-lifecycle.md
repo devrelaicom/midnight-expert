@@ -11,7 +11,7 @@ Every contract interaction follows a five-stage pipeline:
    |                |                 |                 |                 |
    v                v                 v                 v                 v
    createUnproven   proofProvider     walletProvider    midnightProvider  publicDataProvider
-   CallTx()         .prove()          .balanceTx()      .submitTx()       (indexer confirms)
+   CallTx()         .proveTx()        .balanceTx()      .submitTx()       (indexer confirms)
    |                |                 |                 |                 |
    v                v                 v                 v                 v
    UnprovenTx  ->  ProvenTx     ->  BalancedTx   ->  TransactionId ->  FinalizedTxData
@@ -46,7 +46,7 @@ The proof server generates a zero-knowledge proof that the circuit was executed 
 
 ```typescript
 // Happens automatically in callTx, or manually:
-const proof = await providers.proofProvider.prove(circuitId, proveInputs);
+const unbound = await providers.proofProvider.proveTx(unprovenTx);
 ```
 
 During this stage:
@@ -63,10 +63,9 @@ The wallet adds fee inputs and change outputs to make the transaction valid:
 
 ```typescript
 // Happens automatically in callTx, or manually:
-const balanced = await providers.walletProvider.balanceTx(
-  unprovenTx,
-  newCoins,  // Optional: newly created shielded coins
-  ttl,       // Optional: transaction time-to-live
+const finalized = await providers.walletProvider.balanceTx(
+  unboundTx,  // the proven (unbound) transaction from proveTx
+  ttl,        // Optional: transaction time-to-live (Date)
 );
 ```
 

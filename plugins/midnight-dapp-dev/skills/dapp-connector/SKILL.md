@@ -364,8 +364,11 @@ async function createWalletProvider(api: ConnectedAPI): Promise<WalletProvider> 
   return {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    balanceTx: async (tx, newCoins, ttl) => {
-      const result = await api.balanceUnsealedTransaction(tx, { newCoins, ttl });
+    // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+    // The DApp Connector selects fee inputs internally; pass an options object so
+    // the extension can append its {sender} argument in the correct position.
+    balanceTx: async (tx, _ttl) => {
+      const result = await api.balanceUnsealedTransaction(tx, {});
       return result.tx;
     },
   };
@@ -375,7 +378,7 @@ function createMidnightProvider(api: ConnectedAPI): MidnightProvider {
   return {
     submitTx: async (tx) => {
       await api.submitTransaction(tx);
-      return tx.txId;
+      return tx.identifiers()[0];
     },
   };
 }

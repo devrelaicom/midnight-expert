@@ -72,11 +72,11 @@ export async function createProviders(
   const walletProvider: WalletProvider = {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    balanceTx: async (tx, newCoins, ttl) => {
-      const result = await api.balanceUnsealedTransaction(tx, {
-        newCoins,
-        ttl,
-      });
+    // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+    // The Lace DApp Connector handles fee/coin selection internally; pass an
+    // (empty) options object so the extension can append its {sender} arg.
+    balanceTx: async (tx, _ttl) => {
+      const result = await api.balanceUnsealedTransaction(tx, {});
       return result.tx;
     },
   };
@@ -84,7 +84,7 @@ export async function createProviders(
   const midnightProvider: MidnightProvider = {
     submitTx: async (tx) => {
       await api.submitTransaction(tx);
-      return tx.txId;
+      return tx.identifiers()[0];
     },
   };
 

@@ -37,7 +37,7 @@ This is the primary mechanism for keeping the UI in sync with on-chain state.
 **Purpose:** Loads the zero-knowledge circuit configuration (`.zkir` files)
 needed to construct and verify proofs.
 
-**Interface:** `ZkConfigProvider` from `@midnight-ntwrk/midnight-js-types`.
+**Interface:** `ZKConfigProvider` from `@midnight-ntwrk/midnight-js-types`.
 
 **Browser implementation:** Created via `FetchZkConfigProvider` from
 `@midnight-ntwrk/midnight-js-fetch-zk-config-provider`. In the browser,
@@ -89,17 +89,25 @@ Midnight SDK's transaction pipeline.
 returned by the Lace wallet extension.
 
 ```typescript
+// getShieldedAddresses() resolves once; cache the keys before building the provider.
+const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
+  await connectedApi.getShieldedAddresses();
+
 const walletProvider: WalletProvider = {
-  getCoinPublicKey: () => connectedApi.getShieldedAddresses().then((addrs) => addrs[0]),
-  getEncryptionPublicKey: () => connectedApi.getShieldedAddresses().then((addrs) => addrs[0]),
-  balanceTx: (tx, newCoins) =>
-    connectedApi.balanceUnsealedTransaction(serialize(tx), newCoins),
+  // getCoinPublicKey / getEncryptionPublicKey are synchronous.
+  getCoinPublicKey: () => shieldedCoinPublicKey,
+  getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
+  // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+  balanceTx: async (tx, _ttl) => {
+    const result = await connectedApi.balanceUnsealedTransaction(serialize(tx), {});
+    return result.tx;
+  },
 };
 ```
 
-The `balanceTx` method is critical: it takes an unbalanced transaction, sends
-it to Lace, which adds the necessary coin inputs to cover fees and signs the
-transaction. The `serialize` call converts the SDK's internal transaction
+The `balanceTx` method is critical: it takes a proven (unbound) transaction,
+sends it to Lace, which adds the necessary coin inputs to cover fees and signs
+the transaction. The `serialize` call converts the SDK's internal transaction
 representation to the format Lace expects.
 
 ### 5. midnightProvider
@@ -328,17 +336,24 @@ export async function createProviders<PS, C>(
 
   const proofProvider = httpClientProofProvider(proofServerUri, zkConfigProvider);
 
+  const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
+    await connectedApi.getShieldedAddresses();
+
   const walletProvider: WalletProvider = {
-    getCoinPublicKey: () =>
-      connectedApi.getShieldedAddresses().then((addrs) => addrs[0]),
-    getEncryptionPublicKey: () =>
-      connectedApi.getShieldedAddresses().then((addrs) => addrs[0]),
-    balanceTx: (tx, newCoins) =>
-      connectedApi.balanceUnsealedTransaction(serialize(tx), newCoins),
+    getCoinPublicKey: () => shieldedCoinPublicKey,
+    getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
+    // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+    balanceTx: async (tx, _ttl) => {
+      const result = await connectedApi.balanceUnsealedTransaction(serialize(tx), {});
+      return result.tx;
+    },
   };
 
   const midnightProvider: MidnightProvider = {
-    submitTx: (tx) => connectedApi.submitTransaction(serialize(tx)),
+    submitTx: async (tx) => {
+      await connectedApi.submitTransaction(serialize(tx));
+      return tx.identifiers()[0];
+    },
   };
 
   const privateStateProvider: PrivateStateProvider<PS> = {
