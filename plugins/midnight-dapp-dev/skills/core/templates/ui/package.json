@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "{{API_PACKAGE_NAME}}": "workspace:*",
-    "@midnight-ntwrk/dapp-connector-api": "^4.0.0",
-    "@midnight-ntwrk/midnight-js-types": "^3.0.0",
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
+    "@midnight-ntwrk/midnight-js-types": "^4.1.1",
     "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

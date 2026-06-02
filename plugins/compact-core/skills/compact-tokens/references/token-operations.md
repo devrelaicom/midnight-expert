@@ -113,7 +113,7 @@ assert(coin.color == nativeToken(), "Not a native token");
 | `sendImmediateShielded(input, target, value)` | `input: ShieldedCoinInfo, target: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>` | `ShieldedSendResult` | Send value from a same-transaction coin to target; returns change |
 | `mergeCoin(a, b)` | `a: QualifiedShieldedCoinInfo, b: QualifiedShieldedCoinInfo` | `ShieldedCoinInfo` | Combine two ledger coins into one |
 | `mergeCoinImmediate(a, b)` | `a: QualifiedShieldedCoinInfo, b: ShieldedCoinInfo` | `ShieldedCoinInfo` | Combine a ledger coin with a same-transaction coin |
-| `ownPublicKey()` | -- | `ZswapCoinPublicKey` | Returns the public key of the end-user creating this transaction |
+| `ownPublicKey()` | -- | `ZswapCoinPublicKey` | Returns the Zswap coin public key the prover supplies for this transaction. Use it as a token recipient, **not** as an authorization check (see security note below) |
 | `createZswapInput(coin)` | `coin: QualifiedShieldedCoinInfo` | `[]` | Low-level: notify context to create a Zswap input |
 | `createZswapOutput(coin, recipient)` | `coin: ShieldedCoinInfo, recipient: Either<ZswapCoinPublicKey, ContractAddress>` | `[]` | Low-level: notify context to create a Zswap output |
 
@@ -137,6 +137,13 @@ if (res.change.is_some) {
 **`createZswapInput` and `createZswapOutput` are low-level:** Prefer `sendShielded`, `sendImmediateShielded`, and `receiveShielded`. The low-level functions do not handle coin splitting, change, or validation. Use them only when building custom token protocols.
 
 **`sendShielded` does not create coin ciphertexts:** Sending to a user public key other than the current user (`ownPublicKey()`) will not inform that user of the coin. The recipient must discover the coin through other means.
+
+**Security: `ownPublicKey()` is prover-supplied, not signer-bound.** `ownPublicKey()` returns a value the prover passes into the circuit context (the `coinPublicKey` argument to `createConstructorContext` / `createCircuitContext` in `@midnight-ntwrk/compact-runtime`). It is **not** cryptographically bound to the wallet that signs the transaction — any caller can supply any 32-byte value. Its only safe use is identifying the **recipient** of an outgoing shielded token transfer (routing tokens *to* the caller): if the prover lies, they only lose access to their own coins, so there is no boundary to bypass. Do **not** use it for authorization or identity gating:
+
+- `assert(ownPublicKey() == admin, "...")` is bypassable — any chain reader copies the public `admin` value and supplies it.
+- `assert(!blacklist.member(ownPublicKey()), "...")` is bypassable — a blacklisted caller supplies a different value.
+
+For caller identity and access control, derive the public key from a witness-supplied secret instead (see `compact-patterns/references/access-control-patterns.md` and `compact-privacy-disclosure/references/privacy-patterns.md`, which use `get_public_key(sk)` / domain-separated `persistentHash` over a witness secret).
 
 **Nonce management with `evolveNonce`:** Every shielded coin requires a unique nonce. Reusing a nonce compromises privacy by linking coins. Use `evolveNonce` with a counter to derive deterministic nonces from a single seed:
 

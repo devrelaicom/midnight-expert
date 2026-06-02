@@ -38,13 +38,13 @@ Scaffolds a Vite + React 19 + shadcn + Tailwind v4 UI package and a TypeScript A
 
 ### midnight-dapp-dev:midnight-sdk
 
-Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js.
+Comprehensive reference for the Midnight.js SDK (v4.1.1): the core packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js.
 
 #### References
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| [`package-reference.md`](skills/midnight-sdk/references/package-reference.md) | Detailed exports, constructor signatures, and configuration for all 10 Midnight.js SDK packages | When looking up specific SDK package APIs or constructor options |
+| [`package-reference.md`](skills/midnight-sdk/references/package-reference.md) | Detailed exports, constructor signatures, and configuration for the Midnight.js SDK packages | When looking up specific SDK package APIs or constructor options |
 | [`transaction-lifecycle.md`](skills/midnight-sdk/references/transaction-lifecycle.md) | Complete reference for the five-stage transaction pipeline: build, prove, balance, submit, finalize | When implementing or debugging the contract interaction flow |
 
 ## Agents

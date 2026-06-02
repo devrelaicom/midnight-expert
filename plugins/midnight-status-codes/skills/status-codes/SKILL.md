@@ -37,7 +37,7 @@ These are `LedgerApiError` codes that surface via Substrate's `InvalidTransactio
 
 Read `references/sdk-errors.md`
 
-**Recognise by:** Error class names like `TxFailedError`, `DeployTxFailedError`, `CallTxFailedError`, `ContractTypeError`, `InvalidProtocolSchemeError`, `PrivateStateImportError`, `IndexerFormattedError`. These are standard JavaScript `Error` subclasses thrown by the midnight-js SDK packages.
+**Recognise by:** Error class names like `TxFailedError`, `DeployTxFailedError`, `CallTxFailedError`, `ContractTypeError`, `InvalidProtocolSchemeError`, `PrivateStateImportError`, `IndexerFormattedError`, `IndexerError`, `IndexerQueryError`, `IndexerDataError`, `IndexerSubscriptionDataError`, `IndexerProviderConfigError`. These are standard JavaScript `Error` subclasses thrown by the midnight-js SDK packages.
 
 ### 3. Effect tagged error with `_tag` like `Wallet.*`
 
@@ -67,7 +67,7 @@ Read `references/runtime-errors.md`
 
 Read `references/zk-errors.md`
 
-**Recognise by:** Error messages containing "Synthesis error", "constraint system", "NotEnoughRowsAvailable", "wrong arity", PLONK-related terms, or proof verification failures.
+**Recognise by:** Error messages containing "Synthesis error", "constraint system", "NotEnoughRowsAvailable", "The SRS ... does not match for the given circuit", "invalid witness", PLONK-related terms, or proof verification failures.
 
 ### 8. Transaction validation or malformed transaction error (Rust-level)
 
