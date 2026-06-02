@@ -208,7 +208,7 @@ const txData = await deployed.callTx.myCircuit(arg1, arg2);
 // txData contains:
 txData.public.txId;         // TransactionId
 txData.public.txHash;       // string
-txData.public.blockHeight;  // bigint
+txData.public.blockHeight;  // number
 ```
 
 ### Low-Level API
@@ -478,7 +478,7 @@ interface FinalizedDeployTxData<C> {
     contractAddress: ContractAddress;
     txId: TransactionId;
     txHash: string;
-    blockHeight: bigint;
+    blockHeight: number;
   };
   private: {
     signingKey: Uint8Array;
@@ -494,7 +494,7 @@ interface FinalizedCallTxData<C, ICK> {
   public: {
     txId: TransactionId;
     txHash: string;
-    blockHeight: bigint;
+    blockHeight: number;
   };
 }
 ```

@@ -99,7 +99,11 @@ export function createMockConnectedApi(
 ): ConnectedAPI {
   return {
     getConfiguration: vi.fn().mockResolvedValue(mockConfiguration),
-    getShieldedAddresses: vi.fn().mockResolvedValue(['mock-shielded-address']),
+    getShieldedAddresses: vi.fn().mockResolvedValue({
+      shieldedAddress: 'mock-shielded-address',
+      shieldedCoinPublicKey: 'mock-shielded-coin-public-key',
+      shieldedEncryptionPublicKey: 'mock-shielded-encryption-public-key',
+    }),
     getUnshieldedAddress: vi.fn().mockResolvedValue('mock-unshielded-address'),
     getDustAddress: vi.fn().mockResolvedValue('mock-dust-address'),
     getShieldedBalances: vi.fn().mockResolvedValue([]),
@@ -223,7 +227,7 @@ describe('wallet connection states', () => {
     const mockApi = createMockInitialApi();
     mockApi.connect = vi.fn().mockRejectedValue({
       type: 'DAppConnectorAPIError',
-      code: 'UserRejected',
+      code: 'PermissionRejected',
       reason: 'User declined connection',
     });
     (window as any).midnight = { mnLace: mockApi };
@@ -315,11 +319,20 @@ function createMockMidnightProvider(): MidnightProvider {
   return { submitTx: vi.fn().mockResolvedValue('mock-tx-id') };
 }
 
-function createMockPrivateStateProvider(): PrivateStateProvider {
+function createMockPrivateStateProvider(): PrivateStateProvider<string, unknown> {
+  // Partial mock: the real PrivateStateProvider interface requires ~13 members
+  // (setContractAddress, set, get, remove, clear, setSigningKey, getSigningKey,
+  // removeSigningKey, clearSigningKeys, exportPrivateStates, importPrivateStates,
+  // exportSigningKeys, importSigningKeys). We stub only the commonly-called ones and
+  // cast via `as unknown` so TypeScript does not flag the missing members. Add more
+  // stubs here if a test exercises them.
   return {
     get: vi.fn().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue(undefined),
-  };
+    remove: vi.fn().mockResolvedValue(undefined),
+    clear: vi.fn().mockResolvedValue(undefined),
+    setContractAddress: vi.fn().mockResolvedValue(undefined),
+  } as unknown as PrivateStateProvider<string, unknown>;
 }
 
 function renderWithProviders(ui: React.ReactElement) {

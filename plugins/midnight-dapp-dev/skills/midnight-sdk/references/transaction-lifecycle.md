@@ -162,7 +162,10 @@ const deployed = await deployContract(providers, {
   compiledContract,
   privateStateId: "myState",
   initialPrivateState: { secretKey },
-  args: [constructorArg1],  // Optional constructor arguments
+  // `args` holds the contract constructor's parameters. It is REQUIRED when the
+  // Compact constructor takes parameters (pass them in declared order), and
+  // omitted entirely when the constructor takes no arguments.
+  args: [constructorArg1],
 });
 
 // deployed.deployTxData contains:

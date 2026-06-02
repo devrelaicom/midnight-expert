@@ -89,6 +89,9 @@ Midnight SDK's transaction pipeline.
 returned by the Lace wallet extension.
 
 ```typescript
+import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
+import { Transaction } from "@midnight-ntwrk/ledger-v8";
+
 // getShieldedAddresses() resolves once; cache the keys before building the provider.
 const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
   await connectedApi.getShieldedAddresses();
@@ -97,18 +100,34 @@ const walletProvider: WalletProvider = {
   // getCoinPublicKey / getEncryptionPublicKey are synchronous.
   getCoinPublicKey: () => shieldedCoinPublicKey,
   getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-  // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+  // WalletProvider.balanceTx is (tx: UnboundTransaction, ttl?: Date) =>
+  // Promise<FinalizedTransaction>. The DApp Connector speaks serialized hex
+  // strings, so serialize the unbound tx to hex, hand it to Lace, then
+  // deserialize the returned hex back into a FinalizedTransaction.
+  // options is `{ payFees?: boolean }`; an empty `{}` uses the defaults.
   balanceTx: async (tx, _ttl) => {
-    const result = await connectedApi.balanceUnsealedTransaction(serialize(tx), {});
-    return result.tx;
+    const { tx: balancedHex } = await connectedApi.balanceUnsealedTransaction(
+      toHex(tx.serialize()),
+      {},
+    );
+    // A finalized tx is Transaction<SignatureEnabled, Proof, Binding>; pass the
+    // three instance markers for those type parameters.
+    return Transaction.deserialize(
+      "signature",
+      "proof",
+      "binding",
+      fromHex(balancedHex),
+    );
   },
 };
 ```
 
 The `balanceTx` method is critical: it takes a proven (unbound) transaction,
-sends it to Lace, which adds the necessary coin inputs to cover fees and signs
-the transaction. The `serialize` call converts the SDK's internal transaction
-representation to the format Lace expects.
+sends it to Lace, which adds the necessary coin inputs to cover fees and binds
+(finalizes) the transaction. Because the DApp Connector exchanges transactions
+as serialized hex strings, `balanceTx` must `toHex(tx.serialize())` on the way
+in and `Transaction.deserialize(...)` the returned hex string back into a
+`FinalizedTransaction` on the way out — it must not return the raw string.
 
 ### 5. midnightProvider
 
@@ -121,14 +140,23 @@ network.
 `submitTransaction` method.
 
 ```typescript
+import { toHex } from "@midnight-ntwrk/midnight-js-utils";
+
 const midnightProvider: MidnightProvider = {
-  submitTx: (tx) => connectedApi.submitTransaction(serialize(tx)),
+  // submitTransaction takes a serialized hex string and returns void, so
+  // recover the tx id from the transaction's own identifiers().
+  submitTx: async (tx) => {
+    await connectedApi.submitTransaction(toHex(tx.serialize()));
+    return tx.identifiers()[0];
+  },
 };
 ```
 
 After the proof server generates the ZK proof and Lace balances the
 transaction, `submitTx` broadcasts it to the Substrate node via Lace. The
-wallet handles the actual network communication.
+wallet handles the actual network communication. `submitTransaction` returns
+`void`, so the `TransactionId` is read from `tx.identifiers()[0]` rather than
+from the call's result.
 
 ### 6. privateStateProvider
 
@@ -142,14 +170,33 @@ persist private state across sessions — when the user refreshes the page,
 private state is reconstructed from the contract's public ledger where
 possible.
 
+`PrivateStateProvider<PSI, PS>` is a ~13-method interface (`setContractAddress`,
+`set`, `get`, `remove`, `clear`, `setSigningKey`, `getSigningKey`,
+`removeSigningKey`, `clearSigningKeys`, `exportPrivateStates`,
+`importPrivateStates`, `exportSigningKeys`, `importSigningKeys`). A minimal
+in-memory implementation backs the private-state and signing-key stores with
+`Map`s; the export/import methods can reject for an ephemeral store:
+
 ```typescript
-const privateStateProvider: PrivateStateProvider = {
-  get: async (contractAddress: ContractAddress) =>
-    privateStates.get(contractAddress) ?? null,
-  set: async (contractAddress: ContractAddress, state: PrivateState) => {
-    privateStates.set(contractAddress, state);
-  },
-};
+function inMemoryPrivateStateProvider<PSI extends string, PS>(): PrivateStateProvider<PSI, PS> {
+  const states = new Map<PSI, PS>();
+  const signingKeys = new Map<ContractAddress, SigningKey>();
+  return {
+    setContractAddress: () => {},
+    set: async (id, state) => { states.set(id, state); },
+    get: async (id) => states.get(id) ?? null,
+    remove: async (id) => { states.delete(id); },
+    clear: async () => { states.clear(); },
+    setSigningKey: async (address, key) => { signingKeys.set(address, key); },
+    getSigningKey: async (address) => signingKeys.get(address) ?? null,
+    removeSigningKey: async (address) => { signingKeys.delete(address); },
+    clearSigningKeys: async () => { signingKeys.clear(); },
+    exportPrivateStates: async () => { throw new Error("not supported in-memory"); },
+    importPrivateStates: async () => { throw new Error("not supported in-memory"); },
+    exportSigningKeys: async () => { throw new Error("not supported in-memory"); },
+    importSigningKeys: async () => { throw new Error("not supported in-memory"); },
+  };
+}
 ```
 
 ## DApp Connector API Types
@@ -179,19 +226,19 @@ DApps or a contract address for existing deployments.
 
 The full API surface available after the user approves the connection.
 
-| Method                          | Return Type                      | Description                                          |
-| ------------------------------- | -------------------------------- | ---------------------------------------------------- |
-| `getConfiguration()`           | `Promise<Configuration>`        | Returns all network endpoints                        |
-| `getShieldedAddresses()`       | `Promise<string[]>`             | Shielded (private) addresses for the connected wallet |
-| `getUnshieldedAddress()`       | `Promise<string>`               | Unshielded (public) address                          |
-| `getDustAddress()`             | `Promise<string>`               | Address for dust collection                          |
-| `getShieldedBalances()`        | `Promise<Balance[]>`            | Shielded token balances                              |
-| `getUnshieldedBalances()`      | `Promise<Balance[]>`            | Unshielded token balances                            |
-| `getDustBalance()`             | `Promise<Balance>`              | Dust balance                                         |
-| `balanceUnsealedTransaction()` | `Promise<BalancedTransaction>`  | Adds coin inputs and signs                           |
-| `submitTransaction()`          | `Promise<TransactionId>`        | Broadcasts to the network                            |
-| `signData()`                   | `Promise<SignedData>`           | Signs arbitrary data                                 |
-| `getProvingProvider()`         | `Promise<ProvingProvider>`      | Returns the wallet's proving provider (if available) |
+| Method                          | Return Type                                                                          | Description                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `getConfiguration()`           | `Promise<Configuration>`                                                             | Returns all network endpoints                        |
+| `getShieldedAddresses()`       | `Promise<{ shieldedAddress; shieldedCoinPublicKey; shieldedEncryptionPublicKey }>`  | Shielded address plus the coin/encryption public keys (all Bech32m) |
+| `getUnshieldedAddress()`       | `Promise<{ unshieldedAddress }>`                                                    | Unshielded (public) address (Bech32m)                |
+| `getDustAddress()`             | `Promise<{ dustAddress }>`                                                           | Dust address (Bech32m)                               |
+| `getShieldedBalances()`        | `Promise<Record<string, bigint>>`                                                   | Shielded token balances by token type                |
+| `getUnshieldedBalances()`      | `Promise<Record<string, bigint>>`                                                   | Unshielded token balances by token type              |
+| `getDustBalance()`             | `Promise<{ balance; cap }>`                                                          | Dust balance and max cap                             |
+| `balanceUnsealedTransaction()` | `Promise<{ tx: string }>`                                                            | Adds coin inputs and binds; takes/returns serialized hex |
+| `submitTransaction()`          | `Promise<void>`                                                                      | Broadcasts to the network (no return value)          |
+| `signData()`                   | `Promise<Signature>`                                                                | Signs arbitrary data                                 |
+| `getProvingProvider()`         | `Promise<ProvingProvider>`                                                           | Returns the wallet's proving provider (if available) |
 
 ### Configuration
 
@@ -213,12 +260,23 @@ Errors from the DApp Connector API are plain objects, not class instances.
 This is a critical distinction for error handling.
 
 ```typescript
+type ErrorCode =
+  | "PermissionRejected"
+  | "Disconnected"
+  | "InternalError"
+  | "InvalidRequest"
+  | "Rejected";
+
 interface APIError {
   type: "DAppConnectorAPIError";
   code: ErrorCode;
   reason: string;
 }
 ```
+
+`ErrorCode` is a union of string literals (exposed via the `ErrorCodes`
+constant object), not a TypeScript `enum`. Compare against the string values
+directly.
 
 **Never use `instanceof` to check for API errors.** The error objects are
 serialized across the extension boundary and lose their prototype chain. Always
@@ -236,10 +294,10 @@ try {
   ) {
     const apiError = error as APIError;
     switch (apiError.code) {
-      case ErrorCode.UserRejected:
+      case "PermissionRejected":
         // User declined the connection in Lace
         break;
-      case ErrorCode.InternalError:
+      case "InternalError":
         // Something went wrong inside Lace
         break;
     }
@@ -247,15 +305,15 @@ try {
 }
 ```
 
-### ErrorCode Enum
+### ErrorCode Values
 
-| Code              | Meaning                                          |
-| ----------------- | ------------------------------------------------ |
-| `UserRejected`    | User declined the action in the Lace popup       |
-| `InternalError`   | Internal wallet error                            |
-| `InvalidRequest`  | Malformed request to the wallet                  |
-| `Unauthorized`    | DApp not authorized or connection expired        |
-| `NetworkError`    | Network connectivity issue                       |
+| Code                 | Meaning                                          |
+| -------------------- | ------------------------------------------------ |
+| `PermissionRejected` | Permission to perform the action was rejected    |
+| `Rejected`           | The user rejected the request                    |
+| `InternalError`      | Internal wallet error                            |
+| `InvalidRequest`     | Malformed request to the wallet (e.g. a malformed transaction) |
+| `Disconnected`       | The connection to the wallet was lost            |
 
 ## Wallet-Driven Configuration
 
@@ -302,10 +360,12 @@ The recommended pattern is a single factory function that takes a
 `ConnectedAPI` and returns all 6 providers ready for use:
 
 ```typescript
-import { type ConnectedAPI, type Configuration } from '@midnight-ntwrk/dapp-connector-api';
+import { type ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
+import { toHex, fromHex } from '@midnight-ntwrk/midnight-js-utils';
+import { Transaction } from '@midnight-ntwrk/ledger-v8';
 import type {
   MidnightProviders,
   WalletProvider,
@@ -314,24 +374,30 @@ import type {
 } from '@midnight-ntwrk/midnight-js-types';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
-export async function createProviders<PS, C>(
+// MidnightProviders<PCK, PSI, PS>: provable circuit ids first, private-state id
+// second, private-state type third. PCK must extend AnyProvableCircuitId (a
+// string) and PSI must extend PrivateStateId (a string).
+export async function createProviders<
+  PCK extends string,
+  PSI extends string,
+  PS,
+>(
   connectedApi: ConnectedAPI,
-): Promise<MidnightProviders<PS, C>> {
+  privateStateProvider: PrivateStateProvider<PSI, PS>,
+): Promise<MidnightProviders<PCK, PSI, PS>> {
   const config = await connectedApi.getConfiguration();
   setNetworkId(config.networkId);
 
   const proofServerUri = deriveProofServerUri(config.substrateNodeUri);
-
-  const privateStates = new Map<string, PS>();
 
   const publicDataProvider = indexerPublicDataProvider(
     config.indexerUri,
     config.indexerWsUri,
   );
 
-  const zkConfigProvider = new FetchZkConfigProvider<C>(
+  const zkConfigProvider = new FetchZkConfigProvider<PCK>(
     window.location.origin,
-    fetch,
+    fetch.bind(window),
   );
 
   const proofProvider = httpClientProofProvider(proofServerUri, zkConfigProvider);
@@ -342,25 +408,26 @@ export async function createProviders<PS, C>(
   const walletProvider: WalletProvider = {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
+    // Serialize the unbound tx to hex for the connector, then deserialize the
+    // returned hex string back into a FinalizedTransaction.
     balanceTx: async (tx, _ttl) => {
-      const result = await connectedApi.balanceUnsealedTransaction(serialize(tx), {});
-      return result.tx;
+      const { tx: balancedHex } = await connectedApi.balanceUnsealedTransaction(
+        toHex(tx.serialize()),
+        {},
+      );
+      return Transaction.deserialize(
+        'signature',
+        'proof',
+        'binding',
+        fromHex(balancedHex),
+      );
     },
   };
 
   const midnightProvider: MidnightProvider = {
     submitTx: async (tx) => {
-      await connectedApi.submitTransaction(serialize(tx));
+      await connectedApi.submitTransaction(toHex(tx.serialize()));
       return tx.identifiers()[0];
-    },
-  };
-
-  const privateStateProvider: PrivateStateProvider<PS> = {
-    get: async (contractAddress) =>
-      privateStates.get(contractAddress) ?? null,
-    set: async (contractAddress, state) => {
-      privateStates.set(contractAddress, state);
     },
   };
 
@@ -375,6 +442,11 @@ export async function createProviders<PS, C>(
 }
 ```
 
+The `privateStateProvider` is passed in rather than built inline, because the
+full `PrivateStateProvider<PSI, PS>` interface has ~13 methods (see the
+in-memory implementation above). Keying it by the private-state ID (`PSI`)
+rather than by contract address matches the `MidnightProviders` generics.
+
 This factory is called once after wallet connection succeeds and stored in a
 React Context so all components can access the providers.
 
@@ -388,20 +460,26 @@ transaction to Lace, which:
 
 1. Selects appropriate coin inputs from the user's wallet
 2. Constructs change outputs if necessary
-3. Signs the transaction with the user's private key
-4. Returns the balanced, signed transaction
+3. Binds (finalizes) the transaction
+4. Returns the balanced, bound transaction
 
-The `serialize` function converts the SDK's internal representation to the
-wire format expected by Lace. Import it from the appropriate SDK package for
-your contract.
+The DApp Connector exchanges transactions as serialized hex strings.
+`balanceTx` therefore hex-encodes the unbound transaction with
+`toHex(tx.serialize())` before calling `balanceUnsealedTransaction`, and
+deserializes the returned `{ tx }` string with
+`Transaction.deserialize('signature', 'proof', 'binding', fromHex(tx))` to
+produce the `FinalizedTransaction` it must return. `serialize`/`deserialize`
+come from `@midnight-ntwrk/ledger-v8`; `toHex`/`fromHex` from
+`@midnight-ntwrk/midnight-js-utils`.
 
 ## MidnightProvider and submitTx
 
 The `midnightProvider.submitTx` method wraps Lace's `submitTransaction`. After
-balancing and signing, the transaction is ready for broadcast. `submitTx` sends
-it to Lace, which forwards it to the Substrate node. The method returns a
-`TransactionId` that can be used to track confirmation via the indexer's
-WebSocket subscription.
+balancing and binding, the transaction is ready for broadcast. `submitTx`
+serializes it (`toHex(tx.serialize())`) and sends it to Lace, which forwards it
+to the Substrate node. Lace's `submitTransaction` resolves to `void`, so
+`submitTx` reads the `TransactionId` from `tx.identifiers()[0]` and returns
+that for tracking confirmation via the indexer's WebSocket subscription.
 
 ## Browser vs Node.js Differences
 

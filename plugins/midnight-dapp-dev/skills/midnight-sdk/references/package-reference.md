@@ -24,7 +24,7 @@ const deployed: DeployedContract<C> = await deployContract(
     // `args` is REQUIRED when the contract's constructor takes parameters
     // (its type is `Contract.InitializeParameters<C>`); for a no-argument
     // constructor the `args` field is omitted from the options type entirely.
-    args: ConstructorArgs;
+    args: Contract.InitializeParameters<C>;
     signingKey?: SigningKey;  // optional; a fresh CMA signing key is sampled if omitted
   },
 );
@@ -171,7 +171,7 @@ interface FinalizedDeployTxData<C> {
     contractAddress: ContractAddress;
     txId: TransactionId;
     txHash: string;
-    blockHeight: bigint;
+    blockHeight: number;
   };
   private: {
     signingKey: Uint8Array;
@@ -184,7 +184,7 @@ interface FinalizedCallTxData<C, ICK> {
   public: {
     txId: TransactionId;
     txHash: string;
-    blockHeight: bigint;
+    blockHeight: number;
   };
 }
 ```
@@ -308,11 +308,13 @@ import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client
  * Create a ProofProvider that communicates with a proof server via HTTP.
  * @param proofServerUrl - Proof server base URL (e.g., "http://localhost:6300")
  * @param zkConfigProvider - ZK config provider for circuit configurations
+ * @param config - Optional proving provider configuration (ProvingProviderConfig)
  * @returns ProofProvider instance
  */
 httpClientProofProvider<K extends string>(
   proofServerUrl: string,
   zkConfigProvider: ZKConfigProvider<K>,
+  config?: ProvingProviderConfig,
 ): ProofProvider;
 ```
 

@@ -22,6 +22,8 @@ import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
+import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
+import { Transaction } from "@midnight-ntwrk/ledger-v8";
 import type {
   MidnightProviders,
   WalletProvider,
@@ -30,10 +32,10 @@ import type {
 } from "@midnight-ntwrk/midnight-js-types";
 import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
 
-export async function createBrowserProviders<ICK extends string, PSI extends string, PS>(
+export async function createBrowserProviders<PCK extends string, PSI extends string, PS>(
   api: ConnectedAPI,
   privateStateProvider: PrivateStateProvider<PSI, PS>,
-): Promise<MidnightProviders<ICK, PSI, PS>> {
+): Promise<MidnightProviders<PCK, PSI, PS>> {
   // 1. Read configuration from wallet (respects user's network choice)
   const config = await api.getConfiguration();
   setNetworkId(config.networkId);
@@ -45,7 +47,7 @@ export async function createBrowserProviders<ICK extends string, PSI extends str
   );
 
   // 3. Build ZK config provider for browser (fetches via HTTP)
-  const zkConfigProvider = new FetchZkConfigProvider<ICK>(
+  const zkConfigProvider = new FetchZkConfigProvider<PCK>(
     window.location.origin,
     fetch.bind(window),
   );
@@ -63,20 +65,34 @@ export async function createBrowserProviders<ICK extends string, PSI extends str
   const walletProvider: WalletProvider = {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    // WalletProvider.balanceTx is (tx, ttl?) => Promise<FinalizedTransaction>.
-    // The DApp Connector handles fee/coin selection; pass an options object so
-    // the extension can append its {sender} argument in the right position.
+    // WalletProvider.balanceTx is (tx: UnboundTransaction, ttl?: Date) =>
+    // Promise<FinalizedTransaction>. The DApp Connector speaks serialized hex
+    // strings, so serialize the unbound tx to hex, let Lace select fee inputs
+    // and bind it, then deserialize the returned hex back into a
+    // FinalizedTransaction. options is `{ payFees?: boolean }`; `{}` uses
+    // defaults (payFees: true).
     balanceTx: async (tx, _ttl) => {
-      const result = await api.balanceUnsealedTransaction(tx, {});
-      return result.tx;
+      const { tx: balancedHex } = await api.balanceUnsealedTransaction(
+        toHex(tx.serialize()),
+        {},
+      );
+      // A finalized tx is Transaction<SignatureEnabled, Proof, Binding>; pass
+      // the three instance markers for those type parameters.
+      return Transaction.deserialize(
+        "signature",
+        "proof",
+        "binding",
+        fromHex(balancedHex),
+      );
     },
   };
 
   // 6. Build midnight provider from DApp Connector
   const midnightProvider: MidnightProvider = {
     submitTx: async (tx) => {
-      await api.submitTransaction(tx);
-      // submitTransaction returns void; recover the tx id from the transaction's identifiers()
+      // submitTransaction takes a serialized hex string and returns void;
+      // recover the tx id from the transaction's identifiers().
+      await api.submitTransaction(toHex(tx.serialize()));
       return tx.identifiers()[0];
     },
   };
@@ -122,20 +138,33 @@ The `FetchZkConfigProvider` constructs URLs relative to the base URL to load the
 
 Browser DApps cannot use LevelDB. Use an in-memory provider for session-scoped private state:
 
+`PrivateStateProvider<PSI, PS>` is a ~13-method interface, so a compiling
+in-memory implementation must provide all of them. Private state and signing
+keys are kept in `Map`s; the export/import methods reject because an ephemeral
+store has nothing meaningful to export:
+
 ```typescript
 import type { PrivateStateProvider } from "@midnight-ntwrk/midnight-js-types";
+import type { ContractAddress, SigningKey } from "@midnight-ntwrk/compact-runtime";
 
 function inMemoryPrivateStateProvider<PSI extends string, PS>(): PrivateStateProvider<PSI, PS> {
-  const store = new Map<string, PS>();
+  const states = new Map<PSI, PS>();
+  const signingKeys = new Map<ContractAddress, SigningKey>();
 
   return {
-    get: async (id: PSI) => store.get(id) ?? null,
-    set: async (id: PSI, state: PS) => {
-      store.set(id, state);
-    },
-    remove: async (id: PSI) => {
-      store.delete(id);
-    },
+    setContractAddress: () => {},
+    set: async (id, state) => { states.set(id, state); },
+    get: async (id) => states.get(id) ?? null,
+    remove: async (id) => { states.delete(id); },
+    clear: async () => { states.clear(); },
+    setSigningKey: async (address, key) => { signingKeys.set(address, key); },
+    getSigningKey: async (address) => signingKeys.get(address) ?? null,
+    removeSigningKey: async (address) => { signingKeys.delete(address); },
+    clearSigningKeys: async () => { signingKeys.clear(); },
+    exportPrivateStates: async () => { throw new Error("not supported in-memory"); },
+    importPrivateStates: async () => { throw new Error("not supported in-memory"); },
+    exportSigningKeys: async () => { throw new Error("not supported in-memory"); },
+    importSigningKeys: async () => { throw new Error("not supported in-memory"); },
   };
 }
 ```
@@ -166,6 +195,11 @@ async function indexedDBPrivateStateProvider<PSI extends string, PS>(
     remove: async (id: PSI) => {
       await db.delete("privateState", id);
     },
+    // The private-state methods are shown for brevity. A complete
+    // PrivateStateProvider<PSI, PS> must also implement setContractAddress,
+    // clear, the four signing-key methods (setSigningKey, getSigningKey,
+    // removeSigningKey, clearSigningKeys), and the export/import methods —
+    // back them with an additional IndexedDB object store.
   };
 }
 ```
