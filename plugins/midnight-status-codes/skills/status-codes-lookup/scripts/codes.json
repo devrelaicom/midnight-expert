@@ -3399,10 +3399,10 @@
       "verified_against": {
         "source_repo": "midnight-ntwrk/artifacts",
         "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
+        "anchor": "compact-js@2.5.1 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
+        "verified_at": "2026-06-02",
+        "package_version": "2.5.1"
       }
     },
     {
@@ -3421,10 +3421,10 @@
       "verified_against": {
         "source_repo": "midnight-ntwrk/artifacts",
         "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
+        "anchor": "compact-js@2.5.1 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
+        "verified_at": "2026-06-02",
+        "package_version": "2.5.1"
       }
     },
     {
@@ -3443,10 +3443,10 @@
       "verified_against": {
         "source_repo": "midnight-ntwrk/artifacts",
         "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
+        "anchor": "compact-js@2.5.1 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
+        "verified_at": "2026-06-02",
+        "package_version": "2.5.1"
       }
     },
     {
@@ -3468,10 +3468,10 @@
       "verified_against": {
         "source_repo": "midnight-ntwrk/artifacts",
         "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
+        "anchor": "compact-js@2.5.1 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
+        "verified_at": "2026-06-02",
+        "package_version": "2.5.1"
       }
     },
     {
@@ -3557,8 +3557,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3579,8 +3579,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3601,8 +3601,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3623,8 +3623,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3645,8 +3645,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3667,8 +3667,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3689,8 +3689,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3710,8 +3710,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3731,8 +3731,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3753,8 +3753,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3775,8 +3775,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -3796,8 +3796,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -8527,8 +8527,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -8554,8 +8554,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -8581,8 +8581,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -8606,8 +8606,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -8633,8 +8633,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -8660,8 +8660,8 @@
         "ref": "main",
         "anchor": "packages/contracts/src/errors.ts",
         "anchor_modified": "2026-04-13",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -9554,9 +9554,10 @@
       "verified_against": {
         "source_repo": "midnight-ntwrk/artifacts",
         "ref": "private",
-        "anchor": "compact-js-command@2.5.0 (verified via npm pack)",
+        "anchor": "compact-js-command@2.5.1 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04"
+        "verified_at": "2026-06-02",
+        "package_version": "2.5.1"
       }
     },
     {
@@ -9580,9 +9581,10 @@
       "verified_against": {
         "source_repo": "midnight-ntwrk/artifacts",
         "ref": "private",
-        "anchor": "compact-js-command@2.5.0 (verified via npm pack)",
+        "anchor": "compact-js-command@2.5.1 (verified via npm pack)",
         "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04"
+        "verified_at": "2026-06-02",
+        "package_version": "2.5.1"
       }
     },
     {
@@ -9941,11 +9943,11 @@
       "class": "Error",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/assertion-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -9969,11 +9971,11 @@
       "class": "Error",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/assertion-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -9997,11 +9999,11 @@
       "class": "TypeError",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/hex-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -10025,11 +10027,11 @@
       "class": "Error",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/hex-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -10054,11 +10056,11 @@
       "class": "TypeError",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/hex-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -10083,11 +10085,11 @@
       "class": "TypeError",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/hex-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -10111,11 +10113,11 @@
       "class": "TypeError",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/hex-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -10139,11 +10141,11 @@
       "class": "TypeError",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/hex-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {
@@ -10169,11 +10171,11 @@
       "class": "TypeError",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
-        "ref": "midnight-js-utils-4.0.4",
+        "ref": "midnight-js-utils-4.1.1",
         "anchor": "packages/utils/src/type-utils.ts",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04",
-        "package_version": "4.0.4"
+        "verified_at": "2026-06-02",
+        "package_version": "4.1.1"
       }
     },
     {

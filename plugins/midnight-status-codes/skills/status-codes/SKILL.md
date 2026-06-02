@@ -37,7 +37,7 @@ These are `LedgerApiError` codes that surface via Substrate's `InvalidTransactio
 
 Read `references/sdk-errors.md`
 
-**Recognise by:** Error class names like `TxFailedError`, `DeployTxFailedError`, `CallTxFailedError`, `ContractTypeError`, `InvalidProtocolSchemeError`, `PrivateStateImportError`, `IndexerFormattedError`. These are standard JavaScript `Error` subclasses thrown by the midnight-js SDK packages.
+**Recognise by:** Error class names like `TxFailedError`, `DeployTxFailedError`, `CallTxFailedError`, `ContractTypeError`, `InvalidProtocolSchemeError`, `PrivateStateImportError`, `IndexerFormattedError`, `IndexerError`, `IndexerQueryError`, `IndexerDataError`, `IndexerSubscriptionDataError`, `IndexerProviderConfigError`. These are standard JavaScript `Error` subclasses thrown by the midnight-js SDK packages.
 
 ### 3. Effect tagged error with `_tag` like `Wallet.*`
 

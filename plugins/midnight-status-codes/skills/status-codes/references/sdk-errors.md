@@ -57,7 +57,7 @@ Fields:
 | `"Error executing circuit '${id}'"` | Circuit execution threw or returned an error | Inspect `cause` for the underlying error; check circuit inputs |
 | `String(err)` (stringified inner error) | Lazy `getContract()` instantiation failed; the message is just the inner error stringified | Inspect `cause` for the underlying error |
 
-> The previous reference listed three additional messages — `"Unexpected error converting runtime contract state"`, `"Failed to apply maintenance operation"`, `"Invalid number of arguments"` — that are **not present in `compact-js@2.5.0`**. They may have been retired or never existed in this exact form. Removed pending source confirmation.
+> The previous reference listed three additional messages — `"Unexpected error converting runtime contract state"`, `"Failed to apply maintenance operation"`, `"Invalid number of arguments"` — that are **not present in `compact-js@2.5.1`**. They may have been retired or never existed in this exact form. Removed pending source confirmation.
 
 ---
 
