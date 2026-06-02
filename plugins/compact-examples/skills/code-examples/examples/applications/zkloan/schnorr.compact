@@ -3,7 +3,8 @@
 // when it becomes available in a future Compact compiler release.
 // See: https://github.com/LFDT-Minokawa/compact/blob/25b22e3/compiler/standard-library.compact
 
-pragma language_version >= 0.22;
+// <= 0.23 cap: polyfill pinned to current language version pending stdlib jubjubSchnorrVerify.
+pragma language_version >= 0.22 && <= 0.23;
 
 module schnorr {
     import CompactStandardLibrary;
@@ -14,8 +15,10 @@ module schnorr {
     }
 
     struct SchnorrHashInput<#n> {
-        announcement: JubjubPoint;
-        pk: JubjubPoint;
+        ann_x: Field;
+        ann_y: Field;
+        pk_x: Field;
+        pk_y: Field;
         msg: Vector<n, Field>;
     }
 
@@ -23,37 +26,49 @@ module schnorr {
     // by 2^248, so we can truncate it to fit in Jubjub's scalar field.
     witness getSchnorrReduction(challengeHash: Field): [Field, Uint<248>];
 
-    export circuit schnorrVerify<#n>(msg: Vector<n, Field>, signature: SchnorrSignature, pk: JubjubPoint): [] {
+    export circuit schnorrVerify<#n>(
+                     msg: Vector<n, Field>,
+                     signature: SchnorrSignature,
+                     pk: JubjubPoint
+                     ): [] {
         const {announcement, response} = signature;
-        const cFull: Field = transientHash<SchnorrHashInput<n>>(SchnorrHashInput<n>{
-            announcement: announcement,
-            pk: pk,
-            msg: msg
-        });
+        const cFull: Field =
+                transientHash<SchnorrHashInput<n>>(
+                  SchnorrHashInput<n> { ann_x: jubjubPointX(announcement),
+                                        ann_y: jubjubPointY(announcement),
+                                        pk_x: jubjubPointX(pk),
+                                        pk_y: jubjubPointY(pk),
+                                        msg: msg }
+                  );
         // Truncate challenge to 248 bits via witness-assisted division by 2^248.
         // The witness provides (quotient, remainder) such that cFull == q * 2^248 + r
         // where r : Uint<248>, guaranteeing r < 2^248 < Jubjub subgroup order.
         // This is needed because ecMul requires scalars < JUBJUB_ORDER (~2^252.4),
         // but transientHash returns values in BLS12-381's scalar field (~2^255).
-        const TWO_248: Field = 452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
+        const TWO_248: Field =
+                452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
         const [q, cTruncated] = getSchnorrReduction(cFull);
-        assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull, "Invalid challenge reduction");
+        assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull,
+               "Invalid challenge reduction"
+               );
         const c: Field = disclose(cTruncated) as Field;
         const lhs: JubjubPoint = ecMulGenerator(response);
         const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c));
-        assert(lhs == rhs, "Invalid attestation signature");
+        assert(jubjubPointX(lhs) == jubjubPointX(rhs) && jubjubPointY(lhs) == jubjubPointY(rhs),
+               "Invalid attestation signature");
     }
 
     export pure circuit schnorrChallenge(
-        announcement: JubjubPoint,
-        pk: JubjubPoint,
-        msg: Vector<4, Field>
-    ): Field {
-        const cFull: Field = transientHash<SchnorrHashInput<4>>(SchnorrHashInput<4>{
-            announcement: announcement,
-            pk: pk,
-            msg: msg
-        });
+                          ann_x: Field,
+                          ann_y: Field,
+                          pk_x: Field,
+                          pk_y: Field,
+                          msg: Vector<4, Field>
+                          ): Field {
+        const cFull: Field =
+                transientHash<SchnorrHashInput<4>>(
+                  SchnorrHashInput<4> { ann_x: ann_x, ann_y: ann_y, pk_x: pk_x, pk_y: pk_y, msg: msg }
+                  );
         // Return the full hash. Callers must truncate to 248 bits (mod 2^248)
         // to match schnorrVerify's challenge reduction.
         return cFull;
