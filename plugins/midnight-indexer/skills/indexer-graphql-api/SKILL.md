@@ -62,7 +62,7 @@ query {
     timestamp
     transactions {
       hash
-      identifier
+      identifiers
     }
   }
 }
@@ -87,7 +87,7 @@ query {
       zswapState
       unshieldedBalances {
         tokenType
-        value
+        amount
       }
     }
   }
@@ -100,8 +100,8 @@ query {
 
 | Mutation | Parameters | Returns | Purpose |
 |---------|-----------|---------|---------|
-| `connect(viewingKey!)` | Bech32m or hex-encoded viewing key | Session ID | Establish wallet session for shielded transaction scanning |
-| `disconnect(sessionId!)` | Session ID from `connect` | Confirmation | End wallet session |
+| `connect(viewingKey!, options?)` | Bech32m-encoded viewing key (`ViewingKey` scalar); optional `ConnectOptions { startIndex }` to begin scanning from a transaction index | Session ID (`HexEncoded`) | Establish wallet session for shielded transaction scanning |
+| `disconnect(sessionId!)` | Session ID from `connect` | `Unit` (empty) | End wallet session |
 
 ### Example: Wallet Connection
 
@@ -113,7 +113,7 @@ mutation {
 
 # Disconnect wallet
 mutation {
-  disconnect(sessionId: "session-uuid-here")
+  disconnect(sessionId: "session-id-hex")
 }
 ```
 
@@ -121,16 +121,23 @@ mutation {
 
 ## Subscriptions
 
-The indexer provides 6 subscriptions for real-time event streaming over WebSocket.
+The indexer provides 9 subscriptions for real-time event streaming over WebSocket.
 
 | Subscription | Parameters | Emits |
 |-------------|-----------|-------|
-| `blocks(offset?)` | Start block (hash or height) | Block objects |
-| `contractActions(address!, offset?)` | Contract address + optional start offset | ContractDeploy, ContractCall, or ContractUpdate |
-| `shieldedTransactions(sessionId!, index?)` | Session ID from `connect` mutation | RelevantTransaction + sync progress |
-| `unshieldedTransactions(address!, transactionId?)` | Bech32m address, optional resume point | UnshieldedTransaction + sync progress |
-| `dustLedgerEvents(id?)` | Optional event ID to resume from | DUST ledger events |
-| `zswapLedgerEvents(id?)` | Optional event ID to resume from | Zswap ledger events |
+| `blocks(offset?)` | Optional `BlockOffset` (hash or height) start block | Block objects |
+| `contractActions(address!, offset?)` | Contract address + optional `BlockOffset` start | ContractDeploy, ContractCall, or ContractUpdate |
+| `shieldedTransactions(sessionId!, index?)` | Session ID from `connect` mutation, optional `Int` index | `ShieldedTransactionsEvent` union (RelevantTransaction or ShieldedTransactionsProgress) |
+| `unshieldedTransactions(address!, transactionId?)` | `UnshieldedAddress` (Bech32m), optional `Int` transactionId | `UnshieldedTransactionsEvent` union (UnshieldedTransaction or UnshieldedTransactionsProgress) |
+| `dustLedgerEvents(id?)` | Optional `Int` event id to resume from | DUST ledger events |
+| `zswapLedgerEvents(id?)` | Optional `Int` event id to resume from | Zswap ledger events |
+| `dustGenerations(dustAddress!, startIndex!, endIndex!)` | DUST address (`DustAddress` scalar) + inclusive `[startIndex, endIndex]` index range | `DustGenerationsEvent` union (generation entries, collapsed Merkle updates, dtime updates) |
+| `dustNullifierTransactions(nullifierLeBytesPrefixes!, fromBlock?, toBlock?)` | DUST nullifier prefixes (`[HexEncoded!]!`) + optional block range | DustNullifierTransaction (tx/block references) |
+| `shieldedNullifierTransactions(nullifierPrefixes!, fromBlock?, toBlock?)` | Shielded (zswap) nullifier prefixes + optional block range | ShieldedNullifierTransaction (tx/block references) |
+
+> **Note:** the two nullifier subscriptions deliberately use different prefix-arg names — `dustNullifierTransactions` takes `nullifierLeBytesPrefixes`, while `shieldedNullifierTransactions` takes `nullifierPrefixes`.
+
+> **`dustGenerations` index range:** `[startIndex, endIndex]` is **inclusive** at the subscription level. Note the off-by-one against the natural source value `Block.dustGenerationEndIndex`, which is **exclusive** — to cover up to a block's end, pass `endIndex: dustGenerationEndIndex - 1`.
 
 ### Example: Subscribe to Blocks
 
@@ -149,16 +156,26 @@ subscription {
 
 ### Example: Subscribe to Shielded Transactions
 
+`shieldedTransactions` emits a `ShieldedTransactionsEvent` union — either a `RelevantTransaction` (a relevant transaction plus an optional collapsed Merkle tree update) or a `ShieldedTransactionsProgress` (indexing progress). Use inline fragments to handle both:
+
 ```graphql
 subscription {
-  shieldedTransactions(sessionId: "session-uuid") {
-    transaction {
-      hash
-      identifier
+  shieldedTransactions(sessionId: "session-id-hex") {
+    ... on RelevantTransaction {
+      transaction {
+        hash
+        identifiers
+      }
+      zswapCollapsedUpdate {
+        startIndex
+        endIndex
+        update
+      }
     }
-    progress {
-      current
-      total
+    ... on ShieldedTransactionsProgress {
+      highestZswapEndIndex
+      highestCheckedZswapEndIndex
+      highestRelevantZswapEndIndex
     }
   }
 }
@@ -190,11 +207,11 @@ All contract actions share these fields:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `address` | String | Contract address |
-| `state` | String | Contract state after action |
-| `zswapState` | String | Zswap state after action |
+| `address` | HexEncoded | Contract address |
+| `state` | HexEncoded | Contract state after action |
+| `zswapState` | HexEncoded | Zswap state after action |
 | `transaction` | Transaction | Parent transaction |
-| `unshieldedBalances` | [TokenBalance] | Unshielded token balances |
+| `unshieldedBalances` | [ContractBalance!]! | Unshielded token balances (`tokenType`, `amount`) |
 
 ### ContractAction Variants
 
@@ -206,20 +223,26 @@ All contract actions share these fields:
 
 ### TransactionResult
 
+`TransactionResult` is an object with a `status` enum and, for partial success, per-segment results.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | TransactionResultStatus | Overall outcome (see enum below) |
+| `segments` | [Segment!] | Per-segment success flags. **Null unless `status` is `PARTIAL_SUCCESS`** — null-check before iterating |
+
+`TransactionResultStatus` enum values:
+
 | Value | Meaning |
 |-------|---------|
 | `SUCCESS` | All transaction phases completed successfully |
 | `PARTIAL_SUCCESS` | Guaranteed phase succeeded, fallible phase failed |
 | `FAILURE` | Transaction failed entirely |
 
-### TransactionFees
+### Transaction fees
 
-| Field | Description |
-|-------|-------------|
-| `paidFees` | Actual fees paid |
-| `estimatedFees` | Fees estimated before submission |
+The current fee field on a transaction is `fee: String!` (SPECK, the atomic unit of DUST). The older `fees: TransactionFees!` object (with `paidFees`/`estimatedFees`) is deprecated in favour of `fee`; within `TransactionFees`, `estimatedFees` is itself deprecated in favour of `paidFees`.
 
-> **See also:** `references/graphql-types.md` — complete type definitions including Block, Transaction, TokenBalance, RelevantTransaction, UnshieldedTransaction, and SyncProgress.
+> **See also:** `references/graphql-types.md` — complete type definitions including Block, Transaction, ContractBalance, RelevantTransaction, and UnshieldedTransaction.
 
 ## Cross-References
 

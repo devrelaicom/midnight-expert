@@ -88,39 +88,39 @@ The counter uses npm workspaces — both `contract` and `counter-cli` are worksp
 
 ## SDK Package Versions
 
-These are the versions used by `create-mn-app` v0.3.26 hello-world template (verified on 2026-03-30). Versions may have been updated since — run `npm view <package> version` to check current versions:
+These are the versions used by `create-mn-app` v0.4.1 hello-world template (verified on 2026-06-02). Versions may have been updated since — run `npm view <package> version` to check current versions:
 
 | Package | Version |
 |---------|---------|
-| `@midnight-ntwrk/compact-runtime` | 0.15.0 |
+| `@midnight-ntwrk/compact-runtime` | 0.16.0 |
 | `@midnight-ntwrk/compact-js` | 2.5.0 |
 | `@midnight-ntwrk/ledger-v8` | 8.0.3 |
-| `@midnight-ntwrk/midnight-js-contracts` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-level-private-state-provider` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-network-id` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-types` | 4.0.2 |
-| `@midnight-ntwrk/midnight-js-utils` | 4.0.2 |
+| `@midnight-ntwrk/midnight-js-contracts` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-level-private-state-provider` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-network-id` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-types` | 4.0.4 |
+| `@midnight-ntwrk/midnight-js-utils` | 4.0.4 |
 | `@midnight-ntwrk/wallet-sdk-facade` | 3.0.0 |
 | `@midnight-ntwrk/wallet-sdk-hd` | 3.0.1 |
 | `@midnight-ntwrk/wallet-sdk-shielded` | 2.1.0 |
 | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 2.1.0 |
 | `@midnight-ntwrk/wallet-sdk-dust-wallet` | 3.0.0 |
 
-Dev dependencies: `typescript ^5.9.3`, `tsx ^4.21.0`, `@types/node ^22.0.0`
+Dev dependencies: `typescript ^6.0.3`, `tsx ^4.21.0`, `@types/node ^22.0.0`
 
 Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.30.x).
 
 ## Toolchain Versions
 
-Verified on 2026-03-30. Use `compact --version` and `npm view create-mn-app version` to check for newer releases.
+Verified on 2026-06-02. Use `compact --version` and `npm view create-mn-app version` to check for newer releases.
 
 | Component | Version | Install/Update |
 |-----------|---------|----------------|
 | Compact compiler | compactc-v0.30.x | `compact update` |
-| create-mn-app | 0.3.26 | `npx create-mn-app@latest` |
+| create-mn-app | 0.4.1 | `npx create-mn-app@latest` |
 | Proof server Docker image | midnightntwrk/proof-server:8.0.3 | Via Docker |
 | Node.js | 22+ required | https://nodejs.org/ |
 

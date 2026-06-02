@@ -2,12 +2,18 @@ import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
+import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
+import {
+  Transaction,
+  type FinalizedTransaction,
+} from "@midnight-ntwrk/ledger-v8";
+import type { ChargedState } from "@midnight-ntwrk/compact-runtime";
 import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
 import type {
   WalletProvider,
   MidnightProvider,
 } from "@midnight-ntwrk/midnight-js-types";
-import { combineLatest, map, retry, type Observable } from "rxjs";
+import { combineLatest, map, retry, Observable } from "rxjs";
 import { inMemoryPrivateStateProvider } from "./private-state.js";
 import type {
   AppProviders,
@@ -72,19 +78,35 @@ export async function createProviders(
   const walletProvider: WalletProvider = {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    balanceTx: async (tx, newCoins, ttl) => {
-      const result = await api.balanceUnsealedTransaction(tx, {
-        newCoins,
-        ttl,
-      });
-      return result.tx;
+    // WalletProvider.balanceTx is (tx: UnboundTransaction, ttl?: Date) =>
+    // Promise<FinalizedTransaction>. The DApp Connector speaks serialized hex
+    // strings, so we hex-encode the unbound tx, hand it to Lace (which selects
+    // fee inputs/change and binds it), then deserialize the returned hex string
+    // back into a FinalizedTransaction. The options object is `{ payFees?:
+    // boolean }`; an empty `{}` uses the defaults (payFees: true). There is no
+    // `sender`, `newCoins`, or `ttl` argument on this method.
+    balanceTx: async (tx, _ttl) => {
+      const { tx: balancedHex } = await api.balanceUnsealedTransaction(
+        toHex(tx.serialize()),
+        {},
+      );
+      // A balanced/finalized tx is Transaction<SignatureEnabled, Proof, Binding>.
+      // deserialize takes the three instance markers for those type params.
+      return Transaction.deserialize(
+        "signature",
+        "proof",
+        "binding",
+        fromHex(balancedHex),
+      ) satisfies FinalizedTransaction;
     },
   };
 
   const midnightProvider: MidnightProvider = {
     submitTx: async (tx) => {
-      await api.submitTransaction(tx);
-      return tx.txId;
+      // submitTransaction takes a serialized hex string and returns void; the
+      // tx id is recovered from the transaction's own identifiers().
+      await api.submitTransaction(toHex(tx.serialize()));
+      return tx.identifiers()[0];
     },
   };
 
@@ -136,7 +158,9 @@ export function createStateObservable(
   publicDataProvider: AppProviders["publicDataProvider"],
   privateStateProvider: AppProviders["privateStateProvider"],
   contractAddress: string,
-  parseLedger: (data: Uint8Array) => ContractState,
+  // `state.data` is now a ChargedState (not a Uint8Array). Your compiled
+  // contract's generated `YourContract.ledger(state.data)` accepts this value.
+  parseLedger: (data: ChargedState) => ContractState,
 ): Observable<DerivedState> {
   const public$ = publicDataProvider
     .contractStateObservable(contractAddress, { type: "latest" })

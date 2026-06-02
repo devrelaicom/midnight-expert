@@ -156,11 +156,21 @@ if (contractState != null) {
 When deploying or joining a contract, you provide a string identifier for the private state store. This lets the runtime persist and retrieve private state across sessions:
 
 ```typescript
-// Wrap the Contract instance in a CompiledContract
+// Build a CompiledContract with CompiledContract.make + .pipe (compact-js 2.5.x)
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
-const compiledContract = new CompiledContract(contractInstance);
+import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 
-// Deploying
+const compiledContract = CompiledContract.make('mycontract', MyContract.Contract).pipe(
+  // Attach witness implementations (or CompiledContract.withVacantWitnesses if none)
+  CompiledContract.withWitnesses(witnesses),
+  // Point at the generated ZK assets (the compiler `managed/<name>` output)
+  CompiledContract.withCompiledFileAssets(zkConfigPath),
+);
+
+// Deploying — pass `args` (the constructor's InitializeParameters) when the Compact
+// constructor takes parameters, e.g. `args: [42n]`. For a no-argument constructor
+// `args` is optional and can be omitted (the option type makes it required only when
+// the constructor has parameters).
 const deployed = await deployContract(providers, {
   compiledContract: compiledContract,
   privateStateId: 'myContractPrivateState',
@@ -175,6 +185,8 @@ const found = await findDeployedContract(providers, {
   initialPrivateState: createMyPrivateState(secretKey),
 });
 ```
+
+> `CompiledContract` is a module exposing the factory `make(tag, Contract)` plus pipeable combinators (`withWitnesses` / `withVacantWitnesses`, `withCompiledFileAssets`). It is **not** a constructable class — `new CompiledContract(...)` is not valid in compact-js 2.5.x.
 
 The `privateStateId` is a string key used by the private state provider to store and retrieve state. Use a descriptive, unique name per contract type.
 
