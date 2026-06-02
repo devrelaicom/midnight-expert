@@ -309,9 +309,13 @@ interface Signature {
   data: string;
 
   /**
-   * The signature over `midnight_signed_message:<byte_length>:<data_bytes>`.
-   * The wallet prepends this prefix to all signed data to prevent accidental
-   * transaction signing.
+   * The signature over the prefixed data. Per the connector API, the wallet
+   * prepends a domain-separation prefix to the bytes before signing — the
+   * standard guard that keeps a signed message from being interpreted as a
+   * transaction. The exact prefix format is a wallet implementation detail and
+   * is NOT specified by `@midnight-ntwrk/dapp-connector-api`, whose `signData`
+   * JSDoc only states the data "will be prepended with right prefix"; do not
+   * depend on a specific prefix string.
    */
   signature: string;
 
@@ -385,7 +389,9 @@ try {
 
 ## Window Type Augmentation
 
-To get TypeScript support for `window.midnight`, add a type declaration:
+The package already augments the global `Window` type — importing anything from `@midnight-ntwrk/dapp-connector-api` pulls in its bundled declaration (`window.midnight?: { [key: string]: InitialAPI }`), so most projects need **no** manual augmentation.
+
+If you do declare your own (e.g. to attach documentation), it must use the **same index signature as the package** — `[key: string]: InitialAPI`, NOT `InitialAPI | undefined` — or TypeScript raises `TS2717: Subsequent property declarations must have the same type`:
 
 ```typescript
 // types/midnight.d.ts
@@ -393,19 +399,11 @@ import type { InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
 
 declare global {
   interface Window {
-    midnight?: {
-      /**
-       * Per the DApp Connector API v4 spec (CAIP-372 compatible), each wallet
-       * installs its InitialAPI under a freshly-generated UUIDv4 key.
-       * Always enumerate `Object.values(window.midnight)` and match by
-       * `name` / `rdns` — do not assume a fixed key.
-       *
-       * Note: Lace also exposes a convenience alias under `mnLace` for
-       * backwards compatibility, but this is Lace-specific and not part of
-       * the normative spec. Other wallets (e.g. 1AM) only use UUIDv4 keys.
-       */
-      [walletId: string]: InitialAPI | undefined;
-    };
+    // Each wallet installs its InitialAPI under its own key. The DApp Connector
+    // API is CAIP-372-compatible, so keys are UUIDs — do not assume a fixed key;
+    // enumerate `Object.values(window.midnight)` and match by `name`/`rdns`.
+    // (Lace also exposes a Lace-specific convenience alias at `mnLace`.)
+    midnight?: { [walletId: string]: InitialAPI };
   }
 }
 ```
