@@ -3,6 +3,7 @@
 // when it becomes available in a future Compact compiler release.
 // See: https://github.com/LFDT-Minokawa/compact/blob/25b22e3/compiler/standard-library.compact
 
+// <= 0.23 cap: polyfill pinned to current language version pending stdlib jubjubSchnorrVerify.
 pragma language_version >= 0.22 && <= 0.23;
 
 module schnorr {
