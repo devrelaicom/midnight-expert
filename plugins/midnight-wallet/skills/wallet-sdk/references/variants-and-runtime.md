@@ -149,7 +149,7 @@ For everything else, work through the facade API or the per-wallet wallet classe
 
 ## Import Verification
 
-The following imports resolve against `@midnight-ntwrk/wallet-sdk-runtime@1.0.3` (verified with `tsc --noEmit` in the verify harness):
+The following imports resolve against `@midnight-ntwrk/wallet-sdk-runtime@1.0.4` (verified with `tsc --noEmit` in the verify harness):
 
 ```typescript
 import { WalletBuilder, Runtime } from "@midnight-ntwrk/wallet-sdk-runtime";
