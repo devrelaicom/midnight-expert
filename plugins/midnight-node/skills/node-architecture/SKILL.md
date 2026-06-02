@@ -6,9 +6,9 @@ version: 0.1.0
 
 # Node Architecture
 
-The Midnight node is a Substrate-based blockchain client built on Polkadot SDK (polkadot-stable2509) and the Cardano Partner Chain framework (v1.8.1). It produces blocks, finalizes them, verifies ZK proofs, manages ledger state, and bridges to the Cardano mainchain.
+The Midnight node is a Substrate-based blockchain client built on Polkadot SDK (polkadot-stable2603) and the Cardano Partner Chain framework (v1.8.1). It produces blocks, finalizes them, verifies ZK proofs, manages ledger state, and bridges to the Cardano mainchain.
 
-**Current version:** node-0.22.0 — These version identifiers track upstream releases and may change with new Midnight releases.
+**Current version:** node-1.0.0 (mainnet GA) — runtime `spec_version` 1_000_000, `transaction_version` 3. These version identifiers track upstream releases and may change with new Midnight releases.
 
 ## Source Layout
 
@@ -68,7 +68,7 @@ The runtime composes approximately 28 pallets organized by function. The exact c
 | `pallet_node_version` | On-chain node version tracking and compatibility checks |
 | `pallet_cnight_observation` | cNIGHT cross-chain observation and validation |
 | `pallet_system_parameters` | On-chain governance parameters — D-parameter, Terms & Conditions |
-| `pallet_throttle` | Transaction rate limiting — max bytes over a sliding window |
+| `pallet_throttle` | Per-account transaction rate limiting — max bytes and max transaction count over a rolling block window |
 
 ### Governance
 
@@ -166,10 +166,10 @@ The node implements multi-layer transaction filtering to protect against spam an
 | Layer | Mechanism | Purpose |
 |-------|-----------|---------|
 | `FilteringTransactionPool` | Custom transaction pool implementation | Rejects transactions before they enter the pool |
-| `CheckCallFilter` | Signed extension | Validates transaction calls against allow/deny rules |
-| `pallet_throttle` | Runtime pallet | Rate-limits transaction throughput by total bytes over a sliding window |
+| `CheckCallFilter` | Transaction extension | Validates transaction calls against allow/deny rules |
+| `pallet_throttle` | Runtime pallet | Rate-limits each account by both total bytes and transaction count over a rolling block window |
 
-The Throttle pallet enforces a configurable maximum number of transaction bytes within a rolling window, preventing any single block or burst from overwhelming the network.
+The Throttle pallet enforces, per account, a configurable maximum number of transaction bytes (`MaxBytes`) and a maximum transaction count (`MaxTxs`) within a rolling block window (`WindowSize`), preventing any single account from overwhelming the network. Per-account usage is tracked in `AccountUsage` as a `UsageStats` record (`bytes_used`, `txs_used`, `window_start`).
 
 ## Cardano Integration
 
