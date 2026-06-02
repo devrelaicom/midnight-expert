@@ -46,7 +46,7 @@ If the subcommand is `generate`:
 
 1. **Resolve versions:**
    - If `--node-version`, `--indexer-version`, and `--proof-server-version` are ALL provided, use those values.
-   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided.
+   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest devnet-compatible stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided. The resolver caps `midnight-node` below `1.0.0` (the GA mainnet node is not a local-devnet image) and `indexer-standalone` below `4.3.0` (which requires a Blockfrost key); to run a capped tag deliberately, pass it explicitly via `--node-version` / `--indexer-version`.
 
 2. **Verify user-specified versions (if any explicit versions were provided and `--no-verify` is NOT set):**
    - For each user-specified version, check that the Docker Hub tag exists:
@@ -166,7 +166,7 @@ If the subcommand is `health`:
 
   ```bash
   curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:9944/health
-  curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:8088/api/v3/graphql
+  curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:8088/api/v4/graphql
   curl -sf -o /dev/null -w "%{http_code} %{time_total}s" http://localhost:6300/health
   ```
 

@@ -26,7 +26,7 @@ fi
 # service-key | containerName | port | url
 SERVICES=(
   "node|midnight-node|9944|http://127.0.0.1:9944"
-  "indexer|midnight-indexer|8088|http://127.0.0.1:8088/api/v3/graphql"
+  "indexer|midnight-indexer|8088|http://127.0.0.1:8088/api/v4/graphql"
   "proof-server|midnight-proof-server|6300|http://127.0.0.1:6300"
 )
 
