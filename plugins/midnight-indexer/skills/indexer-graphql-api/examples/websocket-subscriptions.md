@@ -32,7 +32,7 @@ const unsubscribe = client.subscribe(
         timestamp
         transactions {
           hash
-          identifier
+          identifiers
         }
       }
     }`,
@@ -85,18 +85,23 @@ async function monitorShieldedTransactions(viewingKey: string) {
     webSocketImpl: WebSocket,
   });
 
+  // shieldedTransactions emits a ShieldedTransactionsEvent union: either a
+  // RelevantTransaction or a ShieldedTransactionsProgress. The sessionId arg
+  // is the HexEncoded scalar.
   const unsubscribe = client.subscribe(
     {
-      query: `subscription($sessionId: String!) {
+      query: `subscription($sessionId: HexEncoded!) {
         shieldedTransactions(sessionId: $sessionId) {
-          transaction {
-            hash
-            identifier
-            result
+          ... on RelevantTransaction {
+            transaction {
+              hash
+              identifiers
+            }
           }
-          progress {
-            current
-            total
+          ... on ShieldedTransactionsProgress {
+            highestZswapEndIndex
+            highestCheckedZswapEndIndex
+            highestRelevantZswapEndIndex
           }
         }
       }`,
@@ -104,10 +109,14 @@ async function monitorShieldedTransactions(viewingKey: string) {
     },
     {
       next(data) {
-        const { transaction, progress } = data.data?.shieldedTransactions;
-        console.log(
-          `[${progress.current}/${progress.total}] Transaction: ${transaction.hash}`,
-        );
+        const event = data.data?.shieldedTransactions;
+        if (event?.transaction) {
+          console.log(`Relevant transaction: ${event.transaction.hash}`);
+        } else if (event) {
+          console.log(
+            `Progress: checked ${event.highestCheckedZswapEndIndex}/${event.highestZswapEndIndex}, relevant up to ${event.highestRelevantZswapEndIndex}`,
+          );
+        }
       },
       error(err) {
         console.error("Subscription error:", err);
@@ -153,14 +162,15 @@ let lastBlockHeight = 0;
 function subscribeToBlocks(client: ReturnType<typeof createClient>) {
   return client.subscribe(
     {
-      query: `subscription($offset: Int) {
+      query: `subscription($offset: BlockOffset) {
         blocks(offset: $offset) {
           hash
           height
           timestamp
         }
       }`,
-      variables: { offset: lastBlockHeight > 0 ? lastBlockHeight : null },
+      // offset is a BlockOffset (@oneOf) input — pass { height } or { hash }, or null for latest.
+      variables: { offset: lastBlockHeight > 0 ? { height: lastBlockHeight } : null },
     },
     {
       next(data) {

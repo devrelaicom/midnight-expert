@@ -8,23 +8,23 @@ Complete `curl` examples for the indexer GraphQL HTTP endpoint. All examples tar
 curl -X POST http://localhost:8088/api/v4/graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "{ block { hash height timestamp transactions { hash identifier } } }"
+    "query": "{ block { hash height timestamp transactions { hash identifiers } } }"
   }'
 ```
 
-Expected response:
+Expected response (note: `timestamp` is a UNIX timestamp in seconds, and `identifiers` is an array):
 
 ```json
 {
   "data": {
     "block": {
-      "hash": "0x1a2b3c...",
+      "hash": "1a2b3c...",
       "height": 12345,
-      "timestamp": "2025-01-15T10:30:00Z",
+      "timestamp": 1736937000,
       "transactions": [
         {
-          "hash": "0xabc123...",
-          "identifier": "tx-id-1"
+          "hash": "abc123...",
+          "identifiers": ["def456..."]
         }
       ]
     }
@@ -38,7 +38,7 @@ Expected response:
 curl -X POST http://localhost:8088/api/v4/graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "{ contractAction(address: \"0xYOUR_CONTRACT_ADDRESS\") { ... on ContractDeploy { address state transaction { hash } } ... on ContractCall { address entryPoint state unshieldedBalances { tokenType value } } } }"
+    "query": "{ contractAction(address: \"YOUR_CONTRACT_ADDRESS_HEX\") { ... on ContractDeploy { address state transaction { hash } } ... on ContractCall { address entryPoint state unshieldedBalances { tokenType amount } } } }"
   }'
 ```
 
@@ -59,7 +59,7 @@ Expected response:
 ```json
 {
   "data": {
-    "connect": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    "connect": "a1b2c3d4e5f6..."
   }
 }
 ```
@@ -74,6 +74,6 @@ End an active wallet session:
 curl -X POST http://localhost:8088/api/v4/graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "mutation { disconnect(sessionId: \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\") }"
+    "query": "mutation { disconnect(sessionId: \"a1b2c3d4e5f6...\") }"
   }'
 ```
