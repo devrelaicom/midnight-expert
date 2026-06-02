@@ -313,7 +313,7 @@ The runtime now uses the `#[frame_support::runtime]` macro (replacing `construct
 | 44 | pallet_federated_authority | Governance authority |
 | 45 | pallet_federated_authority_observation | Authority observation |
 | 50 | pallet_system_parameters | System parameters |
-| 51 | pallet_throttle | Transaction throttling — no error variants; failures surface as `InvalidTransaction::ExhaustsResources` from the `CheckThrottle` signed extension |
+| 51 | pallet_throttle | Transaction throttling — no error variants; failures surface as `InvalidTransaction::ExhaustsResources` from the `CheckThrottle` transaction extension |
 
 > Indices 8 (`pallet_session_validator_management`) and 32 (`pallet_partner_chains_bridge`) are upstream `input-output-hk/partner-chains` pallets vendored into the Midnight runtime; their error variants are documented below alongside the Midnight-authored pallets.
 >

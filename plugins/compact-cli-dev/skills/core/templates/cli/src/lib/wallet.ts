@@ -93,8 +93,8 @@ export async function buildFacade(seed: string): Promise<WalletContext> {
 	const walletConfig = {
 		networkId,
 		indexerClientConnection: {
-			indexerHttpUrl: "http://127.0.0.1:8088/api/v3/graphql",
-			indexerWsUrl: "ws://127.0.0.1:8088/api/v3/graphql/ws",
+			indexerHttpUrl: "http://127.0.0.1:8088/api/v4/graphql",
+			indexerWsUrl: "ws://127.0.0.1:8088/api/v4/graphql/ws",
 		},
 		costParameters: {
 			additionalFeeOverhead: ADDITIONAL_FEE_OVERHEAD,
