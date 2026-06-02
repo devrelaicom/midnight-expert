@@ -33,7 +33,8 @@ SHOW_CONFIG=1 midnight-node --chain preview
 | `validator` | `--validator` | `false` | Run as a block-producing validator node |
 | `cardano_security_parameter` | Config file | Network-specific | Cardano security parameter (k) for finality assumptions |
 | `block_stability_margin` | Config file | Network-specific | Number of blocks before a Cardano block is considered stable |
-| `allow_non_ssl` | Config file | `false` | Allow non-SSL connections to Cardano db-sync PostgreSQL |
+| `ssl_root_cert` | Config file | (optional) | Path to the SSL root certificate for Cardano db-sync PostgreSQL connections. When set, connections use full certificate + hostname validation (`PgSslMode::VerifyFull`); when absent, connections are encrypted but unverified (`PgSslMode::Require`) |
+| `allow_non_ssl` | Config file | `false` | **Deprecated and ignored.** Plaintext database connections are no longer permitted — all connections now use TLS. The flag is retained for backward compatibility and will be removed in a future release. Setting it to `true` emits a startup warning but does not change connection behavior. |
 | `memory_threshold` | Config file | (optional) | Memory usage percentage that triggers graceful shutdown |
 | `storage_cache_size` | `--db-cache` | `1024` | Database cache size in MiB |
 | `trie_cache_size` | `--trie-cache-size` | `67108864` (64 MiB) | State trie cache size in bytes |
@@ -81,6 +82,19 @@ The node loads multiple configuration files that define the chain's genesis stat
 | `ics-config.json` | Inter-chain staking configuration |
 | `federated-authority-config.json` | Initial governance body membership (Council + TechnicalCommittee) |
 | `system-parameters-config.json` | Initial system parameters — D-parameter, Terms & Conditions |
+
+## File Safety and Boot Validation
+
+The node validates the configuration and genesis files it reads on startup. Misconfigured files fail loudly rather than being silently accepted.
+
+| Option / Behavior | Config Key | Default | Description |
+|-------------------|------------|---------|-------------|
+| Symlink rejection | `unsafe_allow_symlinks` | `false` | Config and genesis files that are symlinks are rejected. Set `true` to allow symlinks (accepting the associated symlink-attack risk) |
+| File size limit | `safe_read_max_size` | `10485760` (10 MB) | Maximum size in bytes for a config/genesis file read; larger files are rejected |
+| Regular-file check | (automatic) | — | Files that are not regular files (e.g. directories, devices) are rejected |
+| Network ID validation | (automatic) | — | On boot the node validates that the genesis state's network ID matches the configured chainspec network ID; a mismatch fails startup with `genesis state network id != configured chainspec network id` |
+
+`show_config` (the `SHOW_CONFIG=1` mechanism above) and `show_secrets` are also meta-configuration keys that control how resolved configuration is displayed on startup.
 
 ## Network-Specific Presets
 
