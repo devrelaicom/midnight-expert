@@ -1,6 +1,6 @@
 {
   "name": "midnight-indexer",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Technical reference for the Midnight indexer \u2014 architecture, GraphQL API, data model, and operational guidance for querying on-chain state",
   "author": {
     "name": "Aaron Bassett",
