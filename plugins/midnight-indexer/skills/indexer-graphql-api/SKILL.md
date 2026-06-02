@@ -100,7 +100,7 @@ query {
 
 | Mutation | Parameters | Returns | Purpose |
 |---------|-----------|---------|---------|
-| `connect(viewingKey!, options?)` | Bech32m or hex-encoded viewing key; optional `ConnectOptions { startIndex }` to begin scanning from a transaction index | Session ID (`HexEncoded`) | Establish wallet session for shielded transaction scanning |
+| `connect(viewingKey!, options?)` | Bech32m-encoded viewing key (`ViewingKey` scalar); optional `ConnectOptions { startIndex }` to begin scanning from a transaction index | Session ID (`HexEncoded`) | Establish wallet session for shielded transaction scanning |
 | `disconnect(sessionId!)` | Session ID from `connect` | `Unit` (empty) | End wallet session |
 
 ### Example: Wallet Connection
@@ -131,9 +131,13 @@ The indexer provides 9 subscriptions for real-time event streaming over WebSocke
 | `unshieldedTransactions(address!, transactionId?)` | `UnshieldedAddress` (Bech32m), optional `Int` transactionId | `UnshieldedTransactionsEvent` union (UnshieldedTransaction or UnshieldedTransactionsProgress) |
 | `dustLedgerEvents(id?)` | Optional `Int` event id to resume from | DUST ledger events |
 | `zswapLedgerEvents(id?)` | Optional `Int` event id to resume from | Zswap ledger events |
-| `dustGenerations(dustAddress!, startIndex!, endIndex!)` | DUST address + inclusive index range | `DustGenerationsEvent` union (generation entries, collapsed Merkle updates, dtime updates) |
-| `dustNullifierTransactions(nullifierPrefixes!, fromBlock?, toBlock?)` | DUST nullifier prefixes + optional block range | DustNullifierTransaction (tx/block references) |
+| `dustGenerations(dustAddress!, startIndex!, endIndex!)` | DUST address (`DustAddress` scalar) + inclusive `[startIndex, endIndex]` index range | `DustGenerationsEvent` union (generation entries, collapsed Merkle updates, dtime updates) |
+| `dustNullifierTransactions(nullifierLeBytesPrefixes!, fromBlock?, toBlock?)` | DUST nullifier prefixes (`[HexEncoded!]!`) + optional block range | DustNullifierTransaction (tx/block references) |
 | `shieldedNullifierTransactions(nullifierPrefixes!, fromBlock?, toBlock?)` | Shielded (zswap) nullifier prefixes + optional block range | ShieldedNullifierTransaction (tx/block references) |
+
+> **Note:** the two nullifier subscriptions deliberately use different prefix-arg names — `dustNullifierTransactions` takes `nullifierLeBytesPrefixes`, while `shieldedNullifierTransactions` takes `nullifierPrefixes`.
+
+> **`dustGenerations` index range:** `[startIndex, endIndex]` is **inclusive** at the subscription level. Note the off-by-one against the natural source value `Block.dustGenerationEndIndex`, which is **exclusive** — to cover up to a block's end, pass `endIndex: dustGenerationEndIndex - 1`.
 
 ### Example: Subscribe to Blocks
 
@@ -224,7 +228,7 @@ All contract actions share these fields:
 | Field | Type | Description |
 |-------|------|-------------|
 | `status` | TransactionResultStatus | Overall outcome (see enum below) |
-| `segments` | [Segment!] | Per-segment success flags (present on partial success) |
+| `segments` | [Segment!] | Per-segment success flags. **Null unless `status` is `PARTIAL_SUCCESS`** — null-check before iterating |
 
 `TransactionResultStatus` enum values:
 

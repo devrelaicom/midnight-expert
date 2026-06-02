@@ -15,6 +15,12 @@ Represents a block on the Midnight blockchain.
 | `author` | HexEncoded | Hex-encoded block author (nullable) |
 | `parent` | Block | Parent block (nullable) |
 | `transactions` | [Transaction!]! | Transactions included in this block |
+| `zswapMerkleTreeRoot` | HexEncoded! | Zswap commitment Merkle tree root at this block |
+| `zswapEndIndex` | Int! | Highest zswap commitment index covered by this block |
+| `ledgerParameters` | HexEncoded! | Serialized ledger parameters in effect at this block |
+| `systemParameters` | SystemParameters! | System parameters in effect at this block |
+
+> **Note:** the schema also defines additional dust fields on `Block` — `dustCommitmentEndIndex` and `dustGenerationEndIndex` (both `Int!`, `@beta`), plus `dustCommitmentMerkleTreeRoot` and `dustGenerationMerkleTreeRoot` (nullable `HexEncoded`, latest-indexed dust state). These dust fields are part of the in-flight dust API and are omitted from the stable table above.
 
 ## Transaction (Interface)
 
@@ -30,6 +36,8 @@ Implemented by `RegularTransaction` and `SystemTransaction`. Shared fields:
 | `contractActions` | [ContractAction!]! | Contract operations performed by this transaction |
 | `unshieldedCreatedOutputs` | [UnshieldedUtxo!]! | Unshielded UTXOs created |
 | `unshieldedSpentOutputs` | [UnshieldedUtxo!]! | Unshielded UTXOs spent |
+| `zswapLedgerEvents` | [ZswapLedgerEvent!]! | Zswap ledger events from this transaction |
+| `dustLedgerEvents` | [DustLedgerEvent!]! | Dust ledger events from this transaction |
 
 `RegularTransaction` additionally exposes `transactionResult: TransactionResult!`, `identifiers: [HexEncoded!]!` (note: plural array), `zswapMerkleTreeRoot`, `zswapStartIndex`/`zswapEndIndex`, and `fee: String!` (SPECK, the atomic unit of DUST). The legacy `merkleTreeRoot`/`startIndex`/`endIndex` and `fees: TransactionFees!` fields are deprecated.
 
@@ -40,7 +48,7 @@ Object describing the outcome of applying a transaction to the ledger state.
 | Field | Type | Description |
 |-------|------|-------------|
 | `status` | TransactionResultStatus | Overall outcome (enum below) |
-| `segments` | [Segment!] | Per-segment success flags (present for partial success) |
+| `segments` | [Segment!] | Per-segment success flags. **Null unless `status` is `PARTIAL_SUCCESS`** — clients must null-check before iterating |
 
 `TransactionResultStatus` enum values:
 
@@ -69,6 +77,19 @@ Token balance held by a contract, returned in `unshieldedBalances`.
 |-------|------|-------------|
 | `tokenType` | HexEncoded | Hex-encoded token type identifier |
 | `amount` | String | Balance amount as a string (supports values up to 16 bytes) |
+
+## UnshieldedUtxo
+
+An unshielded UTXO, returned by `unshieldedCreatedOutputs`/`unshieldedSpentOutputs` (Transaction) and `createdUtxos`/`spentUtxos` (UnshieldedTransaction).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `owner` | UnshieldedAddress | Address that owns the UTXO |
+| `intentHash` | HexEncoded | Hex-encoded intent hash that produced/consumed the UTXO |
+| `value` | String | Token amount (u128) as a string, in SPECK/atomic units |
+| `tokenType` | HexEncoded | Hex-encoded token type identifier |
+
+> **Note:** the value field here is named `value` — this is correct for `UnshieldedUtxo`. The parallel balance field on `ContractBalance` is named `amount` (not `value`); the names genuinely differ between the two types, so this is not a stale field.
 
 ## RelevantTransaction
 

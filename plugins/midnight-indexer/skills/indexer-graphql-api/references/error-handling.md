@@ -4,7 +4,9 @@ Common error responses from the indexer GraphQL API and how to resolve them.
 
 ## Complexity Limit Exceeded
 
-The indexer enforces a maximum query complexity of **200**. Deeply nested or wide queries will be rejected before execution.
+The indexer enforces a maximum query complexity (configured via `max_complexity`). Deeply nested or wide queries are rejected before execution.
+
+The complexity limit is wired into the schema with async-graphql's built-in `.limit_complexity(max_complexity)` validator. The error message is the validator's fixed string `"Query is too complex."` — it does not include the configured limit or the query's actual complexity, and no `extensions.code` is attached.
 
 **Error response:**
 
@@ -12,10 +14,7 @@ The indexer enforces a maximum query complexity of **200**. Deeply nested or wid
 {
   "errors": [
     {
-      "message": "Query is too complex. Maximum complexity is 200, but the query has a complexity of 350.",
-      "extensions": {
-        "code": "QUERY_TOO_COMPLEX"
-      }
+      "message": "Query is too complex."
     }
   ]
 }
@@ -27,20 +26,35 @@ The indexer enforces a maximum query complexity of **200**. Deeply nested or wid
 - Split one large query into multiple smaller queries
 - Request only the fields you need from `Transaction` objects
 
-## Invalid Session ID
+## Session ID Errors
 
-Returned when a `sessionId` passed to `shieldedTransactions` or `disconnect` is expired, malformed, or was never created.
+Two distinct errors can be returned for the `sessionId` passed to the `shieldedTransactions` subscription or the `disconnect` mutation. The indexer does **not** attach an `extensions.code`, capitalize "Invalid", or echo the supplied id back in the message.
 
-**Error response:**
+### Malformed session ID
+
+If the supplied id cannot be decoded into a 32-byte session ID, `decode_session_id` fails and the error is wrapped with the lowercase message `"invalid session ID"`. The full message is a chain joined with `:`, where the suffix is the underlying decode failure:
 
 ```json
 {
   "errors": [
     {
-      "message": "Invalid session ID: session-id-hex",
-      "extensions": {
-        "code": "INVALID_SESSION"
-      }
+      "message": "invalid session ID:cannot hex-decode session ID:..."
+    }
+  ]
+}
+```
+
+A value that is valid hex but the wrong length yields `"invalid session ID:cannot convert into session ID:..."` instead.
+
+### Unknown or expired session ID
+
+If the id is well-formed (decodes to 32 bytes) but does not resolve to a live wallet session, the `shieldedTransactions` subscription returns the distinct message `"unknown or expired session ID"` (no source chain, no `extensions.code`):
+
+```json
+{
+  "errors": [
+    {
+      "message": "unknown or expired session ID"
     }
   ]
 }
@@ -50,6 +64,7 @@ Returned when a `sessionId` passed to `shieldedTransactions` or `disconnect` is 
 - Call the `connect` mutation with a valid viewing key to obtain a new session ID
 - Session IDs do not persist across indexer restarts; reconnect after indexer downtime
 - Ensure the session has not been explicitly disconnected via the `disconnect` mutation
+- Check the supplied value is the exact hex session ID returned by `connect` (correct length, valid hex)
 
 ## Malformed Query
 
@@ -80,7 +95,9 @@ Syntax errors in the GraphQL query are returned with position information.
 
 ## Max Depth Exceeded
 
-The indexer enforces a maximum query depth of **15** levels.
+The indexer enforces a maximum query depth (configured via `max_depth`, applied with both `.limit_depth(max_depth)` and `.limit_recursive_depth(max_depth)`).
+
+The error message is async-graphql's fixed validator string `"Query is nested too deep."` — it does not include the configured limit, and no `extensions.code` is attached.
 
 **Error response:**
 
@@ -88,10 +105,7 @@ The indexer enforces a maximum query depth of **15** levels.
 {
   "errors": [
     {
-      "message": "Query is too deep. Maximum depth is 15.",
-      "extensions": {
-        "code": "QUERY_TOO_DEEP"
-      }
+      "message": "Query is nested too deep."
     }
   ]
 }
