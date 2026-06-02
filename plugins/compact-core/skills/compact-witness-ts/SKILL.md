@@ -142,6 +142,8 @@ const contractInstance = new Contract(witnesses);
 // and ZK assets via .pipe(). It is synchronous — do NOT `await` it.
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
 const compiledContract = CompiledContract.make("mycontract", Contract).pipe(
+  // Attach witness implementations (or CompiledContract.withVacantWitnesses if the
+  // contract declares no witnesses — note: it is a value used bare in .pipe(...), NOT called as withVacantWitnesses())
   CompiledContract.withWitnesses(witnesses),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );
