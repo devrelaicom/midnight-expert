@@ -68,8 +68,8 @@ const defaultConfig: StubConfig = {
   unshieldedAddress: { unshieldedAddress: 'mn_addr1...' },
   dustAddress: { dustAddress: 'mn_dust1...' },
   configuration: {
-    indexerUri: 'http://localhost:6300/api/v3/graphql',
-    indexerWsUri: 'ws://localhost:6300/api/v3/graphql/ws',
+    indexerUri: 'http://localhost:8088/api/v4/graphql',
+    indexerWsUri: 'ws://localhost:8088/api/v4/graphql/ws',
     substrateNodeUri: 'ws://localhost:9944',
     networkId: 'undeployed',
   },
@@ -87,7 +87,7 @@ function createWalletStub(config?: Partial<StubConfig>): InitialAPI {
     rdns: 'com.test.wallet',
     name: cfg.name ?? 'Test Wallet',
     icon: cfg.icon ?? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    apiVersion: cfg.apiVersion ?? '1.0.0',
+    apiVersion: cfg.apiVersion ?? '4.0.1',
     connect: async (networkId: string) => {
       if (cfg.connectError) throw createAPIError(cfg.connectError);
       return createConnectedStub(cfg);
@@ -232,7 +232,7 @@ test.beforeEach(async ({ page }) => {
       rdns: 'com.test.wallet',
       name: 'Test Wallet',
       icon: 'data:image/png;base64,...',
-      apiVersion: '1.0.0',
+      apiVersion: '4.0.1',
       connect: async () => ({
         getShieldedBalances: async () => ({ '0x00': BigInt(1000) }),
         getUnshieldedBalances: async () => ({}),

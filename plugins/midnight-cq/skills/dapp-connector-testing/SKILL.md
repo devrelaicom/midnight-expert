@@ -82,7 +82,7 @@ function createWalletStub(config?: Partial<StubConfig>): InitialAPI {
     rdns: 'com.test.wallet',
     name: cfg.name ?? 'Test Wallet',
     icon: cfg.icon ?? 'data:image/png;base64,...',
-    apiVersion: cfg.apiVersion ?? '1.0.0',
+    apiVersion: cfg.apiVersion ?? '4.0.1',
     connect: async (networkId) => {
       if (cfg.connectError) throw createAPIError(cfg.connectError);
       return createConnectedStub(cfg);

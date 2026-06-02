@@ -58,20 +58,22 @@ transition them through the pipeline in order.
 
 ```typescript
 import {
+  CostModel,
   UnprovenTransaction,
-  WellFormedStrictness,
 } from '@midnight-ntwrk/ledger-v8';
 
 // Stage 1 — Unproven: Transaction<SignatureEnabled, PreProof, PreBinding>
 const unproven: UnprovenTransaction = buildUnprovenTransaction();
 
 // Stage 2 — Proved: Transaction<SignatureEnabled, Proof, PreBinding>
-const proved = await unproven.prove(provingParams);
+// prove(provider: ProvingProvider, costModel: CostModel)
+const proved = await unproven.prove(provingProvider, CostModel.initialCostModel());
 
-// Stage 3 — Bound: Transaction<SignatureEnabled, Proof, FiatShamirPedersen>
-const bound = proved.bind(bindingParams);
+// Stage 3 — Bound: Transaction<SignatureEnabled, Proof, Binding>
+// bind() takes no arguments; binding is irreversible
+const bound = proved.bind();
 
-// Stage 4 — Erased proofs (for storage)
+// Stage 4 — Erased proofs (for storage): Transaction<SignatureEnabled, NoProof, NoBinding>
 const erased = bound.eraseProofs();
 ```
 
@@ -111,18 +113,20 @@ encode/decode patterns.
 `ZswapLocalState` and `DustLocalState` return new instances on every mutation.
 The original is unchanged. Tests that assert on the original after calling
 `spend()`, `apply()`, or `revertTransaction()` will always pass — even if the
-operation is broken.
+operation is broken. Note `ZswapLocalState.coins` is a `Set<QualifiedShieldedCoinInfo>`,
+so assert on `.size` (not `.length`).
 
 ```typescript
 it('should remove coin after spend', () => {
   const original = zswapState;
-  const updated = original.spend(coinInfo);
+  // spend(secretKeys, coin, segment, ttl?) -> [ZswapLocalState, UnprovenInput]
+  const [updated] = original.spend(secretKeys, coin, segment);
 
-  // GOOD: Assert on the returned state
-  expect(updated.coins.length).toBe(original.coins.length - 1);
+  // GOOD: Assert on the returned state (coins is a Set -> use .size)
+  expect(updated.coins.size).toBe(original.coins.size - 1);
 
   // BAD: Asserting on original — this always passes, proves nothing
-  // expect(original.coins.length).toBe(original.coins.length);
+  // expect(original.coins.size).toBe(original.coins.size);
 });
 ```
 
@@ -130,17 +134,17 @@ See `references/ledger-state-patterns.md` for complete state mutation patterns.
 
 ### 4. Time-Dependent Dust
 
-`DustLocalState.walletBalance()` takes a `Date` parameter. Dust balances
-change over time as TTLs expire. Tests that use `new Date()` or `Date.now()`
-are non-deterministic.
+`DustLocalState.walletBalance()` takes a `Date` parameter and returns a
+`bigint` (the spendable Dust balance at that instant). Dust balances change
+over time as generation accrues and TTLs expire. Tests that use `new Date()`
+or `Date.now()` are non-deterministic.
 
 ```typescript
 it('should calculate balance at fixed time', () => {
   // GOOD: Fixed time for deterministic results
   const fixedTime = new Date('2026-01-01T00:00:00Z');
-  const balance = dustState.walletBalance(fixedTime);
-  expect(balance).toBeDefined();
-  expect(balance.available).toBe(expectedAmount);
+  const balance = dustState.walletBalance(fixedTime); // bigint
+  expect(balance).toBe(expectedAmount);
 });
 
 // BAD: Non-deterministic — result changes as real time passes
@@ -152,20 +156,26 @@ testing.
 
 ### 5. Cost Model Assertions
 
-`SyntheticCost` has 5 dimensions: `read_time`, `compute_time`, `block_usage`,
-`bytes_written`, and `bytes_churned`. Asserting only that `cost` is defined
-proves nothing about the fee structure.
+`SyntheticCost` has 5 dimensions: `readTime`, `computeTime`, `blockUsage`,
+`bytesWritten`, and `bytesChurned` (all `bigint`). Asserting only that `cost`
+is defined proves nothing about the fee structure.
+
+The cost of a transaction is computed by the transaction's own `cost(params)`
+method (returning a `SyntheticCost`); `LedgerParameters` supplies the cost
+model. There is no `CostModel.calculate(...)` helper — `CostModel` only
+exposes the static `CostModel.initialCostModel()` factory.
 
 ```typescript
-import { CostModel } from '@midnight-ntwrk/ledger-v8';
+import { LedgerParameters } from '@midnight-ntwrk/ledger-v8';
 
 it('should calculate cost with expected dimensions', () => {
-  const cost = CostModel.calculate(transaction);
+  const params = LedgerParameters.initialParameters();
+  const cost = transaction.cost(params); // SyntheticCost
 
   // GOOD: Assert specific dimensions
-  expect(cost.block_usage).toBeGreaterThan(0n);
-  expect(cost.bytes_written).toBeGreaterThanOrEqual(0n);
-  expect(cost.compute_time).toBeGreaterThan(0n);
+  expect(cost.blockUsage).toBeGreaterThan(0n);
+  expect(cost.bytesWritten).toBeGreaterThanOrEqual(0n);
+  expect(cost.computeTime).toBeGreaterThan(0n);
 
   // BAD: Proves nothing
   // expect(cost).toBeDefined();
@@ -181,9 +191,9 @@ See `references/transaction-construction-patterns.md` for cost model patterns.
 | Arbitrary strings for hex types | Fails validation at runtime; wrong length or encoding | Use `sample*` functions (sampleCoinPublicKey, sampleContractAddress, etc.) |
 | Asserting on original state after mutation | Returns always pass; the original is immutable and never changes | Assert on the value returned by spend()/apply()/revertTransaction() |
 | Using `new Date()` in Dust balance tests | Non-deterministic; test results change as real time passes | Pass a fixed `new Date('...')` to walletBalance() |
-| Asserting only that cost is non-zero | Proves nothing about SyntheticCost dimensions | Assert specific dimension values (block_usage, bytes_written, etc.) |
+| Asserting only that cost is non-zero | Proves nothing about SyntheticCost dimensions | Assert specific dimension values (`blockUsage`, `bytesWritten`, etc.) |
 | Skipping proof staging transitions | Tests bypass type safety; miss stage-dependent bugs | Test each transition: Unproven → prove() → bind() → eraseProofs() |
-| Not testing well-formedness rejection | Only happy-path testing; misses constraint violations | Build invalid transactions and assert wellFormed() returns false |
+| Not testing well-formedness rejection | Only happy-path testing; misses constraint violations | Build invalid transactions and assert `wellFormed()` throws (it returns a `VerifiedTransaction` on success, not a boolean) |
 | Sharing state instances across tests | State bleeds between tests; order-dependent failures | Construct fresh state objects in beforeEach |
 
 ## Reference Files
