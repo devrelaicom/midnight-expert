@@ -158,10 +158,10 @@ interface WalletConnectedAPI {
 
   /**
    * Sign arbitrary data with the unshielded signing key.
-   * @param data - Data to sign
-   * @param options - Signing options
+   * @param data - Data to sign, encoded as specified by `options.encoding`
+   * @param options - Signing options (encoding + key type)
    */
-  signData(data: Uint8Array, options: SignDataOptions): Promise<Signature>;
+  signData(data: string, options: SignDataOptions): Promise<Signature>;
 
   /**
    * Get a proving provider that delegates ZK proof generation to the wallet.
@@ -302,15 +302,34 @@ interface IntentOptions {
 
 ```typescript
 interface Signature {
-  /** The signature bytes */
-  signature: Uint8Array;
+  /**
+   * The data that was signed (echoed back from the input, in the original encoding).
+   * Useful for verifying what was signed without re-parsing the request.
+   */
+  data: string;
 
-  /** The public key that produced the signature */
-  publicKey: Uint8Array;
+  /**
+   * The signature over `midnight_signed_message:<byte_length>:<data_bytes>`.
+   * The wallet prepends this prefix to all signed data to prevent accidental
+   * transaction signing.
+   */
+  signature: string;
+
+  /** The verifying key corresponding to the signing key used. */
+  verifyingKey: string;
 }
 
 interface SignDataOptions {
-  /** Which key to sign with */
+  /**
+   * How the `data` argument is encoded.
+   * - `"hex"` / `"base64"`: binary data encoded in that format — the wallet decodes
+   *   to raw bytes before signing.
+   * - `"text"`: sign the string as UTF-8 bytes (JS strings are UTF-16; the wallet
+   *   handles the conversion).
+   */
+  encoding: "hex" | "base64" | "text";
+
+  /** Which key to use for signing. Currently only `"unshielded"` is supported. */
   keyType: "unshielded";
 }
 ```
@@ -375,11 +394,33 @@ import type { InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
 declare global {
   interface Window {
     midnight?: {
-      mnLace?: InitialAPI;
+      /**
+       * Per the DApp Connector API v4 spec (CAIP-372 compatible), each wallet
+       * installs its InitialAPI under a freshly-generated UUIDv4 key.
+       * Always enumerate `Object.values(window.midnight)` and match by
+       * `name` / `rdns` — do not assume a fixed key.
+       *
+       * Note: Lace also exposes a convenience alias under `mnLace` for
+       * backwards compatibility, but this is Lace-specific and not part of
+       * the normative spec. Other wallets (e.g. 1AM) only use UUIDv4 keys.
+       */
       [walletId: string]: InitialAPI | undefined;
     };
   }
 }
 ```
 
-This provides autocompletion and type checking for `window.midnight.mnLace` throughout the project.
+**Detection pattern** — enumerate and match by identity, not by key:
+
+```typescript
+function findWallets(): InitialAPI[] {
+  if (typeof window === "undefined" || !window.midnight) return [];
+  return Object.values(window.midnight).filter(
+    (entry): entry is InitialAPI =>
+      entry != null &&
+      typeof entry === "object" &&
+      typeof (entry as InitialAPI).connect === "function" &&
+      typeof (entry as InitialAPI).apiVersion === "string",
+  );
+}
+```

@@ -67,7 +67,7 @@ on-chain   votes     reached     approved
 | **Propose** | A member of either body submits a motion (a callable dispatch) |
 | **Vote** | Members of the originating body cast Aye or Nay votes |
 | **Approve** | The motion passes if it reaches a 2/3 supermajority |
-| **Close** | After both bodies approve, the motion is executed within a 5-day voting window |
+| **Close** | After both bodies approve, the motion is executed within a 5-day voting window. The `motion_close` extrinsic can be called by anyone and takes a `proposal_weight_bound` argument that caps the weight the dispatched call may consume; it runs as an `Operational` dispatch |
 
 ### Voting Rules
 
