@@ -45,15 +45,15 @@ The toolchain reports three independent version numbers. Confusing them is a com
 | What | Commands | Example Output |
 |------|----------|----------------|
 | **CLI tool version** | `compact --version`, `compact self --version` | `compact 0.5.1` |
-| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.30.0` |
-| **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.22.0` |
+| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.31.0` |
+| **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.23.0` |
 
 The compiler also reports two additional versions relevant to DApp developers:
 
 | What | Command | Example Output |
 |------|---------|----------------|
 | **Ledger version** | `compact compile -- --ledger-version` | `ledger-8.0.2` |
-| **Runtime JS package version** | `compact compile -- --runtime-version` | `0.15.0` |
+| **Runtime JS package version** | `compact compile -- --runtime-version` | `0.16.0` |
 
 The CLI and compiler update independently:
 

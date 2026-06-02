@@ -121,8 +121,8 @@ All endpoints are hardcoded to the local devnet via `DEVNET_CONFIG`:
 
 ```typescript
 export const DEVNET_CONFIG: NetworkConfig = {
-  indexer: "http://127.0.0.1:8088/api/v3/graphql",
-  indexerWS: "ws://127.0.0.1:8088/api/v3/graphql/ws",
+  indexer: "http://127.0.0.1:8088/api/v4/graphql",
+  indexerWS: "ws://127.0.0.1:8088/api/v4/graphql/ws",
   node: "http://127.0.0.1:9944",
   proofServer: "http://127.0.0.1:6300",
   networkId: "undeployed",

@@ -6,7 +6,7 @@ description: >-
   deploying or finding contracts with deployContract or findDeployedContract,
   calling circuits with callTx or submitCallTx, the transaction lifecycle,
   SDK provider types (WalletProvider, MidnightProvider, PublicDataProvider,
-  ProofProvider, ZkConfigProvider, PrivateStateProvider), testkit-js testing,
+  ProofProvider, ZKConfigProvider, PrivateStateProvider), testkit-js testing,
   observable state subscriptions, contract maintenance and verifier keys,
   or connecting to the indexer or proof server.
 version: 0.1.0
@@ -14,7 +14,7 @@ version: 0.1.0
 
 # Midnight SDK Reference
 
-Comprehensive reference for the Midnight.js SDK: all 10 packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see `references/transaction-lifecycle.md`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
+Comprehensive reference for the Midnight.js SDK (v4.1.1 — all `@midnight-ntwrk/midnight-js-*` packages move in lockstep): the core packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see `references/transaction-lifecycle.md`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
 
 For the underlying Wallet SDK packages (WalletFacade, HD derivation, three-wallet architecture), see `midnight-wallet:wallet-sdk`.
 
@@ -23,32 +23,38 @@ For the underlying Wallet SDK packages (WalletFacade, HD derivation, three-walle
 | Package | Purpose | Key Exports |
 |---------|---------|-------------|
 | `@midnight-ntwrk/midnight-js-contracts` | Contract deployment and interaction | `deployContract`, `findDeployedContract`, `submitCallTx`, `callTx`, `submitCallTxAsync`, `submitTxAsync`, `createUnprovenCallTx`, `getStates`, `getPublicStates`, `getUnshieldedBalances`, `verifyContractState`, `submitInsertVerifierKeyTx`, `submitRemoveVerifierKeyTx`, `submitReplaceAuthorityTx`, `replaceAuthority` |
-| `@midnight-ntwrk/midnight-js-types` | Core type definitions | `MidnightProviders`, `WalletProvider`, `MidnightProvider`, `PublicDataProvider`, `PrivateStateProvider`, `ProofProvider`, `ZkConfigProvider` |
+| `@midnight-ntwrk/midnight-js-types` | Core type definitions | `MidnightProviders`, `WalletProvider`, `MidnightProvider`, `PublicDataProvider`, `PrivateStateProvider`, `ProofProvider`, `ZKConfigProvider` |
 | `@midnight-ntwrk/midnight-js-network-id` | Network configuration | `setNetworkId` |
 | `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | Indexer connection | `indexerPublicDataProvider()` |
 | `@midnight-ntwrk/midnight-js-http-client-proof-provider` | Proof server communication | `httpClientProofProvider()` |
 | `@midnight-ntwrk/midnight-js-level-private-state-provider` | LevelDB private state (Node.js) | `levelPrivateStateProvider()` |
 | `@midnight-ntwrk/midnight-js-node-zk-config-provider` | Node.js ZK asset loading | `NodeZkConfigProvider` |
 | `@midnight-ntwrk/midnight-js-fetch-zk-config-provider` | Browser ZK asset loading | `FetchZkConfigProvider` |
-| `@midnight-ntwrk/midnight-js-logger-provider` | Optional structured logging | `loggerProvider()` |
+| `@midnight-ntwrk/midnight-js-logger-provider` | Optional structured logging (pino wrapper) | `LoggerProvider` (class; `new LoggerProvider(pinoLogger)`) |
+| `@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` | Browser wallet-delegated proving | `dappConnectorProofProvider(api, zkConfigProvider, costModel)` |
 | `@midnight-ntwrk/midnight-js-utils` | Utility functions | `toHex` (as of the current release, `toHex` is the primary utility export) |
 
 All packages are published on the **public npm registry** under the `@midnight-ntwrk` scope. Do not configure custom registries or `.npmrc` overrides.
 
 ## MidnightProviders Deep Dive
 
-`MidnightProviders<ICK, PSI, PS>` bundles the six providers required for contract deployment and interaction:
+`MidnightProviders<PCK, PSI, PS>` bundles the six required providers (plus an optional logger) for contract deployment and interaction:
 
 ```typescript
 import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
 
-interface MidnightProviders<ICK extends string, PSI extends string, PS> {
-  walletProvider: WalletProvider;
-  midnightProvider: MidnightProvider;
-  publicDataProvider: PublicDataProvider;
-  privateStateProvider: PrivateStateProvider<PSI, PS>;
-  zkConfigProvider: ZkConfigProvider<ICK>;
-  proofProvider: ProofProvider<ICK>;
+interface MidnightProviders<
+  PCK extends AnyProvableCircuitId = AnyProvableCircuitId,
+  PSI extends PrivateStateId = PrivateStateId,
+  PS = any,
+> {
+  readonly privateStateProvider: PrivateStateProvider<PSI, PS>;
+  readonly publicDataProvider: PublicDataProvider;
+  readonly zkConfigProvider: ZKConfigProvider<PCK>;
+  readonly proofProvider: ProofProvider;
+  readonly walletProvider: WalletProvider;
+  readonly midnightProvider: MidnightProvider;
+  readonly loggerProvider?: LoggerProvider;
 }
 ```
 
@@ -56,8 +62,8 @@ interface MidnightProviders<ICK extends string, PSI extends string, PS> {
 
 | Parameter | Meaning | Example |
 |-----------|---------|---------|
-| `ICK` | Impure circuit keys -- union of circuit names that have witnesses | `"transfer" \| "mint"` |
-| `PSI` | Private state identifier -- the key used in the private state store | `typeof "myContractState"` |
+| `PCK` | Provable circuit keys -- union of circuit names that have witnesses (`AnyProvableCircuitId`) | `"transfer" \| "mint"` |
+| `PSI` | Private state identifier (`PrivateStateId`, a `string`) -- the key used in the private state store | `"myContractState"` |
 | `PS` | Private state type -- the shape of off-chain state | `{ secretKey: Uint8Array }` |
 
 ### Provider Details
@@ -69,19 +75,20 @@ Handles transaction balancing (adding fee inputs/outputs) and provides signing k
 ```typescript
 interface WalletProvider {
   /** Get the shielded coin public key for receiving funds */
-  getCoinPublicKey(): string;
+  getCoinPublicKey(): CoinPublicKey;
 
   /** Get the encryption public key for encrypted outputs */
-  getEncryptionPublicKey(): string;
+  getEncryptionPublicKey(): EncPublicKey;
 
-  /** Balance an unproven transaction by adding fee inputs/outputs */
+  /** Balance an unbound (proven) transaction by adding fee inputs/outputs */
   balanceTx(
-    tx: UnprovenTransaction,
-    newCoins?: ShieldedCoinInfo[],
+    tx: UnboundTransaction,
     ttl?: Date,
-  ): Promise<BalancedProvingRecipe>;
+  ): Promise<FinalizedTransaction>;
 }
 ```
+
+`getCoinPublicKey()` / `getEncryptionPublicKey()` are synchronous and return the `CoinPublicKey` / `EncPublicKey` types (string aliases) from the ledger.
 
 - **Node.js**: Built from `WalletFacade` (see the Deployment section below)
 - **Browser**: Built from `ConnectedAPI.balanceUnsealedTransaction` (see `midnight-dapp-dev:dapp-connector`)
@@ -106,14 +113,27 @@ Connects to the indexer for on-chain state queries and subscriptions:
 
 ```typescript
 interface PublicDataProvider {
-  queryContractState(address: ContractAddress): Promise<ContractState | null>;
-  watchForDeployTxData(address: ContractAddress): Observable<DeployTxData>;
+  queryContractState(
+    address: ContractAddress,
+    config?: BlockHeightConfig | BlockHashConfig,
+  ): Promise<ContractState | null>;
+  // Resolves once when the deploy tx appears on-chain (NOT an observable):
+  watchForDeployTxData(address: ContractAddress): Promise<FinalizedTxData>;
+  watchForTxData(txId: TransactionId): Promise<FinalizedTxData>;
   contractStateObservable(
     address: ContractAddress,
-    options?: { type: "latest" },
+    config: ContractStateObservableConfig,
   ): Observable<ContractState>;
+  // ...also queryZSwapAndContractState, queryDeployContractState,
+  // queryUnshieldedBalances, watchForContractState, unshieldedBalancesObservable
 }
 ```
+
+`ContractStateObservableConfig` is required and selects where the stream starts:
+`{ type: "latest" }`, `{ type: "all" }`, `{ type: "txId"; txId }`,
+`{ type: "blockHeight"; blockHeight }`, or `{ type: "blockHash"; blockHash }`
+(the last three take an optional `inclusive` flag, default `true`). As of v4.1.1 the
+`blockHeight` / `blockHash` configurations correctly emit the state at that block.
 
 Created identically in both Node.js and browser via `indexerPublicDataProvider(httpUrl, wsUrl)`.
 
@@ -132,13 +152,17 @@ interface PrivateStateProvider<PSI extends string, PS> {
 - **Node.js**: `levelPrivateStateProvider()` using LevelDB
 - **Browser**: In-memory `Map` or IndexedDB (see `midnight-dapp-dev:dapp-connector`)
 
-#### ZkConfigProvider
+#### ZKConfigProvider
 
 Loads ZK circuit configurations from compiled assets:
 
 ```typescript
-interface ZkConfigProvider<ICK extends string> {
-  getZkConfig(circuitId: ICK): Promise<ZkConfig>;
+abstract class ZKConfigProvider<K extends string> {
+  abstract getZKIR(circuitId: K): Promise<ZKIR>;
+  abstract getProverKey(circuitId: K): Promise<ProverKey>;
+  abstract getVerifierKey(circuitId: K): Promise<VerifierKey>;
+  getVerifierKeys(circuitIds: K[]): Promise<[K, VerifierKey][]>;
+  get(circuitId: K): Promise<ZKConfig<K>>;  // bundles ZKIR + prover + verifier keys
 }
 ```
 
@@ -150,12 +174,15 @@ interface ZkConfigProvider<ICK extends string> {
 Communicates with the proof server to generate ZK proofs:
 
 ```typescript
-interface ProofProvider<ICK extends string> {
-  prove(circuitId: ICK, inputs: ProveInputs): Promise<Proof>;
+interface ProofProvider {
+  proveTx(
+    unprovenTx: UnprovenTransaction,
+    proveTxConfig?: ProveTxConfig,
+  ): Promise<UnboundTransaction>;
 }
 ```
 
-Created via `httpClientProofProvider(proofServerUrl, zkConfigProvider)` in both environments.
+Created via `httpClientProofProvider(proofServerUrl, zkConfigProvider)` in both environments. For browser DApps, `dappConnectorProofProvider(api, zkConfigProvider, costModel)` from `@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` returns a `ProofProvider` that delegates proving to the connected Lace wallet.
 
 ## Transaction Lifecycle
 
@@ -181,7 +208,7 @@ const txData = await deployed.callTx.myCircuit(arg1, arg2);
 // txData contains:
 txData.public.txId;         // TransactionId
 txData.public.txHash;       // string
-txData.public.blockHeight;  // bigint
+txData.public.blockHeight;  // number
 ```
 
 ### Low-Level API
@@ -451,7 +478,7 @@ interface FinalizedDeployTxData<C> {
     contractAddress: ContractAddress;
     txId: TransactionId;
     txHash: string;
-    blockHeight: bigint;
+    blockHeight: number;
   };
   private: {
     signingKey: Uint8Array;
@@ -467,7 +494,7 @@ interface FinalizedCallTxData<C, ICK> {
   public: {
     txId: TransactionId;
     txHash: string;
-    blockHeight: bigint;
+    blockHeight: number;
   };
 }
 ```
@@ -489,5 +516,5 @@ Both types provide the on-chain confirmation data needed to verify that the oper
 
 | Topic | Reference File |
 |-------|---------------|
-| Detailed exports, constructor signatures, and configuration for all 10 SDK packages | `references/package-reference.md` |
+| Detailed exports, constructor signatures, and configuration for the SDK packages | `references/package-reference.md` |
 | Complete transaction lifecycle with low-level API, proving flow, balancing internals, and finalization | `references/transaction-lifecycle.md` |

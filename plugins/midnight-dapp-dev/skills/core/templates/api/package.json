@@ -10,13 +10,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@midnight-ntwrk/midnight-js-contracts": "^3.0.0",
-    "@midnight-ntwrk/midnight-js-types": "^3.0.0",
-    "@midnight-ntwrk/midnight-js-network-id": "^3.0.0",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^3.0.0",
-    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^3.0.0",
-    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^3.0.0",
-    "@midnight-ntwrk/dapp-connector-api": "^4.0.0",
+    "@midnight-ntwrk/midnight-js-contracts": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-utils": "^4.1.1",
+    "@midnight-ntwrk/ledger-v8": "^8.1.0",
+    "@midnight-ntwrk/compact-runtime": "^0.16.0",
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
     "rxjs": "^7.8.1"
   },
   "peerDependencies": {

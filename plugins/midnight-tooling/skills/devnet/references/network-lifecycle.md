@@ -106,7 +106,7 @@ A container can be "running" (per Docker) but not yet ready to accept requests â
 | Service | Endpoint | Method |
 |---------|----------|--------|
 | Node | `http://localhost:9944/health` | HTTP GET |
-| Indexer | `http://localhost:8088/api/v3/graphql` | HTTP GET |
+| Indexer | `http://localhost:8088/api/v4/graphql` | HTTP GET |
 | Proof Server | `http://localhost:6300/health` | HTTP GET |
 
 ## Getting Network Configuration
@@ -128,8 +128,8 @@ Use these endpoints when configuring DApps or tools to connect to the local devn
 |----------|-----|----------|
 | Node RPC | `http://127.0.0.1:9944` | HTTP (JSON-RPC) |
 | Node WebSocket | `ws://127.0.0.1:9944` | WebSocket |
-| Indexer GraphQL | `http://127.0.0.1:8088/api/v3/graphql` | HTTP (GraphQL) |
-| Indexer WebSocket | `ws://127.0.0.1:8088/api/v3/graphql/ws` | WebSocket (subscriptions) |
+| Indexer GraphQL | `http://127.0.0.1:8088/api/v4/graphql` | HTTP (GraphQL) |
+| Indexer WebSocket | `ws://127.0.0.1:8088/api/v4/graphql/ws` | WebSocket (subscriptions) |
 | Proof Server | `http://127.0.0.1:6300` | HTTP |
 
 The network ID for the local devnet is `undeployed`. This value is used in DApp provider configurations and wallet connections.

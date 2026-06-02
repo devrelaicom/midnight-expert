@@ -82,7 +82,7 @@ indexer:
 |-------|---------|
 | `image` | The Midnight standalone indexer. Version from `midnightntwrk/indexer-standalone`. |
 | `container_name` | Fixed name `midnight-indexer`. |
-| `ports` | Exposes GraphQL API on port 8088. Both HTTP (`/api/v3/graphql`) and WebSocket (`/api/v3/graphql/ws`) endpoints are served here. |
+| `ports` | Exposes GraphQL API on port 8088. Both HTTP (`/api/v4/graphql`) and WebSocket (`/api/v4/graphql/ws`) endpoints are served here. |
 | `RUST_LOG` | Controls Rust log verbosity. Default enables info-level logs for indexer modules and disables noisy telemetry. |
 | `APP__APPLICATION__NETWORK_ID` | Must be `undeployed` for local devnet. This matches the Lace wallet extension defaults so Lace connects without custom configuration. |
 | `APP__INFRA__NODE__URL` | WebSocket connection to the node. Uses Docker internal DNS name `node` (the service name), not `localhost`. |
