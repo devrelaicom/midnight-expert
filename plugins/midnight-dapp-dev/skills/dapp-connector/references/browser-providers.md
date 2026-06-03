@@ -252,9 +252,22 @@ function useContractDeployment(api: ConnectedAPI) {
     const privateStateProvider = inMemoryPrivateStateProvider();
     const providers = await createBrowserProviders(api, privateStateProvider);
 
+    // `withCompiledFileAssets(path)` is the only asset combinator in
+    // compact-js 2.5.1 — its argument is a *path string* to the contract's
+    // compiled output (where `keys/` and `zkir/` live), resolved relative to
+    // each consuming service's base path. There is no URL/fetch-based asset
+    // combinator on CompiledContract. Calling it is required to discharge the
+    // CompiledAssetsPath context so the result is `CompiledContract<C, never>`,
+    // which is what `deployContract`'s `compiledContract` option expects.
+    //
+    // For the BROWSER, the ZK proving/verifying assets are loaded over HTTP at
+    // proving time by the `FetchZkConfigProvider(window.location.origin)` in
+    // your provider assembly above — that is the browser ZK-config mechanism.
+    // The path here just points the verifier-key reader at the same managed
+    // output served as static assets (e.g. `public/managed/mycontract`).
     const compiledContract = CompiledContract.make("mycontract", MyContract.Contract).pipe(
       CompiledContract.withWitnesses(witnesses),
-      CompiledContract.withFetchedFileAssets(window.location.origin),
+      CompiledContract.withCompiledFileAssets("managed/mycontract"),
     );
 
     const deployed = await deployContract(providers, {

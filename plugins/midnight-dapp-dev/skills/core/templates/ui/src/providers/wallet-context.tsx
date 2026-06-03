@@ -62,7 +62,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         ...prev,
         status: "error",
         error:
-          "Lace wallet extension not found. Install it from the Chrome Web Store.",
+          "No Midnight wallet extension found. Install a Midnight wallet (e.g. Lace) to continue.",
       }));
       return;
     }

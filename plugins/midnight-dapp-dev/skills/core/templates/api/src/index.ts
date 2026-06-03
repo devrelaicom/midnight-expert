@@ -130,9 +130,18 @@ export async function createProviders(
 //   import { witnesses } from "{{CONTRACT_PACKAGE}}/witnesses";
 //
 //   export async function deploy(providers: AppProviders) {
+//     // `withCompiledFileAssets(path)` is the only asset combinator in
+//     // compact-js 2.5.1; its argument is a *path string* to the contract's
+//     // compiled output (resolved relative to each consuming service's base
+//     // path), not a URL. It must be called so the result is a fully
+//     // configured `CompiledContract<C, never>`, which is what
+//     // `deployContract` expects. In the browser, the ZK assets themselves are
+//     // fetched over HTTP at proving time by the FetchZkConfigProvider above —
+//     // this path just points the verifier-key reader at the managed output
+//     // you serve as static assets (e.g. "public/managed/myContract").
 //     const compiledContract = CompiledContract.make("myContract", MyContract.Contract).pipe(
 //       CompiledContract.withWitnesses(witnesses),
-//       CompiledContract.withFetchedFileAssets(window.location.origin),
+//       CompiledContract.withCompiledFileAssets("managed/myContract"),
 //     );
 //     return deployContract(providers, {
 //       compiledContract,

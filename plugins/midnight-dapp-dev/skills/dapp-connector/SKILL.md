@@ -2,13 +2,14 @@
 name: midnight-dapp-dev:dapp-connector
 description: >-
   This skill should be used when the user asks about connecting a browser-based
-  DApp to the Midnight Lace wallet extension using the DApp Connector API. Covers
-  the full connection lifecycle (InitialAPI, ConnectedAPI, WalletConnectedAPI),
-  wallet detection via window.midnight, error handling with DAppConnectorAPIError,
-  React 19.x and Next.js 16.x wallet integration patterns, building
-  MidnightProviders from the DApp Connector, FetchZkConfigProvider,
-  balanceUnsealedTransaction, getConfiguration, shielded and unshielded addresses,
-  Lace setup and funding, and wallet-delegated proving.
+  DApp to a Midnight wallet extension (Lace or any other Midnight wallet) using
+  the DApp Connector API. Covers the full connection lifecycle (InitialAPI,
+  ConnectedAPI, WalletConnectedAPI), multi-wallet detection and enumeration via
+  window.midnight, error handling with DAppConnectorAPIError, React 19.x and
+  Next.js 16.x wallet integration patterns, building MidnightProviders from the
+  DApp Connector, FetchZkConfigProvider, balanceUnsealedTransaction,
+  getConfiguration, shielded and unshielded addresses, Lace setup and funding,
+  and wallet-delegated proving.
 version: 0.1.0
 ---
 
@@ -64,7 +65,7 @@ type ConnectedAPI = WalletConnectedAPI & HintUsage;
 
 ```typescript
 interface HintUsage {
-  hintUsage(methodNames: string[]): void;
+  hintUsage(methodNames: Array<keyof WalletConnectedAPI>): Promise<void>;
 }
 ```
 
