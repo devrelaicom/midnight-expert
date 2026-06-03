@@ -3475,72 +3475,6 @@
       }
     },
     {
-      "code": "ConfigError",
-      "name": "ConfigError",
-      "source": "compact-js-sdk",
-      "category": "configuration",
-      "description": "Failed to read or process the contract config file.",
-      "fixes": [
-        "Check the config file path and ensure it is valid JSON/TypeScript",
-        "Verify file permissions allow reading"
-      ],
-      "aliases": [],
-      "severity": "error",
-      "see_also": [],
-      "verified_against": {
-        "source_repo": "midnight-ntwrk/artifacts",
-        "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
-      }
-    },
-    {
-      "code": "ConfigCompilationError",
-      "name": "ConfigCompilationError",
-      "source": "compact-js-sdk",
-      "category": "configuration",
-      "description": "The TypeScript compiler failed when processing the contract config file.",
-      "fixes": [
-        "Fix TypeScript errors in the config file",
-        "Run tsc manually to see detailed diagnostics"
-      ],
-      "aliases": [],
-      "severity": "error",
-      "see_also": [],
-      "verified_against": {
-        "source_repo": "midnight-ntwrk/artifacts",
-        "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
-      }
-    },
-    {
-      "code": "ParseError",
-      "name": "ParseError",
-      "source": "compact-js-sdk",
-      "category": "configuration",
-      "description": "Failed to parse a hex string.",
-      "fixes": [
-        "Ensure the input is a valid hex-encoded string",
-        "Check for truncation or encoding issues in the source data"
-      ],
-      "aliases": [],
-      "severity": "error",
-      "see_also": [],
-      "verified_against": {
-        "source_repo": "midnight-ntwrk/artifacts",
-        "ref": "private",
-        "anchor": "compact-js@2.5.0 (verified via npm pack)",
-        "anchor_modified": "2026-04-23",
-        "verified_at": "2026-05-04",
-        "package_version": "2.5.0"
-      }
-    },
-    {
       "code": "TxFailedError",
       "name": "TxFailedError",
       "source": "midnight-js",
@@ -3621,7 +3555,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/contracts/src/governance/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3643,7 +3577,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/contracts/src/governance/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3665,7 +3599,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/contracts/src/governance/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3708,7 +3642,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3729,7 +3663,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3751,7 +3685,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3773,7 +3707,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -3794,7 +3728,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -8340,7 +8274,7 @@
       },
       "description": "The implicit data was unable to be calculated — a TransactionExtension's implicit metadata (era, genesis hash, spec version, etc.) couldn't be computed for this transaction.",
       "fixes": [
-        "Verify the transaction's signed extensions match the runtime's expected TransactionExtension list",
+        "Verify the transaction's transaction extensions match the runtime's expected TransactionExtension list",
         "Re-fetch chain metadata and rebuild the transaction with current spec/transaction version values"
       ],
       "aliases": [
@@ -8579,7 +8513,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"
@@ -8604,7 +8538,7 @@
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-js",
         "ref": "main",
-        "anchor": "packages/contracts/src/errors.ts",
+        "anchor": "packages/types/src/errors.ts",
         "anchor_modified": "2026-04-13",
         "verified_at": "2026-06-02",
         "package_version": "4.1.1"

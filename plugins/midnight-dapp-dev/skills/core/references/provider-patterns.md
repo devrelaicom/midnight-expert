@@ -214,13 +214,13 @@ the connection.
 | ------------ | ----------------------------------------- | -------------------------------------------- |
 | `name`       | `string`                                  | Wallet display name (e.g., "Lace")           |
 | `icon`       | `string`                                  | Base64 or data URI of the wallet icon         |
-| `apiVersion` | `string`                                  | DApp Connector API version (e.g., "1.0.0")   |
+| `apiVersion` | `string`                                  | Version of the `@midnight-ntwrk/dapp-connector-api` package the wallet implements (e.g., "4.0.1") |
 | `rdns`       | `string`                                  | Reverse DNS identifier                       |
-| `connect`    | `(purpose: string) => Promise<ConnectedAPI>` | Requests user approval and returns connected API |
+| `connect`    | `(networkId: string) => Promise<ConnectedAPI>` | Hints the desired network id, requests user approval, returns the connected API |
 
-The `connect()` method prompts the user to approve the DApp in the Lace
-extension popup. The `purpose` parameter is typically `"undeployed"` for new
-DApps or a contract address for existing deployments.
+The `connect()` method prompts the user to approve the DApp in the wallet
+extension popup. The `networkId` parameter hints the desired network — e.g.
+`"mainnet"` for mainnet, or the network id of the target testnet/devnet.
 
 ### ConnectedAPI
 
@@ -504,7 +504,10 @@ server) over HTTP/WebSocket regardless of runtime.
 
 ## Wallet Setup
 
-Midnight uses the Lace wallet exclusively. The setup requirements are:
+Lace is the reference Midnight wallet, but any wallet that implements the DApp
+Connector API also works — discover wallets by enumerating
+`Object.values(window.midnight)` and matching on `name`/`rdns`. The setup below
+uses Lace as the reference; its requirements are:
 
 1. **Chrome browser.** Lace is a Chrome extension (Chromium-based browsers
    also work).

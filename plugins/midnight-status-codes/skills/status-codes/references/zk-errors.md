@@ -35,9 +35,9 @@ Source: `proofs/src/plonk/error.rs`
 | Variant | Message | Fixes |
 |---------|---------|-------|
 | `ColumnNotAssigned(TableColumn)` | "{col:?} not fully assigned. Help: assign a value at offset 0." *(`{col:?}` is the column's Debug repr, e.g. `TableColumn { inner: Column { index: 0, column_type: Fixed } }`)* | Assign values to all table column rows |
-| `UnevenColumnLengths` | "{col} has length {n} while {table} has length {m}" | All columns in a lookup table must have equal length |
-| `UsedColumn(TableColumn)` | "{col} has already been used" | Don't reuse table columns |
-| `OverwriteDefault(TableColumn, String, String)` | "Attempted to overwrite default value" | Don't assign different values to the same default cell |
+| `UnevenColumnLengths` | "{col:?} has length {col_len} while {table:?} has length {table_len}" | All columns in a lookup table must have equal length |
+| `UsedColumn(TableColumn)` | "{col:?} has already been used" | Don't reuse table columns |
+| `OverwriteDefault(TableColumn, String, String)` | "Attempted to overwrite default value {default} with {val} in {col:?}" | Don't assign different values to the same default cell |
 
 ## Polynomial Commitment Errors
 
