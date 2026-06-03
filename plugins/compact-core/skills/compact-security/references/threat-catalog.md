@@ -15,7 +15,7 @@ Reference shorthand:
 | 3 | Exported state-modifying circuit with no authorization check | Critical | caller input | SR (Access Control) | Yes |
 | 4 | Mint/burn/transfer without authority or ownership check | Critical | caller input | TR (Authorization) | Yes |
 | 5 | Authority captured from a runtime value instead of pinned at deploy | High | caller input | WTB; SR (Access Control) | Yes |
-| 6 | `transientHash` used for a nullifier (non-deterministic) | High | crypto | SR (Crypto Correctness); TR (Double-Spend) | Yes |
+| 6 | `transientHash` used for a nullifier (not reproducible across executions/upgrades) | High | crypto | SR (Crypto Correctness); TR (Double-Spend) | Yes |
 | 7 | Hash/commit without domain separation | High | crypto | SR (Crypto Correctness) | Sometimes |
 | 8 | Nullifier without secret key (pre-computable) | High | crypto | SR; TR | Yes |
 | 9 | Commitment without nonce/salt (brute-forceable) | High | crypto | SR (Crypto Correctness) | Sometimes |
