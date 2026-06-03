@@ -52,10 +52,10 @@ If Docker is not installed, see `references/docker-setup.md` for platform-specif
 | Service | Port | Endpoint | Purpose |
 |---------|------|----------|---------|
 | **Node** | 9944 | `http://127.0.0.1:9944` | Blockchain RPC (Substrate JSON-RPC) |
-| **Indexer** | 8088 | `http://127.0.0.1:8088/api/v3/graphql` | GraphQL queries and subscriptions |
+| **Indexer** | 8088 | `http://127.0.0.1:8088/api/v4/graphql` | GraphQL queries and subscriptions |
 | **Proof server** | 6300 | `http://127.0.0.1:6300` | Zero-knowledge proof generation |
 
-The indexer also exposes a WebSocket endpoint at `ws://127.0.0.1:8088/api/v3/graphql/ws` for real-time subscriptions.
+The indexer also exposes a WebSocket endpoint at `ws://127.0.0.1:8088/api/v4/graphql/ws` for real-time subscriptions.
 
 The network ID for local devnet is `undeployed`.
 

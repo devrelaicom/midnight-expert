@@ -6,7 +6,7 @@ Fast lookup tables for the Midnight Wallet SDK. Every claim in this file is veri
 
 ## Package Map
 
-The wallet SDK is split into focused packages under the `@midnight-ntwrk` scope. A **meta-package** (`@midnight-ntwrk/wallet-sdk` v1.0.0) re-exports all sub-packages through named sub-paths so you can depend on a single package.
+The wallet SDK is split into focused packages under the `@midnight-ntwrk` scope. A **meta-package** (`@midnight-ntwrk/wallet-sdk` v1.1.0) re-exports all sub-packages through named sub-paths so you can depend on a single package.
 
 ### Meta-package sub-paths (`@midnight-ntwrk/wallet-sdk`)
 
@@ -18,10 +18,17 @@ The wallet SDK is split into focused packages under the `@midnight-ntwrk` scope.
 | `./dust` | `@midnight-ntwrk/wallet-sdk-dust-wallet` |
 | `./facade` | `@midnight-ntwrk/wallet-sdk-facade` |
 | `./hd` | `@midnight-ntwrk/wallet-sdk-hd` |
-| `./proving` | `@midnight-ntwrk/wallet-sdk-prover-client` (proving surface) |
+| `./indexer-client` | `@midnight-ntwrk/wallet-sdk-indexer-client` |
+| `./node-client` | `@midnight-ntwrk/wallet-sdk-node-client` |
+| `./prover-client` | `@midnight-ntwrk/wallet-sdk-prover-client` |
+| `./proving` | `@midnight-ntwrk/wallet-sdk-capabilities/proving` (proving capability surface; legacy alias) |
+| `./runtime` | `@midnight-ntwrk/wallet-sdk-runtime` |
 | `./shielded` | `@midnight-ntwrk/wallet-sdk-shielded` |
-| `./testing` | Testing utilities (across packages) |
+| `./testing` | `@midnight-ntwrk/wallet-sdk-utilities/testing` (legacy alias) |
 | `./unshielded` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` |
+| `./utilities` | `@midnight-ntwrk/wallet-sdk-utilities` |
+
+Nested sub-paths are also re-exported, e.g. `./capabilities/balancer`, `./capabilities/proving`, `./capabilities/simulation`, `./capabilities/submission`, `./capabilities/pendingTransactions`, `./dust/v1`, `./shielded/v1`, `./unshielded/v1`, `./indexer-client/effect`, `./node-client/effect`, `./node-client/testing`, `./prover-client/effect`, `./runtime/abstractions`, `./utilities/networking`, `./utilities/types`, `./utilities/testing`.
 
 Example: `import { WalletFacade } from '@midnight-ntwrk/wallet-sdk/facade'`
 

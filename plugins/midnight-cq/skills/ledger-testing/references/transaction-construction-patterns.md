@@ -10,46 +10,54 @@ parameters `Transaction<S, P, B>`:
 
 | Stage | Type | How to reach it |
 |-------|------|-----------------|
-| Unproven | `Transaction<SignatureEnabled, PreProof, PreBinding>` | Build via Intent |
-| Proved | `Transaction<SignatureEnabled, Proof, PreBinding>` | Call `unproven.prove(params)` |
-| Bound | `Transaction<SignatureEnabled, Proof, FiatShamirPedersen>` | Call `proved.bind(params)` |
-| Proof-erased | `Transaction<SignatureEnabled, NoProof, FiatShamirPedersen>` | Call `bound.eraseProofs()` |
+| Unproven | `Transaction<SignatureEnabled, PreProof, PreBinding>` | `Transaction.fromParts(networkId, guaranteed?, fallible?, intent?)` |
+| Proved | `Transaction<SignatureEnabled, Proof, PreBinding>` | Call `unproven.prove(provider, costModel)` |
+| Bound | `Transaction<SignatureEnabled, Proof, Binding>` | Call `proved.bind()` |
+| Proof-erased | `Transaction<SignatureEnabled, NoProof, NoBinding>` | Call `bound.eraseProofs()` |
 
 TypeScript enforces valid transitions — calling methods from the wrong stage
 produces a compile error.
 
 ### Creating an UnprovenTransaction
 
+An `Intent` is created with `Intent.new(ttl)` and populated with
+`ContractCallPrototype` / `ContractDeploy` values. The transaction is then
+assembled with `Transaction.fromParts(...)`.
+
 ```typescript
 import {
   Intent,
+  Transaction,
   UnprovenTransaction,
-  sampleContractAddress,
 } from '@midnight-ntwrk/ledger-v8';
 
-const contractAddress = sampleContractAddress();
-const intent = Intent.empty()
-  .addCall(contractAddress, entrypoint, circuitOutput);
+const intent = Intent.new(ttl) // ttl: Date
+  .addCall(contractCallPrototype); // ContractCallPrototype
 
-const unproven: UnprovenTransaction = intent.toUnprovenTransaction(
-  signingKey,
-  networkId,
-  ttl,
+// guaranteed/fallible Zswap offers are optional; intent is optional too
+const unproven: UnprovenTransaction = Transaction.fromParts(
+  networkId,        // string
+  undefined,        // guaranteed offer (optional)
+  undefined,        // fallible offer (optional)
+  intent,           // UnprovenIntent (optional)
 );
 ```
 
 ### Transitioning to Proved
 
 ```typescript
+import { CostModel } from '@midnight-ntwrk/ledger-v8';
+
 it('should transition from unproven to proved', async () => {
-  const proved = await unproven.prove(provingParams);
+  // prove(provider: ProvingProvider, costModel: CostModel)
+  const proved = await unproven.prove(provingProvider, CostModel.initialCostModel());
 
   // proved has type Transaction<SignatureEnabled, Proof, PreBinding>
   expect(proved).toBeDefined();
 
   // Type safety — these would be compile errors:
-  // unproven.bind(params);    // Error: unproven can't be bound
-  // proved.prove(params);     // Error: already proved
+  // unproven.bind();    // Error: unproven can't be bound
+  // proved.prove(...);  // Error: already proved
 });
 ```
 
@@ -57,9 +65,10 @@ it('should transition from unproven to proved', async () => {
 
 ```typescript
 it('should bind the proved transaction', () => {
-  const bound = proved.bind(bindingParams);
+  // bind() takes no arguments and is irreversible
+  const bound = proved.bind();
 
-  // bound has type Transaction<SignatureEnabled, Proof, FiatShamirPedersen>
+  // bound has type Transaction<SignatureEnabled, Proof, Binding>
   expect(bound).toBeDefined();
 });
 ```
@@ -70,7 +79,7 @@ it('should bind the proved transaction', () => {
 it('should erase proofs for storage', () => {
   const erased = bound.eraseProofs();
 
-  // erased has type Transaction<SignatureEnabled, NoProof, FiatShamirPedersen>
+  // erased has type Transaction<SignatureEnabled, NoProof, NoBinding>
   // Proof data is removed — suitable for persisting without ZK proof bytes
   expect(erased).toBeDefined();
 });
@@ -80,10 +89,10 @@ it('should erase proofs for storage', () => {
 
 ```typescript
 it('should complete full proof staging pipeline', async () => {
-  const intent = Intent.empty().addCall(addr, entrypoint, output);
-  const unproven = intent.toUnprovenTransaction(signingKey, networkId, ttl);
-  const proved = await unproven.prove(provingParams);
-  const bound = proved.bind(bindingParams);
+  const intent = Intent.new(ttl).addCall(contractCallPrototype);
+  const unproven = Transaction.fromParts(networkId, undefined, undefined, intent);
+  const proved = await unproven.prove(provingProvider, CostModel.initialCostModel());
+  const bound = proved.bind();
   const erased = bound.eraseProofs();
 
   // Each stage should be non-null
@@ -98,79 +107,88 @@ it('should complete full proof staging pipeline', async () => {
 
 ## Building Intents
 
-An Intent collects contract calls and deployments before building a transaction.
+An Intent collects contract calls, deployments, and maintenance updates before
+building a transaction. Create one with `Intent.new(ttl)` (a `Date`); each
+`add*` method takes a single prototype object and returns a new Intent.
 
 ### Adding a Contract Call
 
 ```typescript
-import { Intent, sampleContractAddress } from '@midnight-ntwrk/ledger-v8';
+import { Intent } from '@midnight-ntwrk/ledger-v8';
 
-const addr = sampleContractAddress();
-const intent = Intent.empty().addCall(
-  addr,        // ContractAddress
-  entrypoint,  // string — the contract entrypoint name
-  output,      // CircuitOutput — the compiled circuit output
-);
+// addCall(call: ContractCallPrototype) -> Intent<S, PreProof, PreBinding>
+const intent = Intent.new(ttl).addCall(contractCallPrototype);
 ```
 
 ### Adding a Contract Deployment
 
 ```typescript
-const deployIntent = Intent.empty().addDeploy(
-  contractDefinition,  // ContractDefinition
-  initialState,        // InitialContractState
-);
+// addDeploy(deploy: ContractDeploy) -> Intent<S, PreProof, PreBinding>
+const deployIntent = Intent.new(ttl).addDeploy(contractDeploy);
 ```
 
-### Merging Intents
+### Combining Calls and Deployments
 
-Multiple intents can be merged into a single transaction. The result contains
-all calls and deployments from both intents.
+A single Intent can accumulate multiple calls/deploys by chaining `add*`. To
+combine entire transactions, use `Transaction.merge()` (see below) — `Intent`
+itself does not expose a public `merge`.
 
 ```typescript
-it('should merge two intents', () => {
-  const intentA = Intent.empty().addCall(addrA, entrypointA, outputA);
-  const intentB = Intent.empty().addCall(addrB, entrypointB, outputB);
-  const merged = intentA.merge(intentB);
-
-  expect(merged.calls.length).toBe(2);
-});
+const intent = Intent.new(ttl)
+  .addCall(callPrototypeA)
+  .addCall(callPrototypeB);
 ```
 
 ---
 
 ## Testing Well-Formedness
 
-`wellFormed()` checks that a transaction satisfies all ledger constraints
-(disjoint inputs/outputs, balanced token flows, valid TTL, etc.).
+`wellFormed(refState, strictness, tblock)` checks that a transaction satisfies
+all ledger constraints (disjoint inputs/outputs, balanced token flows, valid
+TTL, etc.). It takes a reference `LedgerState`, a `WellFormedStrictness`, and a
+block time (`Date`). On success it RETURNS a `VerifiedTransaction`; on failure
+it THROWS — it does not return a boolean. `WellFormedStrictness` is constructed
+with `new WellFormedStrictness()` and configured via its mutable flags
+(`enforceBalancing`, `verifyNativeProofs`, `verifyContractProofs`,
+`enforceLimits`, `verifySignatures`).
 
 ```typescript
 import { WellFormedStrictness } from '@midnight-ntwrk/ledger-v8';
 
 it('should be well-formed', () => {
-  const result = transaction.wellFormed(WellFormedStrictness.default());
-  expect(result).toBe(true);
+  const strictness = new WellFormedStrictness();
+  strictness.enforceBalancing = true;
+
+  // Returns a VerifiedTransaction (does not throw) for a valid transaction
+  const verified = transaction.wellFormed(refState, strictness, blockTime);
+  expect(verified).toBeDefined();
 });
 ```
 
 ### Negative Well-Formedness Testing
 
 Testing that invalid transactions are rejected is as important as testing
-valid ones. Build transactions that violate constraints deliberately.
+valid ones. Build transactions that violate constraints deliberately and assert
+that `wellFormed()` THROWS.
 
 ```typescript
 it('should reject transaction with overlapping inputs', () => {
   // Build a transaction that uses the same coin as both input and output
   const invalidTransaction = buildTransactionWithOverlappingInputs();
-  const result = invalidTransaction.wellFormed(WellFormedStrictness.default());
-  expect(result).toBe(false);
+  const strictness = new WellFormedStrictness();
+  expect(() => {
+    invalidTransaction.wellFormed(refState, strictness, blockTime);
+  }).toThrow();
 });
 
 it('should reject transaction with imbalanced tokens', () => {
   // Build a transaction where token inputs do not equal outputs
   const unbalanced = buildUnbalancedTransaction();
-  const result = unbalanced.wellFormed(WellFormedStrictness.default());
-  expect(result).toBe(false);
+  const strictness = new WellFormedStrictness();
+  strictness.enforceBalancing = true;
+  expect(() => {
+    unbalanced.wellFormed(refState, strictness, blockTime);
+  }).toThrow();
 });
 ```
 
@@ -178,8 +196,8 @@ it('should reject transaction with imbalanced tokens', () => {
 
 ## Transaction Merging
 
-Transactions (not just intents) can be merged into a single transaction that
-contains all segments from both.
+Transactions (not just intents) can be merged with `Transaction.merge(other)`,
+producing a single transaction that contains all segments from both.
 
 ```typescript
 it('should merge two transactions', () => {
@@ -187,56 +205,43 @@ it('should merge two transactions', () => {
   const txB = buildUnprovenTransaction(intentB);
   const merged = txA.merge(txB);
 
-  expect(merged.wellFormed(WellFormedStrictness.default())).toBe(true);
+  // wellFormed returns a VerifiedTransaction (or throws); it is not a boolean
+  const strictness = new WellFormedStrictness();
+  expect(merged.wellFormed(refState, strictness, blockTime)).toBeDefined();
 });
 ```
 
 ---
 
-## Fee Calculation via CostModel
+## Cost and Fee Calculation
 
-`SyntheticCost` has 5 dimensions. Test each dimension that your code is
-expected to control — not just that cost is non-zero.
+A transaction's resource cost is computed by its own `cost(params)` method,
+returning a `SyntheticCost` with 5 `bigint` dimensions: `readTime`,
+`computeTime`, `blockUsage`, `bytesWritten`, `bytesChurned`. The fee in SPECKs
+is `transaction.fees(params)` (accurate only for proven transactions);
+`feesWithMargin(params, n)` applies an n-block safety margin. `LedgerParameters`
+supplies the cost model — there is no `CostModel.calculate(...)` /
+`CostModel.fee(...)` helper.
 
 ```typescript
-import { CostModel } from '@midnight-ntwrk/ledger-v8';
+import { LedgerParameters } from '@midnight-ntwrk/ledger-v8';
+
+const params = LedgerParameters.initialParameters();
 
 it('should have expected cost dimensions', () => {
-  const cost = CostModel.calculate(transaction);
+  const cost = transaction.cost(params); // SyntheticCost
 
-  // Assert specific dimensions
-  expect(cost.block_usage).toBeGreaterThan(0n);
-  expect(cost.compute_time).toBeGreaterThan(0n);
-  expect(cost.bytes_written).toBeGreaterThanOrEqual(0n);
-  expect(cost.bytes_churned).toBeGreaterThanOrEqual(0n);
-  expect(cost.read_time).toBeGreaterThanOrEqual(0n);
+  // Assert specific dimensions (all bigint)
+  expect(cost.blockUsage).toBeGreaterThan(0n);
+  expect(cost.computeTime).toBeGreaterThan(0n);
+  expect(cost.bytesWritten).toBeGreaterThanOrEqual(0n);
+  expect(cost.bytesChurned).toBeGreaterThanOrEqual(0n);
+  expect(cost.readTime).toBeGreaterThanOrEqual(0n);
 });
 
-it('should stay within block usage limit', () => {
-  const cost = CostModel.calculate(transaction);
-  const BLOCK_LIMIT = 200_000n;
-  expect(cost.block_usage).toBeLessThanOrEqual(BLOCK_LIMIT);
-});
-```
-
-### Fee Formula
-
-The total fee is calculated as:
-
-```
-fee = max(read_time, compute_time, block_usage) + bytes_written + bytes_churned
-```
-
-```typescript
-it('should calculate fee correctly', () => {
-  const cost = CostModel.calculate(transaction);
-  const expectedFee =
-    BigInt(Math.max(
-      Number(cost.read_time),
-      Number(cost.compute_time),
-      Number(cost.block_usage),
-    )) + cost.bytes_written + cost.bytes_churned;
-
-  expect(CostModel.fee(cost)).toBe(expectedFee);
+it('should produce a non-zero fee for a proven transaction', () => {
+  // fees() is only accurate when called on a proven transaction
+  const fee = provenTransaction.fees(params); // bigint, in SPECKs
+  expect(fee).toBeGreaterThan(0n);
 });
 ```

@@ -1,8 +1,10 @@
 # ZK Errors Reference
 
-> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-zk@midnight-proofs-v0.7.0` (the latest published proofs tag). At this tag the directory layout is `aggregator/`, `circuits/`, `curves/`, `proofs/`, `zk_stdlib/`, `zkir/` — **ZKIR is present**. The `next` branch removes ZKIR and adds `IvcError::InvalidWitness`; consumers tracking that branch should apply those changes themselves.
+> **Last verified:** 2026-06-02 against `midnightntwrk/midnight-zk@main`. The current directory layout is `aggregation/`, `circuits/`, `curves/`, `proofs/`, `zk_stdlib/` — **the `zkir/` Rust crate has been removed from `main`** (and the old `next` branch no longer exists). The "ZKIR Errors" Rust-crate section that previously appeared here has been dropped accordingly.
+>
+> **Note:** the removed `zkir/` *Rust crate* is unrelated to the `@midnight-ntwrk/zkir-v2` *npm package* (the WASM PLONK checker used by midnight-verify and the Compact toolchain), which is unaffected and still published (2.1.0). It is also unrelated to the Compact compiler's internal `zkir` pass (see compiler-errors.md).
 
-Errors from the zero-knowledge proof system used by Midnight (midnight-zk repo). Covers PLONK proving/verification, ZKIR circuit compilation, IVC aggregation, and dev/test tools. These errors surface during proof generation, proof verification, circuit compilation, or development testing.
+Errors from the zero-knowledge proof system used by Midnight (midnight-zk repo). Covers PLONK proving/verification, IVC aggregation, and dev/test tools. These errors surface during proof generation, proof verification, or development testing.
 
 ## PLONK Errors
 
@@ -23,7 +25,7 @@ Primary proof system errors:
 | `NotEnoughColumnsForConstants` | "Too few fixed columns are enabled for global constants usage" | Enable more fixed columns in circuit config |
 | `ColumnNotInPermutation(Column)` | "Column {column:?} must be included in the permutation. Help: try applying \`meta.enable_equalty\` on the column" *(note upstream typo: source says `enable_equalty`, missing an `i`; the actual API method is `enable_equality()`)* | Add `meta.enable_equality()` on the column |
 | `TableError(TableError)` | Delegates to TableError | See Table Errors below |
-| `SrsError(usize, usize)` | "The SRS does not match for the given circuit" | SRS size doesn't match circuit; regenerate keys with correct SRS |
+| `SrsError(usize, usize)` | "The SRS (with size {srs_k}) does not match for the given circuit (of size {circuit_k})" | SRS size doesn't match circuit; regenerate keys with correct SRS |
 | `CompletenessFailure` | "Completeness failure due to bad luck in random sampling. This error is expected to be almost impossible to trigger." | Extremely rare; retry the proof generation |
 
 ## Table Errors
@@ -32,7 +34,7 @@ Source: `proofs/src/plonk/error.rs`
 
 | Variant | Message | Fixes |
 |---------|---------|-------|
-| `ColumnNotAssigned(TableColumn)` | "{col} not fully assigned. Assign a value at offset 0." | Assign values to all table column rows |
+| `ColumnNotAssigned(TableColumn)` | "{col:?} not fully assigned. Help: assign a value at offset 0." *(`{col:?}` is the column's Debug repr, e.g. `TableColumn { inner: Column { index: 0, column_type: Fixed } }`)* | Assign values to all table column rows |
 | `UnevenColumnLengths` | "{col} has length {n} while {table} has length {m}" | All columns in a lookup table must have equal length |
 | `UsedColumn(TableColumn)` | "{col} has already been used" | Don't reuse table columns |
 | `OverwriteDefault(TableColumn, String, String)` | "Attempted to overwrite default value" | Don't assign different values to the same default cell |
@@ -47,39 +49,6 @@ Source: `proofs/src/poly/mod.rs`
 | `SamplingError` | Need to re-sample evaluation point | Retry with different randomness |
 | `DuplicatedQuery` | Duplicate query to same (commitment, opening) pair | Multiopen argument only supports single query per pair |
 
-## ZKIR Errors
-
-Source: `zkir/src/error.rs` (present on `main` and at the `midnight-proofs-v0.7.0` tag; **removed on `next`**).
-
-> **Note:** the ZKIR enum implements only `fmt::Debug`, **not `fmt::Display`**. The strings below are Debug-formatter outputs, not user-facing Display strings. When ZKIR errors flow through `From<Error> for plonk::Error`, they become `plonk::Error::Synthesis(format!("{error:?}"))`.
-
-| Variant | Debug format | Fixes |
-|---------|--------------|-------|
-| `InvalidArity(Operation)` | "wrong arity: '{op:?}'" | Operation received wrong number of inputs/outputs |
-| `ParsingError(IrType, String)` | "'{s:?}' cannot be parsed as a {t:?}" | Value doesn't match expected type (Bool, Native, JubjubScalar) |
-| `NotFound(Name)` | "'{s}' not found" | Variable or witness not in memory; check circuit definitions |
-| `DuplicatedName(Name)` | "'{s}' already exists" | Variable name collision; rename to avoid shadowing |
-| `ExpectingType(IrType, IrType)` | "type {e:?} was expected instead of {t:?}" | Type mismatch in circuit IR |
-| `Unsupported(Operation, Vec<IrType>)` | "{op:?} is not supported on {t:?}" | Operation not supported for these types |
-| `Other(String)` | "{s}" | Catch-all; check message for specifics |
-
-Verified `Other` messages constructed at `midnight-proofs-v0.7.0` (full enumeration of `Error::Other(...)` constructor sites in the `zkir` crate):
-
-| Message (verbatim format-string) | Source file |
-|----------------------------------|-------------|
-| `"cannot convert {:?} to {:?}"` (e.g. `cannot convert Bool to "Native"`, `cannot convert BigUint(7) to "Native"`, `cannot convert Native to "Bytes"`) — emitted by the `TryFrom<IrValue>` macro for every typed extractor | `zkir/src/types.rs` |
-| `"invalid length"` (off-circuit and in-circuit inner-product when `v.len() != w.len()` or empty) | `zkir/src/instructions/operations/inner_product.rs` |
-| `"underflow subtracting {b} from {a}"` (BigUint subtraction when `a < b`) | `zkir/src/instructions/operations/sub.rs` |
-| `"cannot convert {x} to Bytes({n})"` and `"cannot convert {big} to Bytes({n})"` | `zkir/src/instructions/operations/into_bytes.rs` |
-| `"cannot convert {bytes:?} to JubjubPoint"` and `"expecting Bytes(n), got {:?}"` (from-bytes-incircuit) | `zkir/src/instructions/operations/from_bytes.rs` |
-| `"assertion violated: {:?} == {:?}"` (off-circuit `AssertEqual` failure) | `zkir/src/parser/offcircuit.rs` |
-| `"assertion violated: {:?} != {:?}"` (off-circuit `AssertNotEqual` failure) | `zkir/src/parser/offcircuit.rs` |
-| `"expecting Bytes(n), got {:?}"` (off-circuit `FromBytes` input not Bytes) | `zkir/src/parser/offcircuit.rs` |
-| `"invalid format: {value}"` (constant parsing in `parse_constant`) | `zkir/src/utils/constants.rs` |
-| `"{e}"` (serde_json error during `ZkirRelation::read`) | `zkir/src/zkir.rs` |
-
-Plus the implicit `From<plonk::Error> for Error` conversion in `zkir/src/error.rs` wraps any PLONK error as `Error::Other(format!("{error:?}"))` — so any PLONK failure surfaced through ZKIR will appear here with the Debug-format of the underlying `plonk::Error`.
-
 ## IVC Errors
 
 Source: `aggregation/src/ivc/error.rs`
@@ -88,6 +57,7 @@ Source: `aggregation/src/ivc/error.rs`
 |---------|---------|-------|
 | `ProofGeneration(plonk::Error)` | "proof generation failed: {e}" | Wraps PLONK error; see PLONK errors above |
 | `InvalidInstance` | "invalid instance" | IVC instance is malformed |
+| `InvalidWitness(String)` | "invalid witness: {msg}" | The witness supplied to the IVC step is invalid; check the message for specifics |
 | `VkMismatch` | "verifying-key mismatch" | VK in instance doesn't match verifier's key; ensure consistent keys |
 | `InvalidProof` | "invalid proof" | Accumulator pairing check failed; proof is invalid |
 | `TranscriptNotEmpty` | "proof transcript not empty" | Trailing data in proof; may indicate corruption |
@@ -122,8 +92,6 @@ Dev/testing infrastructure for debugging circuit issues. All types implement Dis
 ## Error Conversion Chains
 
 ```
-zkir::Error  ──From──►  plonk::Error::Synthesis(format!("{error:?}"))
-plonk::Error ──From──►  zkir::Error::Other(format!("{error:?}"))
 io::Error    ──From──►  plonk::Error::Transcript(error)
 plonk::Error ──From──►  IvcError::ProofGeneration(e)
 ```

@@ -27,7 +27,7 @@ export function createStateObservable<L, P>(
   parseLedger: (state: ContractState) => L,
 ): Observable<DAppState<L, P>> {
   const ledger$ = publicDataProvider
-    .contractStateObservable(contractAddress)
+    .contractStateObservable(contractAddress, { type: "latest" })
     .pipe(
       map((state) => parseLedger(state)),
       retry({ delay: 500 }),
@@ -148,7 +148,7 @@ observable after a 500ms delay when an error occurs:
 
 ```typescript
 const ledger$ = publicDataProvider
-  .contractStateObservable(contractAddress)
+  .contractStateObservable(contractAddress, { type: "latest" })
   .pipe(
     map((state) => parseLedger(state)),
     retry({ delay: 500 }),
@@ -220,8 +220,20 @@ restarts.
 ```typescript
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 
-const privateStateProvider = levelPrivateStateProvider({ dataDir: './state' });
+const privateStateProvider = levelPrivateStateProvider({
+  privateStateStoreName: 'private-states',
+  signingKeyStoreName: 'signing-keys',
+  accountId: walletAddress, // required: scopes LevelDB storage per account
+  privateStoragePasswordProvider: () => process.env.PRIVATE_STATE_PASSWORD!,
+});
 ```
+
+The LevelDB-backed encryption is async under the hood (Web Crypto + PBKDF2 as of
+midnight-js 4.1.0); the password from `privateStoragePasswordProvider` is subject to a
+strict policy: it must be at least 16 characters and contain at least 3 of the 4
+character classes (lowercase, uppercase, digits, symbols), or the SDK throws a
+`PasswordValidationError`. A short value like a bare `process.env.PRIVATE_STATE_PASSWORD`
+will fail at runtime unless it satisfies this policy.
 
 Choose in-memory for browser DApps. Choose LevelDB for long-running processes
 or integration tests where state must persist across runs.
@@ -307,7 +319,7 @@ indexer:
 
 ```typescript
 const shared$ = publicDataProvider
-  .contractStateObservable(contractAddress)
+  .contractStateObservable(contractAddress, { type: "latest" })
   .pipe(shareReplay(1));
 ```
 

@@ -367,6 +367,8 @@ In the browser, the DApp Connector replaces the Node.js WalletFacade. The `Conne
 ```typescript
 import type { WalletProvider, MidnightProvider } from "@midnight-ntwrk/midnight-js-types";
 import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
+import { Transaction } from "@midnight-ntwrk/ledger-v8";
 
 async function createWalletProvider(api: ConnectedAPI): Promise<WalletProvider> {
   const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
@@ -375,9 +377,21 @@ async function createWalletProvider(api: ConnectedAPI): Promise<WalletProvider> 
   return {
     getCoinPublicKey: () => shieldedCoinPublicKey,
     getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    balanceTx: async (tx, newCoins, ttl) => {
-      const result = await api.balanceUnsealedTransaction(tx, { newCoins, ttl });
-      return result.tx;
+    // WalletProvider.balanceTx is (tx: UnboundTransaction, ttl?: Date) =>
+    // Promise<FinalizedTransaction>. balanceUnsealedTransaction takes/returns
+    // serialized hex strings, so serialize in and deserialize out.
+    // options is `{ payFees?: boolean }`; an empty `{}` uses the defaults.
+    balanceTx: async (tx, _ttl) => {
+      const { tx: balancedHex } = await api.balanceUnsealedTransaction(
+        toHex(tx.serialize()),
+        {},
+      );
+      return Transaction.deserialize(
+        "signature",
+        "proof",
+        "binding",
+        fromHex(balancedHex),
+      );
     },
   };
 }
@@ -385,8 +399,10 @@ async function createWalletProvider(api: ConnectedAPI): Promise<WalletProvider> 
 function createMidnightProvider(api: ConnectedAPI): MidnightProvider {
   return {
     submitTx: async (tx) => {
-      await api.submitTransaction(tx);
-      return tx.txId;
+      // submitTransaction takes a serialized hex string and returns void;
+      // recover the tx id from the transaction's identifiers().
+      await api.submitTransaction(toHex(tx.serialize()));
+      return tx.identifiers()[0];
     },
   };
 }

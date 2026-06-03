@@ -27,7 +27,7 @@ When you receive an SDK-related claim, classify it using this table to determine
 | Type/interface shape | "MidnightProviders has a walletProvider field" | @"midnight-verify:type-checker (agent)" |
 | Import path correctness | "import { deployContract } from '@midnight-ntwrk/midnight-js-contracts'" | @"midnight-verify:type-checker (agent)" |
 | Error class hierarchy | "CallTxFailedError extends TxFailedError" | @"midnight-verify:type-checker (agent)" |
-| Package exists / version | "@midnight-ntwrk/midnight-js-contracts is at version 4.0.2" | @"devs:deps-maintenance (agent)" (fallback: run `npm view` directly) |
+| Package exists / version | "@midnight-ntwrk/midnight-js-contracts is at version 4.1.1" | @"devs:deps-maintenance (agent)" (fallback: run `npm view` directly) |
 | Export count / package structure | "contracts package exports 91 symbols" | @"midnight-verify:source-investigator (agent)" |
 | Implementation details | "httpClientProofProvider retries 3 times with exponential backoff" | @"midnight-verify:source-investigator (agent)" |
 | Provider internal behavior | "LevelDB provider encrypts with AES-256-GCM" | @"midnight-verify:source-investigator (agent)" |

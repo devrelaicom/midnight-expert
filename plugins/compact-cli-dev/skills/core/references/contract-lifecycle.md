@@ -67,6 +67,17 @@ The `deployContract()` SDK function:
 
 The `privateStateId` is a LevelDB key prefix for storing private state. The `initialPrivateState` object must match the contract's expected initial state shape.
 
+If the contract's constructor takes arguments (i.e. its generated `InitializeParameters` is not the empty tuple), `deployContract` also requires an `args` field whose shape is inferred from the contract. For a no-argument constructor, omit `args` entirely — the options type narrows to a variant that does not accept it. Example with constructor arguments:
+
+```typescript
+const deployed = await deployContract(providers, {
+  compiledContract,
+  privateStateId: `${CONTRACT_NAME}PrivateState`,
+  initialPrivateState,
+  args: [/* constructor arguments matching the contract */],
+});
+```
+
 ---
 
 ## Join

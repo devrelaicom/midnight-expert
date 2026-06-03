@@ -19,9 +19,7 @@ everywhere you need a fixture of a specific type.
 ```typescript
 import {
   sampleCoinPublicKey,
-  sampleCoinSecretKey,
   sampleContractAddress,
-  sampleRawTokenType,
   sampleSigningKey,
   sampleEncryptionPublicKey,
   sampleIntentHash,
@@ -32,7 +30,6 @@ import {
 // GOOD: Use sample functions for valid test data
 const pk = sampleCoinPublicKey();
 const contractAddr = sampleContractAddress();
-const rawType = sampleRawTokenType();
 const signingKey = sampleSigningKey();
 const encPk = sampleEncryptionPublicKey();
 const intentHash = sampleIntentHash();
@@ -45,6 +42,17 @@ const dustSk = sampleDustSecretKey();
 // const rawType = '000000';           // Wrong length
 ```
 
+There is no `sampleCoinSecretKey` export. A `CoinSecretKey` is obtained from
+`ZswapSecretKeys` (`ZswapSecretKeys.fromSeed(seed).coinSecretKey`):
+
+```typescript
+import { ZswapSecretKeys } from '@midnight-ntwrk/ledger-v8';
+
+const secretKeys = ZswapSecretKeys.fromSeed(new Uint8Array(32).fill(1));
+const coinSk = secretKeys.coinSecretKey; // CoinSecretKey
+const coinPk = secretKeys.coinPublicKey; // CoinPublicKey
+```
+
 ### Deterministic Fixtures
 
 `sample*` functions return the same value every time — they are deterministic
@@ -53,7 +61,6 @@ stubs, not random generators. Use them freely in test setup.
 ```typescript
 beforeEach(() => {
   pk = sampleCoinPublicKey();
-  sk = sampleCoinSecretKey();
   contractAddr = sampleContractAddress();
 });
 ```
@@ -99,12 +106,15 @@ it('should produce different commitments for different keys', () => {
 A coin nullifier is a deterministic function of `(CoinInfo, CoinSecretKey)`.
 Once a nullifier appears on-chain, the coin is spent.
 
+`coinNullifier(coin, coinSecretKey)` takes a `CoinSecretKey` obtained from
+`ZswapSecretKeys` (there is no `sampleCoinSecretKey`).
+
 ```typescript
-import { coinNullifier, sampleCoinSecretKey } from '@midnight-ntwrk/ledger-v8';
+import { coinNullifier, ZswapSecretKeys } from '@midnight-ntwrk/ledger-v8';
 
 it('should produce deterministic nullifier', () => {
   const coin = createShieldedCoinInfo(tokenType, value);
-  const sk = sampleCoinSecretKey();
+  const sk = ZswapSecretKeys.fromSeed(new Uint8Array(32).fill(1)).coinSecretKey;
 
   const nullifier1 = coinNullifier(coin, sk);
   const nullifier2 = coinNullifier(coin, sk);
@@ -116,11 +126,10 @@ it('should produce deterministic nullifier', () => {
 
 it('commitment and nullifier should be different', () => {
   const coin = createShieldedCoinInfo(tokenType, value);
-  const pk = sampleCoinPublicKey();
-  const sk = sampleCoinSecretKey();
+  const secretKeys = ZswapSecretKeys.fromSeed(new Uint8Array(32).fill(1));
 
-  const commitment = coinCommitment(coin, pk);
-  const nullifier = coinNullifier(coin, sk);
+  const commitment = coinCommitment(coin, secretKeys.coinPublicKey);
+  const nullifier = coinNullifier(coin, secretKeys.coinSecretKey);
 
   expect(commitment).not.toBe(nullifier);
 });
@@ -130,8 +139,12 @@ it('commitment and nullifier should be different', () => {
 
 ## Testing Token Type Functions
 
-`@midnight-ntwrk/ledger-v8` exports functions that construct the four token
-types: Night (native), fee, shielded, and unshielded.
+`@midnight-ntwrk/ledger-v8` exports helper functions that construct token
+types: `nativeToken()` (the native NIGHT `UnshieldedTokenType`), `feeToken()`
+(the Dust fee `DustTokenType`), and the default-for-testing `shieldedToken()`
+(`ShieldedTokenType`) / `unshieldedToken()` (`UnshieldedTokenType`). These take
+NO arguments. To derive a token type for a custom contract domain, use
+`rawTokenType(domainSeparator, contractAddress)`.
 
 ```typescript
 import {
@@ -139,33 +152,29 @@ import {
   feeToken,
   shieldedToken,
   unshieldedToken,
-  sampleRawTokenType,
 } from '@midnight-ntwrk/ledger-v8';
 
-it('should distinguish token types', () => {
-  const rawType = sampleRawTokenType();
-
-  const night = nativeToken();
-  const fee = feeToken();
-  const shielded = shieldedToken(rawType);
-  const unshielded = unshieldedToken(rawType);
-
-  expect(night).not.toBe(fee);
-  expect(shielded).not.toBe(unshielded);
-  expect(night).not.toBe(shielded);
+it('should have the correct discriminant tags', () => {
+  // Each call returns a fresh object — use .tag to identify the token kind.
+  expect(nativeToken().tag).toBe('unshielded');   // NIGHT — UnshieldedTokenType
+  expect(feeToken().tag).toBe('dust');             // DUST  — DustTokenType
+  expect(shieldedToken().tag).toBe('shielded');    // default ShieldedTokenType
+  expect(unshieldedToken().tag).toBe('unshielded'); // default UnshieldedTokenType
 });
 
-it('nativeToken should always return the same value', () => {
-  const night1 = nativeToken();
-  const night2 = nativeToken();
-  expect(night1).toBe(night2);
+it('nativeToken should return the same value across calls', () => {
+  // Use toStrictEqual (deep equality) — each call returns a fresh object,
+  // so toBe (reference equality) would fail.
+  expect(nativeToken()).toStrictEqual(nativeToken());
 });
 
-it('shieldedToken and unshieldedToken should differ for same raw type', () => {
-  const rawType = sampleRawTokenType();
-  const shielded = shieldedToken(rawType);
-  const unshielded = unshieldedToken(rawType);
-  expect(shielded).not.toBe(unshielded);
+it('should distinguish token kinds by tag', () => {
+  // Compare across DIFFERENT token kinds using .tag.
+  // Note: nativeToken() and unshieldedToken() are deep-equal — both have
+  // tag 'unshielded' with an all-zeros raw value — so don't assert they differ.
+  expect(shieldedToken().tag).not.toBe(nativeToken().tag);
+  expect(feeToken().tag).not.toBe(nativeToken().tag);
+  expect(feeToken().tag).not.toBe(shieldedToken().tag);
 });
 ```
 
@@ -250,10 +259,16 @@ roundTripTest(
 
 ## Testing signData and verifySignature
 
+`SigningKey` and `SignatureVerifyingKey` are hex `string` types (not classes).
+Derive the verifying key from the signing key with the free function
+`signatureVerifyingKey(signingKey)` — there is no `signingKey.publicKey()`
+method.
+
 ```typescript
 import {
   signData,
   verifySignature,
+  signatureVerifyingKey,
   sampleSigningKey,
 } from '@midnight-ntwrk/ledger-v8';
 
@@ -262,9 +277,9 @@ it('should produce a verifiable signature', () => {
   const data = new Uint8Array([1, 2, 3, 4]);
 
   const signature = signData(signingKey, data);
-  const publicKey = signingKey.publicKey();
+  const verifyingKey = signatureVerifyingKey(signingKey);
 
-  const valid = verifySignature(publicKey, data, signature);
+  const valid = verifySignature(verifyingKey, data, signature);
   expect(valid).toBe(true);
 });
 
@@ -274,9 +289,9 @@ it('should reject signature for different data', () => {
   const otherData = new Uint8Array([5, 6, 7, 8]);
 
   const signature = signData(signingKey, data);
-  const publicKey = signingKey.publicKey();
+  const verifyingKey = signatureVerifyingKey(signingKey);
 
-  const valid = verifySignature(publicKey, otherData, signature);
+  const valid = verifySignature(verifyingKey, otherData, signature);
   expect(valid).toBe(false);
 });
 
@@ -286,9 +301,9 @@ it('should reject signature from different key', () => {
   const data = new Uint8Array([1, 2, 3, 4]);
 
   const signature = signData(signingKey1, data);
-  const wrongPublicKey = signingKey2.publicKey();
+  const wrongVerifyingKey = signatureVerifyingKey(signingKey2);
 
-  const valid = verifySignature(wrongPublicKey, data, signature);
+  const valid = verifySignature(wrongVerifyingKey, data, signature);
   expect(valid).toBe(false);
 });
 ```
@@ -303,19 +318,20 @@ For tests that use many crypto types, organise fixtures in a shared setup file:
 // test/fixtures/ledger-fixtures.ts
 import {
   sampleCoinPublicKey,
-  sampleCoinSecretKey,
   sampleContractAddress,
   sampleRawTokenType,
   sampleSigningKey,
   sampleEncryptionPublicKey,
   nativeToken,
   feeToken,
+  ZswapSecretKeys,
 } from '@midnight-ntwrk/ledger-v8';
 
 export function createLedgerFixtures() {
+  const secretKeys = ZswapSecretKeys.fromSeed(new Uint8Array(32).fill(1));
   return {
     coinPk: sampleCoinPublicKey(),
-    coinSk: sampleCoinSecretKey(),
+    coinSk: secretKeys.coinSecretKey, // no sampleCoinSecretKey — derive from ZswapSecretKeys
     contractAddr: sampleContractAddress(),
     rawTokenType: sampleRawTokenType(),
     signingKey: sampleSigningKey(),

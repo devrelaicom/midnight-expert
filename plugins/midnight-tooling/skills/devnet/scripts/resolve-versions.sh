@@ -17,10 +17,23 @@ for cmd in curl jq; do
   fi
 done
 
+# Each entry: key|image|max_exclusive
+# max_exclusive (optional) caps version resolution to tags strictly below the
+# given version. This keeps the local devnet on images that actually work as a
+# self-contained dev network, rather than blindly taking the highest tag on
+# Docker Hub:
+#   - midnight-node: capped below 1.0.0. The 1.0.0 GA tag is the mainnet node,
+#     not a local-devnet image; the local standalone devnet is built around the
+#     0.22.x line (CFG_PRESET=dev). The official create-mn-app scaffold pins
+#     0.22.5.
+#   - indexer-standalone: capped below 4.3.0. From 4.3.0 the standalone indexer
+#     requires a Blockfrost API key and exits 1 without one, so it cannot run in
+#     a key-less local devnet. The official create-mn-app scaffold pins 4.2.1.
+# proof-server has no cap (latest stable is usable for the local devnet).
 IMAGES=(
-  "node|midnightntwrk/midnight-node"
-  "indexer|midnightntwrk/indexer-standalone"
-  "proof-server|midnightntwrk/proof-server"
+  "node|midnightntwrk/midnight-node|1.0.0"
+  "indexer|midnightntwrk/indexer-standalone|4.3.0"
+  "proof-server|midnightntwrk/proof-server|"
 )
 
 # Fetch all tags for an image from Docker Hub, handling pagination.
@@ -48,23 +61,39 @@ fetch_tags() {
 }
 
 # Filter tags to pure X.Y.Z semver (no pre-release, no arch suffix, no rc/alpha/beta).
-# Returns the highest version.
+# Returns the highest version, optionally strictly below $2 (max_exclusive).
 highest_stable() {
   local tags="$1"
-  echo "$tags" \
+  local max_exclusive="${2:-}"
+  local stable
+  stable=$(echo "$tags" \
     | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
-    | sort -t. -k1,1n -k2,2n -k3,3n \
-    | tail -1
+    | sort -t. -k1,1n -k2,2n -k3,3n)
+
+  if [ -n "$max_exclusive" ]; then
+    # Keep only versions strictly less than max_exclusive (numeric semver compare).
+    stable=$(echo "$stable" | awk -F. -v m="$max_exclusive" '
+      BEGIN { split(m, mm, ".") }
+      {
+        if ($1 < mm[1]) { print; next }
+        if ($1 > mm[1]) { next }
+        if ($2 < mm[2]) { print; next }
+        if ($2 > mm[2]) { next }
+        if ($3 < mm[3]) { print }
+      }')
+  fi
+
+  echo "$stable" | tail -1
 }
 
 errors=0
 
 for entry in "${IMAGES[@]}"; do
-  IFS='|' read -r name image <<< "$entry"
+  IFS='|' read -r name image max_exclusive <<< "$entry"
 
   tags=$(fetch_tags "$image") || { errors=$((errors + 1)); continue; }
 
-  version=$(highest_stable "$tags")
+  version=$(highest_stable "$tags" "$max_exclusive")
   if [ -z "$version" ]; then
     echo "ERROR: No stable version found for ${image}" >&2
     errors=$((errors + 1))
