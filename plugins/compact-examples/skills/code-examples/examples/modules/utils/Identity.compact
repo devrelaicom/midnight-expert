@@ -1,0 +1,90 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Compact Contracts v0.0.1-alpha.1 (utils/Identity.compact)
+
+pragma language_version >= 0.23;
+
+// =============================================================================
+//  SECURE PATTERN — witness-derived identity
+// =============================================================================
+//  Shared identity primitives for the FungibleToken / Ownable / AccessControl
+//  family. Every identity is a 32-byte value DERIVED inside the ZK circuit from
+//  a single private witness secret via a domain-separated `persistentHash` —
+//  never a raw, prover-supplied public key. `ownPublicKey()` is intentionally
+//  NOT used for authorization: it returns the prover-supplied Zswap coin public
+//  key with no binding to the transaction signer, so any caller can supply any
+//  value and bypass an identity check built on it.
+//
+//  The witness `getUserSecret()` lives in the TOP-LEVEL composing contract, not
+//  here. Modules that gate on identity take the caller's already-DERIVED
+//  `UserPublicKey` / `AdminPublicKey` as an explicit parameter; the composing
+//  contract computes that parameter from the witness and never lets a caller
+//  pass an arbitrary identity.
+// =============================================================================
+
+/**
+ * @module Identity
+ * @description Domain-separated identity derivations shared across the token and
+ * access-control modules. Distinct domains ensure the same secret yields
+ * distinct user vs. admin keys, so the admin role cannot be impersonated by a
+ * user-key holder and vice versa.
+ */
+module Identity {
+  import CompactStandardLibrary;
+
+  // A private 32-byte secret. Each prover holds their own; supplied by the
+  // `getUserSecret()` witness in the top-level contract.
+  export struct UserSecretKey {
+    bytes: Bytes<32>;
+  }
+
+  // Per-user public identity. Derived from the holder's secret; a caller can
+  // only act as the identity whose secret they hold. Used as the balance /
+  // allowance / role map key.
+  export struct UserPublicKey {
+    bytes: Bytes<32>;
+  }
+
+  // Admin public identity. Domain-separated from the user derivation so the
+  // same secret yields a distinct admin key. The deployer's derived admin key
+  // is frozen into the contract's owner/admin slot at deploy.
+  export struct AdminPublicKey {
+    bytes: Bytes<32>;
+  }
+
+  /**
+   * @description Derives the caller's per-user public key from their secret.
+   * Domain "id:user:pk:v1" separates it from the admin derivation.
+   *
+   * @param {UserSecretKey} sk - The caller's private secret.
+   * @return {UserPublicKey} - The derived per-user public key.
+   */
+  export pure circuit deriveUserPublicKey(sk: UserSecretKey): UserPublicKey {
+    return UserPublicKey { bytes: persistentHash<Vector<2, Bytes<32>>>(
+                                    [pad(32, "id:user:pk:v1"), sk.bytes]
+                                    ) };
+  }
+
+  /**
+   * @description Derives the caller's admin public key from their secret.
+   * Domain "id:admin:pk:v1" separates it from the user derivation.
+   *
+   * @param {UserSecretKey} sk - The caller's private secret.
+   * @return {AdminPublicKey} - The derived admin public key.
+   */
+  export pure circuit deriveAdminPublicKey(sk: UserSecretKey): AdminPublicKey {
+    return AdminPublicKey { bytes: persistentHash<Vector<2, Bytes<32>>>(
+                                     [pad(32, "id:admin:pk:v1"), sk.bytes]
+                                     ) };
+  }
+
+  /**
+   * @description Returns whether a derived user public key is the zero key.
+   * Used as a "not the zero address" guard for recipients/owners.
+   *
+   * @param {UserPublicKey} key - The key to check.
+   * @return {Boolean} - True if the key is all-zero.
+   */
+  export pure circuit isUserKeyZero(key: UserPublicKey): Boolean {
+    return key == default<UserPublicKey>;
+  }
+}

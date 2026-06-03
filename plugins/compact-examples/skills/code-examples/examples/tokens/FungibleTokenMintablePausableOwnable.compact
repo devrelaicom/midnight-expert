@@ -1,128 +1,129 @@
 // FungibleTokenMintablePausableOwnable.compact
 // A complete ERC-20 style token with minting, pausing, and ownership.
 //
-// PREREQUISITE: This file must be placed in a project where `compact-contracts`
-// has been cloned as a submodule and `npm install` (or `yarn`) has been run
-// inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
-// See: https://github.com/OpenZeppelin/compact-contracts
+// Uses the LOCAL modules under ../modules (no external submodule required).
 
-pragma language_version >= 0.22.0;
+pragma language_version >= 0.23;
+
+// =============================================================================
+//  SECURE PATTERN — witness-derived identity
+// =============================================================================
+//  Each instance holds a single 32-byte secret in private state. Caller identity
+//  is derived INSIDE the circuit from that secret via the `Identity` module's
+//  domain-separated `persistentHash` (`deriveUserPublicKey` /
+//  `deriveAdminPublicKey`), so a caller can only act as the identity they hold
+//  the secret for. `ownPublicKey()` is intentionally NOT used for authorization
+//  — it is prover-supplied and bypassable. The owner is pinned at deploy: the
+//  deployer's derived admin key is frozen into the Ownable `_owner`. Only the
+//  safe wrappers below (which compute the caller from the witness) are exported;
+//  the modules' identity-parameterized circuits are NOT re-exported, since that
+//  would let a caller pass an arbitrary identity and defeat the protection.
+// =============================================================================
 
 import CompactStandardLibrary;
-import "../modules/access/Ownable"
-  prefix Ownable_;
-import "../modules/security/Pausable"
-  prefix Pausable_;
-import "../modules/token/FungibleToken"
-  prefix FungibleToken_;
 
-constructor(
-  _name: Opaque<"string">,
-  _symbol: Opaque<"string">,
-  _decimals: Uint<8>,
-  _owner: Either<ZswapCoinPublicKey, ContractAddress>
-) {
+import "../modules/access/Ownable" prefix Ownable_;
+
+import "../modules/security/Pausable" prefix Pausable_;
+
+import "../modules/token/FungibleToken" prefix FungibleToken_;
+
+import "../modules/utils/Identity" prefix Identity_;
+
+// Re-export identity types and pure derivations so the TypeScript layer can
+// compute public keys off-chain (e.g. to look up balances by key). Prefixed
+// imports bring names into scope WITH the prefix, so we re-export those.
+export { Identity_UserSecretKey, Identity_UserPublicKey, Identity_AdminPublicKey };
+
+export { Identity_deriveUserPublicKey, Identity_deriveAdminPublicKey };
+
+// Read-only views from FungibleToken are safe to expose: they take derived keys
+// (no secret) and never authorize.
+export { FungibleToken_name,
+         FungibleToken_symbol,
+         FungibleToken_decimals,
+         FungibleToken_totalSupply,
+         FungibleToken_balanceOf,
+         FungibleToken_allowance };
+
+// Pausable view is safe to expose.
+export { Pausable_isPaused };
+
+// Ownable view is safe to expose.
+export { Ownable_owner };
+
+// The witness: each prover supplies their own 32-byte secret from private state.
+witness getUserSecret(): Identity_UserSecretKey;
+
+constructor(_name: Opaque<"string">, _symbol: Opaque<"string">, _decimals: Uint<8>) {
   FungibleToken_initialize(_name, _symbol, _decimals);
-  Ownable_initialize(_owner);
+  // Pin ownership to the deployer's derived admin key.
+  Ownable_initialize(disclose(Identity_deriveAdminPublicKey(getUserSecret())));
 }
 
-/** IFungibleTokenMetadata */
+/** IFungibleToken — identity-sensitive wrappers compute the caller from the witness */
 
-export circuit name(): Opaque<"string"> {
-  return FungibleToken_name();
-}
-
-export circuit symbol(): Opaque<"string"> {
-  return FungibleToken_symbol();
-}
-
-export circuit decimals(): Uint<8> {
-  return FungibleToken_decimals();
-}
-
-/** IFungibleToken */
-
-export circuit totalSupply(): Uint<128> {
-  return FungibleToken_totalSupply();
-}
-
-export circuit balanceOf(
-  account: Either<ZswapCoinPublicKey, ContractAddress>
-): Uint<128> {
-  return FungibleToken_balanceOf(account);
-}
-
-export circuit allowance(
-  owner: Either<ZswapCoinPublicKey, ContractAddress>,
-  spender: Either<ZswapCoinPublicKey, ContractAddress>
-): Uint<128> {
-  return FungibleToken_allowance(owner, spender);
-}
-
-export circuit transfer(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
+// Transfer `value` of YOUR tokens to `to`. The caller is derived from the
+// witness secret and used as the `from` account.
+export circuit transfer(to: Identity_UserPublicKey, value: Uint<128>): Boolean {
   Pausable_assertNotPaused();
-  return FungibleToken_transfer(to, value);
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_transfer(caller, to, value);
 }
 
+// Spend `value` of `fromAccount`'s tokens via your allowance. The caller (the
+// spender) is derived from the witness secret.
 export circuit transferFrom(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
+                 fromAccount: Identity_UserPublicKey,
+                 to: Identity_UserPublicKey,
+                 value: Uint<128>
+                 ): Boolean {
   Pausable_assertNotPaused();
-  return FungibleToken_transferFrom(fromAddress, to, value);
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_transferFrom(caller, fromAccount, to, value);
 }
 
-export circuit approve(
-  spender: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
+// Approve `spender` to spend `value` of YOUR tokens. The caller (the owner) is
+// derived from the witness secret.
+export circuit approve(spender: Identity_UserPublicKey, value: Uint<128>): Boolean {
   Pausable_assertNotPaused();
-  return FungibleToken_approve(spender, value);
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_approve(caller, spender, value);
 }
 
-/** IMintable */
+/** IMintable — owner only */
 
-export circuit mint(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
+export circuit mint(account: Identity_UserPublicKey, value: Uint<128>): [] {
   Pausable_assertNotPaused();
-  Ownable_assertOnlyOwner();
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_assertOnlyOwner(caller);
   FungibleToken__mint(account, value);
 }
 
-/** IPausable */
-
-export circuit isPaused(): Boolean {
-  return Pausable_isPaused();
-}
+/** IPausable — owner only */
 
 export circuit pause(): [] {
-  Ownable_assertOnlyOwner();
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_assertOnlyOwner(caller);
   Pausable__pause();
 }
 
 export circuit unpause(): [] {
-  Ownable_assertOnlyOwner();
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_assertOnlyOwner(caller);
   Pausable__unpause();
 }
 
-/** IOwnable */
+/** IOwnable — owner only */
 
-export circuit owner(): Either<ZswapCoinPublicKey, ContractAddress> {
-  return Ownable_owner();
-}
-
-export circuit transferOwnership(
-  newOwner: Either<ZswapCoinPublicKey, ContractAddress>
-): [] {
-  Ownable_transferOwnership(newOwner);
+// Transfer ownership to `newOwner` (a derived admin key). Caller must be the
+// current owner; both are derived/checked against the pinned `_owner`.
+export circuit transferOwnership(newOwner: Identity_AdminPublicKey): [] {
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_transferOwnership(caller, newOwner);
 }
 
 export circuit renounceOwnership(): [] {
-  Ownable_renounceOwnership();
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_renounceOwnership(caller);
 }
