@@ -1,34 +1,72 @@
 // SimpleNonFungibleToken.compact
 // A basic NFT contract with URI storage, approvals, and transfers.
-//
-// PREREQUISITE: This file must be placed in a project where `compact-contracts`
-// has been cloned as a submodule and `npm install` (or `yarn`) has been run
-// inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
-// See: https://github.com/OpenZeppelin/compact-contracts
 
 pragma language_version >= 0.22.0;
 
-import CompactStandardLibrary;
-import "../modules/token/NonFungibleToken"
-  prefix NonFungibleToken_;
+// =============================================================================
+//  SECURE PATTERN — witness-derived identity
+// =============================================================================
+//  This top-level contract holds the single 32-byte secret in private state and
+//  is the ONLY place that turns it into a caller identity. Every mutating entry
+//  point computes `const caller = disclose(deriveUserPublicKey(getUserSecret()))`
+//  and passes that derived key into the NonFungibleToken module, which checks
+//  authorization against it. `ownPublicKey()` is intentionally NOT used: it is
+//  prover-supplied and bypassable. The admin/minter is pinned at deploy — the
+//  deployer's `deriveAdminPublicKey(secret)` is frozen into `contractAdmin`.
+//
+//  Only safe wrappers (which compute the caller from the witness) and read-only
+//  views are exported. The module's identity-parameterized circuits
+//  (approve/setApprovalForAll/transferFrom/_approve/_setApprovalForAll/...) are
+//  deliberately NOT re-exported: exposing them would let a caller pass an
+//  arbitrary `caller`/`auth` identity and defeat the protection.
+// =============================================================================
 
-constructor(
-  name: Opaque<"string">,
-  symbol: Opaque<"string">,
-  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
-  tokenURI: Opaque<"string">,
-) {
+import CompactStandardLibrary;
+
+import "../modules/token/NonFungibleToken" prefix NonFungibleToken_;
+
+// Re-export identity types and pure derivations so the TypeScript layer can
+// compute public keys off-chain (e.g. to look up balances/owners by key).
+export { NonFungibleToken_UserSecretKey,
+         NonFungibleToken_UserPublicKey,
+         NonFungibleToken_AdminPublicKey };
+
+export { NonFungibleToken_deriveUserPublicKey, NonFungibleToken_deriveAdminPublicKey };
+
+// Only safe, read-only view wrappers (below) and the witness-derived mutating
+// wrappers are exported. The module's mutating, identity-parameterized circuits
+// are NOT re-exported — exposing them would let a caller pass any identity. The
+// wrappers below compute the caller from the witness secret instead.
+
+// The witness: each prover supplies their own 32-byte secret from private state.
+witness getUserSecret(): NonFungibleToken_UserSecretKey;
+
+// The admin's derived public key, pinned at deploy time. Only the holder of the
+// deployer's secret can mint or burn.
+export ledger contractAdmin: NonFungibleToken_AdminPublicKey;
+
+constructor(name: Opaque<"string">, symbol: Opaque<"string">, tokenURI: Opaque<"string">,) {
   const tokenId = 1 as Uint<128>;
+  // Pin the admin role to the deployer's derived admin key.
+  contractAdmin = disclose(NonFungibleToken_deriveAdminPublicKey(getUserSecret()));
+  // Derive the deployer's user key and mint the genesis token to them.
+  const deployer = disclose(NonFungibleToken_deriveUserPublicKey(getUserSecret()));
   NonFungibleToken_initialize(name, symbol);
-  NonFungibleToken__mint(recipient, tokenId);
+  NonFungibleToken__mint(deployer, tokenId);
   NonFungibleToken__setTokenURI(tokenId, tokenURI);
 }
 
-export circuit balanceOf(owner: Either<ZswapCoinPublicKey, ContractAddress>): Uint<128> {
+// ----------------------------------------------------------------------------
+// Read-only views. These take/return a UserPublicKey directly (no witness, no
+// authorization) so the TypeScript layer can inspect ownership, balances, and
+// metadata by key.
+// ----------------------------------------------------------------------------
+
+export circuit balanceOf(owner: NonFungibleToken_UserPublicKey): Uint<128> {
   return NonFungibleToken_balanceOf(owner);
 }
 
-export circuit ownerOf(tokenId: Uint<128>): Either<ZswapCoinPublicKey, ContractAddress> {
+export circuit ownerOf(tokenId: Uint<128>): NonFungibleToken_UserPublicKey {
   return NonFungibleToken_ownerOf(tokenId);
 }
 
@@ -44,35 +82,74 @@ export circuit tokenURI(tokenId: Uint<128>): Opaque<"string"> {
   return NonFungibleToken_tokenURI(tokenId);
 }
 
-export circuit approve(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  tokenId: Uint<128>
-): [] {
-  NonFungibleToken_approve(to, tokenId);
-}
-
-export circuit getApproved(tokenId: Uint<128>): Either<ZswapCoinPublicKey, ContractAddress> {
+export circuit getApproved(tokenId: Uint<128>): NonFungibleToken_UserPublicKey {
   return NonFungibleToken_getApproved(tokenId);
 }
 
-export circuit setApprovalForAll(
-  operator: Either<ZswapCoinPublicKey, ContractAddress>,
-  approved: Boolean
-): [] {
-  NonFungibleToken_setApprovalForAll(operator, approved);
-}
-
 export circuit isApprovedForAll(
-  owner: Either<ZswapCoinPublicKey, ContractAddress>,
-  operator: Either<ZswapCoinPublicKey, ContractAddress>
-): Boolean {
+                 owner: NonFungibleToken_UserPublicKey,
+                 operator: NonFungibleToken_UserPublicKey
+                 ): Boolean {
   return NonFungibleToken_isApprovedForAll(owner, operator);
 }
 
-export circuit transferFrom(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  tokenId: Uint<128>
-): [] {
-  NonFungibleToken_transferFrom(fromAddress, to, tokenId);
+// ----------------------------------------------------------------------------
+// Witness-derived mutating wrappers. Each computes the caller identity from the
+// private secret and passes it to the module — never a caller-supplied identity.
+// ----------------------------------------------------------------------------
+
+// Transfer one of YOUR tokens to `to`. The caller is derived from the witness
+// secret and used as both the proven identity and the `from` account.
+export circuit transfer(to: NonFungibleToken_UserPublicKey, tokenId: Uint<128>): [] {
+  const caller = disclose(NonFungibleToken_deriveUserPublicKey(getUserSecret()));
+  NonFungibleToken_transferFrom(caller, caller, to, tokenId);
+}
+
+// Transfer a token out of `fromAccount` to `to`. The caller is derived from the
+// witness secret; the module asserts the caller is the owner or authorized.
+export circuit transferFromAuthorized(
+                 fromAccount: NonFungibleToken_UserPublicKey,
+                 to: NonFungibleToken_UserPublicKey,
+                 tokenId: Uint<128>
+                 ): [] {
+  const caller = disclose(NonFungibleToken_deriveUserPublicKey(getUserSecret()));
+  NonFungibleToken_transferFrom(caller, fromAccount, to, tokenId);
+}
+
+// Approve `to` to transfer `tokenId`. Caller derived from the witness secret.
+export circuit approve(to: NonFungibleToken_UserPublicKey, tokenId: Uint<128>): [] {
+  const caller = disclose(NonFungibleToken_deriveUserPublicKey(getUserSecret()));
+  NonFungibleToken_approve(caller, to, tokenId);
+}
+
+// Set or unset `operator` as an operator for all of the caller's tokens.
+// Caller derived from the witness secret.
+export circuit setApprovalForAll(operator: NonFungibleToken_UserPublicKey, approved: Boolean): [] {
+  const caller = disclose(NonFungibleToken_deriveUserPublicKey(getUserSecret()));
+  NonFungibleToken_setApprovalForAll(caller, operator, approved);
+}
+
+// Only the pinned admin can mint. The caller must prove they hold the admin
+// secret whose derived admin key equals `contractAdmin`.
+export circuit mint(to: NonFungibleToken_UserPublicKey, tokenId: Uint<128>): [] {
+  assert(contractAdmin == NonFungibleToken_deriveAdminPublicKey(getUserSecret()),
+         "Not authorized to mint."
+         );
+  NonFungibleToken__mint(to, tokenId);
+}
+
+// Only the pinned admin can set a token's URI.
+export circuit setTokenURI(tokenId: Uint<128>, tokenURI: Opaque<"string">): [] {
+  assert(contractAdmin == NonFungibleToken_deriveAdminPublicKey(getUserSecret()),
+         "Not authorized to set URI."
+         );
+  NonFungibleToken__setTokenURI(tokenId, tokenURI);
+}
+
+// Only the pinned admin can burn.
+export circuit burn(tokenId: Uint<128>): [] {
+  assert(contractAdmin == NonFungibleToken_deriveAdminPublicKey(getUserSecret()),
+         "Not authorized to burn."
+         );
+  NonFungibleToken__burn(tokenId);
 }
