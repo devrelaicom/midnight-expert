@@ -87,6 +87,22 @@ Check every exported circuit for proper authorization and state guards.
   }
   ```
 
+- [ ] **`ownPublicKey()` used for authorization or identity gating.** `ownPublicKey()` returns the prover-supplied Zswap coin public key — it is NOT bound to the transaction signer, so any `assert`/state-gate built on it is bypassable. Its only safe use is routing shielded coins to the caller via `left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey())`. For authorization, derive caller identity inside the circuit from a witness-held secret via domain-separated `persistentHash`, and pin the authority at deploy. See `compact-core:compact-security` → `references/witness-trust-boundary.md`.
+
+  ```compact
+  // BAD — prover supplies any coinPublicKey; auth is bypassable
+  export circuit adminOnly(): [] {
+    assert(ownPublicKey() == admin, "Not admin");
+    // ...
+  }
+
+  // GOOD — re-derive from the caller's secret; compare to pinned authority
+  export circuit adminOnly(): [] {
+    assert(contractAdmin == deriveAdminPublicKey(getUserSecret()), "Not admin");
+    // ...
+  }
+  ```
+
 - [ ] **Missing state machine guards.** For contracts implementing a multi-phase protocol (e.g., commit-reveal, propose-vote-execute, lock-unlock), each phase transition must assert the current state before proceeding. Calling a later phase before an earlier one has completed can lead to protocol violations.
 
   ```compact
@@ -401,6 +417,7 @@ Quick reference of common security anti-patterns in Compact contracts.
 
 | Anti-Pattern | Why It's Wrong | Correct Approach |
 |---|---|---|
+| `ownPublicKey()` used for an authorization/identity check | Returns the prover-supplied coin public key, not the tx signer; a caller can supply the stored authority value and pass the gate | Derive identity from a witness secret via domain-separated `persistentHash`; pin the authority at deploy and `assert(pinned == derive(getUserSecret()))` — see `compact-core:compact-security` |
 | `export circuit` with no `assert(caller == owner)` on state change | Anyone can invoke the circuit and modify contract state, leading to unauthorized minting, draining, or resetting | Derive caller identity via `publicKey(secretKey())` and assert against stored authority before any state modification |
 | `transientHash` used for nullifier | Non-deterministic; same input produces different outputs each call; double-spend detection fails completely | `persistentHash` with domain separation and secret key inclusion; deterministic output enables reliable duplicate detection |
 | Hash/commit call without domain string | Identical inputs from different contracts or different purposes produce the same output; enables cross-protocol replay attacks | Include a unique domain prefix in every hash: `[pad(32, "appname:purpose:"), ...]` |
