@@ -6,18 +6,56 @@
 // inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
 // See: https://github.com/OpenZeppelin/compact-contracts
 
-pragma language_version >= 0.22.0;
+pragma language_version >= 0.23;
+
+// =============================================================================
+//  SECURE PATTERN — witness-derived identity
+// =============================================================================
+//  Each instance holds a single 32-byte identity secret in private state.
+//  Caller identity is derived INSIDE the circuit from that secret via
+//  domain-separated `persistentHash` (`deriveUserPublicKey` /
+//  `deriveAdminPublicKey`), so a caller can only act as the identity they hold
+//  the secret for. `ownPublicKey()` is intentionally NOT used for authorization
+//  — it is prover-supplied and bypassable. The admin is pinned at deploy: the
+//  deployer's derived admin key is frozen into `contractAdmin`. Only these safe
+//  wrappers (which compute the caller from the witness) and read-only views are
+//  exported — never the module's identity-parameterized circuits, which would
+//  let a caller pass an arbitrary identity and defeat the protection.
+// =============================================================================
 
 import CompactStandardLibrary;
-import "../modules/token/MultiToken"
-  prefix MultiToken_;
 
-constructor(
-  _uri: Opaque<"string">,
-  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
-  fungibleFixedSupply: Uint<128>,
-) {
+import "../modules/token/MultiToken" prefix MultiToken_;
+
+// Re-export identity types and pure derivations so the TypeScript layer can
+// compute account keys off-chain (e.g. to look up balances by key).
+export { MultiToken_UserSecretKey, MultiToken_UserPublicKey, MultiToken_AdminPublicKey };
+
+export { MultiToken_deriveUserPublicKey, MultiToken_deriveAdminPublicKey };
+
+// Export only the read-only views from the MultiToken module. The module's
+// identity-parameterized mutating circuits (setApprovalForAll/transferFrom/
+// _mint/_burn) are deliberately NOT re-exported — exposing them would let a
+// caller pass any account identity. Instead, the safe wrappers below compute
+// the caller from the witness secret.
+export { MultiToken_uri, MultiToken_balanceOf, MultiToken_isApprovedForAll };
+
+// The identity witness: each prover supplies their own 32-byte secret from
+// private state. This is the SOLE source of caller identity for authorization.
+witness getUserSecret(): MultiToken_UserSecretKey;
+
+// The admin's derived public key, pinned at deploy time.
+export ledger contractAdmin: MultiToken_AdminPublicKey;
+
+constructor(_uri: Opaque<"string">, fungibleFixedSupply: Uint<128>,) {
   MultiToken_initialize(_uri);
+
+  // Pin the admin role to the deployer's derived admin key.
+  contractAdmin = disclose(MultiToken_deriveAdminPublicKey(getUserSecret()));
+
+  // The deployer is also the initial recipient of the fixed supplies, keyed by
+  // their derived user public key.
+  const recipient = disclose(MultiToken_deriveUserPublicKey(getUserSecret()));
 
   // Token id 123 is a fungible token (with a fixed supply)
   const fungibleTokenId = 123;
@@ -28,36 +66,66 @@ constructor(
   MultiToken__mint(recipient, nonFungibleTokenId, 1);
 }
 
+// Read-only metadata view.
 export circuit uri(id: Uint<128>): Opaque<"string"> {
   return MultiToken_uri(id);
 }
 
-export circuit balanceOf(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  id: Uint<128>
-): Uint<128> {
+// Read-only balance view. Accounts are derived keys, so callers look balances
+// up by the recipient's `UserPublicKey`.
+export circuit balanceOf(account: MultiToken_UserPublicKey, id: Uint<128>): Uint<128> {
   return MultiToken_balanceOf(account, id);
 }
 
-export circuit setApprovalForAll(
-  operator: Either<ZswapCoinPublicKey, ContractAddress>,
-  approved: Boolean
-): [] {
-  return MultiToken_setApprovalForAll(operator, approved);
-}
-
+// Read-only operator-approval view.
 export circuit isApprovedForAll(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  operator: Either<ZswapCoinPublicKey, ContractAddress>
-): Boolean {
+                 account: MultiToken_UserPublicKey,
+                 operator: MultiToken_UserPublicKey
+                 ): Boolean {
   return MultiToken_isApprovedForAll(account, operator);
 }
 
-export circuit transferFrom(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  id: Uint<128>,
-  value: Uint<128>,
-): [] {
-  return MultiToken_transferFrom(fromAddress, to, id, value);
+// Set or unset `operator` as an operator for all of the caller's assets.
+// The caller is derived from the witness secret.
+export circuit setApprovalForAll(operator: MultiToken_UserPublicKey, approved: Boolean): [] {
+  const caller = disclose(MultiToken_deriveUserPublicKey(getUserSecret()));
+  MultiToken_setApprovalForAll(caller, operator, approved);
+}
+
+// Transfer `value` of token `id` out of one of YOUR accounts to `to`. The
+// caller is derived from the witness secret and used as both the proven
+// identity and the `from` account.
+export circuit transfer(to: MultiToken_UserPublicKey, id: Uint<128>, value: Uint<128>): [] {
+  const caller = disclose(MultiToken_deriveUserPublicKey(getUserSecret()));
+  MultiToken_transferFrom(caller, caller, to, id, value);
+}
+
+// Transfer `value` of token `id` out of `fromAddress` to `to`. The caller is
+// derived from the witness secret; the module asserts the caller is the owner
+// or an approved operator of `fromAddress`.
+export circuit transferFromAuthorized(
+                 fromAddress: MultiToken_UserPublicKey,
+                 to: MultiToken_UserPublicKey,
+                 id: Uint<128>,
+                 value: Uint<128>
+                 ): [] {
+  const caller = disclose(MultiToken_deriveUserPublicKey(getUserSecret()));
+  MultiToken_transferFrom(caller, fromAddress, to, id, value);
+}
+
+// Only the pinned admin can mint. The caller must prove they hold the admin
+// secret whose derived admin key equals `contractAdmin`.
+export circuit mintAdmin(to: MultiToken_UserPublicKey, id: Uint<128>, value: Uint<128>): [] {
+  assert(contractAdmin == MultiToken_deriveAdminPublicKey(getUserSecret()),
+         "Not authorized to mint."
+         );
+  MultiToken__mint(to, id, value);
+}
+
+// Only the pinned admin can burn.
+export circuit burnAdmin(fromAddress: MultiToken_UserPublicKey, id: Uint<128>, value: Uint<128>): [] {
+  assert(contractAdmin == MultiToken_deriveAdminPublicKey(getUserSecret()),
+         "Not authorized to burn."
+         );
+  MultiToken__burn(fromAddress, id, value);
 }
