@@ -165,11 +165,15 @@ describe('wallet name/icon sanitization', () => {
 
 ## Testing apiVersion Validation
 
+`apiVersion` is the version of the `@midnight-ntwrk/dapp-connector-api` package
+the wallet implemented (current published API is 4.0.1), so the DApp should
+range-check it with semver.
+
 ```typescript
 describe('wallet version validation', () => {
   it('should reject incompatible wallet version', () => {
     const stub = createWalletStub({
-      apiVersion: '0.1.0', // too old
+      apiVersion: '3.0.0', // too old — different major
     });
 
     // DApp should check semver compatibility before calling connect()
@@ -178,7 +182,7 @@ describe('wallet version validation', () => {
 
   it('should accept compatible wallet version', () => {
     const stub = createWalletStub({
-      apiVersion: '1.2.0', // compatible with ^1.0.0
+      apiVersion: '4.0.1', // compatible with ^4.0.0
     });
 
     // DApp should proceed with connection

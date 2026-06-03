@@ -150,21 +150,26 @@ import { test as base } from '@playwright/test';
 export const test = base.extend({
   page: async ({ page }, use) => {
     await page.addInitScript(() => {
-      // Stub the Midnight wallet connector that the DApp reads on load
+      // Stub the Midnight DApp Connector that the DApp reads on load.
+      // window.midnight is a record keyed by install UUID (per CAIP-372);
+      // rdns is a field *inside* each InitialAPI value, not the key.
+      // connect(networkId) resolves to a ConnectedAPI.
       (window as any).midnight = {
-        mnLace: {
-          enable: async () => ({
-            isEnabled: async () => true,
-            state: async () => ({
-              address: 'mn_test_addr_deadbeef',
-              coinPublicKey: '0'.repeat(64),
+        'com.test.wallet': {
+          rdns: 'com.test.wallet',
+          name: 'MockWallet',
+          icon: 'data:image/png;base64,iVBORw0KGgo=',
+          apiVersion: '4.0.1',
+          connect: async (networkId: string) => ({
+            getShieldedAddresses: async () => ({
+              shieldedAddress: 'mn_shield-addr_test',
+              shieldedCoinPublicKey: '0'.repeat(64),
+              shieldedEncryptionPublicKey: '0'.repeat(64),
             }),
-            submitTransaction: async (_tx: unknown) => ({
-              txHash: 'mock_tx_hash_' + Date.now(),
-            }),
+            getUnshieldedAddress: async () => ({ unshieldedAddress: 'mn_addr_test' }),
+            submitTransaction: async (_tx: string) => {},
+            getConnectionStatus: async () => ({ status: 'connected', networkId }),
           }),
-          apiVersion: '1.0.0',
-          name: 'MockLace',
         },
       };
     });
@@ -190,14 +195,28 @@ test('connects wallet and displays address', async ({ page }) => {
 });
 ```
 
-To test rejection flows, override `enable` to throw:
+To test rejection flows, override `connect` to throw a DApp Connector
+`APIError` (the API throws an object with `type: 'DAppConnectorAPIError'` and a
+`code` such as `'Rejected'`):
 
 ```typescript
 await page.addInitScript(() => {
   (window as any).midnight = {
-    mnLace: {
-      enable: async () => {
-        throw new Error('User rejected the connection request.');
+    'com.test.wallet': {
+      rdns: 'com.test.wallet',
+      name: 'MockWallet',
+      icon: 'data:image/png;base64,iVBORw0KGgo=',
+      apiVersion: '4.0.1',
+      connect: async () => {
+        const err = new Error('User rejected the connection request.') as Error & {
+          type: string;
+          code: string;
+          reason: string;
+        };
+        err.type = 'DAppConnectorAPIError';
+        err.code = 'Rejected';
+        err.reason = 'User rejected the connection request.';
+        throw err;
       },
     },
   };

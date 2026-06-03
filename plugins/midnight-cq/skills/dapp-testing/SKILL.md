@@ -217,26 +217,30 @@ the constructor, multi-step flows in named methods.
 
 When a real browser wallet extension is unavailable in CI, inject a stub via
 `page.addInitScript()` before any app code runs. The stub must match the real
-DApp Connector API shape (`window.midnight.mnLace.enable()`) — see
+DApp Connector API shape: `window.midnight` is a record keyed by the wallet's
+rdns, each value an `InitialAPI` (`{ rdns, name, icon, apiVersion, connect(networkId) }`)
+whose `connect()` resolves to a `ConnectedAPI` — see
 `references/playwright-patterns.md` for the full fixture pattern.
 
 ```typescript
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     (window as any).midnight = {
-      mnLace: {
-        enable: async () => ({
-          isEnabled: async () => true,
-          state: async () => ({
-            address: 'mn_test_addr_deadbeef',
-            coinPublicKey: '0'.repeat(64),
+      'com.test.wallet': {
+        rdns: 'com.test.wallet',
+        name: 'MockWallet',
+        icon: 'data:image/png;base64,iVBORw0KGgo=',
+        apiVersion: '4.0.1',
+        connect: async (_networkId: string) => ({
+          getShieldedAddresses: async () => ({
+            shieldedAddress: 'mn_shield-addr_test',
+            shieldedCoinPublicKey: '0'.repeat(64),
+            shieldedEncryptionPublicKey: '0'.repeat(64),
           }),
-          submitTransaction: async (_tx: unknown) => ({
-            txHash: 'mock_tx_hash_' + Date.now(),
-          }),
+          getUnshieldedAddress: async () => ({ unshieldedAddress: 'mn_addr_test' }),
+          submitTransaction: async (_tx: string) => {},
+          getConnectionStatus: async () => ({ status: 'connected', networkId: _networkId }),
         }),
-        apiVersion: '1.0.0',
-        name: 'MockLace',
       },
     };
   });
