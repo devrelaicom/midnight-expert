@@ -39,6 +39,39 @@
 
 pragma language_version >= 0.22;
 
+// =============================================================================
+//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+// =============================================================================
+//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
+//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
+//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
+//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
+//
+//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
+//  coinPublicKey passed into the circuit context by
+//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
+//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
+//  so any authorization or identity check built on it can be trivially
+//  bypassed by reading the public target value off-chain and supplying it.
+//
+//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
+//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
+//  recipient — if the prover lies, they only misroute their own coins.
+//
+//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
+//  witness-supplied secret via a domain-separated persistentHash, and pin the
+//  authority at deploy. See the secure reference implementation in the
+//  compact-examples plugin:
+//    examples/applications/zkloan/zkloan-credit-scorer.compact
+//    examples/applications/zkloan/witnesses.ts
+//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
+//  ownPublicKey(); see that plugin's references/applications.md for rationale.
+//
+//  A full rework of this example to the secure pattern is tracked as a
+//  follow-up. Until then, every ownPublicKey()-based auth check below is a
+//  demonstration of what NOT to do.
+// =============================================================================
+
 /**
  * @module NonFungibleToken
  * @description An unshielded Non-Fungible Token library.
@@ -386,6 +419,7 @@ module NonFungibleToken {
  // The caller's identity is captured via ownPublicKey() and wrapped as the
  // Left variant of Either (ZswapCoinPublicKey). This `auth` value is passed
  // to _approve to verify the caller is the token owner or an operator.
+ // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
  const auth = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
  _approve(to, tokenId, auth);
   }
@@ -435,6 +469,7 @@ module NonFungibleToken {
  Initializable_assertInitialized();
  // Wrap the caller's public key as the owner. In Midnight, ownPublicKey()
  // identifies the transaction sender within a circuit.
+ // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
  const owner = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
  _setApprovalForAll(owner, operator, approved);
   }
@@ -559,6 +594,7 @@ module NonFungibleToken {
  assert(!Utils_isKeyOrAddressZero(to), "NonFungibleToken: Invalid Receiver");
  // Setting an "auth" arguments enables the `_isAuthorized` check which verifies that the token exists
  // (fromAddress != 0). Therefore, it is not needed to verify that the return value is not 0 here.
+ // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
  const auth = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
  // _update performs the core accounting: balance adjustment, ownership transfer,
  // and approval clearing. It returns the previous owner so we can verify the

@@ -1,3 +1,35 @@
+// =============================================================================
+//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+// =============================================================================
+//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
+//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
+//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
+//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
+//
+//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
+//  coinPublicKey passed into the circuit context by
+//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
+//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
+//  so any authorization or identity check built on it can be trivially
+//  bypassed by reading the public target value off-chain and supplying it.
+//
+//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
+//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
+//  recipient — if the prover lies, they only misroute their own coins.
+//
+//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
+//  witness-supplied secret via a domain-separated persistentHash, and pin the
+//  authority at deploy. See the secure reference implementation:
+//    examples/applications/zkloan/zkloan-credit-scorer.compact
+//    examples/applications/zkloan/witnesses.ts
+//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
+//  ownPublicKey(); see references/applications.md for the rationale.
+//
+//  A full rework of this example to the secure pattern is tracked as a
+//  follow-up. Until then, every ownPublicKey()-based auth check below is a
+//  demonstration of what NOT to do.
+// =============================================================================
+
 module NftZk {
 
   /**
@@ -85,6 +117,7 @@ module NftZk {
 
   // Approves another public key to transfer the specified token ID
   export circuit approve(to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
+    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
     const senderPublicKey = ownPublicKey();
     assert(to != default<ZswapCoinPublicKey>, "Approved account cannot be empty.");
 
@@ -119,6 +152,7 @@ module NftZk {
 
   // Sets or unsets approval for an operator to manage all of the caller's tokens
   export circuit setApprovalForAll(operator: ZswapCoinPublicKey, approved: Boolean): [] {
+    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
     const senderPublicKey = ownPublicKey();
     assert(operator != default<ZswapCoinPublicKey>, "Operator cannot be empty.");
     assert(operator != senderPublicKey, "Cannot set yourself as operator.");
@@ -152,6 +186,7 @@ module NftZk {
 
   // Transfers ownership of a given token ID from you to another account
   export circuit transfer(to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
+    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
     const senderPublicKey = ownPublicKey();
     assert(tokenId != default<Uint<64>>, "Token ID cannot be empty.");
 
@@ -163,6 +198,7 @@ module NftZk {
 
   // Transfers ownership of a given token ID from one public key to another
   export circuit transferFrom(fromHashKey: Field, to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
+    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
     const senderPublicKey = ownPublicKey();
     assert(tokenId != default<Uint<64>>, "Token ID cannot be empty.");
 
