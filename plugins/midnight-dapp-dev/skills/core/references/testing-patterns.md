@@ -78,8 +78,12 @@ This single import adds custom matchers like `toBeInTheDocument()`,
 
 ## Mocking window.midnight
 
-The Lace wallet extension injects `window.midnight.mnLace` into the page.
-In tests, this global does not exist, so you must mock it.
+A Midnight wallet extension injects its DApp Connector API into `window.midnight`
+under a per-install key — a UUID (per CAIP-372); Lace also aliases itself at
+`mnLace`, but that key is not normative. Code should enumerate
+`Object.values(window.midnight)` and match on `name`/`rdns` rather than assume a
+fixed key. In tests this global does not exist, so you must mock it (key it
+however you like — the code under test should discover the wallet by enumeration).
 
 ### Creating a Mock InitialAPI
 
@@ -124,7 +128,7 @@ export function createMockInitialApi(
   return {
     name: 'Mock Lace',
     icon: 'data:image/png;base64,mock',
-    apiVersion: '1.0.0',
+    apiVersion: '4.0.1',
     rdns: 'com.mock.lace',
     connect: vi.fn().mockResolvedValue(api),
   };
@@ -141,7 +145,7 @@ describe('WalletConnection', () => {
 
   beforeEach(() => {
     mockApi = createMockInitialApi();
-    (window as any).midnight = { mnLace: mockApi };
+    (window as any).midnight = { 'com.test.wallet': mockApi };
   });
 
   afterEach(() => {
@@ -189,7 +193,7 @@ describe('wallet connection states', () => {
   it('transitions to connected after successful connect', async () => {
     const user = userEvent.setup();
     const mockApi = createMockInitialApi();
-    (window as any).midnight = { mnLace: mockApi };
+    (window as any).midnight = { 'com.test.wallet': mockApi };
 
     render(
       <WalletProvider>
@@ -230,7 +234,7 @@ describe('wallet connection states', () => {
       code: 'PermissionRejected',
       reason: 'User declined connection',
     });
-    (window as any).midnight = { mnLace: mockApi };
+    (window as any).midnight = { 'com.test.wallet': mockApi };
 
     render(
       <WalletProvider>

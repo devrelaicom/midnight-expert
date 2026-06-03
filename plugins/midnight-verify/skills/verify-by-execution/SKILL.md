@@ -237,8 +237,8 @@ When dispatched for a ledger/protocol claim, you compile and execute a Compact c
 
 | Claim type | What to extract | How |
 |---|---|---|
-| Cost model claims | SyntheticCost breakdown | Import CostModel from ledger-v8, call `cost()` on the compiled transaction |
-| Well-formedness claims | Acceptance/rejection | Call `wellFormed()` on the transaction, capture result |
+| Cost model claims | SyntheticCost breakdown | Call `cost(LedgerParameters.initialParameters())` on the compiled transaction; reads a `SyntheticCost` (camelCase bigint fields) |
+| Well-formedness claims | Acceptance/rejection | Call `wellFormed(refState, new WellFormedStrictness(), tblock)`; it returns a `VerifiedTransaction` and throws on invalid |
 | Balance claims | Per-segment per-token balance | Inspect transaction structure after construction |
 | Transaction structure | Intent/offer properties | Read compiled transaction fields |
 | Proof staging | Stage transitions | Construct UnprovenTransaction, call `prove()`, observe state change |
@@ -248,23 +248,38 @@ When dispatched for a ledger/protocol claim, you compile and execute a Compact c
 After the normal circuit execution (Step 5), add ledger-level evidence extraction:
 
 ```javascript
-import { CostModel, WellFormedStrictness } from '@midnight-ntwrk/ledger';
+import { LedgerParameters, WellFormedStrictness } from '@midnight-ntwrk/ledger-v8';
 
 // ... normal circuit execution from Step 5 ...
 
-// Extract cost data
-const cost = transaction.cost();
+// Extract cost data. `cost()` takes LedgerParameters and returns a SyntheticCost
+// whose fields are camelCase bigints. (There is no CostModel.calculate(); the
+// only CostModel factory is the static CostModel.initialCostModel().)
+const cost = transaction.cost(LedgerParameters.initialParameters());
 console.log(JSON.stringify({
   circuitResult: result,
   cost: {
-    read_time: cost.read_time?.toString(),
-    compute_time: cost.compute_time?.toString(),
-    block_usage: cost.block_usage?.toString(),
-    bytes_written: cost.bytes_written?.toString(),
-    bytes_churned: cost.bytes_churned?.toString(),
+    readTime: cost.readTime.toString(),
+    computeTime: cost.computeTime.toString(),
+    blockUsage: cost.blockUsage.toString(),
+    bytesWritten: cost.bytesWritten.toString(),
+    bytesChurned: cost.bytesChurned.toString(),
   },
-  wellFormed: transaction.wellFormed(WellFormedStrictness.default()),
 }));
+
+// Well-formedness. `wellFormed(refState, strictness, tblock)` returns a
+// VerifiedTransaction and THROWS if the transaction is not well-formed — it is
+// NOT a boolean. Build strictness with `new WellFormedStrictness()` (there is no
+// WellFormedStrictness.default()). `refState` is the LedgerState to validate
+// against (e.g. `LedgerState.blank(networkId)` for an isolated check).
+let wellFormed;
+try {
+  transaction.wellFormed(refState, new WellFormedStrictness(), new Date());
+  wellFormed = true;
+} catch (e) {
+  wellFormed = { ok: false, error: String(e) };
+}
+console.log(JSON.stringify({ wellFormed }));
 ```
 
 **Include the ledger-level evidence in your report** alongside the normal execution report. The orchestrator uses both to synthesize the verdict.

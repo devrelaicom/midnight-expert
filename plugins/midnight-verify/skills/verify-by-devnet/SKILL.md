@@ -204,8 +204,8 @@ This mode is used ONLY as a fallback for wallet SDK claims when source investiga
 The wallet SDK requires Docker containers instead of a standalone devnet:
 
 1. **midnight-node** — check with `docker ps | grep midnight-node` or query the substrate RPC endpoint
-2. **midnight-indexer** — check GraphQL health endpoint (typically `http://localhost:6300/api/v3/graphql`)
-3. **proof-server** — check health endpoint (typically `http://localhost:6301/health`)
+2. **midnight-indexer** — check GraphQL health endpoint (typically `http://localhost:8088/api/v4/graphql`)
+3. **proof-server** — check health endpoint (typically `http://localhost:6300/health`)
 
 If ANY container is unreachable:
 - Report **Inconclusive (source insufficient, devnet unavailable)**

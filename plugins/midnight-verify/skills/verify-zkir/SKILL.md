@@ -74,6 +74,6 @@ The ZKIR reference document below catalogs the opcodes across 8 categories. The 
 - **Control Flow:** cond_select, copy
 - **Type Encoding:** decode, encode, reconstitute_field
 - **Division:** div_mod_power_of_two
-- **Cryptographic:** ec_mul, ec_mul_generator, hash_to_curve, persistent_hash, transient_hash
+- **Cryptographic:** ec_mul, ec_mul_generator, hash_to_curve, keccak256, persistent_hash, transient_hash
 - **I/O:** impact, output, private_input, public_input
 - **Comparison:** less_than, test_eq
