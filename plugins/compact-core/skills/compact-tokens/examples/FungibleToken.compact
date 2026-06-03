@@ -1,11 +1,10 @@
 // *** NON-COMPILABLE EXAMPLE — ILLUSTRATIVE REFERENCE ONLY ***
 //
-// This file CANNOT be compiled standalone. It requires external dependencies
-// from the OpenZeppelin compact-contracts project that are not vendored here.
+// This file CANNOT be compiled standalone. It requires an external dependency
+// from the OpenZeppelin compact-contracts project that is not vendored here.
 //
-// Missing dependencies:
+// Missing dependency:
 //   ../security/Initializable  — one-time initialization guard module
-//   ../utils/Utils              — address validation utilities
 //
 // To compile this contract, clone the full OpenZeppelin project:
 //   Repository: https://github.com/OpenZeppelin/compact-contracts
@@ -22,52 +21,43 @@
 // Limitations:
 // - Uint<128> instead of Uint<256> (circuit backend limitation)
 // - No events (Compact does not support event emission)
-// - No contract-to-contract calls (safe circuits block ContractAddress)
+// - No contract-to-contract calls
 // - Should NOT be called "ERC20" due to these incompatibilities
 //
 // Key patterns demonstrated:
 // - Module-based composition (import with prefix)
 // - Initializable guard for one-time setup
-// - Safe/unsafe circuit pairs
 // - _update as core accounting mechanism
-// - Either<ZswapCoinPublicKey, ContractAddress> as universal account type
+// - Witness-derived identity (UserPublicKey) as the account type
 
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Compact Contracts v0.0.1-alpha.1 (token/FungibleToken.compact)
 
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 // =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+//  SECURE PATTERN — witness-derived identity
 // =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
+//  Accounts are keyed by a `UserPublicKey`: a 32-byte value DERIVED inside the
+//  ZK circuit from a private witness secret via a domain-separated
+//  `persistentHash` (see `deriveUserPublicKey` / `deriveAdminPublicKey`). A
+//  caller can only act as the identity whose secret they hold, so identity is
+//  cryptographically bound to a private value rather than a routable address.
 //
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
+//  Identity-sensitive circuits (`transfer`, `approve`, `transferFrom`,
+//  `_spendAllowance`) take the caller's already-DERIVED `UserPublicKey` as an
+//  explicit `caller` parameter and use it as the owner/spender. `ownPublicKey()`
+//  is intentionally NOT used for authorization: it returns the prover-supplied
+//  Zswap coin public key with no binding to the transaction signer, so any check
+//  built on it is bypassable. The top-level composing contract holds the
+//  `getUserSecret()` witness, computes `caller` from it, and is the only thing
+//  that may call these circuits — it must never re-export them with a
+//  caller-supplied identity.
 //
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation in the
-//  compact-examples plugin:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see that plugin's references/applications.md for rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
+//  Because a `UserPublicKey` is a derived 32-byte value (not a routable
+//  Zswap/contract address), the contract-vs-user `_unsafe*` machinery of the
+//  address-based design does not apply and has been removed; the surviving
+//  guards reject the zero key.
 // =============================================================================
 
 /**
@@ -80,22 +70,11 @@ pragma language_version >= 0.22;
  * This is due to encoding limits on the midnight circuit backend:
  * https://github.com/midnightntwrk/compactc/issues/929
  *
- * @notice At the moment Midnight does not support contract-to-contract communication, but
- * there are ongoing efforts to enable this in the future. Thus, the main circuits of this module
- * restrict developers from sending tokens to contracts; however, we provide developers
- * the ability to experiment with sending tokens to contracts using the `_unsafe`
- * transfer methods. Once contract-to-contract communication is available we will follow the
- * deprecation plan outlined below:
- *
- * Initial Minor Version Change:
- *
- * - Mark _unsafeFN as deprecated and emit a warning if possible.
- * - Keep its implementation intact so existing callers continue to work.
- *
- * Later Major Version Change:
- *
- * - Drop _unsafeFN and remove `isContract` guard from `FN`.
- * - By this point, anyone using _unsafeFN should have migrated to the now C2C-capable `FN`.
+ * @notice Accounts are identified by a witness-derived `UserPublicKey` rather
+ * than an `Either<ZswapCoinPublicKey, ContractAddress>`. Because a `UserPublicKey`
+ * is a derived 32-byte value (not a routable Zswap/contract address), there is no
+ * contract-recipient case to guard against; the safe/unsafe circuit pairs of the
+ * address-based design have been removed and the surviving guards reject the zero key.
  *
  * Due to the vast incompatibilities with the EIP20 spec, it is our
  * opinion that this implementation should not be called ERC20 at this time
@@ -108,14 +87,83 @@ pragma language_version >= 0.22;
  */
 module FungibleToken {
   // PATTERN: Module composition -- import with prefix so all exported symbols get namespaced.
-  // CompactStandardLibrary provides builtins like ownPublicKey(), shieldedBurnAddress(),
-  // default<T>, assert(), disclose(), left<L,R>(), Map, Either, etc.
+  // CompactStandardLibrary provides builtins like persistentHash, pad, default<T>,
+  // assert(), disclose(), Map, etc.
   import CompactStandardLibrary;
 
-  // PATTERN: Prefixed imports -- Initializable_ and Utils_ prefixes prevent name collisions
-  // and make it clear which module provides each function when reading circuit bodies.
+  // PATTERN: Prefixed imports -- the Initializable_ prefix prevents name collisions
+  // and makes it clear which module provides each function when reading circuit bodies.
   import "../security/Initializable" prefix Initializable_;
-  import "../utils/Utils" prefix Utils_;
+
+  // ============================================================================
+  // IDENTITY TYPES
+  // ============================================================================
+  //
+  // SECURE PATTERN: every identity is a 32-byte value DERIVED from a private
+  // witness secret via a domain-separated persistentHash -- never a raw,
+  // prover-supplied public key. The witness `getUserSecret()` lives in the
+  // top-level composing contract; this module only ever sees already-derived
+  // keys passed in as parameters.
+
+  // A private 32-byte secret. Each prover holds their own; supplied by the
+  // `getUserSecret()` witness in the top-level contract.
+  export struct UserSecretKey {
+    bytes: Bytes<32>;
+  }
+
+  // Per-user public identity. Derived from the holder's secret; a caller can
+  // only act as the identity whose secret they hold. Used as the balance /
+  // allowance map key.
+  export struct UserPublicKey {
+    bytes: Bytes<32>;
+  }
+
+  // Admin public identity. Domain-separated from the user derivation so the same
+  // secret yields a distinct admin key. The deployer's derived admin key is
+  // pinned into the top-level contract's admin slot at deploy.
+  export struct AdminPublicKey {
+    bytes: Bytes<32>;
+  }
+
+  /**
+   * @description Derives the caller's per-user public key from their secret.
+   * Domain "fungible:user:pk:v1" separates it from the admin derivation, so the
+   * same secret yields distinct user vs. admin keys.
+   *
+   * @param {UserSecretKey} sk - The caller's private 32-byte secret.
+   * @return {UserPublicKey} - The derived per-user public key.
+   */
+  export pure circuit deriveUserPublicKey(sk: UserSecretKey): UserPublicKey {
+    return UserPublicKey { bytes: persistentHash<Vector<2, Bytes<32>>>(
+                                    [pad(32, "fungible:user:pk:v1"), sk.bytes]
+                                    ) };
+  }
+
+  /**
+   * @description Derives the admin public key from a secret. Domain-separated
+   * from the user derivation so the admin role cannot be impersonated by a
+   * user-key holder and vice versa.
+   *
+   * @param {UserSecretKey} sk - The deployer's private 32-byte secret.
+   * @return {AdminPublicKey} - The derived admin public key.
+   */
+  export pure circuit deriveAdminPublicKey(sk: UserSecretKey): AdminPublicKey {
+    return AdminPublicKey { bytes: persistentHash<Vector<2, Bytes<32>>>(
+                                     [pad(32, "fungible:admin:pk:v1"), sk.bytes]
+                                     ) };
+  }
+
+  /**
+   * @description Returns whether a derived user public key is the zero key.
+   * Used as a "not the zero address" guard for senders / receivers, and as the
+   * mint-source / burn-destination sentinel.
+   *
+   * @param {UserPublicKey} key - The key to check.
+   * @return {Boolean} - True if the key is all-zero.
+   */
+  export pure circuit isKeyZero(key: UserPublicKey): Boolean {
+    return key == default<UserPublicKey>;
+  }
 
   // ============================================================================
   // LEDGER STATE
@@ -124,36 +172,35 @@ module FungibleToken {
   // All on-chain state lives in `ledger` declarations. These are persisted in the
   // contract's Merkle-tree state on the Midnight blockchain.
   //
-  // The account type `Either<ZswapCoinPublicKey, ContractAddress>` is a union that
-  // can represent either a user wallet (ZswapCoinPublicKey) or a deployed contract
-  // (ContractAddress). This is Midnight's equivalent of Ethereum's `address` type.
+  // The account type is `UserPublicKey` -- a 32-byte value derived from the
+  // holder's secret. It is NOT a routable address, so there is no user-vs-contract
+  // distinction to model.
 
   /**
- * @description Mapping from account addresses to their token balances.
- * @type {Either<ZswapCoinPublicKey, ContractAddress>} account - The account address.
- * @type {Uint<128>} balance - The balance of the account.
- * @type {Map<account, balance>}
- * @type {Map<Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>>} _balances
- */
+  * @description Mapping from account public keys to their token balances.
+  * @type {UserPublicKey} account - The derived account key.
+  * @type {Uint<128>} balance - The balance of the account.
+  * @type {Map<account, balance>}
+  * @type {Map<UserPublicKey, Uint<128>>} _balances
+  */
   // LIMITATION: Uint<128> -- ERC20 uses Uint<256>; Midnight's circuit backend limits to 128 bits
-  export ledger _balances: Map<Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>>;
+  export ledger _balances: Map<UserPublicKey, Uint<128>>;
   /**
- * @description Mapping from owner accounts to spender accounts and their allowances.
- * @type {Either<ZswapCoinPublicKey, ContractAddress>} account - The owner account address.
- * @type {Either<ZswapCoinPublicKey, ContractAddress>} spender - The spender account address.
- * @type {Uint<128>} allowance - The amount allowed to be spent by the spender.
- * @type {Map<account, Map<spender, allowance>>}
- * @type {Map<Either<ZswapCoinPublicKey, ContractAddress>, Map<Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>>>} _allowances
- */
+  * @description Mapping from owner accounts to spender accounts and their allowances.
+  * @type {UserPublicKey} account - The owner's derived account key.
+  * @type {UserPublicKey} spender - The spender's derived account key.
+  * @type {Uint<128>} allowance - The amount allowed to be spent by the spender.
+  * @type {Map<account, Map<spender, allowance>>}
+  * @type {Map<UserPublicKey, Map<UserPublicKey, Uint<128>>>} _allowances
+  */
   // Nested Map is used because Compact does not support tuple keys.
   // Lookup pattern: _allowances.lookup(owner).lookup(spender) -> allowance amount
-  export ledger _allowances: Map<Either<ZswapCoinPublicKey, ContractAddress>,
- Map<Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>>>;
+  export ledger _allowances: Map<UserPublicKey, Map<UserPublicKey, Uint<128>>>;
 
   export ledger _totalSupply: Uint<128>;
 
   // `sealed` means these values can only be set during contract initialization
-  // (the constructor circuit). They are permanently immutable after deployment.
+  // (the initialize circuit). They are permanently immutable after deployment.
   // Opaque<"string"> is Compact's way of handling strings -- they are opaque to the
   // circuit (cannot be inspected character-by-character) but can be stored and compared.
   export sealed ledger _name: Opaque<"string">;
@@ -172,30 +219,28 @@ module FungibleToken {
   // because they call Initializable_assertInitialized().
 
   /**
- * @description Initializes the contract by setting the name, symbol, and decimals.
- * @dev This MUST be called in the implementing contract's constructor. Failure to do so
- * can lead to an irreparable contract.
- *
- * @circuitInfo k=10, rows=71
- *
- * @param {Opaque<"string">} name_ - The name of the token.
- * @param {Opaque<"string">} symbol_ - The symbol of the token.
- * @param {Uint<8>} decimals_ - The number of decimals used to get the user representation.
- * @return {[]} - Empty tuple.
- */
+  * @description Initializes the contract by setting the name, symbol, and decimals.
+  * @dev This MUST be called in the implementing contract's constructor. Failure to do so
+  * can lead to an irreparable contract.
+  *
+  * @param {Opaque<"string">} name_ - The name of the token.
+  * @param {Opaque<"string">} symbol_ - The symbol of the token.
+  * @param {Uint<8>} decimals_ - The number of decimals used to get the user representation.
+  * @return {[]} - Empty tuple.
+  */
   export circuit initialize(
- name_: Opaque<"string">,
- symbol_: Opaque<"string">,
- decimals_: Uint<8>
- ): [] {
- // Delegates to the Initializable module -- will revert if already initialized
- Initializable_initialize();
- // disclose() is required here because _name, _symbol, _decimals are `sealed` ledger fields.
- // Writing to a sealed ledger field from a circuit parameter requires disclose() to prove
- // the value is known to the prover and commit it to the public ledger state.
- _name = disclose(name_);
- _symbol = disclose(symbol_);
- _decimals = disclose(decimals_);
+                   name_: Opaque<"string">,
+                   symbol_: Opaque<"string">,
+                   decimals_: Uint<8>
+                   ): [] {
+    // Delegates to the Initializable module -- will revert if already initialized
+    Initializable_initialize();
+    // disclose() is required here because _name, _symbol, _decimals are `sealed` ledger fields.
+    // Writing to a sealed ledger field from a circuit parameter requires disclose() to prove
+    // the value is known to the prover and commit it to the public ledger state.
+    _name = disclose(name_);
+    _symbol = disclose(symbol_);
+    _decimals = disclose(decimals_);
   }
 
   // ============================================================================
@@ -207,173 +252,123 @@ module FungibleToken {
   // uninitialized (and therefore meaningless) contract.
 
   /**
- * @description Returns the token name.
- *
- * @circuitInfo k=10, rows=37
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @return {Opaque<"string">} - The token name.
- */
+  * @description Returns the token name.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @return {Opaque<"string">} - The token name.
+  */
   export circuit name(): Opaque<"string"> {
- Initializable_assertInitialized();
- return _name;
+    Initializable_assertInitialized();
+    return _name;
   }
 
   /**
- * @description Returns the symbol of the token.
- *
- * @circuitInfo k=10, rows=37
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @return {Opaque<"string">} - The token name.
- */
+  * @description Returns the symbol of the token.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @return {Opaque<"string">} - The token name.
+  */
   export circuit symbol(): Opaque<"string"> {
- Initializable_assertInitialized();
- return _symbol;
+    Initializable_assertInitialized();
+    return _symbol;
   }
 
   /**
- * @description Returns the number of decimals used to get its user representation.
- *
- * @circuitInfo k=10, rows=36
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @return {Uint<8>} - The account's token balance.
- */
+  * @description Returns the number of decimals used to get its user representation.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @return {Uint<8>} - The account's token balance.
+  */
   export circuit decimals(): Uint<8> {
- Initializable_assertInitialized();
- return _decimals;
+    Initializable_assertInitialized();
+    return _decimals;
   }
 
   /**
- * @description Returns the value of tokens in existence.
- *
- * @circuitInfo k=10, rows=36
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @return {Uint<128>} - The total supply of tokens.
- */
+  * @description Returns the value of tokens in existence.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @return {Uint<128>} - The total supply of tokens.
+  */
   export circuit totalSupply(): Uint<128> {
- Initializable_assertInitialized();
- return _totalSupply;
+    Initializable_assertInitialized();
+    return _totalSupply;
   }
 
   /**
- * @description Returns the value of tokens owned by `account`.
- *
- * @circuitInfo k=10, rows=310
- *
- * @dev Manually checks if `account` is a key in the map and returns 0 if it is not.
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - The public key or contract address to query.
- * @return {Uint<128>} - The account's token balance.
- */
-  export circuit balanceOf(account: Either<ZswapCoinPublicKey, ContractAddress>): Uint<128> {
- Initializable_assertInitialized();
- // disclose(account) is needed because Map.member() requires the key to be disclosed
- // (committed to the public proof) so the lookup can be verified against the Merkle tree.
- if (!_balances.member(disclose(account))) {
- // Return 0 for accounts that have never held tokens, rather than reverting.
- // This mirrors ERC20's balanceOf behavior for non-existent accounts.
- return 0;
- }
+  * @description Returns the value of tokens owned by `account`.
+  *
+  * @dev Manually checks if `account` is a key in the map and returns 0 if it is not.
+  * Takes a derived `UserPublicKey` only -- no secret -- so it is safe to expose as a view.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @param {UserPublicKey} account - The derived public key to query.
+  * @return {Uint<128>} - The account's token balance.
+  */
+  export circuit balanceOf(account: UserPublicKey): Uint<128> {
+    Initializable_assertInitialized();
+    // disclose(account) is needed because Map.member() requires the key to be disclosed
+    // (committed to the public proof) so the lookup can be verified against the Merkle tree.
+    if (!_balances.member(disclose(account))) {
+      // Return 0 for accounts that have never held tokens, rather than reverting.
+      // This mirrors ERC20's balanceOf behavior for non-existent accounts.
+      return 0;
+    }
 
- return _balances.lookup(disclose(account));
+    return _balances.lookup(disclose(account));
   }
 
   // ============================================================================
   // TRANSFER CIRCUITS
   // ============================================================================
   //
-  // PATTERN: Safe/unsafe pair -- Each transfer function has two variants:
-  //   1. Safe variant (e.g., `transfer`) -- blocks ContractAddress recipients
-  //   2. Unsafe variant (e.g., `_unsafeTransfer`) -- allows ContractAddress recipients
-  //
-  // The safe variants exist because Midnight does NOT yet support contract-to-contract
-  // calls. Sending tokens to a ContractAddress would lock them permanently since the
-  // receiving contract cannot execute code to move them. The unsafe variants are provided
-  // for experimentation and forward-compatibility.
+  // SECURE PATTERN: identity-sensitive circuits take the caller's already-DERIVED
+  // `UserPublicKey` as an explicit `caller` parameter. The top-level contract
+  // computes `caller` from the witness secret; authorization is implicit because
+  // only the secret holder can produce that `caller`. These circuits NEVER call
+  // ownPublicKey().
   //
   // LIMITATION: No events -- ERC20 requires Transfer/Approval events; Compact cannot emit them.
   // This means off-chain indexers cannot subscribe to transfer notifications from the contract.
 
   /**
- * @description Moves a `value` amount of tokens from the caller's account to `to`.
- *
- * @circuitInfo k=11, rows=1173
- *
- * @notice Transfers to contract addresses are currently disallowed until contract-to-contract
- * interactions are supported in Compact. This restriction prevents assets from
- * being inadvertently locked in contracts that cannot currently handle token receipt.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `to` is not a ContractAddress.
- * - `to` is not the zero address.
- * - The caller has a balance of at least `value`.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The recipient of the transfer, either a user or a contract.
- * @param {Uint<128>} value - The amount to transfer.
- * @return {Boolean} - As per the IERC20 spec, this MUST return true.
- */
-  export circuit transfer(
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): Boolean {
- Initializable_assertInitialized();
- // PATTERN: Safe/unsafe pair -- safe blocks ContractAddress recipients until C2C is supported.
- // Utils_isContractAddress checks `to.is_left` -- if it's a Right (ContractAddress), reject.
- assert(!Utils_isContractAddress(to), "FungibleToken: Unsafe Transfer");
- return _unsafeTransfer(to, value);
-  }
-
-  /**
- * @description Unsafe variant of `transfer` which allows transfers to contract addresses.
- *
- * @circuitInfo k=11, rows=1170
- *
- * @warning Transfers to contract addresses are considered unsafe because contract-to-contract
- * calls are not currently supported. Tokens sent to a contract address may become irretrievable.
- * Once contract-to-contract calls are supported, this circuit may be deprecated.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `to` is not the zero address.
- * - The caller has a balance of at least `value`.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The recipient of the transfer, either a user or a contract.
- * @param {Uint<128>} value - The amount to transfer.
- * @return {Boolean} - As per the IERC20 spec, this MUST return true.
- */
-  export circuit _unsafeTransfer(
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): Boolean {
- Initializable_assertInitialized();
- // ownPublicKey() returns the ZswapCoinPublicKey of the transaction signer (the caller).
- // Wrapping in left<>() creates an Either value representing a user (not a contract).
- // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
- const owner = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
- _unsafeUncheckedTransfer(owner, to, value);
- return true;
+  * @description Moves a `value` amount of tokens from `caller` to `to`.
+  *
+  * @dev `caller` is the DERIVED identity of the transaction author, computed by
+  * the top-level contract from the witness secret. It is used as the `from`
+  * account; authorization is implicit because only the secret holder can
+  * produce this `caller`.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `to` is not the zero key.
+  * - `caller` has a balance of at least `value`.
+  *
+  * @param {UserPublicKey} caller - The derived identity of the transaction author.
+  * @param {UserPublicKey} to - The recipient of the transfer.
+  * @param {Uint<128>} value - The amount to transfer.
+  * @return {Boolean} - As per the IERC20 spec, this MUST return true.
+  */
+  export circuit transfer(caller: UserPublicKey, to: UserPublicKey, value: Uint<128>): Boolean {
+    Initializable_assertInitialized();
+    _transfer(caller, to, value);
+    return true;
   }
 
   // ============================================================================
@@ -389,210 +384,125 @@ module FungibleToken {
   // matching ERC20 convention for gas optimization (here: circuit-size optimization).
 
   /**
- * @description Returns the remaining number of tokens that `spender` will be allowed to spend on behalf of `owner`
- * through `transferFrom`. This value changes when `approve` or `transferFrom` are called.
- *
- * @circuitInfo k=10, rows=624
- *
- * @dev Manually checks if `owner` and `spender` are keys in the map and returns 0 if they are not.
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} owner - The public key or contract address of approver.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} spender - The public key or contract address of spender.
- * @return {Uint<128>} - The `spender`'s allowance over `owner`'s tokens.
- */
-  export circuit allowance(
- owner: Either<ZswapCoinPublicKey, ContractAddress>,
- spender: Either<ZswapCoinPublicKey, ContractAddress>
- ): Uint<128> {
- Initializable_assertInitialized();
- // Two-level map check: first verify the owner exists in _allowances, then verify
- // the spender exists within that owner's sub-map. Both must be disclosed for
- // Merkle-tree verification.
- if (!_allowances.member(disclose(owner)) || !_allowances.lookup(owner).member(disclose(spender))) {
- return 0;
- }
+  * @description Returns the remaining number of tokens that `spender` will be allowed to spend on behalf of `owner`
+  * through `transferFrom`. This value changes when `approve` or `transferFrom` are called.
+  *
+  * @dev Manually checks if `owner` and `spender` are keys in the map and returns 0 if they are not.
+  * Takes derived keys only -- no secret -- so it is safe to expose as a view.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @param {UserPublicKey} owner - The derived public key of the approver.
+  * @param {UserPublicKey} spender - The derived public key of the spender.
+  * @return {Uint<128>} - The `spender`'s allowance over `owner`'s tokens.
+  */
+  export circuit allowance(owner: UserPublicKey, spender: UserPublicKey): Uint<128> {
+    Initializable_assertInitialized();
+    // Two-level map check: first verify the owner exists in _allowances, then verify
+    // the spender exists within that owner's sub-map. Both must be disclosed for
+    // Merkle-tree verification.
+    if (!_allowances.member(disclose(owner)) || !_allowances.lookup(owner).member(disclose(spender))) {
+      return 0;
+    }
 
- return _allowances.lookup(owner).lookup(disclose(spender));
+    return _allowances.lookup(owner).lookup(disclose(spender));
   }
 
   /**
- * @description Sets a `value` amount of tokens as allowance of `spender` over the caller's tokens.
- *
- * @circuitInfo k=10, rows=452
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `spender` is not the zero address.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} spender - The Zswap key or ContractAddress that may spend on behalf of the caller.
- * @param {Uint<128>} value - The amount of tokens the `spender` may spend.
- * @return {Boolean} - Returns a boolean value indicating whether the operation succeeded.
- */
-  export circuit approve(spender: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): Boolean {
- Initializable_assertInitialized();
-
- // Identify the caller as the owner of the allowance being set
- // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
- const owner = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
- _approve(owner, spender, value);
- return true;
+  * @description Sets a `value` amount of tokens as allowance of `spender` over `caller`'s tokens.
+  *
+  * @dev `caller` is the DERIVED identity of the transaction author. It is used as
+  * the `owner` of the allowance; only the holder of the corresponding secret can
+  * produce this `caller`, so the allowance is bound to that holder.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `spender` is not the zero key.
+  *
+  * @param {UserPublicKey} caller - The derived identity of the transaction author.
+  * @param {UserPublicKey} spender - The key that may spend on behalf of the caller.
+  * @param {Uint<128>} value - The amount of tokens the `spender` may spend.
+  * @return {Boolean} - Returns a boolean value indicating whether the operation succeeded.
+  */
+  export circuit approve(caller: UserPublicKey, spender: UserPublicKey, value: Uint<128>): Boolean {
+    Initializable_assertInitialized();
+    _approve(caller, spender, value);
+    return true;
   }
 
   /**
- * @description Moves `value` tokens from `fromAddress` to `to` using the allowance mechanism.
- * `value` is the deducted from the caller's allowance.
- *
- * @circuitInfo k=11, rows=1821
- *
- * @notice Transfers to contract addresses are currently disallowed until contract-to-contract
- * interactions are supported in Compact. This restriction prevents assets from
- * being inadvertently locked in contracts that cannot currently handle token receipt.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `fromAddress` is not the zero address.
- * - `fromAddress` must have a balance of at least `value`.
- * - `to` is not the zero address.
- * - `to` is not a ContractAddress.
- * - The caller has an allowance of `fromAddress`'s tokens of at least `value`.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} fromAddress - The current owner of the tokens for the transfer, either a user or a contract.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The recipient of the transfer, either a user or a contract.
- * @param {Uint<128>} value - The amount to transfer.
- * @return {Boolean} - As per the IERC20 spec, this MUST return true.
- */
+  * @description Moves `value` tokens from `fromAccount` to `to` using the allowance mechanism.
+  * `value` is deducted from `caller`'s allowance over `fromAccount`'s tokens.
+  *
+  * @dev `caller` is the DERIVED identity of the transaction author (the spender).
+  * Only the holder of the corresponding secret can produce it, so the spender
+  * cannot be impersonated.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `fromAccount` is not the zero key.
+  * - `fromAccount` must have a balance of at least `value`.
+  * - `to` is not the zero key.
+  * - `caller` has an allowance of `fromAccount`'s tokens of at least `value`.
+  *
+  * @param {UserPublicKey} caller - The derived identity of the transaction author (spender).
+  * @param {UserPublicKey} fromAccount - The current owner of the tokens for the transfer.
+  * @param {UserPublicKey} to - The recipient of the transfer.
+  * @param {Uint<128>} value - The amount to transfer.
+  * @return {Boolean} - As per the IERC20 spec, this MUST return true.
+  */
   export circuit transferFrom(
- fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): Boolean {
- Initializable_assertInitialized();
- // PATTERN: Safe/unsafe pair -- block ContractAddress recipients
- assert(!Utils_isContractAddress(to), "FungibleToken: Unsafe Transfer");
- return _unsafeTransferFrom(fromAddress, to, value);
-  }
-
-  /**
- * @description Unsafe variant of `transferFrom` which allows transfers to contract addresses.
- *
- * @circuitInfo k=11, rows=1818
- *
- * @warning Transfers to contract addresses are considered unsafe because contract-to-contract
- * calls are not currently supported. Tokens sent to a contract address may become irretrievable.
- * Once contract-to-contract calls are supported, this circuit may be deprecated.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `fromAddress` is not the zero address.
- * - `fromAddress` must have a balance of at least `value`.
- * - `to` is not the zero address.
- * - The caller has an allowance of `fromAddress`'s tokens of at least `value`.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} fromAddress - The current owner of the tokens for the transfer, either a user or a contract.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The recipient of the transfer, either a user or a contract.
- * @param {Uint<128>} value - The amount to transfer.
- * @return {Boolean} - As per the IERC20 spec, this MUST return true.
- */
-  export circuit _unsafeTransferFrom(
- fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): Boolean {
- Initializable_assertInitialized();
-
- // The caller (spender) is identified via ownPublicKey(), not passed as a parameter.
- // This prevents a malicious caller from impersonating another spender.
- // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
- const spender = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
- // Deduct from the spender's allowance before performing the transfer
- _spendAllowance(fromAddress, spender, value);
- _unsafeUncheckedTransfer(fromAddress, to, value);
- return true;
+                   caller: UserPublicKey,
+                   fromAccount: UserPublicKey,
+                   to: UserPublicKey,
+                   value: Uint<128>
+                   ): Boolean {
+    Initializable_assertInitialized();
+    // Deduct from the caller's (spender's) allowance before performing the transfer.
+    // `caller` is the derived identity of the transaction author, so the spender
+    // cannot be impersonated.
+    _spendAllowance(fromAccount, caller, value);
+    _transfer(fromAccount, to, value);
+    return true;
   }
 
   // ============================================================================
-  // INTERNAL TRANSFER CIRCUITS
+  // INTERNAL TRANSFER CIRCUIT
   // ============================================================================
   //
-  // These are internal circuits (prefixed with _) used by higher-level circuits.
-  // They follow the same safe/unsafe pattern as the public-facing circuits.
+  // Internal circuit (prefixed with _) used by higher-level circuits.
 
   /**
- * @description Moves a `value` amount of tokens from `fromAddress` to `to`.
- * This circuit is equivalent to {transfer}, and can be used to
- * e.g. implement automatic token fees, slashing mechanisms, etc.
- *
- * @circuitInfo k=11, rows=1312
- *
- * @notice Transfers to contract addresses are currently disallowed until contract-to-contract
- * interactions are supported in Compact. This restriction prevents assets from
- * being inadvertently locked in contracts that cannot currently handle token receipt.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `fromAddress` is not be the zero address.
- * - `fromAddress` must have at least a balance of `value`.
- * - `to` must not be the zero address.
- * - `to` must not be a ContractAddress.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} fromAddress - The owner of the tokens to transfer.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The receipient of the transferred tokens.
- * @param {Uint<128>} value - The amount of tokens to transfer.
- * @return {[]} - Empty tuple.
- */
-  export circuit _transfer(
- fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): [] {
- Initializable_assertInitialized();
- assert(!Utils_isContractAddress(to), "FungibleToken: Unsafe Transfer");
- _unsafeUncheckedTransfer(fromAddress, to, value);
-  }
+  * @description Moves a `value` amount of tokens from `fromAccount` to `to`.
+  * This circuit is equivalent to {transfer}, and can be used to
+  * e.g. implement automatic token fees, slashing mechanisms, etc.
+  * Internal circuit without access restriction -- gate it in the composing contract.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `fromAccount` is not the zero key.
+  * - `fromAccount` must have at least a balance of `value`.
+  * - `to` must not be the zero key.
+  *
+  * @param {UserPublicKey} fromAccount - The owner of the tokens to transfer.
+  * @param {UserPublicKey} to - The recipient of the transferred tokens.
+  * @param {Uint<128>} value - The amount of tokens to transfer.
+  * @return {[]} - Empty tuple.
+  */
+  export circuit _transfer(fromAccount: UserPublicKey, to: UserPublicKey, value: Uint<128>): [] {
+    Initializable_assertInitialized();
+    // Reject the zero key as sender -- burning should go through _burn, not via direct transfer
+    assert(!isKeyZero(fromAccount), "FungibleToken: invalid sender");
+    // Reject the zero key as receiver -- minting should go through _mint, not via direct transfer
+    assert(!isKeyZero(to), "FungibleToken: invalid receiver");
 
-  /**
- * @description Unsafe variant of `transferFrom` which allows transfers to contract addresses.
- *
- * @circuitInfo k=11, rows=1309
- *
- * @warning Transfers to contract addresses are considered unsafe because contract-to-contract
- * calls are not currently supported. Tokens sent to a contract address may become irretrievable.
- * Once contract-to-contract calls are supported, this circuit may be deprecated.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `fromAddress` is not the zero address.
- * - `to` is not the zero address.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} fromAddress - The owner of the tokens to transfer.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The receipient of the transferred tokens.
- * @param {Uint<128>} value - The amount of tokens to transfer.
- * @return {[]} - Empty tuple.
- */
-  export circuit _unsafeUncheckedTransfer(
- fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): [] {
- Initializable_assertInitialized();
- // Reject zero address as sender -- burning should go through _burn, not via direct transfer
- assert(!Utils_isKeyOrAddressZero(fromAddress), "FungibleToken: invalid sender");
- // Reject zero address as receiver -- minting should go through _mint, not via direct transfer
- assert(!Utils_isKeyOrAddressZero(to), "FungibleToken: invalid receiver");
-
- // PATTERN: _update mechanism -- delegates to the single core accounting function
- _update(fromAddress, to, value);
+    // PATTERN: _update mechanism -- delegates to the single core accounting function
+    _update(fromAccount, to, value);
   }
 
   // ============================================================================
@@ -600,155 +510,117 @@ module FungibleToken {
   // ============================================================================
   //
   // PATTERN: _update mechanism -- a single circuit handles mint, burn, and transfer
-  // by treating the zero address (shieldedBurnAddress) as a special sentinel:
-  //   - fromAddress == zero  =>  MINT  (tokens created from nothing)
-  //   - to == zero           =>  BURN  (tokens destroyed)
-  //   - neither is zero      =>  TRANSFER (tokens moved between accounts)
+  // by treating the zero key as a special sentinel:
+  //   - fromAccount == zeroKey  =>  MINT  (tokens created from nothing)
+  //   - to == zeroKey           =>  BURN  (tokens destroyed)
+  //   - neither is zeroKey      =>  TRANSFER (tokens moved between accounts)
   //
   // This mirrors OpenZeppelin's ERC20 _update pattern from Solidity, providing
   // a single override point for custom token behavior (hooks, fees, etc.).
 
   /**
- * @description Transfers a `value` amount of tokens from `fromAddress` to `to`, or alternatively mints (or burns) if `fromAddress`
- * (or `to`) is the zero address.
- * @dev Checks for a mint overflow in order to output a more readable error message.
- *
- * @circuitInfo k=11, rows=1305
- *
- * Requirements:
- *
- * - Contract is initialized.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} fromAddress - The original owner of the tokens moved (which is 0 if tokens are minted).
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} to - The recipient of the tokens moved (which is 0 if tokens are burned).
- * @param {Uint<128>} value - The amount of tokens moved from `fromAddress` to `to`.
- * @return {[]} - Empty tuple.
- */
-  circuit _update(fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
- to: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): [] {
- Initializable_assertInitialized();
- // disclose(fromAddress) is needed because Utils_isKeyOrAddressZero reads the value
- // inside a circuit; circuit parameters must be disclosed to be used in conditionals
- // that affect ledger writes.
- if (Utils_isKeyOrAddressZero(disclose(fromAddress))) {
- // Mint path: fromAddress is the zero address, so we are creating new tokens.
- // LIMITATION: Uint<128> -- max value is 2^128 - 1, written out as a literal constant
- // because Compact does not have a built-in MAX constant.
- const MAX_UINT128 = 340282366920938463463374607431768211455;
- // Overflow check: ensure minting `value` tokens won't exceed the max representable supply.
- // This explicit check provides a readable error message instead of a silent wraparound.
- assert(MAX_UINT128 - _totalSupply >= value, "FungibleToken: arithmetic overflow");
+  * @description Transfers a `value` amount of tokens from `fromAccount` to `to`, or alternatively mints (or burns) if `fromAccount`
+  * (or `to`) is the zero key.
+  * @dev Checks for a mint overflow in order to output a more readable error message.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  *
+  * @param {UserPublicKey} fromAccount - The original owner of the tokens moved (zero key if minted).
+  * @param {UserPublicKey} to - The recipient of the tokens moved (zero key if burned).
+  * @param {Uint<128>} value - The amount of tokens moved from `fromAccount` to `to`.
+  * @return {[]} - Empty tuple.
+  */
+  circuit _update(fromAccount: UserPublicKey, to: UserPublicKey, value: Uint<128>): [] {
+    Initializable_assertInitialized();
+    // disclose(fromAccount) is needed because isKeyZero reads the value inside a
+    // circuit; circuit parameters must be disclosed to be used in conditionals
+    // that affect ledger writes.
+    if (isKeyZero(disclose(fromAccount))) {
+      // Mint path: fromAccount is the zero key, so we are creating new tokens.
+      // LIMITATION: Uint<128> -- max value is 2^128 - 1, written out as a literal constant
+      // because Compact does not have a built-in MAX constant.
+      const MAX_UINT128 = 340282366920938463463374607431768211455;
+      // Overflow check: ensure minting `value` tokens won't exceed the max representable supply.
+      // This explicit check provides a readable error message instead of a silent wraparound.
+      assert(MAX_UINT128 - _totalSupply >= value, "FungibleToken: arithmetic overflow");
 
- // disclose() is required when writing computed values to ledger state.
- // The `as Uint<128>` cast tells the compiler the result fits in 128 bits.
- _totalSupply = disclose(_totalSupply + value as Uint<128>);
- } else {
- // Transfer or burn path: deduct `value` from the sender's balance.
- const fromBal = balanceOf(fromAddress);
- assert(fromBal >= value, "FungibleToken: insufficient balance");
- _balances.insert(disclose(fromAddress), disclose(fromBal - value as Uint<128>));
- }
+      // disclose() is required when writing computed values to ledger state.
+      // The `as Uint<128>` cast tells the compiler the result fits in 128 bits.
+      _totalSupply = disclose(_totalSupply + value as Uint<128>);
+    } else {
+      // Transfer or burn path: deduct `value` from the sender's balance.
+      const fromBal = balanceOf(fromAccount);
+      assert(fromBal >= value, "FungibleToken: insufficient balance");
+      _balances.insert(disclose(fromAccount), disclose(fromBal - value as Uint<128>));
+    }
 
- if (Utils_isKeyOrAddressZero(disclose(to))) {
- // Burn path: to is the zero address, so we are destroying tokens.
- _totalSupply = disclose(_totalSupply - value as Uint<128>);
- } else {
- // Transfer or mint path: credit `value` to the receiver's balance.
- const toBal = balanceOf(to);
- _balances.insert(disclose(to), disclose(toBal + value as Uint<128>));
- }
+    if (isKeyZero(disclose(to))) {
+      // Burn path: to is the zero key, so we are destroying tokens.
+      _totalSupply = disclose(_totalSupply - value as Uint<128>);
+    } else {
+      // Transfer or mint path: credit `value` to the receiver's balance.
+      const toBal = balanceOf(to);
+      _balances.insert(disclose(to), disclose(toBal + value as Uint<128>));
+    }
   }
 
   // ============================================================================
   // MINT AND BURN
   // ============================================================================
   //
-  // Minting and burning use shieldedBurnAddress() as the zero address sentinel.
-  // shieldedBurnAddress() returns left<ZswapCoinPublicKey, ContractAddress>(default<ZswapCoinPublicKey>),
-  // which is the Midnight equivalent of Ethereum's address(0). Tokens sent to or from
-  // this address are created or destroyed via the _update mechanism.
+  // Minting and burning use the zero key (zeroKey()) as the mint-source /
+  // burn-destination sentinel, the Midnight-derived-identity equivalent of
+  // Ethereum's address(0). Tokens sent to or from the zero key are created or
+  // destroyed via the _update mechanism. These are internal circuits without
+  // access restriction -- gate them in the composing contract (e.g. behind an
+  // admin check that compares deriveAdminPublicKey(getUserSecret()) to a pinned
+  // admin key).
 
   /**
- * @description Creates a `value` amount of tokens and assigns them to `account`,
- * by transferring it from the zero address. Relies on the `update` mechanism.
- *
- * @circuitInfo k=10, rows=752
- *
- * @notice Transfers to contract addresses are currently disallowed until contract-to-contract
- * interactions are supported in Compact. This restriction prevents assets from
- * being inadvertently locked in contracts that cannot currently handle token receipt.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `to` is not a ContractAddress.
- * - `account` is not the zero address.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - The recipient of tokens minted.
- * @param {Uint<128>} value - The amount of tokens minted.
- * @return {[]} - Empty tuple.
- */
-  export circuit _mint(account: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): [] {
- Initializable_assertInitialized();
- // PATTERN: Safe/unsafe pair -- safe variant blocks minting to ContractAddress
- assert(!Utils_isContractAddress(account), "FungibleToken: Unsafe Transfer");
- _unsafeMint(account, value);
+  * @description Creates a `value` amount of tokens and assigns them to `account`,
+  * by transferring it from the zero key. Relies on the `_update` mechanism.
+  * Internal circuit without access restriction -- gate it in the composing contract.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `account` is not the zero key.
+  *
+  * @param {UserPublicKey} account - The recipient of tokens minted.
+  * @param {Uint<128>} value - The amount of tokens minted.
+  * @return {[]} - Empty tuple.
+  */
+  export circuit _mint(account: UserPublicKey, value: Uint<128>): [] {
+    Initializable_assertInitialized();
+    // Minting to the zero key would be a no-op (tokens created then immediately destroyed)
+    assert(!isKeyZero(account), "FungibleToken: invalid receiver");
+    // zeroKey() as `fromAccount` tells _update to execute the mint branch (increase totalSupply).
+    _update(zeroKey(), account, value);
   }
 
   /**
- * @description Unsafe variant of `_mint` which allows transfers to contract addresses.
- *
- * @circuitInfo k=10, rows=749
- *
- * @warning Transfers to contract addresses are considered unsafe because contract-to-contract
- * calls are not currently supported. Tokens sent to a contract address may become irretrievable.
- * Once contract-to-contract calls are supported, this circuit may be deprecated.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `account` is not the zero address.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - The recipient of tokens minted.
- * @param {Uint<128>} value - The amount of tokens minted.
- * @return {[]} - Empty tuple.
- */
-  export circuit _unsafeMint(
- account: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): [] {
- Initializable_assertInitialized();
- // Minting to the zero address would be a no-op (tokens created then immediately destroyed)
- assert(!Utils_isKeyOrAddressZero(account), "FungibleToken: invalid receiver");
- // shieldedBurnAddress() represents the zero address in Midnight. Passing it as
- // `fromAddress` tells _update to execute the mint branch (increase totalSupply).
- _update(shieldedBurnAddress(), account, value);
-  }
-
-  /**
- * @description Destroys a `value` amount of tokens from `account`, lowering the total supply.
- * Relies on the `_update` mechanism.
- *
- * @circuitInfo k=10, rows=773
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `account` is not the zero address.
- * - `account` must have at least a balance of `value`.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - The target owner of tokens to burn.
- * @param {Uint<128>} value - The amount of tokens to burn.
- * @return {[]} - Empty tuple.
- */
-  export circuit _burn(account: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): [] {
- Initializable_assertInitialized();
- // Burning from the zero address is meaningless (nothing to destroy)
- assert(!Utils_isKeyOrAddressZero(account), "FungibleToken: invalid sender");
- // shieldedBurnAddress() as `to` tells _update to execute the burn branch (decrease totalSupply)
- _update(account, shieldedBurnAddress(), value);
+  * @description Destroys a `value` amount of tokens from `account`, lowering the total supply.
+  * Relies on the `_update` mechanism. Internal circuit without access restriction --
+  * gate it in the composing contract.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `account` is not the zero key.
+  * - `account` must have at least a balance of `value`.
+  *
+  * @param {UserPublicKey} account - The target owner of tokens to burn.
+  * @param {Uint<128>} value - The amount of tokens to burn.
+  * @return {[]} - Empty tuple.
+  */
+  export circuit _burn(account: UserPublicKey, value: Uint<128>): [] {
+    Initializable_assertInitialized();
+    // Burning from the zero key is meaningless (nothing to destroy)
+    assert(!isKeyZero(account), "FungibleToken: invalid sender");
+    // zeroKey() as `to` tells _update to execute the burn branch (decrease totalSupply)
+    _update(account, zeroKey(), value);
   }
 
   // ============================================================================
@@ -759,83 +631,73 @@ module FungibleToken {
   // public-facing `approve` and `transferFrom` circuits.
 
   /**
- * @description Sets `value` as the allowance of `spender` over the `owner`'s tokens.
- * This circuit is equivalent to `approve`, and can be used to
- *
- * @circuitInfo k=10, rows=583
- *
- * e.g. set automatic allowances for certain subsystems, etc.
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `owner` is not the zero address.
- * - `spender` is not the zero address.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} owner - The owner of the tokens.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} spender - The spender of the tokens.
- * @param {Uint<128>} value - The amount of tokens `spender` may spend on behalf of `owner`.
- * @return {[]} - Empty tuple.
- */
-  export circuit _approve(
- owner: Either<ZswapCoinPublicKey, ContractAddress>,
- spender: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): [] {
- Initializable_assertInitialized();
- assert(!Utils_isKeyOrAddressZero(owner), "FungibleToken: invalid owner");
- assert(!Utils_isKeyOrAddressZero(spender), "FungibleToken: invalid spender");
- // Nested map initialization: if this owner has never granted any allowance before,
- // we must create an empty sub-map first. Compact Maps do not auto-initialize.
- if (!_allowances.member(disclose(owner))) {
- // If owner doesn't exist, create and insert a new sub-map directly
- _allowances.insert(
- disclose(owner),
- default<Map<Either<ZswapCoinPublicKey, ContractAddress>, Uint<128>>>
- );
- }
- // LIMITATION: No events -- in ERC20, this would emit an Approval event. Compact cannot emit events,
- // so off-chain services must poll the ledger state to detect allowance changes.
- _allowances.lookup(owner).insert(disclose(spender), disclose(value));
+  * @description Sets `value` as the allowance of `spender` over the `owner`'s tokens.
+  * This circuit is equivalent to `approve`, and can be used to
+  * e.g. set automatic allowances for certain subsystems, etc.
+  * Internal circuit without access restriction.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `owner` is not the zero key.
+  * - `spender` is not the zero key.
+  *
+  * @param {UserPublicKey} owner - The owner of the tokens.
+  * @param {UserPublicKey} spender - The spender of the tokens.
+  * @param {Uint<128>} value - The amount of tokens `spender` may spend on behalf of `owner`.
+  * @return {[]} - Empty tuple.
+  */
+  export circuit _approve(owner: UserPublicKey, spender: UserPublicKey, value: Uint<128>): [] {
+    Initializable_assertInitialized();
+    assert(!isKeyZero(owner), "FungibleToken: invalid owner");
+    assert(!isKeyZero(spender), "FungibleToken: invalid spender");
+    // Nested map initialization: if this owner has never granted any allowance before,
+    // we must create an empty sub-map first. Compact Maps do not auto-initialize.
+    if (!_allowances.member(disclose(owner))) {
+      // If owner doesn't exist, create and insert a new sub-map directly
+      _allowances.insert(disclose(owner), default<Map<UserPublicKey, Uint<128>>>);
+    }
+    // LIMITATION: No events -- in ERC20, this would emit an Approval event. Compact cannot emit events,
+    // so off-chain services must poll the ledger state to detect allowance changes.
+    _allowances.lookup(owner).insert(disclose(spender), disclose(value));
   }
 
   /**
- * @description Updates `owner`'s allowance for `spender` based on spent `value`.
- * Does not update the allowance value in case of infinite allowance.
- *
- * @circuitInfo k=10, rows=931
- *
- * Requirements:
- *
- * - Contract is initialized.
- * - `spender` must have at least an allowance of `value` from `owner`.
- *
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} owner - The owner of the tokens.
- * @param {Either<ZswapCoinPublicKey, ContractAddress>} spender - The spender of the tokens.
- * @param {Uint<128>} value - The amount of token allowance to spend.
- * @return {[]} - Empty tuple.
- */
-  export circuit _spendAllowance(
- owner: Either<ZswapCoinPublicKey, ContractAddress>,
- spender: Either<ZswapCoinPublicKey, ContractAddress>,
- value: Uint<128>
- ): [] {
- Initializable_assertInitialized();
- // Verify the allowance exists at all before trying to read it
- assert((_allowances.member(disclose(owner)) &&
- _allowances.lookup(owner).member(disclose(spender))),
- "FungibleToken: insufficient allowance"
- );
+  * @description Updates `owner`'s allowance for `spender` based on spent `value`.
+  * Does not update the allowance value in case of infinite allowance.
+  *
+  * Requirements:
+  *
+  * - Contract is initialized.
+  * - `spender` must have at least an allowance of `value` from `owner`.
+  *
+  * @param {UserPublicKey} owner - The owner of the tokens.
+  * @param {UserPublicKey} spender - The spender of the tokens.
+  * @param {Uint<128>} value - The amount of token allowance to spend.
+  * @return {[]} - Empty tuple.
+  */
+  export circuit _spendAllowance(owner: UserPublicKey, spender: UserPublicKey, value: Uint<128>): [] {
+    Initializable_assertInitialized();
+    // Verify the allowance exists at all before trying to read it
+    assert((_allowances.member(disclose(owner)) &&
+            _allowances.lookup(owner).member(disclose(spender))),
+           "FungibleToken: insufficient allowance"
+           );
 
- const currentAllowance = _allowances.lookup(owner).lookup(disclose(spender));
- // MAX_UINT128 represents "infinite" allowance (same convention as ERC20's type(uint256).max).
- // If the owner approved MAX_UINT128, the allowance is never decremented -- this saves
- // circuit rows and allows a "set once, spend forever" pattern.
- const MAX_UINT128 = 340282366920938463463374607431768211455;
- if (currentAllowance < MAX_UINT128) {
- // Only deduct from finite allowances
- assert(currentAllowance >= value, "FungibleToken: insufficient allowance");
- _approve(owner, spender, currentAllowance - value as Uint<128>);
- }
+    const currentAllowance = _allowances.lookup(owner).lookup(disclose(spender));
+    // MAX_UINT128 represents "infinite" allowance (same convention as ERC20's type(uint256).max).
+    // If the owner approved MAX_UINT128, the allowance is never decremented -- this saves
+    // circuit rows and allows a "set once, spend forever" pattern.
+    const MAX_UINT128 = 340282366920938463463374607431768211455;
+    if (currentAllowance < MAX_UINT128) {
+      // Only deduct from finite allowances
+      assert(currentAllowance >= value, "FungibleToken: insufficient allowance");
+      _approve(owner, spender, currentAllowance - value as Uint<128>);
+    }
+  }
+
+  // The zero user key, used as the mint source / burn destination sentinel.
+  pure circuit zeroKey(): UserPublicKey {
+    return default<UserPublicKey>;
   }
 }
