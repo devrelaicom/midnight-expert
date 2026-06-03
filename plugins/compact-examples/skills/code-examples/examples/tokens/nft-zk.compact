@@ -23,82 +23,104 @@
  * damages or losses arising from the use of this software.
  */
 
-pragma language_version >= 0.22.0;
+pragma language_version >= 0.23;
 
 // =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+//  SECURE PATTERN — witness-derived identity
 // =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
+//  Each instance holds a single 32-byte identity secret in private state.
+//  Caller identity is derived INSIDE the circuit from that secret via
+//  domain-separated `persistentHash` (`deriveUserPublicKey` /
+//  `deriveAdminPublicKey`), so a caller can only act as the identity they hold
+//  the secret for. `ownPublicKey()` is intentionally NOT used for authorization
+//  — it is prover-supplied and bypassable. The admin is pinned at deploy: the
+//  deployer's derived admin key is frozen into `contractAdmin`. Only these safe
+//  wrappers (which compute the caller from the witness) are exported — never the
+//  module's identity-parameterized circuits, which would let a caller pass an
+//  arbitrary identity and defeat the protection.
 //
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
-//
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see references/applications.md for the rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
+//  PRIVACY is preserved from the original design: owner identity is stored
+//  on-chain as a `Field` hash (never a raw key), and balances are looked up via
+//  `generateHashKey(pk.bytes, localSecret/sharedSecret)`. The derived
+//  `UserPublicKey` replaces the prover-supplied `ownPublicKey()` as the identity
+//  fed into those hashes.
 // =============================================================================
 
 import CompactStandardLibrary;
+
 import "../modules/token/NftZk";
 
-// Export selected circuits from the NftZk module.
-// We aren't exporting 'burn' or 'mint' because they have no authorization checks.
-export { 
-  balanceOf,
-  ownerOf,
-  approve,
-  getApproved,
-  setApprovalForAll,
-  isApprovedForAll,
-  transfer,
-  transferFrom,
-  generateHashKey
-};
+// Re-export identity types and pure derivations so the TypeScript layer can
+// compute public keys off-chain (e.g. to look up hashed balances/owners).
+export { UserSecretKey, UserPublicKey, AdminPublicKey };
 
-export ledger contractAdmin: ZswapCoinPublicKey;
+export { deriveUserPublicKey, deriveAdminPublicKey };
 
-// Set the public key of the contract admin.
+// Export only the read-only views and the off-chain hash helper from the NftZk
+// module. The module's identity-parameterized mutating circuits
+// (approve/setApprovalForAll/transfer/transferFrom/mint/burn) are deliberately
+// NOT re-exported — exposing them would let a caller pass any `caller` identity.
+// Instead, the safe wrappers below compute the caller from the witness secret.
+export { ownerOf, getApproved, isApprovedForAll, tokenExists, generateHashKey };
+
+// The identity witness: each prover supplies their own 32-byte secret from
+// private state. This is the SOLE source of caller identity for authorization.
+witness getUserSecret(): UserSecretKey;
+
+// The admin's derived public key, pinned at deploy time.
+export ledger contractAdmin: AdminPublicKey;
+
+// Pin the admin role to the deployer's derived admin key.
 constructor() {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  contractAdmin = ownPublicKey();
+  contractAdmin = disclose(deriveAdminPublicKey(getUserSecret()));
 }
 
-// Example: Only Admin can mint tokens.
-export circuit mintAdmin(to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  const senderPublicKey = ownPublicKey();
-  assert(senderPublicKey == contractAdmin, "Not authorized to mint.");
-
-  // Use the imported NFT-ZK functionality
-  mint(to, tokenId);
+// Returns the number of tokens owned by `owner`. The caller is derived from the
+// witness secret; querying yourself uses the local secret, otherwise the shared
+// secret (preserving the privacy design).
+export circuit balanceOf(owner: UserPublicKey): Uint<64> {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  return balanceOf(caller, owner);
 }
 
-// Example: Only admin can burn tokens.
+// Transfer one of YOUR tokens to `to`. The caller is derived from the witness
+// secret and used as the proven identity.
+export circuit transfer(to: UserPublicKey, tokenId: Uint<64>): [] {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  transfer(caller, to, tokenId);
+}
+
+// Transfer a token out of `fromHashKey` to `to`. The caller is derived from the
+// witness secret; the module asserts the caller is the owner or authorized.
+export circuit transferFromAuthorized(fromHashKey: Field, to: UserPublicKey, tokenId: Uint<64>): [] {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  transferFrom(caller, fromHashKey, to, tokenId);
+}
+
+// Approve `to` to transfer `tokenId`. Caller derived from the witness secret.
+export circuit approve(to: UserPublicKey, tokenId: Uint<64>): [] {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  approve(caller, to, tokenId);
+}
+
+// Set or unset `operator` as an operator for all of the caller's tokens.
+// Caller derived from the witness secret.
+export circuit setApprovalForAll(operator: UserPublicKey, approved: Boolean): [] {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  setApprovalForAll(caller, operator, approved);
+}
+
+// Only the pinned admin can mint. The caller must prove they hold the admin
+// secret whose derived admin key equals `contractAdmin`.
+export circuit mintAdmin(to: UserPublicKey, tokenId: Uint<64>): [] {
+  assert(contractAdmin == deriveAdminPublicKey(getUserSecret()), "Not authorized to mint.");
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  mint(caller, to, tokenId);
+}
+
+// Only the pinned admin can burn.
 export circuit burnAdmin(tokenId: Uint<64>): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  const senderPublicKey = ownPublicKey();
-  assert(senderPublicKey == contractAdmin, "Not authorized to burn.");
-
-  // Get the owner hash key of the token and then burn it
+  assert(contractAdmin == deriveAdminPublicKey(getUserSecret()), "Not authorized to burn.");
   const tokenOwnerHashKey = ownerOf(tokenId);
   burn(tokenOwnerHashKey, tokenId);
 }

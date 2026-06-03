@@ -1,5 +1,5 @@
 /**
- * @file NFT witness types and utilities
+ * @file NFT witness types and utilities (SECURE PATTERN — witness-derived identity)
  * @author Ricardo Rius
  * @license GPL-3.0
  *
@@ -23,7 +23,47 @@
  * damages or losses arising from the use of this software.
  */
 
-// This is how we type an empty object.
-export type NftPrivateState = {};
+import { Ledger } from "../managed/nft/contract/index.js";
+import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
 
-export const witnesses = {};
+// Each browser/CLI instance carries a single 32-byte user secret in private
+// state. ALL identity in the contract — per-user ownership AND the admin role —
+// derives from this one secret via domain-separated persistentHash INSIDE the
+// ZK circuit (deriveUserPublicKey / deriveAdminPublicKey). `ownPublicKey()` is
+// never consulted: it returns a prover-claimed value with no cryptographic
+// binding to the transaction signer. Whoever's deriveAdminPublicKey(secret) was
+// pinned into `contractAdmin` at deploy holds the admin role; everyone else
+// fails the equality assertion inside the proof. A caller can only act as the
+// identity whose secret they hold.
+export type NftPrivateState = {
+  readonly userSecretKey: Uint8Array;
+};
+
+// Factory for the private state. The secret must be exactly 32 bytes.
+export const createNftPrivateState = (
+  userSecretKey: Uint8Array
+): NftPrivateState => {
+  if (!userSecretKey || userSecretKey.length !== 32) {
+    throw new Error("createNftPrivateState: userSecretKey must be 32 bytes");
+  }
+  return { userSecretKey };
+};
+
+export const witnesses = {
+  getUserSecret: ({
+    privateState
+  }: WitnessContext<Ledger, NftPrivateState>): [
+    NftPrivateState,
+    { bytes: Uint8Array }
+  ] => {
+    if (
+      !privateState.userSecretKey ||
+      privateState.userSecretKey.length !== 32
+    ) {
+      throw new Error(
+        "getUserSecret: userSecretKey is missing or wrong length"
+      );
+    }
+    return [privateState, { bytes: privateState.userSecretKey }];
+  }
+};

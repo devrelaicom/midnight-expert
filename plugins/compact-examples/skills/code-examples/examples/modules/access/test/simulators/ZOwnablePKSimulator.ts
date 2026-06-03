@@ -3,11 +3,10 @@ import {
   createSimulator,
 } from '@openzeppelin-compact/contracts-simulator';
 import {
-  type ContractAddress,
-  type Either,
   ledger,
   Contract as MockZOwnablePK,
-  type ZswapCoinPublicKey,
+  type ZOwnablePK_UserPublicKey,
+  type ZOwnablePK_UserSecretKey,
 } from '../../../../artifacts/MockZOwnablePK/contract/index.js';
 import {
   ZOwnablePKPrivateState,
@@ -18,7 +17,7 @@ import {
  * Type constructor args
  */
 type ZOwnablePKArgs = readonly [
-  owner: Uint8Array,
+  ownerId: Uint8Array,
   instanceSalt: Uint8Array,
   isInit: boolean,
 ];
@@ -43,8 +42,8 @@ const ZOwnablePKSimulatorBase: any = createSimulator<
   contractFactory: (witnesses) =>
     new MockZOwnablePK<ZOwnablePKPrivateState>(witnesses),
   defaultPrivateState: () => ZOwnablePKPrivateState.generate(),
-  contractArgs: (owner, instanceSalt, isInit) => {
-    return [owner, instanceSalt, isInit];
+  contractArgs: (ownerId, instanceSalt, isInit) => {
+    return [ownerId, instanceSalt, isInit];
   },
   ledgerExtractor: (state) => ledger(state),
   witnessesFactory: () => ZOwnablePKWitnesses(),
@@ -52,6 +51,10 @@ const ZOwnablePKSimulatorBase: any = createSimulator<
 
 /**
  * ZOwnablePKSimulator
+ *
+ * SECURE PATTERN — witness-derived identity. The owner's identity is derived
+ * in-circuit from a single 32-byte witness secret; `ownPublicKey()` is never
+ * used for authorization.
  */
 export class ZOwnablePKSimulator extends ZOwnablePKSimulatorBase {
   constructor(
@@ -86,7 +89,7 @@ export class ZOwnablePKSimulator extends ZOwnablePKSimulatorBase {
 
   /**
    * @description Leaves the contract without an owner.
-   * It will not be possible to call `assertOnlyOnwer` circuits anymore.
+   * It will not be possible to call `assertOnlyOwner` circuits anymore.
    * Can only be called by the current owner.
    */
   public renounceOwnership() {
@@ -94,11 +97,32 @@ export class ZOwnablePKSimulator extends ZOwnablePKSimulatorBase {
   }
 
   /**
-   * @description Throws if called by any account whose id hash `SHA256(pk, nonce)` does not match
-   * the stored owner commitment. Use this to only allow the owner to call specific circuits.
+   * @description Throws if the caller's witness-derived id `SHA256(pk, nonce)`
+   * does not match the stored owner commitment. Use this to only allow the
+   * owner to call specific circuits.
    */
   public assertOnlyOwner() {
     this.circuits.impure.assertOnlyOwner();
+  }
+
+  /**
+   * @description Derives the owner's public key from a witness secret.
+   * @param sk - The user secret key.
+   * @returns The derived owner public key.
+   */
+  public _deriveOwnerPublicKey(
+    sk: ZOwnablePK_UserSecretKey,
+  ): ZOwnablePK_UserPublicKey {
+    return this.circuits.pure._deriveOwnerPublicKey(sk);
+  }
+
+  /**
+   * @description Derives the unlinkability nonce from a witness secret.
+   * @param sk - The user secret key.
+   * @returns The derived secret nonce.
+   */
+  public _deriveOwnerNonce(sk: ZOwnablePK_UserSecretKey): Uint8Array {
+    return this.circuits.pure._deriveOwnerNonce(sk);
   }
 
   /**
@@ -114,13 +138,13 @@ export class ZOwnablePKSimulator extends ZOwnablePKSimulatorBase {
 
   /**
    * @description Computes the unique identifier (`id`) of the owner from their
-   * public key and a secret nonce.
-   * @param pk - The public key of the identity being committed.
-   * @param nonce - A private nonce to scope the commitment.
+   * derived public key and a secret nonce.
+   * @param pk - The owner's derived public key.
+   * @param nonce - The owner's derived secret nonce.
    * @returns The computed owner ID.
    */
   public _computeOwnerId(
-    pk: Either<ZswapCoinPublicKey, ContractAddress>,
+    pk: ZOwnablePK_UserPublicKey,
     nonce: Uint8Array,
   ): Uint8Array {
     return this.circuits.pure._computeOwnerId(pk, nonce);
@@ -137,27 +161,34 @@ export class ZOwnablePKSimulator extends ZOwnablePKSimulatorBase {
 
   public readonly privateState = {
     /**
-     * @description Contextually sets a new nonce into the private state.
-     * @param newNonce The secret nonce.
-     * @returns The ZOwnablePK private state after setting the new nonce.
+     * @description Contextually sets a new 32-byte secret into the private state.
+     * The owner's derived identity changes with the secret.
+     * @param newSecret The 32-byte user secret.
+     * @returns The ZOwnablePK private state after setting the new secret.
      */
-    injectSecretNonce: (
-      newNonce: Buffer<ArrayBufferLike>,
-    ): ZOwnablePKPrivateState => {
+    injectSecret: (newSecret: Uint8Array): ZOwnablePKPrivateState => {
+      if (newSecret.length !== 32) {
+        throw new Error(
+          `injectSecret: expected 32-byte secret, received ${newSecret.length} bytes`,
+        );
+      }
       const currentState =
         this.circuitContextManager.getContext().currentPrivateState;
-      const updatedState = { ...currentState, secretNonce: newNonce };
+      const updatedState = {
+        ...currentState,
+        userSecretKey: Uint8Array.from(newSecret),
+      };
       this.circuitContextManager.updatePrivateState(updatedState);
       return updatedState;
     },
 
     /**
-     * @description Returns the secret nonce given the context.
-     * @returns The secret nonce.
+     * @description Returns the current 32-byte secret given the context.
+     * @returns The user secret.
      */
-    getCurrentSecretNonce: (): Uint8Array => {
+    getCurrentSecret: (): Uint8Array => {
       return this.circuitContextManager.getContext().currentPrivateState
-        .secretNonce;
+        .userSecretKey;
     },
   };
 }

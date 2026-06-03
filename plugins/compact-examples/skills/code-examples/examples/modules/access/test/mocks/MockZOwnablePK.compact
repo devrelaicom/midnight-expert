@@ -2,10 +2,23 @@
 
 pragma language_version >= 0.22;
 
+// =============================================================================
+//  TEST FIXTURE — minimal top-level wrapper to compile/exercise ZOwnablePK.
+// =============================================================================
+//  ZOwnablePK is a module; it needs a composing top-level contract to compile
+//  and run. This wrapper exists solely to drive the module's circuits from
+//  tests. The witness `getUserSecret` lives in the module and is surfaced here
+//  via the generated witness interface.
+// =============================================================================
+
 import CompactStandardLibrary;
+
 import "../../ZOwnablePK" prefix ZOwnablePK_;
 
-export { ZswapCoinPublicKey, ContractAddress, Either, Maybe };
+// Re-export identity types and pure derivations so the TypeScript layer can
+// derive the same owner public key / nonce / id off-chain.
+export { ZOwnablePK_UserSecretKey, ZOwnablePK_UserPublicKey };
+
 export { ZOwnablePK__ownerCommitment, ZOwnablePK__counter };
 
 /**
@@ -15,9 +28,9 @@ export { ZOwnablePK__ownerCommitment, ZOwnablePK__counter };
  * This behavior is to test that circuits are not callable unless the
  * contract is initialized.
 */
-constructor(initOwnerCommitment: Bytes<32>, instanceSalt: Bytes<32>, isInit: Boolean) {
+constructor(initOwnerId: Bytes<32>, instanceSalt: Bytes<32>, isInit: Boolean) {
   if (disclose(isInit)) {
-    ZOwnablePK_initialize(initOwnerCommitment, instanceSalt);
+    ZOwnablePK_initialize(initOwnerId, instanceSalt);
   }
 }
 
@@ -25,8 +38,8 @@ export circuit owner(): Bytes<32> {
   return ZOwnablePK_owner();
 }
 
-export circuit transferOwnership(newOwnerCommitment: Bytes<32>): [] {
-  return ZOwnablePK_transferOwnership(disclose(newOwnerCommitment));
+export circuit transferOwnership(newOwnerId: Bytes<32>): [] {
+  return ZOwnablePK_transferOwnership(disclose(newOwnerId));
 }
 
 export circuit renounceOwnership(): [] {
@@ -37,14 +50,23 @@ export circuit assertOnlyOwner(): [] {
   return ZOwnablePK_assertOnlyOwner();
 }
 
+// Pure derivations exposed for off-chain parity checks.
+export pure circuit _deriveOwnerPublicKey(sk: ZOwnablePK_UserSecretKey): ZOwnablePK_UserPublicKey {
+  return ZOwnablePK__deriveOwnerPublicKey(sk);
+}
+
+export pure circuit _deriveOwnerNonce(sk: ZOwnablePK_UserSecretKey): Bytes<32> {
+  return ZOwnablePK__deriveOwnerNonce(sk);
+}
+
 export circuit _computeOwnerCommitment(id: Bytes<32>, counter: Uint<64>): Bytes<32> {
   return ZOwnablePK__computeOwnerCommitment(id, counter);
 }
 
-export pure circuit _computeOwnerId(pk: Either<ZswapCoinPublicKey, ContractAddress>, nonce: Bytes<32>): Bytes<32> {
+export pure circuit _computeOwnerId(pk: ZOwnablePK_UserPublicKey, nonce: Bytes<32>): Bytes<32> {
   return ZOwnablePK__computeOwnerId(pk, nonce);
 }
 
-export circuit _transferOwnership(newOwnerCommitment: Bytes<32>): [] {
-  return ZOwnablePK__transferOwnership(newOwnerCommitment);
+export circuit _transferOwnership(newOwnerId: Bytes<32>): [] {
+  return ZOwnablePK__transferOwnership(newOwnerId);
 }

@@ -1,124 +1,109 @@
 // AccessControlledToken.compact
 // A fungible token with role-based minting and burning using AccessControl.
 //
-// PREREQUISITE: This file must be placed in a project where `compact-contracts`
-// has been cloned as a submodule and `npm install` (or `yarn`) has been run
-// inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
-// See: https://github.com/OpenZeppelin/compact-contracts
+// Uses the LOCAL modules under ../modules (no external submodule required).
 
-pragma language_version >= 0.22.0;
+pragma language_version >= 0.23;
 
 // =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+//  SECURE PATTERN — witness-derived identity
 // =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
-//
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
-//
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see references/applications.md for the rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
+//  Each instance holds a single 32-byte secret in private state. Caller identity
+//  is derived INSIDE the circuit from that secret via the `Identity` module's
+//  domain-separated `persistentHash` (`deriveUserPublicKey`), so a caller can
+//  only act as the identity they hold the secret for. `ownPublicKey()` is
+//  intentionally NOT used for authorization — it is prover-supplied and
+//  bypassable. At deploy the constructor grants `DEFAULT_ADMIN_ROLE` to the
+//  deployer's DERIVED user key, so only that secret holder can grant/revoke
+//  roles. Only the safe wrappers below (which compute the caller from the
+//  witness) are exported; the AccessControl module's identity-parameterized
+//  circuits are NOT re-exported, since that would let a caller pass an arbitrary
+//  identity and defeat the protection.
 // =============================================================================
 
 import CompactStandardLibrary;
-import "../modules/access/AccessControl"
-  prefix AccessControl_;
-import "../modules/token/FungibleToken"
-  prefix FungibleToken_;
+
+import "../modules/access/AccessControl" prefix AccessControl_;
+
+import "../modules/token/FungibleToken" prefix FungibleToken_;
+
+import "../modules/utils/Identity" prefix Identity_;
+
+// Re-export identity types and pure derivations for the off-chain TypeScript
+// layer. Prefixed imports bring names into scope WITH the prefix.
+export { Identity_UserSecretKey, Identity_UserPublicKey };
+
+export { Identity_deriveUserPublicKey };
+
+// Read-only views are safe to expose (they take derived keys, never authorize).
+export { FungibleToken_name,
+         FungibleToken_symbol,
+         FungibleToken_decimals,
+         FungibleToken_totalSupply,
+         FungibleToken_balanceOf,
+         FungibleToken_allowance };
+
+export { AccessControl_hasRole, AccessControl_getRoleAdmin };
 
 export sealed ledger MINTER_ROLE: Bytes<32>;
+
 export sealed ledger BURNER_ROLE: Bytes<32>;
 
-constructor(
-  name: Opaque<"string">,
-  symbol: Opaque<"string">,
-  decimals: Uint<8>,
-) {
+// The witness: each prover supplies their own 32-byte secret from private state.
+witness getUserSecret(): Identity_UserSecretKey;
+
+constructor(name: Opaque<"string">, symbol: Opaque<"string">, decimals: Uint<8>,) {
   FungibleToken_initialize(name, symbol, decimals);
   MINTER_ROLE = persistentHash<Bytes<32>>(pad(32, "MINTER_ROLE"));
   BURNER_ROLE = persistentHash<Bytes<32>>(pad(32, "BURNER_ROLE"));
-  // Grant deployer admin role — they can grant/revoke any role
+  // Grant the deployer the admin role under their DERIVED user key — they can
+  // grant/revoke any role. The derived key is the proven identity of whoever
+  // holds the deploy secret; no prover-supplied address is trusted.
   AccessControl__grantRole(
     AccessControl_DEFAULT_ADMIN_ROLE,
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey())
-  );
+    disclose(Identity_deriveUserPublicKey(getUserSecret()))
+    );
 }
 
-/** IFungibleTokenMetadata */
+/** IFungibleToken — identity-sensitive wrappers compute the caller from the witness */
 
-export circuit name(): Opaque<"string"> {
-  return FungibleToken_name();
+export circuit transfer(to: Identity_UserPublicKey, value: Uint<128>): Boolean {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_transfer(caller, to, value);
 }
 
-export circuit symbol(): Opaque<"string"> {
-  return FungibleToken_symbol();
+export circuit approve(spender: Identity_UserPublicKey, value: Uint<128>): Boolean {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_approve(caller, spender, value);
 }
 
-export circuit decimals(): Uint<8> {
-  return FungibleToken_decimals();
+/** Role management — admin only (gated inside AccessControl on the derived caller) */
+
+export circuit grantRole(roleId: Bytes<32>, account: Identity_UserPublicKey): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_grantRole(roleId, account, caller);
 }
 
-/** IFungibleToken */
-
-export circuit totalSupply(): Uint<128> {
-  return FungibleToken_totalSupply();
+export circuit revokeRole(roleId: Bytes<32>, account: Identity_UserPublicKey): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_revokeRole(roleId, account, caller);
 }
 
-export circuit balanceOf(
-  account: Either<ZswapCoinPublicKey, ContractAddress>
-): Uint<128> {
-  return FungibleToken_balanceOf(account);
+export circuit renounceRole(roleId: Bytes<32>): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_renounceRole(roleId, caller);
 }
 
-export circuit transfer(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
-  return FungibleToken_transfer(to, value);
-}
+/** Role-protected token operations */
 
-export circuit approve(
-  spender: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
-  return FungibleToken_approve(spender, value);
-}
-
-/** Role-protected operations */
-
-export circuit mint(
-  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  AccessControl_assertOnlyRole(MINTER_ROLE);
+export circuit mint(recipient: Identity_UserPublicKey, value: Uint<128>): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_assertOnlyRole(MINTER_ROLE, caller);
   FungibleToken__mint(recipient, value);
 }
 
-export circuit burn(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  AccessControl_assertOnlyRole(BURNER_ROLE);
+export circuit burn(account: Identity_UserPublicKey, value: Uint<128>): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_assertOnlyRole(BURNER_ROLE, caller);
   FungibleToken__burn(account, value);
 }

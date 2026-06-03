@@ -1,50 +1,62 @@
 // SPDX-License-Identifier: MIT
+//
+// SECURE PATTERN — witness-derived identity.
+// Test harness exposing the reworked Ownable module. The owner is an
+// AdminPublicKey pinned at deploy from the deployer's witness secret;
+// identity-sensitive circuits take the caller's DERIVED admin key (computed here
+// from `getUserSecret()`), never `ownPublicKey()`.
 
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 import CompactStandardLibrary;
 
 import "../../Ownable" prefix Ownable_;
 
-export { ZswapCoinPublicKey, ContractAddress, Either, Maybe };
+import "../../../utils/Identity" prefix Identity_;
+
+export { Identity_UserSecretKey, Identity_AdminPublicKey };
+
+export { Identity_deriveAdminPublicKey };
+
+export { Ownable_owner };
+
+witness getUserSecret(): Identity_UserSecretKey;
 
 /**
  * @description `isInit` is a param for testing.
  *
- * If `isInit` is false, the constructor will not initialize the contract.
- * This behavior is to test that circuits are not callable unless the
- * contract is initialized.
-*/
-constructor(initialOwner: Either<ZswapCoinPublicKey, ContractAddress>, isInit: Boolean) {
+ * If `isInit` is false, the constructor will not initialize the contract, so we
+ * can test that circuits are not callable unless the contract is initialized.
+ * When `isInit` is true, ownership is pinned to the deployer's DERIVED admin key.
+ */
+constructor(isInit: Boolean) {
   if (disclose(isInit)) {
-    Ownable_initialize(initialOwner);
+    Ownable_initialize(disclose(Identity_deriveAdminPublicKey(getUserSecret())));
   }
 }
 
-export circuit owner(): Either<ZswapCoinPublicKey, ContractAddress> {
+export circuit owner(): Identity_AdminPublicKey {
   return Ownable_owner();
 }
 
-export circuit transferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  return Ownable_transferOwnership(newOwner);
-}
-
-export circuit _unsafeTransferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  return Ownable__unsafeTransferOwnership(newOwner);
+// Transfer ownership to `newOwner`. Caller is derived from the witness secret.
+export circuit transferOwnership(newOwner: Identity_AdminPublicKey): [] {
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_transferOwnership(caller, newOwner);
 }
 
 export circuit renounceOwnership(): [] {
-  return Ownable_renounceOwnership();
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_renounceOwnership(caller);
 }
 
+// Asserts the witness-derived caller is the current owner.
 export circuit assertOnlyOwner(): [] {
-  return Ownable_assertOnlyOwner();
+  const caller = disclose(Identity_deriveAdminPublicKey(getUserSecret()));
+  Ownable_assertOnlyOwner(caller);
 }
 
-export circuit _transferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  return Ownable__transferOwnership(newOwner);
-}
-
-export circuit _unsafeUncheckedTransferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  return Ownable__unsafeUncheckedTransferOwnership(newOwner);
+// Internal, unchecked ownership transfer (no caller gate) — exposed for tests.
+export circuit _transferOwnership(newOwner: Identity_AdminPublicKey): [] {
+  Ownable__transferOwnership(newOwner);
 }

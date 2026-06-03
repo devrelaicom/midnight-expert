@@ -1,22 +1,46 @@
 // SPDX-License-Identifier: MIT
+//
+// SECURE PATTERN — witness-derived identity.
+// Test harness exposing the reworked AccessControl module. Roles are keyed by a
+// DERIVED UserPublicKey; identity-sensitive circuits take the caller's derived
+// key (computed here from `getUserSecret()`), never `ownPublicKey()`.
 
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 import CompactStandardLibrary;
 
 import "../../AccessControl" prefix AccessControl_;
 
-export { ZswapCoinPublicKey, ContractAddress, Either, Maybe, AccessControl_DEFAULT_ADMIN_ROLE };
+import "../../../utils/Identity" prefix Identity_;
 
-export circuit hasRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): Boolean {
+export { Identity_UserSecretKey, Identity_UserPublicKey };
+
+export { Identity_deriveUserPublicKey };
+
+export { AccessControl_DEFAULT_ADMIN_ROLE };
+
+witness getUserSecret(): Identity_UserSecretKey;
+
+// Grant the deployer DEFAULT_ADMIN_ROLE under their derived key (matches the
+// composing-contract pattern), so admin-gated circuits can be exercised.
+constructor() {
+  AccessControl__grantRole(
+    AccessControl_DEFAULT_ADMIN_ROLE,
+    disclose(Identity_deriveUserPublicKey(getUserSecret()))
+    );
+}
+
+export circuit hasRole(roleId: Bytes<32>, account: Identity_UserPublicKey): Boolean {
   return AccessControl_hasRole(roleId, account);
 }
 
+// Asserts the witness-derived caller has `roleId`.
 export circuit assertOnlyRole(roleId: Bytes<32>): [] {
-  AccessControl_assertOnlyRole(roleId);
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_assertOnlyRole(roleId, caller);
 }
 
-export circuit _checkRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): [] {
+export circuit _checkRole(roleId: Bytes<32>, account: Identity_UserPublicKey): [] {
   AccessControl__checkRole(roleId, account);
 }
 
@@ -24,30 +48,32 @@ export circuit getRoleAdmin(roleId: Bytes<32>): Bytes<32> {
   return AccessControl_getRoleAdmin(roleId);
 }
 
-export circuit grantRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  AccessControl_grantRole(roleId, account);
+// Grant `roleId` to `account`. Caller (admin) derived from the witness secret.
+export circuit grantRole(roleId: Bytes<32>, account: Identity_UserPublicKey): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_grantRole(roleId, account, caller);
 }
 
-export circuit revokeRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  AccessControl_revokeRole(roleId, account);
+// Revoke `roleId` from `account`. Caller (admin) derived from the witness secret.
+export circuit revokeRole(roleId: Bytes<32>, account: Identity_UserPublicKey): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_revokeRole(roleId, account, caller);
 }
 
-export circuit renounceRole(roleId: Bytes<32>, callerConfirmation: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-  AccessControl_renounceRole(roleId, callerConfirmation);
+// Renounce `roleId` for the witness-derived caller.
+export circuit renounceRole(roleId: Bytes<32>): [] {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  AccessControl_renounceRole(roleId, caller);
 }
 
 export circuit _setRoleAdmin(roleId: Bytes<32>, adminRole: Bytes<32>): [] {
   AccessControl__setRoleAdmin(roleId, adminRole);
 }
 
-export circuit _grantRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): Boolean {
+export circuit _grantRole(roleId: Bytes<32>, account: Identity_UserPublicKey): Boolean {
   return AccessControl__grantRole(roleId, account);
 }
 
-export circuit _unsafeGrantRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): Boolean {
-  return AccessControl__unsafeGrantRole(roleId, account);
-}
-
-export circuit _revokeRole(roleId: Bytes<32>, account: Either<ZswapCoinPublicKey, ContractAddress>): Boolean {
+export circuit _revokeRole(roleId: Bytes<32>, account: Identity_UserPublicKey): Boolean {
   return AccessControl__revokeRole(roleId, account);
 }

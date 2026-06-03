@@ -1,26 +1,30 @@
 // SPDX-License-Identifier: MIT
+//
+// SECURE PATTERN — witness-derived identity.
+// Test harness exposing the reworked FungibleToken module. Accounts are keyed by
+// a DERIVED UserPublicKey; identity-sensitive circuits take the caller's derived
+// key (computed here from `getUserSecret()`), never `ownPublicKey()`.
 
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 import CompactStandardLibrary;
 
 import "../../FungibleToken" prefix FungibleToken_;
 
-export { ZswapCoinPublicKey, ContractAddress, Either, Maybe };
+import "../../../utils/Identity" prefix Identity_;
+
+export { Identity_UserSecretKey, Identity_UserPublicKey };
+
+export { Identity_deriveUserPublicKey };
+
+witness getUserSecret(): Identity_UserSecretKey;
 
 /**
  * @description `init` is a param for testing.
- * If `init` is true, initialize the contract with the
- * _name`, `_symbol`, and `_decimals`.
- * Otherwise, the contract will not initialize and we can test
- * the contract when it is not initialized properly.
-*/
-constructor(
-  _name: Opaque<"string">,
-  _symbol: Opaque<"string">,
-  _decimals:Uint<8>,
-  init: Boolean
-) {
+ * If `init` is true, initialize the contract; otherwise leave it uninitialized
+ * so we can test guards on the uninitialized state.
+ */
+constructor(_name: Opaque<"string">, _symbol: Opaque<"string">, _decimals: Uint<8>, init: Boolean) {
   if (disclose(init)) {
     FungibleToken_initialize(_name, _symbol, _decimals);
   }
@@ -42,94 +46,65 @@ export circuit totalSupply(): Uint<128> {
   return FungibleToken_totalSupply();
 }
 
-export circuit balanceOf(account: Either<ZswapCoinPublicKey, ContractAddress>): Uint<128> {
+export circuit balanceOf(account: Identity_UserPublicKey): Uint<128> {
   return FungibleToken_balanceOf(account);
 }
 
-export circuit allowance(
-  owner: Either<ZswapCoinPublicKey, ContractAddress>,
-  spender: Either<ZswapCoinPublicKey, ContractAddress>
-): Uint<128> {
+export circuit allowance(owner: Identity_UserPublicKey, spender: Identity_UserPublicKey): Uint<128> {
   return FungibleToken_allowance(owner, spender);
 }
 
-export circuit transfer(to: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): Boolean {
-  return FungibleToken_transfer(to, value);
+// Transfer YOUR tokens to `to`. Caller derived from the witness secret.
+export circuit transfer(to: Identity_UserPublicKey, value: Uint<128>): Boolean {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_transfer(caller, to, value);
 }
 
-export circuit _unsafeTransfer(to: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): Boolean {
-  return FungibleToken__unsafeTransfer(to, value);
-}
-
+// Spend `fromAccount`'s tokens via allowance. Caller (spender) derived from secret.
 export circuit transferFrom(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
-  return FungibleToken_transferFrom(fromAddress, to, value);
+                 fromAccount: Identity_UserPublicKey,
+                 to: Identity_UserPublicKey,
+                 value: Uint<128>
+                 ): Boolean {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_transferFrom(caller, fromAccount, to, value);
 }
 
-export circuit _unsafeTransferFrom(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): Boolean {
-  return FungibleToken__unsafeTransferFrom(fromAddress, to, value);
+// Approve `spender` over YOUR tokens. Caller (owner) derived from the witness secret.
+export circuit approve(spender: Identity_UserPublicKey, value: Uint<128>): Boolean {
+  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+  return FungibleToken_approve(caller, spender, value);
 }
 
-export circuit approve(spender: Either<ZswapCoinPublicKey, ContractAddress>, value: Uint<128>): Boolean {
-  return FungibleToken_approve(spender, value);
-}
-
+// Internal circuits (no caller gate) — exposed for tests.
 export circuit _approve(
-  owner: Either<ZswapCoinPublicKey, ContractAddress>,
-  spender: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__approve(owner, spender, value);
+                 owner: Identity_UserPublicKey,
+                 spender: Identity_UserPublicKey,
+                 value: Uint<128>
+                 ): [] {
+  FungibleToken__approve(owner, spender, value);
 }
 
 export circuit _transfer(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__transfer(fromAddress, to, value);
+                 fromAccount: Identity_UserPublicKey,
+                 to: Identity_UserPublicKey,
+                 value: Uint<128>
+                 ): [] {
+  FungibleToken__transfer(fromAccount, to, value);
 }
 
-export circuit _unsafeUncheckedTransfer(
-  fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__unsafeUncheckedTransfer(fromAddress, to, value);
+export circuit _mint(account: Identity_UserPublicKey, value: Uint<128>): [] {
+  FungibleToken__mint(account, value);
 }
 
-export circuit _mint(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__mint(account, value);
-}
-
-export circuit _unsafeMint(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__unsafeMint(account, value);
-}
-
-export circuit _burn(
-  account: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__burn(account, value);
+export circuit _burn(account: Identity_UserPublicKey, value: Uint<128>): [] {
+  FungibleToken__burn(account, value);
 }
 
 export circuit _spendAllowance(
-  owner: Either<ZswapCoinPublicKey, ContractAddress>,
-  spender: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>
-): [] {
-  return FungibleToken__spendAllowance(owner, spender, value);
+                 owner: Identity_UserPublicKey,
+                 spender: Identity_UserPublicKey,
+                 value: Uint<128>
+                 ): [] {
+  FungibleToken__spendAllowance(owner, spender, value);
 }

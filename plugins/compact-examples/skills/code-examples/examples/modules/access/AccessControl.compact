@@ -1,38 +1,19 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Compact Contracts v0.0.1-alpha.1 (access/AccessControl.compact)
 
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 // =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+//  SECURE PATTERN — witness-derived identity
 // =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
-//
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
-//
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see references/applications.md for the rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
+//  Roles are keyed by a `UserPublicKey` DERIVED inside the ZK circuit from a
+//  private witness secret (see the `Identity` module). `assertOnlyRole` takes
+//  the caller's already-derived `UserPublicKey` and checks role membership
+//  against it — it NEVER calls `ownPublicKey()`, which is prover-supplied and
+//  bypassable for authorization. `grantRole` / `revokeRole` gate on the admin
+//  role of the derived caller. The top-level contract computes the caller from
+//  the witness and is the only thing that may call these circuits; the deployer
+//  is granted `DEFAULT_ADMIN_ROLE` under their DERIVED key in the constructor.
 // =============================================================================
 
 /**
@@ -47,7 +28,7 @@ pragma language_version >= 0.22;
  *
  * ```typescript
  * import CompactStandardLibrary;
- * import "./node_modules/@openzeppelin-compact/accessControl/src/AccessControl" prefix AccessControl_;
+ * import "../modules/access/AccessControl" prefix AccessControl_;
  *
  * export sealed ledger MY_ROLE: Bytes<32>;
  *
@@ -56,11 +37,13 @@ pragma language_version >= 0.22;
  * }
  * ```
  *
- * To restrict access to a circuit, use {assertOnlyRole}:
+ * To restrict access to a circuit, derive the caller from the witness secret in
+ * the top-level contract and pass it to {assertOnlyRole}:
  *
  * ```typescript
  * circuit foo(): [] {
- *  assertOnlyRole(MY_ROLE);
+ *  const caller = disclose(Identity_deriveUserPublicKey(getUserSecret()));
+ *  AccessControl_assertOnlyRole(MY_ROLE, caller);
  *  ...
  * }
  * ```
@@ -72,29 +55,17 @@ pragma language_version >= 0.22;
  * By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means
  * that only accounts with this role will be able to grant or revoke other
  * roles. More complex role relationships can be created by using
- * {_setRoleAdmin}. To set a custom `DEFAULT_ADMIN_ROLE`, implement the `Initializable`
- * module and set `DEFAULT_ADMIN_ROLE` in the `initialize()` circuit.
+ * {_setRoleAdmin}.
  *
  * WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to
  * grant and revoke this role. Extra precautions should be taken to secure
  * accounts that have been granted it.
  *
- * @notice Roles can only be granted to ZswapCoinPublicKeys
- * through the main role approval circuits (`grantRole` and `_grantRole`).
- * In other words, role approvals to contract addresses are disallowed through these
- * circuits.
- * This is because Compact currently does not support contract-to-contract calls which means
- * if a contract is granted a role, the contract cannot directly call the protected
- * circuit.
- *
- * @notice This module does offer an experimental circuit that allows roles to be granted
- * to contract addresses (`_unsafeGrantRole`).
- * Note that the circuit name is very explicit ("unsafe") with this experimental circuit.
- * Until contract-to-contract calls are supported,
- * there is no direct way for a contract to call protected circuits.
- *
- * @notice The unsafe circuits are planned to become deprecated once contract-to-contract calls
- * are supported.
+ * @notice Accounts are identified by a witness-derived `UserPublicKey` rather
+ * than an `Either<ZswapCoinPublicKey, ContractAddress>`. Because a
+ * `UserPublicKey` is a derived 32-byte value (not a routable Zswap/contract
+ * address), the contract-vs-user `_unsafe*` machinery of the address-based
+ * design does not apply here and has been removed.
  *
  * @notice Missing Features and Improvements:
  *
@@ -103,42 +74,31 @@ pragma language_version >= 0.22;
  */
 module AccessControl {
   import CompactStandardLibrary;
-  import "../utils/Utils" prefix Utils_;
+  import "../utils/Identity" prefix Identity_;
 
   /**
    * @description Mapping from a role identifier -> account -> its permissions.
-   * @type {Bytes<32>} roleId - A hash representing a role identifier.
-   * @type {Map<Either<ZswapCoinPublicKey, ContractAddress>, Boolean>} hasRole - A mapping from an account to a
-   * Boolean determining if the account is approved for a role.
-   * @type {Map<roleId, hasRole>}
-   * @type {Map<Bytes<32>, Map<Either<ZswapCoinPublicKey, ContractAddress>, Boolean>} _operatorRoles
-   */
-  export ledger _operatorRoles: Map<Bytes<32>,
-                                    Map<Either<ZswapCoinPublicKey, ContractAddress>, Boolean>>;
+   * @type {Map<Bytes<32>, Map<UserPublicKey, Boolean>>} _operatorRoles
+   */
+  export ledger _operatorRoles: Map<Bytes<32>, Map<Identity_UserPublicKey, Boolean>>;
 
   /**
    * @description Mapping from a role identifier to an admin role identifier.
-   * @type {Bytes<32>} roleId - A hash representing a role identifier.
-   * @type {Bytes<32>} adminId - A hash representing an admin identifier.
-   * @type {Map<roleId, adminId>}
    * @type {Map<Bytes<32>, Bytes<32>>} _adminRoles
-   */
+   */
   export ledger _adminRoles: Map<Bytes<32>, Bytes<32>>;
 
   export ledger DEFAULT_ADMIN_ROLE: Bytes<32>;
 
   /**
    * @description Returns `true` if `account` has been granted `roleId`.
-   *
-   * @circuitInfo k=10, rows=487
+   * Takes a derived `UserPublicKey` only — no secret — so it is safe as a view.
    *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - The account to query.
+   * @param {UserPublicKey} account - The derived account key to query.
    * @return {Boolean} - Whether the account has the specified role.
-    */
-  export circuit hasRole(roleId: Bytes<32>,
-                         account: Either<ZswapCoinPublicKey, ContractAddress>
-                         ): Boolean {
+    */
+  export circuit hasRole(roleId: Bytes<32>, account: Identity_UserPublicKey): Boolean {
     if (_operatorRoles.member(disclose(roleId)) &&
         _operatorRoles.lookup(roleId).member(disclose(account))) {
       return _operatorRoles.lookup(roleId).lookup(disclose(account));
@@ -148,40 +108,36 @@ module AccessControl {
   }
 
   /**
-   * @description Reverts if `ownPublicKey()` is missing `roleId`.
+   * @description Reverts if the derived `caller` is missing `roleId`.
    *
-   * @circuitInfo k=10, rows=345
+   * @dev `caller` is the DERIVED identity of the transaction author, computed by
+   * the top-level contract from the witness secret. Authorization holds because
+   * only the secret holder can produce a `caller` that has been granted a role.
    *
    * Requirements:
    *
-   * - The caller must have `roleId`.
-   * - The caller must not be a ContractAddress
+   * - `caller` must have `roleId`.
    *
    * @param {Bytes<32>} roleId - The role identifier.
+   * @param {UserPublicKey} caller - The derived identity of the transaction author.
    * @return {[]} - Empty tuple.
    */
-  export circuit assertOnlyRole(roleId: Bytes<32>): [] {
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    _checkRole(roleId, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+  export circuit assertOnlyRole(roleId: Bytes<32>, caller: Identity_UserPublicKey): [] {
+    _checkRole(roleId, caller);
   }
 
   /**
    * @description Reverts if `account` is missing `roleId`.
-   *
-   * @circuitInfo k=10, rows=467
    *
    * Requirements:
    *
    * - `account` must have `roleId`.
    *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - The account to query.
+   * @param {UserPublicKey} account - The derived account key to query.
    * @return {[]} - Empty tuple.
    */
-  export circuit _checkRole(
-                   roleId: Bytes<32>,
-                   account: Either<ZswapCoinPublicKey, ContractAddress>
-                   ): [] {
+  export circuit _checkRole(roleId: Bytes<32>, account: Identity_UserPublicKey): [] {
     assert(hasRole(roleId, account), "AccessControl: unauthorized account");
   }
 
@@ -189,9 +145,7 @@ module AccessControl {
    * @description Returns the admin role that controls `roleId` or
    * a byte array with all zero bytes if `roleId` doesn't exist. See {grantRole} and {revokeRole}.
    *
-   * To change a role’s admin use {_setRoleAdmin}.
-   *
-   * @circuitInfo k=10, rows=207
+   * To change a role's admin use {_setRoleAdmin}.
    *
    * @param {Bytes<32>} roleId - The role identifier.
    * @return {Bytes<32>} roleAdmin - The admin role that controls `roleId`.
@@ -206,43 +160,48 @@ module AccessControl {
   /**
    * @description Grants `roleId` to `account`.
    *
-   * @circuitInfo k=10, rows=994
+   * @dev `caller` is the DERIVED identity of the transaction author; it must
+   * hold `roleId`'s admin role.
    *
    * Requirements:
    *
-   * - `account` must not be a ContractAddress.
-   * - The caller must have `roleId`'s admin role.
+   * - `caller` must have `roleId`'s admin role.
    *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - A ZswapCoinPublicKey or ContractAddress.
+   * @param {UserPublicKey} account - The derived key to grant the role to.
+   * @param {UserPublicKey} caller - The derived identity of the transaction author.
    * @return {[]} - Empty tuple.
    */
   export circuit grantRole(
                    roleId: Bytes<32>,
-                   account: Either<ZswapCoinPublicKey, ContractAddress>
+                   account: Identity_UserPublicKey,
+                   caller: Identity_UserPublicKey
                    ): [] {
-    assertOnlyRole(getRoleAdmin(roleId));
+    assertOnlyRole(getRoleAdmin(roleId), caller);
     _grantRole(roleId, account);
   }
 
   /**
    * @description Revokes `roleId` from `account`.
    *
-   * @circuitInfo k=10, rows=827
+   * @dev `caller` is the DERIVED identity of the transaction author; it must
+   * hold `roleId`'s admin role.
    *
    * Requirements:
    *
-   * - The caller must have `roleId`'s admin role.
+   * - `caller` must have `roleId`'s admin role.
    *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - A ZswapCoinPublicKey or ContractAddress.
+   * @param {UserPublicKey} account - The derived key to revoke the role from.
+   * @param {UserPublicKey} caller - The derived identity of the transaction author.
    * @return {[]} - Empty tuple.
    */
   export circuit revokeRole(
                    roleId: Bytes<32>,
-                   account: Either<ZswapCoinPublicKey, ContractAddress>
+                   account: Identity_UserPublicKey,
+                   caller: Identity_UserPublicKey
                    ): [] {
-    assertOnlyRole(getRoleAdmin(roleId));
+    assertOnlyRole(getRoleAdmin(roleId), caller);
     _revokeRole(roleId, account);
   }
 
@@ -251,35 +210,23 @@ module AccessControl {
    *
    * @notice Roles are often managed via {grantRole} and {revokeRole}: this circuit's
    * purpose is to provide a mechanism for accounts to lose their privileges
-   * if they are compromised (such as when a trusted device is misplaced).
+   * if they are compromised.
    *
-   * @circuitInfo k=10, rows=640
-   *
-   * Requirements:
-   *
-   * - The caller must be `callerConfirmation`.
-   * - The caller must not be a `ContractAddress`.
+   * @dev `caller` is the DERIVED identity of the transaction author. Because the
+   * caller is derived from the witness secret, the `callerConfirmation` of the
+   * address-based design is unnecessary — only the secret holder can produce
+   * their own derived key.
    *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} callerConfirmation - A ZswapCoinPublicKey or ContractAddress.
+   * @param {UserPublicKey} caller - The derived identity of the transaction author.
    * @return {[]} - Empty tuple.
    */
-  export circuit renounceRole(
-                   roleId: Bytes<32>,
-                   callerConfirmation: Either<ZswapCoinPublicKey, ContractAddress>
-                   ): [] {
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    assert(callerConfirmation == left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()),
-           "AccessControl: bad confirmation"
-           );
-
-    _revokeRole(roleId, callerConfirmation);
+  export circuit renounceRole(roleId: Bytes<32>, caller: Identity_UserPublicKey): [] {
+    _revokeRole(roleId, caller);
   }
 
   /**
    * @description Sets `adminRole` as `roleId`'s admin role.
-   *
-   * @circuitInfo k=10, rows=209
    *
    * @param {Bytes<32>} roleId - The role identifier.
    * @param {Bytes<32>} adminRole - The admin role identifier.
@@ -293,52 +240,17 @@ module AccessControl {
    * @description Attempts to grant `roleId` to `account` and returns a boolean indicating if `roleId` was granted.
    * Internal circuit without access restriction.
    *
-   * @circuitInfo k=10, rows=734
-   *
-   * Requirements:
-   *
-   * - `account` must not be a ContractAddress.
-   *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - A ZswapCoinPublicKey or ContractAddress.
+   * @param {UserPublicKey} account - The derived account key.
    * @return {Boolean} roleGranted - A boolean indicating if `roleId` was granted.
    */
-  export circuit _grantRole(
-                   roleId: Bytes<32>,
-                   account: Either<ZswapCoinPublicKey, ContractAddress>
-                   ): Boolean {
-    assert(!Utils_isContractAddress(account), "AccessControl: unsafe role approval");
-    return _unsafeGrantRole(roleId, account);
-  }
-
-  /**
-   * @description Attempts to grant `roleId` to `account` and returns a boolean indicating if `roleId` was granted.
-   * Internal circuit without access restriction. It does NOT check if the role is granted to a ContractAddress.
-   *
-   * @circuitInfo k=10, rows=733
-   *
-   * @notice External smart contracts cannot call the token contract at this time, so granting a role to an ContractAddress may
-   * render a circuit permanently inaccessible.
-   *
-   * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} account - A ZswapCoinPublicKey or ContractAddress.
-   * @return {Boolean} roleGranted - A boolean indicating if `role` was granted.
-   */
-  export circuit _unsafeGrantRole(
-                   roleId: Bytes<32>,
-                   account: Either<ZswapCoinPublicKey, ContractAddress>
-                   ): Boolean {
+  export circuit _grantRole(roleId: Bytes<32>, account: Identity_UserPublicKey): Boolean {
     if (hasRole(roleId, account)) {
       return false;
     }
 
     if (!_operatorRoles.member(disclose(roleId))) {
-      _operatorRoles.insert(
-        disclose(roleId),
-        default<Map<Either<ZswapCoinPublicKey, ContractAddress>, Boolean>>
-        );
-      _operatorRoles.lookup(roleId).insert(disclose(account), true);
-      return true;
+      _operatorRoles.insert(disclose(roleId), default<Map<Identity_UserPublicKey, Boolean>>);
     }
 
     _operatorRoles.lookup(roleId).insert(disclose(account), true);
@@ -349,16 +261,11 @@ module AccessControl {
    * @description Attempts to revoke `roleId` from `account` and returns a boolean indicating if `roleId` was revoked.
    * Internal circuit without access restriction.
    *
-   * @circuitInfo k=10, rows=563
-   *
    * @param {Bytes<32>} roleId - The role identifier.
-   * @param {Bytes<32>} adminRole - The admin role identifier.
+   * @param {UserPublicKey} account - The derived account key.
    * @return {Boolean} roleRevoked - A boolean indicating if `roleId` was revoked.
    */
-  export circuit _revokeRole(
-                   roleId: Bytes<32>,
-                   account: Either<ZswapCoinPublicKey, ContractAddress>
-                   ): Boolean {
+  export circuit _revokeRole(roleId: Bytes<32>, account: Identity_UserPublicKey): Boolean {
     if (!hasRole(roleId, account)) {
       return false;
     }
