@@ -20,7 +20,6 @@ everywhere you need a fixture of a specific type.
 import {
   sampleCoinPublicKey,
   sampleContractAddress,
-  sampleRawTokenType,
   sampleSigningKey,
   sampleEncryptionPublicKey,
   sampleIntentHash,
@@ -31,7 +30,6 @@ import {
 // GOOD: Use sample functions for valid test data
 const pk = sampleCoinPublicKey();
 const contractAddr = sampleContractAddress();
-const rawType = sampleRawTokenType();
 const signingKey = sampleSigningKey();
 const encPk = sampleEncryptionPublicKey();
 const intentHash = sampleIntentHash();
@@ -156,21 +154,27 @@ import {
   unshieldedToken,
 } from '@midnight-ntwrk/ledger-v8';
 
-it('should distinguish token types', () => {
-  const night = nativeToken();
-  const fee = feeToken();
-  const shielded = shieldedToken();
-  const unshielded = unshieldedToken();
-
-  expect(night).not.toBe(fee);
-  expect(shielded).not.toBe(unshielded);
-  expect(night).not.toBe(shielded);
+it('should have the correct discriminant tags', () => {
+  // Each call returns a fresh object — use .tag to identify the token kind.
+  expect(nativeToken().tag).toBe('unshielded');   // NIGHT — UnshieldedTokenType
+  expect(feeToken().tag).toBe('dust');             // DUST  — DustTokenType
+  expect(shieldedToken().tag).toBe('shielded');    // default ShieldedTokenType
+  expect(unshieldedToken().tag).toBe('unshielded'); // default UnshieldedTokenType
 });
 
-it('nativeToken should always return the same value', () => {
-  const night1 = nativeToken();
-  const night2 = nativeToken();
-  expect(night1).toBe(night2);
+it('nativeToken should return the same value across calls', () => {
+  // Use toStrictEqual (deep equality) — each call returns a fresh object,
+  // so toBe (reference equality) would fail.
+  expect(nativeToken()).toStrictEqual(nativeToken());
+});
+
+it('should distinguish token kinds by tag', () => {
+  // Compare across DIFFERENT token kinds using .tag.
+  // Note: nativeToken() and unshieldedToken() are deep-equal — both have
+  // tag 'unshielded' with an all-zeros raw value — so don't assert they differ.
+  expect(shieldedToken().tag).not.toBe(nativeToken().tag);
+  expect(feeToken().tag).not.toBe(nativeToken().tag);
+  expect(feeToken().tag).not.toBe(shieldedToken().tag);
 });
 ```
 

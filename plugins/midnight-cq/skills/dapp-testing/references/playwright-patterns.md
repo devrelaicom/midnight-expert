@@ -151,8 +151,9 @@ export const test = base.extend({
   page: async ({ page }, use) => {
     await page.addInitScript(() => {
       // Stub the Midnight DApp Connector that the DApp reads on load.
-      // window.midnight is a record keyed by rdns; each value is an InitialAPI
-      // whose connect(networkId) resolves to a ConnectedAPI.
+      // window.midnight is a record keyed by install UUID (per CAIP-372);
+      // rdns is a field *inside* each InitialAPI value, not the key.
+      // connect(networkId) resolves to a ConnectedAPI.
       (window as any).midnight = {
         'com.test.wallet': {
           rdns: 'com.test.wallet',
