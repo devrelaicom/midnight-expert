@@ -2,13 +2,14 @@
 name: midnight-dapp-dev:dapp-connector
 description: >-
   This skill should be used when the user asks about connecting a browser-based
-  DApp to the Midnight Lace wallet extension using the DApp Connector API. Covers
-  the full connection lifecycle (InitialAPI, ConnectedAPI, WalletConnectedAPI),
-  wallet detection via window.midnight, error handling with DAppConnectorAPIError,
-  React 19.x and Next.js 16.x wallet integration patterns, building
-  MidnightProviders from the DApp Connector, FetchZkConfigProvider,
-  balanceUnsealedTransaction, getConfiguration, shielded and unshielded addresses,
-  Lace setup and funding, and wallet-delegated proving.
+  DApp to a Midnight wallet extension (Lace or any other Midnight wallet) using
+  the DApp Connector API. Covers the full connection lifecycle (InitialAPI,
+  ConnectedAPI, WalletConnectedAPI), multi-wallet detection and enumeration via
+  window.midnight, error handling with DAppConnectorAPIError, React 19.x and
+  Next.js 16.x wallet integration patterns, building MidnightProviders from the
+  DApp Connector, FetchZkConfigProvider, balanceUnsealedTransaction,
+  getConfiguration, shielded and unshielded addresses, Lace setup and funding,
+  and wallet-delegated proving.
 version: 0.1.0
 ---
 
@@ -19,22 +20,27 @@ This skill covers the Midnight DApp Connector API for browser-based wallet integ
 ## Connection Lifecycle
 
 ```
-window.midnight.mnLace  ->  InitialAPI.connect(networkId)  ->  ConnectedAPI
-     (injected)                                                (WalletConnectedAPI & HintUsage)
+window.midnight[walletId]  ->  InitialAPI.connect(networkId)  ->  ConnectedAPI
+   (injected per wallet)                                         (WalletConnectedAPI & HintUsage)
 ```
 
-1. **Detect** -- Check `window.midnight?.mnLace` for the injected wallet object. For TypeScript window augmentation, see `references/connector-api-types.md`.
+1. **Detect** -- Enumerate `Object.values(window.midnight)` and match by `name`/`rdns`. Each wallet installs its `InitialAPI` under its own key (a UUID — the API is CAIP-372-compatible), so do not assume a fixed key. Lace also exposes a convenience alias at `window.midnight.mnLace`, but relying on it alone misses other wallets. See the `findWallets()` helper and window augmentation in `references/connector-api-types.md`.
 2. **Connect** -- Call `connect(networkId)` with the target network (`"undeployed"`, `"preview"`, or `"preprod"`)
 3. **Interact** -- Use the returned `ConnectedAPI` for addresses, balances, transfers, and proving
 
 ## InitialAPI
 
-The wallet extension injects an `InitialAPI` object at `window.midnight.{walletId}`. For the Lace wallet, the identifier is `mnLace`:
+Each wallet extension injects an `InitialAPI` object under its own key in `window.midnight` — a per-wallet UUID, since the API is CAIP-372-compatible. Discover wallets by enumerating and matching on `name`/`rdns`, not by assuming a key. Lace also installs a convenience alias at `window.midnight.mnLace` (Lace-specific, not part of the normative spec):
 
 ```typescript
 import type { InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
 
-const wallet: InitialAPI | undefined = window.midnight?.mnLace;
+// Robust: enumerate every injected wallet (see findWallets() in references/connector-api-types.md)
+const wallets: InitialAPI[] = Object.values(window.midnight ?? {}).filter(
+  (w): w is InitialAPI => w != null && typeof w.connect === "function",
+);
+// Then match by rdns/name or present a wallet picker. Lace-only shortcut:
+// const wallet = window.midnight?.mnLace;
 ```
 
 | Property | Type | Description |
@@ -59,7 +65,7 @@ type ConnectedAPI = WalletConnectedAPI & HintUsage;
 
 ```typescript
 interface HintUsage {
-  hintUsage(methodNames: string[]): void;
+  hintUsage(methodNames: Array<keyof WalletConnectedAPI>): Promise<void>;
 }
 ```
 
@@ -220,12 +226,14 @@ export function useWalletConnection() {
   const connect = useCallback(async (networkId: string) => {
     setState((prev) => ({ ...prev, isConnecting: true, error: null }));
 
-    const wallet: InitialAPI | undefined = window.midnight?.mnLace;
+    const wallet: InitialAPI | undefined = Object.values(
+      window.midnight ?? {},
+    ).find((w): w is InitialAPI => w != null && typeof w.connect === "function");
     if (!wallet) {
       setState((prev) => ({
         ...prev,
         isConnecting: false,
-        error: "Lace wallet extension not found. Install it from the Chrome Web Store.",
+        error: "No Midnight wallet extension found. Install a Midnight wallet (e.g. Lace) to continue.",
       }));
       return;
     }
@@ -303,15 +311,19 @@ function WalletDetector() {
   const [walletAvailable, setWalletAvailable] = useState(false);
 
   useEffect(() => {
-    // window.midnight is only available in the browser
-    setWalletAvailable(window.midnight?.mnLace !== undefined);
+    // window.midnight is only available in the browser; enumerate injected wallets
+    setWalletAvailable(
+      Object.values(window.midnight ?? {}).some(
+        (w) => w != null && typeof w.connect === "function",
+      ),
+    );
   }, []);
 
   if (!walletAvailable) {
-    return <p>Install the Lace wallet extension to continue.</p>;
+    return <p>Install a Midnight wallet (e.g. Lace) to continue.</p>;
   }
 
-  return <p>Lace wallet detected.</p>;
+  return <p>Midnight wallet detected.</p>;
 }
 ```
 

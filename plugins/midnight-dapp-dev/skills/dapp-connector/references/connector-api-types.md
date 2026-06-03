@@ -46,10 +46,11 @@ type ConnectedAPI = WalletConnectedAPI & HintUsage;
 interface HintUsage {
   /**
    * Pre-declare methods the DApp intends to use.
-   * Allows the wallet to batch permission prompts.
-   * @param methodNames - Array of WalletConnectedAPI method names
+   * Allows the wallet to batch permission prompts. The wallet may resolve the
+   * returned promise only after the user has granted the hinted permissions.
+   * @param methodNames - WalletConnectedAPI method names
    */
-  hintUsage(methodNames: string[]): void;
+  hintUsage(methodNames: Array<keyof WalletConnectedAPI>): Promise<void>;
 }
 ```
 
@@ -111,50 +112,83 @@ interface WalletConnectedAPI {
   getTxHistory(page: number, size: number): Promise<HistoryEntry[]>;
 
   /**
-   * Create a balanced transfer transaction.
-   * @param outputs - Transfer output specifications
+   * Initialize a transfer transaction with the desired outputs. The wallet pays
+   * fees by default (`payFees: true`).
+   *
+   * The returned `tx` is a SERIALIZED transaction (hex string), NOT a Ledger
+   * `Transaction` object — see the note under "Transaction values are serialized
+   * hex strings" below.
+   * @param desiredOutputs - Outputs to create
    * @param options - Optional transfer parameters
    */
-  makeTransfer(outputs: TransferOutput[], options?: TransferOptions): Promise<{ tx: Transaction }>;
+  makeTransfer(
+    desiredOutputs: DesiredOutput[],
+    options?: { payFees?: boolean },
+  ): Promise<{ tx: string }>;
 
   /**
-   * Create an unbalanced intent for atomic swaps.
-   * @param inputs - Intent inputs
-   * @param outputs - Intent outputs
-   * @param options - Intent options
+   * Initialize a transaction with an unbalanced intent containing the desired
+   * inputs and outputs. The primary use case is creating a transaction that
+   * initiates a swap.
+   *
+   * The returned `tx` is a SERIALIZED transaction (hex string).
+   * @param desiredInputs - Inputs to provide
+   * @param desiredOutputs - Outputs to create
+   * @param options - Intent options:
+   *   - `intentId`: the segment id for the created intent. Use `1` to ensure no
+   *     transaction merging executes actions before this intent in the same
+   *     transaction; use a specific number within ledger limits to assign that
+   *     segment id; or use `"random"` to let the wallet pick one (typical for swaps).
+   *   - `payFees`: whether the wallet pays fees for the issued transaction.
    */
   makeIntent(
-    inputs: IntentInput[],
-    outputs: IntentOutput[],
-    options: IntentOptions,
-  ): Promise<{ tx: Transaction }>;
+    desiredInputs: DesiredInput[],
+    desiredOutputs: DesiredOutput[],
+    options: { intentId: number | "random"; payFees: boolean },
+  ): Promise<{ tx: string }>;
 
   /**
-   * Balance an unsealed transaction (from a contract call).
-   * Adds fee inputs/outputs to make the transaction valid.
-   * @param tx - The unbalanced transaction from contract interaction
-   * @param options - Optional balancing parameters
+   * Balance an unsealed transaction (e.g. from a contract call). Pays fees and
+   * adds the inputs/outputs needed to remove imbalances, returning a transaction
+   * ready for submission. Expects a serialized `Transaction<SignatureEnabled,
+   * Proof, PreBinding>` and returns a serialized transaction (hex strings).
+   *
+   * This is the method DApps use when interacting with contracts — the wallet may
+   * need to add inputs/outputs to balance the transaction. Because it operates on
+   * the *unsealed* transaction, it can balance contracts that use fallible sections.
+   * @param tx - The serialized unbalanced transaction from the contract interaction
+   * @param options - `payFees` defaults to `true`
    */
   balanceUnsealedTransaction(
-    tx: UnbalancedTransaction,
-    options?: BalanceOptions,
-  ): Promise<{ tx: BalancedTransaction }>;
+    tx: string,
+    options?: { payFees?: boolean },
+  ): Promise<{ tx: string }>;
 
   /**
-   * Balance a sealed transaction (for completing a swap).
-   * @param tx - The sealed transaction to balance
-   * @param options - Optional balancing parameters
+   * Balance a sealed transaction (proven, signed, and cryptographically bound).
+   * Pays fees and adds the inputs/outputs needed to remove imbalances. Expects a
+   * serialized `Transaction<SignatureEnabled, Proof, Binding>` and returns a
+   * serialized transaction (hex strings).
+   *
+   * Mainly used when operating on transactions created by the wallet, or to force
+   * balancing into a separate intent. Note: the wallet cannot balance contracts
+   * that use fallible sections this way — use `balanceUnsealedTransaction` for those.
+   * @param tx - The serialized sealed transaction to balance
+   * @param options - `payFees` defaults to `true`
    */
   balanceSealedTransaction(
-    tx: SealedTransaction,
-    options?: BalanceOptions,
-  ): Promise<{ tx: BalancedTransaction }>;
+    tx: string,
+    options?: { payFees?: boolean },
+  ): Promise<{ tx: string }>;
 
   /**
-   * Submit a balanced and proven transaction to the network.
-   * @param tx - The finalized transaction to submit
+   * Submit a transaction to the network, using the wallet as a relayer. The
+   * transaction must be balanced and "sealed" (proven, signed, and
+   * cryptographically bound — a serialized `Transaction<SignatureEnabled, Proof,
+   * Binding>`), passed as a serialized hex string.
+   * @param tx - The serialized, finalized transaction to submit
    */
-  submitTransaction(tx: FinalizedTransaction): Promise<void>;
+  submitTransaction(tx: string): Promise<void>;
 
   /**
    * Sign arbitrary data with the unshielded signing key.
@@ -185,6 +219,12 @@ interface Configuration {
   /** Indexer GraphQL WebSocket endpoint */
   indexerWsUri: string;
 
+  /**
+   * Prover server URI. Often absent as different proving modalities emerge.
+   * @deprecated Use `getProvingProvider` instead.
+   */
+  proverServerUri?: string;
+
   /** Substrate node RPC endpoint */
   substrateNodeUri: string;
 
@@ -195,8 +235,20 @@ interface Configuration {
 
 ### ConnectionStatus
 
+A discriminated union narrowed on the `status` field. When connected, it also
+carries the `networkId` the wallet is connected to. `getConnectionStatus()`
+returns `Promise<ConnectionStatus>`.
+
 ```typescript
-type ConnectionStatus = "connected" | "disconnected";
+type ConnectionStatus =
+  | { status: "connected"; networkId: string }
+  | { status: "disconnected" };
+
+// Narrow on the `status` field:
+const s = await api.getConnectionStatus();
+if (s.status === "connected") {
+  // s.networkId is available here
+}
 ```
 
 ### Address Types
@@ -240,62 +292,90 @@ interface DustBalance {
 
 ```typescript
 interface HistoryEntry {
-  /** Transaction hash */
+  /** Hex-encoded transaction hash */
   txHash: string;
 
   /** Transaction status */
-  txStatus: TransactionStatus;
+  txStatus: TxStatus;
 }
 
-type TransactionStatus = "pending" | "confirmed" | "failed";
+/**
+ * Execution status of a transaction — indicates which sections of the
+ * transaction executed successfully. Keys are section indices.
+ */
+type ExecutionStatus = Record<number, "Success" | "Failure">;
+
+/**
+ * Discriminated union narrowed on the `status` field. The `finalized` and
+ * `confirmed` variants carry an `executionStatus`; `pending` and `discarded`
+ * do not.
+ */
+type TxStatus =
+  | { status: "finalized"; executionStatus: ExecutionStatus } // included in chain and finalized
+  | { status: "confirmed"; executionStatus: ExecutionStatus } // included in chain, not finalized yet
+  | { status: "pending" } // sent to network, not yet confirmed or discarded
+  | { status: "discarded" }; // failed to be included (e.g. TTL or validity checks)
 ```
 
-### Transfer Types
+### Transaction values are serialized hex strings
+
+The transaction methods above (`makeTransfer`, `makeIntent`,
+`balanceUnsealedTransaction`, `balanceSealedTransaction`, `submitTransaction`)
+do **not** exchange Ledger `Transaction` objects — the connector API speaks
+**serialized transactions as hex strings**. The DApp Connector API package does
+not export `Transaction`, `UnbalancedTransaction`, `BalancedTransaction`,
+`SealedTransaction`, or similar object types; those live in the Ledger API
+(`@midnight-ntwrk/ledger-v<N>`).
+
+Convert between the wallet's hex strings and the SDK's `Transaction` objects with
+the same adapter idiom used by the provider adapters (see
+`references/browser-providers.md`):
 
 ```typescript
-interface TransferOutput {
-  /** Recipient address (Bech32m) */
-  address: string;
+import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
+import { Transaction } from "@midnight-ntwrk/ledger-v8";
 
-  /** Amount to transfer */
-  amount: bigint;
+// SDK Transaction object -> hex string the wallet understands
+await api.submitTransaction(toHex(tx.serialize()));
 
-  /** Token type identifier */
-  tokenType: string;
-}
-
-interface TransferOptions {
-  /** Transaction time-to-live */
-  ttl?: Date;
-}
+// hex string from the wallet -> SDK Transaction object
+const { tx: balancedHex } = await api.balanceUnsealedTransaction(
+  toHex(unsealedTx.serialize()),
+  {},
+);
+// A balanced/sealed tx is Transaction<SignatureEnabled, Proof, Binding>;
+// pass the three instance markers for those type parameters.
+const balanced = Transaction.deserialize(
+  "signature",
+  "proof",
+  "binding",
+  fromHex(balancedHex),
+);
 ```
 
-### Intent Types (Atomic Swaps)
+### Token and Transfer Types
 
 ```typescript
-interface IntentInput {
-  /** Token type to offer */
-  tokenType: string;
+/** Hex-encoded string relating to the ledger's raw token type. */
+type TokenType = string;
 
-  /** Amount to offer */
-  amount: bigint;
-}
+/**
+ * Desired output from a transfer or intent. The recipient must be a Bech32m
+ * address matching the token kind and the network the wallet is connected to.
+ */
+type DesiredOutput = {
+  kind: "shielded" | "unshielded";
+  type: TokenType;
+  value: bigint;
+  recipient: string;
+};
 
-interface IntentOutput {
-  /** Token type to receive */
-  tokenType: string;
-
-  /** Amount to receive */
-  amount: bigint;
-
-  /** Recipient address */
-  address: string;
-}
-
-interface IntentOptions {
-  /** Expiration for the intent */
-  ttl?: Date;
-}
+/** Desired input for an intent: the token kind/type and amount to provide. */
+type DesiredInput = {
+  kind: "shielded" | "unshielded";
+  type: TokenType;
+  value: bigint;
+};
 ```
 
 ### Signature Types
@@ -309,9 +389,13 @@ interface Signature {
   data: string;
 
   /**
-   * The signature over `midnight_signed_message:<byte_length>:<data_bytes>`.
-   * The wallet prepends this prefix to all signed data to prevent accidental
-   * transaction signing.
+   * The signature over the prefixed data. Per the connector API, the wallet
+   * prepends a domain-separation prefix to the bytes before signing — the
+   * standard guard that keeps a signed message from being interpreted as a
+   * transaction. The exact prefix format is a wallet implementation detail and
+   * is NOT specified by `@midnight-ntwrk/dapp-connector-api`, whose `signData`
+   * JSDoc only states the data "will be prepended with right prefix"; do not
+   * depend on a specific prefix string.
    */
   signature: string;
 
@@ -385,7 +469,9 @@ try {
 
 ## Window Type Augmentation
 
-To get TypeScript support for `window.midnight`, add a type declaration:
+The package already augments the global `Window` type — importing anything from `@midnight-ntwrk/dapp-connector-api` pulls in its bundled declaration (`window.midnight?: { [key: string]: InitialAPI }`), so most projects need **no** manual augmentation.
+
+If you do declare your own (e.g. to attach documentation), it must use the **same index signature as the package** — `[key: string]: InitialAPI`, NOT `InitialAPI | undefined` — to avoid a declaration-merge conflict (which surfaces as `TS2717: Subsequent property declarations must have the same type` on recent TypeScript):
 
 ```typescript
 // types/midnight.d.ts
@@ -393,19 +479,11 @@ import type { InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
 
 declare global {
   interface Window {
-    midnight?: {
-      /**
-       * Per the DApp Connector API v4 spec (CAIP-372 compatible), each wallet
-       * installs its InitialAPI under a freshly-generated UUIDv4 key.
-       * Always enumerate `Object.values(window.midnight)` and match by
-       * `name` / `rdns` — do not assume a fixed key.
-       *
-       * Note: Lace also exposes a convenience alias under `mnLace` for
-       * backwards compatibility, but this is Lace-specific and not part of
-       * the normative spec. Other wallets (e.g. 1AM) only use UUIDv4 keys.
-       */
-      [walletId: string]: InitialAPI | undefined;
-    };
+    // Each wallet installs its InitialAPI under its own key. The DApp Connector
+    // API is CAIP-372-compatible, so keys are UUIDs — do not assume a fixed key;
+    // enumerate `Object.values(window.midnight)` and match by `name`/`rdns`.
+    // (Lace also exposes a Lace-specific convenience alias at `mnLace`.)
+    midnight?: { [walletId: string]: InitialAPI };
   }
 }
 ```

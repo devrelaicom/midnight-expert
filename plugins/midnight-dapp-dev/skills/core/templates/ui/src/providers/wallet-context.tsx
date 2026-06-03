@@ -34,7 +34,12 @@ export const WalletContext = createContext<WalletContextValue | null>(null);
 
 function findWallet(): InitialAPI | undefined {
   if (typeof window === "undefined" || !window.midnight) return undefined;
-  return window.midnight.mnLace ?? Object.values(window.midnight)[0];
+  // Each wallet is injected under its own key (a UUID; Lace also aliases itself
+  // at `mnLace`). Enumerate and use the first valid wallet; to target a specific
+  // wallet, match on `rdns`/`name` instead.
+  return Object.values(window.midnight).find(
+    (w): w is InitialAPI => w != null && typeof w.connect === "function",
+  );
 }
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -57,7 +62,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         ...prev,
         status: "error",
         error:
-          "Lace wallet extension not found. Install it from the Chrome Web Store.",
+          "No Midnight wallet extension found. Install a Midnight wallet (e.g. Lace) to continue.",
       }));
       return;
     }
