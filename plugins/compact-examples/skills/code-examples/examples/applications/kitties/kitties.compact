@@ -26,49 +26,37 @@
 pragma language_version >= 0.22;
 
 // =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+//  SECURE PATTERN — witness-derived identity
 // =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
-//
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
-//
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see references/applications.md for the rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
+//  Each instance holds a single 32-byte secret in private state. Caller
+//  identity is derived INSIDE the circuit from that secret via domain-separated
+//  `persistentHash` (`deriveUserPublicKey` / `deriveAdminPublicKey`), so a
+//  caller can only act as the identity they hold the secret for. `ownPublicKey()`
+//  is intentionally NOT used for authorization — it is prover-supplied and
+//  bypassable. Every exported mutating circuit computes
+//  `const caller = disclose(deriveUserPublicKey(getUserSecret()))` and uses
+//  that derived key as both the proven identity and the owner/buyer it stores;
+//  ownership gates compare `ownerOf(kittyId)` against that derived caller. The
+//  module's identity-parameterized circuits (approve / setApprovalForAll /
+//  transferFrom) are never re-exported, only the safe wrappers below.
 // =============================================================================
 
 import CompactStandardLibrary;
+
 import "./Nft";
 
-// Export selected circuits from the NFT module for standard NFT operations.
-export {
-  balanceOf,
-  ownerOf,
-  approve,
-  getApproved,
-  setApprovalForAll,
-  isApprovedForAll
-};
+// Re-export identity types and pure derivations so the TypeScript layer can
+// compute public keys off-chain (e.g. to look up owners/offers by key).
+export { UserSecretKey, UserPublicKey, AdminPublicKey };
+
+export { deriveUserPublicKey, deriveAdminPublicKey };
+
+// Export only the read-only views from the Nft module. The module's
+// identity-parameterized mutating circuits (approve / setApprovalForAll /
+// transferFrom / mint / burn) are deliberately NOT re-exported — exposing them
+// would let a caller pass any `caller` identity and defeat the protection.
+// Instead, the safe wrappers below compute the caller from the witness secret.
+export { balanceOf, ownerOf, getApproved, isApprovedForAll, tokenExists };
 
 // =====================
 // CryptoKitties-specific data structures
@@ -82,17 +70,17 @@ export enum Gender {
 
 // Struct holding all attributes for a kitty.
 export struct Kitty {
-  dna: Field,                // Unique DNA for the kitty
-  gender: Gender,            // Gender of the kitty
-  owner: ZswapCoinPublicKey, // Owner's public key
-  price: Uint<64>,           // Sale price (0 if not for sale)
-  forSale: Boolean,          // Whether the kitty is for sale
-  generation: Uint<32>       // Generation number (0 for original, increments with breeding)
+  dna: Field, // Unique DNA for the kitty
+  gender: Gender, // Gender of the kitty
+  owner: UserPublicKey, // Owner's DERIVED public key
+  price: Uint<64>, // Sale price (0 if not for sale)
+  forSale: Boolean, // Whether the kitty is for sale
+  generation: Uint<32> // Generation number (0 for original, increments with breeding)
 }
 
 export struct Offer {
   kittyId: Uint<64>,
-  buyer: ZswapCoinPublicKey,
+  buyer: UserPublicKey, // Buyer's DERIVED public key
   price: Uint<64>
 }
 
@@ -106,7 +94,12 @@ export ledger allKittiesCount: Counter;
 export ledger genderSelector: Boolean;
 
 // Mapping for kitty ID to Account to offer data.
-export ledger buyOffers: Map<Uint<64>, Map<ZswapCoinPublicKey, Offer>>;
+export ledger buyOffers: Map<Uint<64>, Map<UserPublicKey, Offer>>;
+
+// Witness function: each prover supplies their own 32-byte secret from private
+// state. The caller's identity is DERIVED from this secret inside the circuit;
+// it is never a value the caller can choose arbitrarily.
+witness getUserSecret(): UserSecretKey;
 
 // Witness function to retrieve a random number (for DNA generation and breeding).
 // WARNING: This is a witness, meaning the value is injected from outside the circuit
@@ -127,10 +120,10 @@ constructor() {
 // =====================
 
 // Generates unique DNA for a kitty.
-circuit generateDNA(minter: ZswapCoinPublicKey, kittyId: Uint<64>): Field {
+circuit generateDNA(minter: UserPublicKey, kittyId: Uint<64>): Field {
   // In a production implementation, this would use a more secure randomness.
   // Here, we use a hash of the KittyId, minter, contract address, and a witness random number.
-  const payload = [kittyId, minter.bytes, kernel.self().bytes,  createRandomNumber()];
+  const payload = [kittyId, minter.bytes, kernel.self().bytes, createRandomNumber()];
   return transientHash<[Uint<64>, Bytes<32>, Bytes<32>, Bytes<32>]>(payload);
 }
 
@@ -149,9 +142,9 @@ circuit generateGender(): Gender {
 // =====================
 
 // Creates a new unique kitty and mints the corresponding NFT.
+// The minter/owner is the caller derived from the witness secret.
 export circuit createKitty(): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  const sender = ownPublicKey();
+  const sender = disclose(deriveUserPublicKey(getUserSecret()));
   const kittyId = (allKittiesCount.read() + 1) as Uint<64>;
   const kittyDna = generateDNA(sender, kittyId);
 
@@ -159,14 +152,13 @@ export circuit createKitty(): [] {
   assert(!tokenExists(kittyId), "Kitty already exists");
 
   // Create the new kitty struct.
-  const newKitty = Kitty {
-    dna: kittyDna,
-    gender: generateGender(),
-    owner: sender,
-    price: 0,
-    forSale: false,
-    generation: 0
-  };
+  const newKitty =
+          Kitty { dna: kittyDna,
+                  gender: generateGender(),
+                  owner: sender,
+                  price: 0,
+                  forSale: false,
+                  generation: 0 };
 
   // Store the kitty data in the ledger.
   kitties.insert(disclose(kittyId), disclose(newKitty));
@@ -180,9 +172,11 @@ export circuit createKitty(): [] {
   genderSelector = !genderSelector;
 }
 
-// Transfers a kitty to another account and resets its sale status.
-export circuit transferKitty(to: ZswapCoinPublicKey, kittyId: Uint<64>): [] {
-  // const sender = ownPublicKey();
+// Transfers one of YOUR kitties to another account and resets its sale status.
+// The caller is derived from the witness secret and is both the proven identity
+// and the account the kitty leaves.
+export circuit transferKitty(to: UserPublicKey, kittyId: Uint<64>): [] {
+  const sender = disclose(deriveUserPublicKey(getUserSecret()));
 
   // Ensure the kitty exists.
   assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
@@ -191,35 +185,40 @@ export circuit transferKitty(to: ZswapCoinPublicKey, kittyId: Uint<64>): [] {
   const kitty = kitties.lookup(disclose(kittyId));
 
   // Update the kitty's owner and reset sale status.
-  const updatedKitty = Kitty {
-    dna: kitty.dna,
-    gender: kitty.gender,
-    owner: to,
-    price: 0,
-    forSale: false,
-    generation: kitty.generation
-  };
+  const updatedKitty =
+          Kitty { dna: kitty.dna,
+                  gender: kitty.gender,
+                  owner: to,
+                  price: 0,
+                  forSale: false,
+                  generation: kitty.generation };
 
   kitties.insert(disclose(kittyId), disclose(updatedKitty));
 
-  // Transfering token resets offers if the kitty was but on sale before.
+  // Transferring the token resets offers if the kitty was on sale before.
   if (buyOffers.member(disclose(kittyId))) {
-    // Note: In a real implementation, currency reimbursment would occur here.
+    // Note: In a real implementation, currency reimbursement would occur here.
     // The currency transfer would be the bidPrice from the offer.
     // For now, only clear offers.
 
     // Empty the kitty offers.
     buyOffers.remove(disclose(kittyId));
-
   }
 
-  // Transfer the NFT using the imported NFT module.
-  transfer(to, kittyId);
+  // Transfer the NFT using the imported NFT module. The caller is the proven
+  // identity and also the `from` account.
+  transferFrom(sender, sender, to, kittyId);
 }
 
-// Transfers a kitty to another account and resets its sale status.
-export circuit transferKittyFrom(fromAddress: ZswapCoinPublicKey, to: ZswapCoinPublicKey, kittyId: Uint<64>): [] {
-  // const sender = ownPublicKey();
+// Transfers a kitty out of `fromAddress` to another account and resets its sale
+// status. The caller is derived from the witness secret; the module asserts the
+// caller is the owner or authorized for the token.
+export circuit transferKittyFrom(
+                 fromAddress: UserPublicKey,
+                 to: UserPublicKey,
+                 kittyId: Uint<64>
+                 ): [] {
+  const sender = disclose(deriveUserPublicKey(getUserSecret()));
 
   // Ensure the kitty exists.
   assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
@@ -228,20 +227,19 @@ export circuit transferKittyFrom(fromAddress: ZswapCoinPublicKey, to: ZswapCoinP
   const kitty = kitties.lookup(disclose(kittyId));
 
   // Update the kitty's owner and reset sale status.
-  const updatedKitty = Kitty {
-    dna: kitty.dna,
-    gender: kitty.gender,
-    owner: to,
-    price: 0,
-    forSale: false,
-    generation: kitty.generation
-  };
+  const updatedKitty =
+          Kitty { dna: kitty.dna,
+                  gender: kitty.gender,
+                  owner: to,
+                  price: 0,
+                  forSale: false,
+                  generation: kitty.generation };
 
   kitties.insert(disclose(kittyId), disclose(updatedKitty));
 
-  // Transfering token resets offers if the kitty was but on sale before.
+  // Transferring the token resets offers if the kitty was on sale before.
   if (buyOffers.member(disclose(kittyId))) {
-    // Note: In a real implementation, currency reimbursment would occur here.
+    // Note: In a real implementation, currency reimbursement would occur here.
     // The currency transfer would be the bidPrice from the offer.
     // For now, only clear offers.
 
@@ -249,14 +247,14 @@ export circuit transferKittyFrom(fromAddress: ZswapCoinPublicKey, to: ZswapCoinP
     buyOffers.remove(disclose(kittyId));
   }
 
-  // Transfer the NFT using the imported NFT module.
-  transferFrom(fromAddress, to, kittyId);
+  // Transfer the NFT using the imported NFT module. Authorization is checked
+  // against the derived caller inside the module.
+  transferFrom(sender, fromAddress, to, kittyId);
 }
 
 // Sets the price for a kitty and marks it as for sale if price > 0.
 export circuit setPrice(kittyId: Uint<64>, price: Uint<64>): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  const sender = ownPublicKey();
+  const sender = disclose(deriveUserPublicKey(getUserSecret()));
 
   // Ensure the kitty exists.
   assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
@@ -268,22 +266,21 @@ export circuit setPrice(kittyId: Uint<64>, price: Uint<64>): [] {
   const kitty = kitties.lookup(disclose(kittyId));
 
   // Update the kitty's price and sale status.
-  const updatedKitty = Kitty {
-    dna: kitty.dna,
-    gender: kitty.gender,
-    owner: kitty.owner,
-    price: price,
-    forSale: price > 0,
-    generation: kitty.generation
-  };
+  const updatedKitty =
+          Kitty { dna: kitty.dna,
+                  gender: kitty.gender,
+                  owner: kitty.owner,
+                  price: price,
+                  forSale: price > 0,
+                  generation: kitty.generation };
 
   kitties.insert(disclose(kittyId), disclose(updatedKitty));
 }
 
 // Allows a user to create an offer to buy a kitty that is for sale.
+// The buyer identity is derived from the witness secret.
 export circuit createBuyOffer(kittyId: Uint<64>, bidPrice: Uint<64>): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  const buyer = ownPublicKey();
+  const buyer = disclose(deriveUserPublicKey(getUserSecret()));
 
   // Ensure the kitty exists.
   assert(tokenExists(disclose(kittyId)), "Kitty does not exist");
@@ -303,26 +300,24 @@ export circuit createBuyOffer(kittyId: Uint<64>, bidPrice: Uint<64>): [] {
   // Note: In a real implementation, currency transfer would occur here.
   // For now, only create the offer.
 
-  const newOffer = Offer {
-    kittyId: kittyId,
-    buyer: buyer,
-    price: bidPrice
-  };
+  const newOffer = Offer { kittyId: kittyId, buyer: buyer, price: bidPrice };
 
   // Initialize the inner map if it doesn't exist.
   if (!buyOffers.member(disclose(kittyId))) {
-    buyOffers.insert(disclose(kittyId), default<Map<ZswapCoinPublicKey, Offer>>);
+    buyOffers.insert(disclose(kittyId), default<Map<UserPublicKey, Offer>>);
   }
 
-  buyOffers.lookup(disclose(kittyId)).insert(disclose(buyer), disclose(newOffer));
+  buyOffers.lookup(disclose(kittyId)).insert(buyer, disclose(newOffer));
 }
 
 // Approves a pending offer for a kitty, transferring ownership to the buyer.
 // Only the current owner can approve an offer.
 // Note: Currency transfer is not implemented here; only ownership is transferred.
-export circuit approveOffer(kittyId: Uint<64>, buyer: ZswapCoinPublicKey): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  assert(ownPublicKey() == ownerOf(disclose(kittyId)), "Only owner can sell.");
+export circuit approveOffer(kittyId: Uint<64>, buyer: UserPublicKey): [] {
+  const seller = disclose(deriveUserPublicKey(getUserSecret()));
+
+  // Only the owner (proven via the witness secret) can sell.
+  assert(seller == ownerOf(disclose(kittyId)), "Only owner can sell.");
 
   // Retrieve the kitty's current data.
   const kitty = kitties.lookup(disclose(kittyId));
@@ -337,14 +332,13 @@ export circuit approveOffer(kittyId: Uint<64>, buyer: ZswapCoinPublicKey): [] {
   buyOffers.remove(disclose(kittyId));
 
   // Prepare the updated kitty struct with new owner and reset sale info.
-  const updatedKitty = Kitty {
-    dna: kitty.dna,
-    gender: kitty.gender,
-    owner: buyer,
-    price: 0,
-    forSale: false,
-    generation: kitty.generation
-  };
+  const updatedKitty =
+          Kitty { dna: kitty.dna,
+                  gender: kitty.gender,
+                  owner: buyer,
+                  price: 0,
+                  forSale: false,
+                  generation: kitty.generation };
 
   // Store the updated kitty data in the ledger.
   kitties.insert(disclose(kittyId), disclose(updatedKitty));
@@ -353,16 +347,16 @@ export circuit approveOffer(kittyId: Uint<64>, buyer: ZswapCoinPublicKey): [] {
   // The currency transfer would be the bidPrice from the offer.
   // For now, only transfer the kitty ownership.
 
-  // Transfer the NFT to the buyer using the imported NFT module.
-  transfer(buyer, kittyId);
+  // Transfer the NFT to the buyer using the imported NFT module. The seller is
+  // the proven caller and the `from` account.
+  transferFrom(seller, seller, buyer, kittyId);
 }
 
 // Breeds two kitties to create a new offspring with combined DNA.
 // Warning: The DNA combination uses a random seed from a witness.
 // The offspring's generation is set to max(parent generations) + 1.
 export circuit breedKitty(kittyId1: Uint<64>, kittyId2: Uint<64>): [] {
-  // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-  const sender = ownPublicKey();
+  const sender = disclose(deriveUserPublicKey(getUserSecret()));
 
   // Ensure both parent kitties exist.
   assert(tokenExists(disclose(kittyId1)), "Parent kitty 1 does not exist");
@@ -372,10 +366,9 @@ export circuit breedKitty(kittyId1: Uint<64>, kittyId2: Uint<64>): [] {
   assert(kittyId1 != kittyId2, "Cannot breed a kitty with itself");
 
   // Ensure the sender owns at least one of the parent kitties.
-  assert(
-    ownerOf(kittyId1) == sender || ownerOf(kittyId2) == sender,
-    "Must own at least one parent kitty"
-  );
+  assert(ownerOf(kittyId1) == sender || ownerOf(kittyId2) == sender,
+         "Must own at least one parent kitty"
+         );
 
   // Generate new kitty ID.
   const newKittyId = (allKittiesCount.read() + 1) as Uint<64>;
@@ -397,14 +390,13 @@ export circuit breedKitty(kittyId1: Uint<64>, kittyId2: Uint<64>): [] {
   const newGeneration = (getMaxGeneration(kitty1.generation, kitty2.generation) + 1) as Uint<32>;
 
   // Create the new offspring kitty.
-  const newKitty = Kitty {
-    dna: combinedDNA,
-    gender: generateGender(),
-    owner: sender,
-    price: 0,
-    forSale: false,
-    generation: newGeneration
-  };
+  const newKitty =
+          Kitty { dna: combinedDNA,
+                  gender: generateGender(),
+                  owner: sender,
+                  price: 0,
+                  forSale: false,
+                  generation: newGeneration };
 
   // Store the new kitty data.
   kitties.insert(disclose(newKittyId), disclose(newKitty));
@@ -416,6 +408,19 @@ export circuit breedKitty(kittyId1: Uint<64>, kittyId2: Uint<64>): [] {
   allKittiesCount.increment(1);
   // Alternate the gender for the next kitty.
   genderSelector = !genderSelector;
+}
+
+// Approve `to` to transfer `tokenId`. Caller derived from the witness secret.
+export circuit approveKitty(to: UserPublicKey, kittyId: Uint<64>): [] {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  approve(caller, to, kittyId);
+}
+
+// Set or unset `operator` as an operator for all of the caller's kitties.
+// Caller derived from the witness secret.
+export circuit setApprovalForAllKitties(operator: UserPublicKey, approved: Boolean): [] {
+  const caller = disclose(deriveUserPublicKey(getUserSecret()));
+  setApprovalForAll(caller, operator, approved);
 }
 
 // Retrieves and returns information about a specific kitty by its ID.
@@ -432,11 +437,9 @@ export circuit getAllKittiesCount(): Uint<64> {
 }
 
 // Helper function to get the Offer from map.
-export circuit getOffer(kittyId: Uint<64>, offerFrom: ZswapCoinPublicKey): Offer {
-  if (
-    buyOffers.member(disclose(kittyId)) &&
-    buyOffers.lookup(disclose(kittyId)).member(disclose(offerFrom))
-  ) {
+export circuit getOffer(kittyId: Uint<64>, offerFrom: UserPublicKey): Offer {
+  if (buyOffers.member(disclose(kittyId)) &&
+      buyOffers.lookup(disclose(kittyId)).member(disclose(offerFrom))) {
     return buyOffers.lookup(disclose(kittyId)).lookup(disclose(offerFrom));
   } else {
     return default<Offer>;

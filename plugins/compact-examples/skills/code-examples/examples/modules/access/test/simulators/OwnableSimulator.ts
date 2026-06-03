@@ -1,119 +1,50 @@
+// SPDX-License-Identifier: MIT
+//
+// SECURE PATTERN — witness-derived identity.
+// Ownable test simulator. Drives the compiled MockOwnable contract through
+// @midnight-ntwrk/compact-runtime via the shared SecureSim harness. Each actor is
+// a 32-byte secret; `as(secret)` authorizes the next call as that actor.
+//
+// Build the contract first:
+//   compact compile modules/access/test/mocks/MockOwnable.compact \
+//     modules/access/test/managed/MockOwnable
+
 import {
-  type BaseSimulatorOptions,
-  createSimulator,
-} from '@openzeppelin-compact/contracts-simulator';
-import {
-  type ContractAddress,
-  type Either,
-  ledger,
   Contract as MockOwnable,
-  type ZswapCoinPublicKey,
-} from '../../../../artifacts/MockOwnable/contract/index.js';
-import {
-  OwnablePrivateState,
-  OwnableWitnesses,
-} from '../../witnesses/OwnableWitnesses.js';
+  ledger,
+  pureCircuits,
+  type Ledger,
+  type Identity_AdminPublicKey,
+} from "../managed/MockOwnable/contract/index.js";
+import { SecureSim } from "../../../test-utils/secure-identity-sim.js";
 
-/**
- * Type constructor args
- */
-type OwnableArgs = readonly [
-  initialOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-  isInit: boolean,
-];
-
-const OwnableSimulatorBase = createSimulator<
-  OwnablePrivateState,
-  ReturnType<typeof ledger>,
-  ReturnType<typeof OwnableWitnesses>,
-  MockOwnable<OwnablePrivateState>,
-  OwnableArgs
->({
-  contractFactory: (witnesses) =>
-    new MockOwnable<OwnablePrivateState>(witnesses),
-  defaultPrivateState: () => OwnablePrivateState,
-  contractArgs: (initialOwner, isInit) => [initialOwner, isInit],
-  ledgerExtractor: (state) => ledger(state),
-  witnessesFactory: () => OwnableWitnesses(),
-});
-
-/**
- * Ownable Simulator
- */
-export class OwnableSimulator extends OwnableSimulatorBase {
-  constructor(
-    initialOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-    isInit: boolean,
-    options: BaseSimulatorOptions<
-      OwnablePrivateState,
-      ReturnType<typeof OwnableWitnesses>
-    > = {},
-  ) {
-    super([initialOwner, isInit], options);
-  }
-  /**
-   * @description Returns the current contract owner.
-   * @returns The contract owner.
-   */
-  public owner(): Either<ZswapCoinPublicKey, ContractAddress> {
-    return this.circuits.impure.owner();
+export class OwnableSimulator extends SecureSim<MockOwnable, Ledger> {
+  constructor(deployerSecret: Uint8Array, isInit: boolean) {
+    super(MockOwnable, ledger, deployerSecret, isInit);
   }
 
-  /**
-   * @description Transfers ownership of the contract to `newOwner`.
-   * @param newOwner - The new owner.
-   */
-  public transferOwnership(
-    newOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-  ) {
-    this.circuits.impure.transferOwnership(newOwner);
+  /** Off-chain derivation of an actor's admin key (matches the in-circuit hash). */
+  static adminKey(secret: Uint8Array): Identity_AdminPublicKey {
+    return pureCircuits.Identity_deriveAdminPublicKey({ bytes: secret });
   }
 
-  /**
-   * @description Unsafe variant of `transferOwnership`.
-   * @param newOwner - The new owner.
-   */
-  public _unsafeTransferOwnership(
-    newOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-  ) {
-    this.circuits.impure._unsafeTransferOwnership(newOwner);
+  owner(): Identity_AdminPublicKey {
+    return this.read("owner");
   }
 
-  /**
-   * @description Leaves the contract without an owner.
-   * It will not be possible to call `assertOnlyOnwer` circuits anymore.
-   * Can only be called by the current owner.
-   */
-  public renounceOwnership() {
-    this.circuits.impure.renounceOwnership();
+  transferOwnership(newOwner: Identity_AdminPublicKey): void {
+    this.call("transferOwnership", newOwner);
   }
 
-  /**
-   * @description Throws if called by any account other than the owner.
-   * Use this to restrict access of specific circuits to the owner.
-   */
-  public assertOnlyOwner() {
-    this.circuits.impure.assertOnlyOwner();
+  renounceOwnership(): void {
+    this.call("renounceOwnership");
   }
 
-  /**
-   * @description Transfers ownership of the contract to `newOwner` without
-   * enforcing permission checks on the caller.
-   * @param newOwner - The new owner.
-   */
-  public _transferOwnership(
-    newOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-  ) {
-    this.circuits.impure._transferOwnership(newOwner);
+  assertOnlyOwner(): void {
+    this.call("assertOnlyOwner");
   }
 
-  /**
-   * @description Unsafe variant of `_transferOwnership`.
-   * @param newOwner - The new owner.
-   */
-  public _unsafeUncheckedTransferOwnership(
-    newOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-  ) {
-    this.circuits.impure._unsafeUncheckedTransferOwnership(newOwner);
+  _transferOwnership(newOwner: Identity_AdminPublicKey): void {
+    this.call("_transferOwnership", newOwner);
   }
 }

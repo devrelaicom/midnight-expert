@@ -3,71 +3,91 @@ import type { WitnessContext } from '@midnight-ntwrk/compact-runtime';
 import type { Ledger } from '../../../artifacts/MockZOwnablePK/contract/index.js';
 
 /**
+ * @description SECURE PATTERN — witness-derived identity.
+ *
+ * Each instance carries a single 32-byte secret in private state. ALL identity
+ * in the contract — the owner's derived public key AND the unlinkability nonce —
+ * derives from this one secret via domain-separated `persistentHash` INSIDE the
+ * ZK circuit (`_deriveOwnerPublicKey` / `_deriveOwnerNonce`). `ownPublicKey()`
+ * is never consulted: it returns a prover-claimed value with no cryptographic
+ * binding to the transaction signer. Whoever's derived owner key was committed
+ * at deploy/transfer holds the owner role; everyone else fails the equality
+ * assertion inside the proof.
+ */
+
+/**
  * @description Interface defining the witness methods for ZOwnablePK operations.
  * @template P - The private state type.
  */
 export interface IZOwnablePKWitnesses<P> {
   /**
-   * Retrieves the secret nonce from the private state.
+   * Retrieves the single 32-byte user secret from the private state.
    * @param context - The witness context containing the private state.
-   * @returns A tuple of the private state and the secret nonce as a Uint8Array.
+   * @returns A tuple of the private state and the secret as `{ bytes: Uint8Array }`.
    */
-  wit_secretNonce(context: WitnessContext<Ledger, P>): [P, Uint8Array];
+  getUserSecret(context: WitnessContext<Ledger, P>): [P, { bytes: Uint8Array }];
 }
 
 /**
- * @description Represents the private state of an ownable contract, storing a secret nonce.
+ * @description Represents the private state of a ZOwnablePK contract, storing a
+ * single 32-byte user secret. The derived owner public key and nonce are
+ * computed in-circuit from this secret.
  */
 export type ZOwnablePKPrivateState = {
-  /** @description A 32-byte secret nonce used as a privacy additive. */
-  secretNonce: Buffer;
+  /** @description The single 32-byte witness secret from which all identity derives. */
+  userSecretKey: Uint8Array;
 };
 
 /**
- * @description Utility object for managing the private state of an Ownable contract.
+ * @description Utility object for managing the private state of a ZOwnablePK contract.
  */
 export const ZOwnablePKPrivateState = {
   /**
-   * @description Generates a new private state with a random secret nonce.
+   * @description Generates a new private state with a random 32-byte secret.
    * @returns A fresh ZOwnablePKPrivateState instance.
    */
   generate: (): ZOwnablePKPrivateState => {
-    return { secretNonce: getRandomValues(Buffer.alloc(32)) };
+    return { userSecretKey: getRandomValues(new Uint8Array(32)) };
   },
 
   /**
-   * @description Generates a new private state with a user-defined secret nonce.
-   * Useful for deterministic nonce generation or advanced use cases.
+   * @description Generates a new private state with a user-defined 32-byte secret.
+   * Useful for deterministic identity in tests.
    *
-   * @param nonce - The 32-byte secret nonce to use.
-   * @returns A fresh ZOwnablePKPrivateState instance with the provided nonce.
+   * @param secret - The 32-byte user secret to use.
+   * @returns A fresh ZOwnablePKPrivateState instance with the provided secret.
    *
    * @example
    * ```typescript
-   * // For deterministic nonces (user-defined scheme)
-   * const deterministicNonce = myDeterministicScheme(...);
-   * const privateState = ZOwnablePKPrivateState.withNonce(deterministicNonce);
+   * const secret = myDeterministicScheme(...);
+   * const privateState = ZOwnablePKPrivateState.withSecret(secret);
    * ```
    */
-  withNonce: (nonce: Buffer): ZOwnablePKPrivateState => {
-    if (nonce.length !== 32) {
+  withSecret: (secret: Uint8Array): ZOwnablePKPrivateState => {
+    if (secret.length !== 32) {
       throw new Error(
-        `withNonce: expected 32-byte nonce, received ${nonce.length} bytes`,
+        `withSecret: expected 32-byte secret, received ${secret.length} bytes`,
       );
     }
-    return { secretNonce: Buffer.from(nonce) };
+    return { userSecretKey: Uint8Array.from(secret) };
   },
 };
 
 /**
- * @description Factory function creating witness implementations for Ownable operations.
+ * @description Factory function creating witness implementations for ZOwnablePK.
  * @returns An object implementing the Witnesses interface for ZOwnablePKPrivateState.
  */
 export const ZOwnablePKWitnesses =
   (): IZOwnablePKWitnesses<ZOwnablePKPrivateState> => ({
-    wit_secretNonce(
+    getUserSecret(
       context: WitnessContext<Ledger, ZOwnablePKPrivateState>,
-    ): [ZOwnablePKPrivateState, Uint8Array] {
-      return [context.privateState, context.privateState.secretNonce];
+    ): [ZOwnablePKPrivateState, { bytes: Uint8Array }] {
+      const { userSecretKey } = context.privateState;
+      if (!userSecretKey || userSecretKey.length !== 32) {
+        throw new Error(
+          'getUserSecret: userSecretKey is missing or not 32 bytes',
+        );
+      }
+      return [context.privateState, { bytes: userSecretKey }];
     },
   });

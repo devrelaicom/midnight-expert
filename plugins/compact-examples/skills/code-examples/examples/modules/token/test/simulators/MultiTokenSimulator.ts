@@ -1,14 +1,29 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Compact Contracts (token/test/simulators/MultiTokenSimulator.ts)
+//
+// SECURE PATTERN — witness-derived identity.
+//
+// Ported to the witness-derived identity API. Accounts are now
+// `UserPublicKey` ({ bytes: Uint8Array }) derived from a 32-byte secret rather
+// than `Either<ZswapCoinPublicKey, ContractAddress>`. "Acting as" a caller
+// (`.as(secret)`) swaps the private-state `userSecretKey`, which is the SOLE
+// source of caller identity — `ownPublicKey()` is no longer used for auth.
+//
+// NOTE: this file targets the upstream `@openzeppelin-compact/contracts-simulator`
+// harness, which is not vendored into this examples tree. The runnable
+// equivalent lives in `../MultiToken.test.ts`, which drives the compiled
+// MockMultiToken directly via `@midnight-ntwrk/compact-runtime` (no extra
+// packages required).
+
 import {
   type BaseSimulatorOptions,
   createSimulator,
 } from '@openzeppelin-compact/contracts-simulator';
 import {
-  type ContractAddress,
-  type Either,
   ledger,
   type Maybe,
   Contract as MockMultiToken,
-  type ZswapCoinPublicKey,
+  type MultiToken_UserPublicKey,
 } from '../../../../artifacts/MockMultiToken/contract/index.js';
 import {
   MultiTokenPrivateState,
@@ -50,193 +65,104 @@ export class MultiTokenSimulator extends MultiTokenSimulatorBase {
   }
 
   /**
-   * @description Initializes the contract. This is already executed in the simulator constructor;
-   * however, this method enables the tests to assert it cannot be called again.
-   * @param uri The base URI for all token URIs.
+   * @description Switch the simulated caller by setting the private-state
+   * identity secret. Returns `this` for chaining (mirrors the upstream `.as()`).
+   * @param secret The 32-byte identity secret of the caller to act as.
+   */
+  public asSecret(secret: Uint8Array): this {
+    this.setPrivateState({ userSecretKey: secret });
+    return this;
+  }
+
+  /**
+   * @description Initializes the contract. This is already executed in the
+   * simulator constructor; this method lets tests assert it cannot be called again.
    */
   public initialize(uri: string) {
     this.circuits.impure.initialize(uri);
   }
 
-  /**
-   * @description Returns the token URI.
-   * @param id The token identifier to query.
-   * @returns The token URI.
-   */
+  /** @description Returns the token URI. */
   public uri(id: bigint): string {
     return this.circuits.impure.uri(id);
   }
 
-  /**
-   * @description Returns the amount of `id` tokens owned by `account`.
-   * @param account The account balance to query.
-   * @param id The token identifier to query.
-   * @returns The quantity of `id` tokens that `account` owns.
-   */
-  public balanceOf(
-    account: Either<ZswapCoinPublicKey, ContractAddress>,
-    id: bigint,
-  ): bigint {
+  /** @description Returns the amount of `id` tokens owned by `account`. */
+  public balanceOf(account: MultiToken_UserPublicKey, id: bigint): bigint {
     return this.circuits.impure.balanceOf(account, id);
   }
 
+  /** @description Queries if `operator` is an authorized operator for `account`. */
+  public isApprovedForAll(
+    account: MultiToken_UserPublicKey,
+    operator: MultiToken_UserPublicKey,
+  ): boolean {
+    return this.circuits.impure.isApprovedForAll(account, operator);
+  }
+
   /**
-   * @description Enables or disables approval for `operator` to manage all of the caller's assets.
-   * @param operator The ZswapCoinPublicKey or ContractAddress whose approval is set for the caller's assets.
-   * @param approved The boolean value determining if the operator may or may not handle the
-   * caller's assets.
+   * @description Enables or disables approval for `operator` to manage all of
+   * the CALLER's assets. The caller is derived from the witness secret.
    */
   public setApprovalForAll(
-    operator: Either<ZswapCoinPublicKey, ContractAddress>,
+    operator: MultiToken_UserPublicKey,
     approved: boolean,
   ) {
     this.circuits.impure.setApprovalForAll(operator, approved);
   }
 
   /**
-   * @description Queries if `operator` is an authorized operator for `owner`.
-   * @param account The queried possessor of assets.
-   * @param operator The queried handler of `account`'s assets.
-   * @returns Whether or not `operator` has permission to handle `account`'s assets.
+   * @description Transfers `value` of token `id` from the CALLER to `to`.
    */
-  public isApprovedForAll(
-    account: Either<ZswapCoinPublicKey, ContractAddress>,
-    operator: Either<ZswapCoinPublicKey, ContractAddress>,
-  ): boolean {
-    return this.circuits.impure.isApprovedForAll(account, operator);
+  public transfer(to: MultiToken_UserPublicKey, id: bigint, value: bigint) {
+    this.circuits.impure.transfer(to, id, value);
   }
 
   /**
-   * @description Transfers ownership of `value` amount of `id` tokens from `fromAddress` to `to`.
-   * The caller must be `fromAddress` or approved to transfer on their behalf.
-   * @param fromAddress The owner from which the transfer originates.
-   * @param to The recipient of the transferred assets.
-   * @param id The unique identifier of the asset type.
-   * @param value The quantity of `id` tokens to transfer.
+   * @description Transfers `value` of token `id` from `fromAddress` to `to`.
+   * The caller (derived from the witness secret) must be `fromAddress` or an
+   * approved operator of it.
    */
-  public transferFrom(
-    fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-    to: Either<ZswapCoinPublicKey, ContractAddress>,
+  public transferFromAuthorized(
+    fromAddress: MultiToken_UserPublicKey,
+    to: MultiToken_UserPublicKey,
     id: bigint,
     value: bigint,
   ) {
-    this.circuits.impure.transferFrom(fromAddress, to, id, value);
+    this.circuits.impure.transferFromAuthorized(fromAddress, to, id, value);
   }
 
-  /**
-   * @description Unsafe variant of `transferFrom` which allows transfers to contract addresses.
-   * The caller must be `fromAddress` or approved to transfer on their behalf.
-   * @param fromAddress The owner from which the transfer originates.
-   * @param to The recipient of the transferred assets.
-   * @param id The unique identifier of the asset type.
-   * @param value The quantity of `id` tokens to transfer.
-   */
-  public _unsafeTransferFrom(
-    fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-    to: Either<ZswapCoinPublicKey, ContractAddress>,
-    id: bigint,
-    value: bigint,
-  ) {
-    this.circuits.impure._unsafeTransferFrom(fromAddress, to, id, value);
-  }
+  // ---- test-only unauthenticated building blocks ----------------------------
 
-  /**
-   *  @description Transfers ownership of `value` amount of `id` tokens from `fromAddress` to `to`.
-   * Does not impose restrictions on the caller, making it suitable for composition
-   * in higher-level contract logic.
-   * @param fromAddress The owner from which the transfer originates.
-   * @param to The recipient of the transferred assets.
-   * @param id The unique identifier of the asset type.
-   * @param value The quantity of `id` tokens to transfer.
-   */
+  /** @description Unauthenticated transfer (test setup only). */
   public _transfer(
-    fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-    to: Either<ZswapCoinPublicKey, ContractAddress>,
+    fromAddress: MultiToken_UserPublicKey,
+    to: MultiToken_UserPublicKey,
     id: bigint,
     value: bigint,
   ) {
     this.circuits.impure._transfer(fromAddress, to, id, value);
   }
 
-  /**
-   * @description Unsafe variant of `_transfer` which allows transfers to contract addresses.
-   * Does not impose restrictions on the caller, making it suitable as a low-level
-   * building block for advanced contract logic.
-   * @param fromAddress The owner from which the transfer originates.
-   * @param to The recipient of the transferred assets.
-   * @param id The unique identifier of the asset type.
-   * @param value The quantity of `id` tokens to transfer.
-   */
-  public _unsafeTransfer(
-    fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-    to: Either<ZswapCoinPublicKey, ContractAddress>,
-    id: bigint,
-    value: bigint,
-  ) {
-    this.circuits.impure._unsafeTransfer(fromAddress, to, id, value);
-  }
-
-  /**
-   * @description Sets a new URI for all token types.
-   * @param newURI The new base URI for all tokens.
-   */
+  /** @description Sets a new URI for all token types. */
   public _setURI(newURI: string) {
     this.circuits.impure._setURI(newURI);
   }
 
-  /**
-   * @description Creates a `value` amount of tokens of type `token_id`, and assigns them to `to`.
-   * @param to The recipient of the minted tokens.
-   * @param id The unique identifier for the token type.
-   * @param value The quantity of `id` tokens that are minted to `to`.
-   */
-  public _mint(
-    to: Either<ZswapCoinPublicKey, ContractAddress>,
-    id: bigint,
-    value: bigint,
-  ) {
+  /** @description Unauthenticated mint (test setup only). */
+  public _mint(to: MultiToken_UserPublicKey, id: bigint, value: bigint) {
     this.circuits.impure._mint(to, id, value);
   }
 
-  /**
-   * @description Creates a `value` amount of tokens of type `token_id`, and assigns them to `to`.
-   * @param to The recipient of the minted tokens.
-   * @param id The unique identifier for the token type.
-   * @param value The quantity of `id` tokens that are minted to `to`.
-   */
-  public _unsafeMint(
-    to: Either<ZswapCoinPublicKey, ContractAddress>,
-    id: bigint,
-    value: bigint,
-  ) {
-    this.circuits.impure._unsafeMint(to, id, value);
-  }
-
-  /**
-   * @description Destroys a `value` amount of tokens of type `token_id` from `fromAddress`.
-   * @param fromAddress The owner whose tokens will be destroyed.
-   * @param id The unique identifier of the token type.
-   * @param value The quantity of `id` tokens that will be destroyed from `fromAddress`
-   */
-  public _burn(
-    fromAddress: Either<ZswapCoinPublicKey, ContractAddress>,
-    id: bigint,
-    value: bigint,
-  ) {
+  /** @description Unauthenticated burn (test setup only). */
+  public _burn(fromAddress: MultiToken_UserPublicKey, id: bigint, value: bigint) {
     this.circuits.impure._burn(fromAddress, id, value);
   }
 
-  /**
-   * @description Enables or disables approval for `operator` to manage all of the caller's assets.
-   * @param owner The ZswapCoinPublicKey or ContractAddress of the target owner.
-   * @param operator The ZswapCoinPublicKey or ContractAddress whose approval is set for the
-   * `owner`'s assets.
-   * @param approved The boolean value determining if the operator may or may not handle the
-   * `owner`'s assets.
-   */
+  /** @description Unauthenticated operator approval (test setup only). */
   public _setApprovalForAll(
-    owner: Either<ZswapCoinPublicKey, ContractAddress>,
-    operator: Either<ZswapCoinPublicKey, ContractAddress>,
+    owner: MultiToken_UserPublicKey,
+    operator: MultiToken_UserPublicKey,
     approved: boolean,
   ) {
     this.circuits.impure._setApprovalForAll(owner, operator, approved);

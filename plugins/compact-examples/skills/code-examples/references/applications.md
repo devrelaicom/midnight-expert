@@ -11,18 +11,22 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 | Attribute | Detail |
 |---|---|
 | Path | `applications/kitties/` |
-| Description | CryptoKitties-inspired NFT game on Midnight. Cats have gender, genetic traits, and can breed. NFT ownership and transfer mechanics delegate to the `Nft` module; kitty-specific logic (breeding, gender assignment, genetic hashing) is implemented on top. |
+| Description | CryptoKitties-inspired NFT game on Midnight. Cats have gender, genetic traits, and can breed. NFT ownership and transfer mechanics delegate to the `Nft` module; kitty-specific logic (breeding, gender assignment, genetic hashing) is implemented on top. Caller identity is derived in-circuit from a witness secret — `ownPublicKey()` is never used for authorization. |
 | Files | `kitties.compact`, `Nft.compact`, `witnesses.ts` |
-| Witnesses | `witnesses.ts` — implements `getLocalSecret(): Bytes<32>` and other Nft witnesses |
+| Witnesses | `witnesses.ts` — implements `getUserSecret(): UserSecretKey` (the per-prover 32-byte secret) and `createRandomNumber(): Bytes<32>` (DNA/breeding seed) |
 | Complexity | Intermediate |
 
 **`kitties.compact`** imports the local `./Nft` module and adds:
 - `Gender` enum (`Male`, `Female`)
-- Kitty-specific ledger state (traits, owner mapping)
-- `breed`, `createKitty`, and related circuits
-- Selectively exports standard NFT circuits (`balanceOf`, `ownerOf`, `approve`, `getApproved`, `setApprovalForAll`, `isApprovedForAll`) without exposing raw `mint`/`burn`
+- Identity structs: `UserSecretKey`, `UserPublicKey`, `AdminPublicKey` (all wrapping `Bytes<32>`), re-exported from the `Nft` module
+- Kitty-specific ledger state. The `Kitty.owner` and `Offer.buyer` fields are the holder's **derived** `UserPublicKey`, and the owner/buyer map keys are derived keys (not `ZswapCoinPublicKey`)
+- `createKitty`, `breedKitty`, `setPrice`, `createBuyOffer`, `approveOffer`, `transferKitty`/`transferKittyFrom` — each computes `const caller = disclose(deriveUserPublicKey(getUserSecret()))` and gates ownership against `ownerOf(kittyId) == caller`
+- Safe approval wrappers `approveKitty` / `setApprovalForAllKitties` that compute the caller from the witness and forward it to the module
+- Selectively exports the read-only NFT views (`balanceOf`, `ownerOf`, `getApproved`, `isApprovedForAll`, `tokenExists`) **without** re-exporting the module's identity-parameterized mutating circuits (`approve`/`setApprovalForAll`/`transferFrom`/`mint`/`burn`), which would let a caller pass an arbitrary `caller` identity
 
-**`Nft.compact`** is a local copy of the `modules/token/Nft` module (not imported from the modules directory).
+**Witness-derived identity (no `ownPublicKey()`):** all caller identity derives inside the circuit from a single 32-byte `userSecretKey` private-state field via the domain-separated pure circuits `deriveUserPublicKey(sk)` (`"kitties:user:pk:v1"`) and `deriveAdminPublicKey(sk)` (`"kitties:admin:pk:v1"`). `ownPublicKey()` is deliberately never used: it returns a prover-claimed value with no cryptographic binding to the transaction signer, so any ownership assertion that depends on it (e.g. `assert(ownPublicKey() == ownerOf(kittyId))`) is bypassable — an attacker just reads the owner's public key off-chain and supplies it. With derived identity, an attacker cannot reproduce the owner's derivation, so `setPrice`/`approveOffer` on a kitty they do not own fail the in-circuit assertion.
+
+**`Nft.compact`** is a local copy of the `modules/token/Nft` module (not imported from the modules directory). Its identity-sensitive circuits (`approve`, `setApprovalForAll`, `transferFrom`) take the caller's **derived** `UserPublicKey` as an explicit first parameter; the top-level contract computes it from the witness and never lets a caller supply it directly.
 
 ---
 
@@ -54,13 +58,14 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 | Attribute | Detail |
 |---|---|
 | Path | `applications/midnight-rwa/` |
-| Description | Privacy-gated real-world asset contract. Users must prove passport identity, issuer authorization (via Merkle tree), user authorization (via second Merkle tree), legal age, and nationality — all in zero-knowledge. On success, the user receives shielded tBTC and tHF tokens as reward. |
+| Description | Privacy-gated real-world asset contract. Users must prove passport identity, issuer authorization (via Merkle tree), user authorization (via second Merkle tree), legal age, and nationality — all in zero-knowledge. On success, the user receives shielded tBTC and tHF tokens as reward. **Authorization uses the secure witness-derived identity pattern**: the user's authorization key is a `UserPublicKey` derived in-circuit from a single private witness secret (`getUserSecret`), never `ownPublicKey()` (which is retained only as the safe recipient of token sends). |
 | Files | `midnight-rwa.compact`, `crypto.compact`, `passportidentity.compact`, `witnesses.ts` |
-| Witnesses | `witnesses.ts` — implements `localSecretKey()`, `findIssuerPath(pk)`, `findAuthorizationPath(pk)`, `reduceChallenge(r)` |
+| Witnesses | `witnesses.ts` — implements `localSecretKey()`, `getUserSecret()`, `findIssuerPath(pk)`, `findAuthorizationPath(pk: UserPublicKey)`, `reduceChallenge(r)` |
 | Complexity | Advanced |
 
 **`midnight-rwa.compact`** defines:
-- Ledgers: `counter`, `nonce`, `quizHash`, `issuerAuthorizations: HistoricMerkleTree<32, Bytes<32>>`, `authorizations: HistoricMerkleTree<32, ZswapCoinPublicKey>`, `tbtcCoinColor`, `identityProviderPublicKey`, `EIGHTEEN_YEARS_IN_SECONDS`, `ALLOWED_COUNTRY_CODE1/2`, `tHF`, `tBTC`
+- Identity structs `UserSecretKey`/`UserPublicKey` and `deriveUserPublicKey()`, a domain-separated (`"rwa:user:pk:v1"`) `persistentHash` derivation used as the authorization identity
+- Ledgers: `counter`, `nonce`, `quizHash`, `issuerAuthorizations: HistoricMerkleTree<32, Bytes<32>>`, `authorizations: HistoricMerkleTree<32, UserPublicKey>`, `tbtcCoinColor`, `identityProviderPublicKey`, `EIGHTEEN_YEARS_IN_SECONDS`, `ALLOWED_COUNTRY_CODE1/2`, `tHF`, `tBTC`
 - `QuizResult` struct
 - Multi-step identity proof circuit using `PassportData` + `SignedCredential`, Merkle path verification, age check, and nationality check
 - Shielded token rewards via `mintShieldedToken`
@@ -87,13 +92,13 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 
 These applications illustrate several important composition patterns:
 
-1. **Module import + selective re-export** — `kitties.compact` imports `Nft` and re-exports only safe circuits, hiding `mint`/`burn` from external callers.
+1. **Module import + selective re-export** — `kitties.compact` imports `Nft` and re-exports only the read-only views, hiding the identity-parameterized mutating circuits (`approve`/`setApprovalForAll`/`transferFrom`/`mint`/`burn`) from external callers. Exposing those would let a caller pass an arbitrary `caller` identity and bypass ownership checks; instead the top-level contract derives the caller from the witness secret and forwards it.
 
 2. **Local module copies** — Applications like `kitties` and `zkloan` keep local copies of modules (e.g., `Nft.compact`, `schnorr.compact`) rather than importing from `modules/`. This makes them self-contained.
 
-3. **Witness-driven privacy** — `midnight-rwa` uses four separate witnesses to provide off-chain data (secret key, two Merkle paths, challenge reduction), all verified in-circuit.
+3. **Witness-driven privacy** — `midnight-rwa` uses several witnesses to provide off-chain data (issuer secret key, the user authorization secret, two Merkle paths, challenge reduction), all verified in-circuit.
 
-4. **Merkle tree authorization** — `midnight-rwa` uses `HistoricMerkleTree` for two independent authorization registries, each with a separate Merkle proof witness.
+4. **Merkle tree authorization with witness-derived identity** — `midnight-rwa` uses `HistoricMerkleTree` for two independent authorization registries, each with a separate Merkle proof witness. The user registry (`authorizations`) keys on a `UserPublicKey` **derived in-circuit from a private witness secret**, never `ownPublicKey()`. The gate binds the membership proof to the caller (`assert(authPath.leaf == caller)`) so a prover cannot pass another onboarded member's valid path for an identity they do not control.
 
 5. **Multi-module DApp** — `midnight-rwa` combines three `.compact` files (`midnight-rwa.compact`, `crypto.compact`, `passportidentity.compact`) in a single deployment.
 

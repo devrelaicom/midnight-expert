@@ -371,11 +371,13 @@ export circuit _burn(account: Either<ZswapCoinPublicKey, ContractAddress>,
 All OpenZeppelin token modules use `Either<ZswapCoinPublicKey, ContractAddress>` as the universal account identifier. This covers both user wallets (identified by their Zswap public key) and contracts:
 
 ```compact
-left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey())   // current user
+left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey())   // prover-supplied key
 right<ZswapCoinPublicKey, ContractAddress>(contractAddr)     // a contract
 ```
 
 The `Utils_isKeyOrAddressZero` function checks for the zero address (used as a sentinel for mint/burn). The `Utils_isContractAddress` function checks the `is_left` flag to determine if the account is a contract.
+
+**Security: `ownPublicKey()` is not an identity for authorization.** The snippet above reflects the upstream OpenZeppelin module design, but `ownPublicKey()` returns the prover-supplied `coinPublicKey` from the circuit context (`@midnight-ntwrk/compact-runtime`'s `ownPublicKey()` is literally `circuitContext.currentZswapLocalState.coinPublicKey`) — it is **not** cryptographically bound to the transaction signer. Its only safe use is as a *recipient* for outgoing shielded transfers (routing tokens *to* the caller); using it as an owner/admin/spender for an authorization check is bypassable. The bundled `examples/FungibleToken.compact`, `examples/NonFungibleToken.compact`, and `examples/MultiToken.compact` therefore key every account on a witness-derived `UserPublicKey` (a 32-byte value derived in-circuit from a private `getUserSecret()` secret via a domain-separated `persistentHash`), and identity-sensitive circuits take the already-derived `caller: UserPublicKey` as a parameter rather than calling `ownPublicKey()`. See the `token-operations.md` "Security" note for the full rationale.
 
 ### Composing with Access Control
 

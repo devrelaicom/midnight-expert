@@ -1,34 +1,20 @@
-// =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
-// =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
+// SECURE PATTERN — witness-derived identity
 //
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
+// Caller identity is derived INSIDE the circuit from a private witness secret
+// via domain-separated `persistentHash` (see `deriveUserPublicKey` /
+// `deriveAdminPublicKey`). `ownPublicKey()` is intentionally NOT used for
+// authorization: it returns a prover-supplied value with no binding to the
+// transaction signer, so any check built on it is bypassable. Identity-bearing
+// circuits here take the caller's DERIVED `UserPublicKey` as an explicit
+// parameter; the witness lives in the top-level contract, which computes that
+// parameter and never lets a caller pass an arbitrary identity. The admin is
+// pinned at deploy in the top-level contract.
 //
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see references/applications.md for the rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
-// =============================================================================
+// The privacy design is preserved: owner identity is still stored on-chain as a
+// `Field` hash (never a raw key), and balances are looked up via
+// `generateHashKey(pk.bytes, localSecret/sharedSecret)`. The change is solely in
+// where the caller's public key comes from — a witness secret, not
+// `ownPublicKey()`.
 
 module NftZk {
 
@@ -59,35 +45,69 @@ module NftZk {
 
   import CompactStandardLibrary;
 
-  // Mapping from token ID to owner public key
+  // Identity types. Every identity is a 32-byte value DERIVED from a private
+  // witness secret via a domain-separated persistentHash — never a raw,
+  // prover-supplied public key.
+  export struct UserSecretKey {
+    bytes: Bytes<32>;
+  }
+  export struct UserPublicKey {
+    bytes: Bytes<32>;
+  }
+  export struct AdminPublicKey {
+    bytes: Bytes<32>;
+  }
+
+  // Per-user identity. Derived from the holder's secret; a caller can only act
+  // as the identity whose secret they hold. This derived key is what gets fed
+  // into `generateHashKey` to produce the private (hashed) ownership key.
+  export pure circuit deriveUserPublicKey(sk: UserSecretKey): UserPublicKey {
+    return UserPublicKey { bytes: persistentHash<Vector<2, Bytes<32>>>(
+                                    [pad(32, "nftzk:user:pk:v1"), sk.bytes]
+                                    ) };
+  }
+
+  // Admin identity. Domain-separated from the user derivation so the same
+  // secret yields a distinct admin key. The deployer's
+  // `deriveAdminPublicKey(secret)` is frozen into `contractAdmin` at deploy.
+  export pure circuit deriveAdminPublicKey(sk: UserSecretKey): AdminPublicKey {
+    return AdminPublicKey { bytes: persistentHash<Vector<2, Bytes<32>>>(
+                                     [pad(32, "nftzk:admin:pk:v1"), sk.bytes]
+                                     ) };
+  }
+
+  // Mapping from token ID to owner hash key (Field hash, never a raw key)
   export ledger tokenOwner: Map<Uint<64>, Field>;
 
-  // Mapping from token ID to approved public key (for single-token approval)
+  // Mapping from token ID to approved hash key (for single-token approval)
   export ledger tokenApprovals: Map<Uint<64>, Field>;
 
-  // Mapping from owner to number of owned tokens (using a Counter type for safe increment/decrement)
+  // Mapping from owner hash key to number of owned tokens (using a Counter type
+  // for safe increment/decrement)
   export ledger ownedTokensCount: Map<Field, Counter>;
 
   // Mapping from owner to operator approvals (owner -> operator -> bool)
   // Using hash of owner+operator as key for flat structure
   export ledger operatorApprovals: Map<Field, Boolean>;
 
-  // Retrieve the caller local secret.
+  // Retrieve the caller local secret (PRIVACY: hashed-key ownership lookups).
   export witness getLocalSecret(): Bytes<32>;
 
-  // Retrieve the caller local shared secret for approvals.
+  // Retrieve the caller local shared secret for approvals (PRIVACY).
   export witness getSharedSecret(): Bytes<32>;
 
-  // Returns the number of tokens owned by a given public key
-  export circuit balanceOf(owner: ZswapCoinPublicKey): Uint<64> {
-    const senderPublicKey = ownPublicKey();
-    assert(owner != default<ZswapCoinPublicKey>, "Owner cannot be empty.");
-    
+  // Returns the number of tokens owned by a given public key.
+  // `caller` is the DERIVED identity computed by the top-level contract from
+  // the witness secret — it is the proven identity of the transaction author.
+  // `owner` is the derived identity being queried.
+  export circuit balanceOf(caller: UserPublicKey, owner: UserPublicKey): Uint<64> {
+    assert(owner != default<UserPublicKey>, "Owner cannot be empty.");
+
     // If you check for yourself we use local secret.
     // If you check for someone else we use shared secret.
-    if(disclose(owner == senderPublicKey)){
-      // Create a hash key from sender and local secret.
-      const ownerHashKey = disclose(generateHashKey(senderPublicKey.bytes, getLocalSecret()));
+    if (disclose(caller == owner)) {
+      // Create a hash key from owner and local secret.
+      const ownerHashKey = disclose(generateHashKey(owner.bytes, getLocalSecret()));
       // Get the owner tokens count.
       if (ownedTokensCount.member(ownerHashKey)) {
         return ownedTokensCount.lookup(ownerHashKey);
@@ -103,7 +123,7 @@ module NftZk {
     return 0;
   }
 
-  // Returns the owner of a given token ID
+  // Returns the owner hash key of a given token ID
   export circuit ownerOf(tokenId: Uint<64>): Field {
     assert(tokenId != default<Uint<64>>, "Token ID cannot be empty.");
     assert(tokenExists(disclose(tokenId)), "Token does not exist.");
@@ -112,14 +132,13 @@ module NftZk {
 
   // Returns true if a token exists for the given token ID
   export circuit tokenExists(tokenId: Uint<64>): Boolean {
-    return tokenOwner.member(tokenId);
+    return tokenOwner.member(disclose(tokenId));
   }
 
-  // Approves another public key to transfer the specified token ID
-  export circuit approve(to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    const senderPublicKey = ownPublicKey();
-    assert(to != default<ZswapCoinPublicKey>, "Approved account cannot be empty.");
+  // Approves another public key to transfer the specified token ID.
+  // `caller` is the DERIVED identity of the transaction author.
+  export circuit approve(caller: UserPublicKey, to: UserPublicKey, tokenId: Uint<64>): [] {
+    assert(to != default<UserPublicKey>, "Approved account cannot be empty.");
 
     // Create a hash key from to and local secret.
     const toLocalHashKey = generateHashKey(to.bytes, getLocalSecret());
@@ -127,22 +146,23 @@ module NftZk {
     // Get the owner of the token.
     const ownerHashKey = ownerOf(tokenId);
 
-    // This assert cannot be completely trusted because of the witness nature.
-    assert(toLocalHashKey != ownerHashKey, "Cannot approve yourself.");
+    assert(disclose(toLocalHashKey != ownerHashKey), "Cannot approve yourself.");
 
-    // Create a hash key from sender and local secret.
-    const senderHashKey = generateHashKey(senderPublicKey.bytes, getLocalSecret());
+    // Create a hash key from caller and local secret.
+    const senderHashKey = generateHashKey(caller.bytes, getLocalSecret());
 
     // The caller must be the owner or an approved operator
-    assert(disclose(senderHashKey == ownerHashKey) || isApprovedForAll(ownerHashKey, senderHashKey), "Not authorized.");
+    assert(disclose(senderHashKey == ownerHashKey) || isApprovedForAll(ownerHashKey, senderHashKey),
+           "Not authorized."
+           );
 
     // Create a hash key from to and shared secret.
     const toSharedHashKey = generateHashKey(to.bytes, getSharedSecret());
-    
+
     tokenApprovals.insert(disclose(tokenId), disclose(toSharedHashKey));
   }
 
-  // Returns the approved public key for a given token ID
+  // Returns the approved hash key for a given token ID
   export circuit getApproved(tokenId: Uint<64>): Field {
     assert(tokenId != default<Uint<64>>, "Token ID cannot be empty.");
     assert(tokenExists(disclose(tokenId)), "Token does not exist.");
@@ -150,22 +170,25 @@ module NftZk {
     return tokenApprovals.lookup(disclose(tokenId));
   }
 
-  // Sets or unsets approval for an operator to manage all of the caller's tokens
-  export circuit setApprovalForAll(operator: ZswapCoinPublicKey, approved: Boolean): [] {
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    const senderPublicKey = ownPublicKey();
-    assert(operator != default<ZswapCoinPublicKey>, "Operator cannot be empty.");
-    assert(operator != senderPublicKey, "Cannot set yourself as operator.");
+  // Sets or unsets approval for an operator to manage all of the caller's tokens.
+  // `caller` is the DERIVED identity of the transaction author.
+  export circuit setApprovalForAll(
+                   caller: UserPublicKey,
+                   operator: UserPublicKey,
+                   approved: Boolean
+                   ): [] {
+    assert(operator != default<UserPublicKey>, "Operator cannot be empty.");
+    assert(operator != caller, "Cannot set yourself as operator.");
 
-    // Create a hash key from sender and local secret.
-    const senderHashKey = generateHashKey(senderPublicKey.bytes, getLocalSecret());
+    // Create a hash key from caller and local secret.
+    const senderHashKey = generateHashKey(caller.bytes, getLocalSecret());
 
     // Create a hash key from operator and shared secret.
     const operatorHashKey = generateHashKey(operator.bytes, getSharedSecret());
 
     // Create a hash key from owner and operator
     const hashKey = transientHash<[Field, Field]>([senderHashKey, operatorHashKey]);
-    
+
     // Set or unset approval for the operator
     operatorApprovals.insert(disclose(hashKey), disclose(approved));
   }
@@ -174,60 +197,69 @@ module NftZk {
   export circuit isApprovedForAll(ownerHashKey: Field, operatorHashKey: Field): Boolean {
     // Create a hash key from owner and operator
     const approvalHashKey = disclose(transientHash<[Field, Field]>([ownerHashKey, operatorHashKey]));
-    
+
     // Check if the approval exists
-    if (disclose(!operatorApprovals.member(approvalHashKey))) {
+    if (!operatorApprovals.member(approvalHashKey)) {
       return false;
     }
 
     // Return the approval status
-    return operatorApprovals.lookup(disclose(approvalHashKey));
+    return operatorApprovals.lookup(approvalHashKey);
   }
 
-  // Transfers ownership of a given token ID from you to another account
-  export circuit transfer(to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    const senderPublicKey = ownPublicKey();
+  // Transfers ownership of a given token ID from the caller to another account.
+  // `caller` is the DERIVED identity of the transaction author.
+  export circuit transfer(caller: UserPublicKey, to: UserPublicKey, tokenId: Uint<64>): [] {
     assert(tokenId != default<Uint<64>>, "Token ID cannot be empty.");
 
-    // Create a hash key from sender and local secret.
-    const senderHashKey = generateHashKey(senderPublicKey.bytes, getLocalSecret());
+    // Create a hash key from caller and local secret.
+    const senderHashKey = generateHashKey(caller.bytes, getLocalSecret());
 
-    transferFrom(senderHashKey, to, tokenId);
+    transferFrom(caller, senderHashKey, to, tokenId);
   }
 
-  // Transfers ownership of a given token ID from one public key to another
-  export circuit transferFrom(fromHashKey: Field, to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    const senderPublicKey = ownPublicKey();
+  // Transfers ownership of a given token ID from one hash key to another.
+  // `caller` is the DERIVED identity of the transaction author; `fromHashKey`
+  // is the owner hash key the token leaves. Authorization is checked against
+  // the caller's derived hash key, not against `ownPublicKey()`.
+  export circuit transferFrom(
+                   caller: UserPublicKey,
+                   fromHashKey: Field,
+                   to: UserPublicKey,
+                   tokenId: Uint<64>
+                   ): [] {
     assert(tokenId != default<Uint<64>>, "Token ID cannot be empty.");
 
-    // Create a hash key from sender and local secret.
-    const senderHashKey = generateHashKey(senderPublicKey.bytes, getLocalSecret());
+    // Create a hash key from caller and local secret.
+    const senderHashKey = generateHashKey(caller.bytes, getLocalSecret());
 
-    assert(isApprovedOrOwner(disclose(senderHashKey), disclose(tokenId)), "Not authorized to transfer.");
+    assert(isApprovedOrOwner(disclose(senderHashKey), disclose(tokenId)),
+           "Not authorized to transfer."
+           );
 
     // Create a hash key with shared secret.
     const toHashKey = generateHashKey(to.bytes, getSharedSecret());
 
     // Clear approval for this token
     clearApproval(disclose(fromHashKey), disclose(tokenId));
-    
+
     // Remove token from the current owner
     removeTokenFrom(disclose(fromHashKey), disclose(tokenId));
-    
+
     // Add token to the new owner
     addTokenTo(disclose(toHashKey), disclose(tokenId));
   }
 
-  // Mints a new token with the specified token ID to the given public key
-  export circuit mint(to: ZswapCoinPublicKey, tokenId: Uint<64>): [] {
-    const senderPublicKey = ownPublicKey();
-
-    // Minting to self (to == senderPublicKey) could reduce privacy: hash links to caller key.
-    if(disclose(to == senderPublicKey)){
-      // Create a hash key from sender and local secret.
-      const senderHashKey = generateHashKey(senderPublicKey.bytes, getLocalSecret());
+  // Mints a new token with the specified token ID to the given public key.
+  // Authorization is enforced by the top-level admin wrapper, not here.
+  // `caller` is the DERIVED identity of the transaction author, used to decide
+  // whether the recipient is the caller (local secret) or someone else
+  // (shared secret) for the privacy-preserving hash key.
+  export circuit mint(caller: UserPublicKey, to: UserPublicKey, tokenId: Uint<64>): [] {
+    // Minting to self (to == caller) could reduce privacy: hash links to caller key.
+    if (disclose(to == caller)) {
+      // Create a hash key from caller and local secret.
+      const senderHashKey = generateHashKey(caller.bytes, getLocalSecret());
       // If you mint for yourself we use local secret.
       addTokenTo(disclose(senderHashKey), disclose(tokenId));
     } else {
@@ -238,7 +270,8 @@ module NftZk {
     }
   }
 
-  // Burns (destroys) a specific token. No privileges required.
+  // Burns (destroys) a specific token. Authorization is enforced by the
+  // top-level admin wrapper, not here.
   export circuit burn(ownerHashKey: Field, tokenId: Uint<64>): [] {
     clearApproval(disclose(ownerHashKey), disclose(tokenId));
     removeTokenFrom(disclose(ownerHashKey), disclose(tokenId));
@@ -256,22 +289,22 @@ module NftZk {
   // Returns true if the spender is the owner, approved, or an operator for the token
   circuit isApprovedOrOwner(spenderHashKey: Field, tokenId: Uint<64>): Boolean {
     const ownerHashKey = ownerOf(tokenId);
-    
+
     // Check if spender is the owner
     if (spenderHashKey == ownerHashKey) {
       return true;
     }
-    
+
     // Check if spender is specifically approved for this token
     if (tokenApprovals.member(tokenId) && spenderHashKey == tokenApprovals.lookup(tokenId)) {
       return true;
     }
-    
+
     // Check if spender is an approved operator for all tokens
     return isApprovedForAll(ownerHashKey, spenderHashKey);
   }
 
-  // Adds a token to a public key, updating ownership and balance
+  // Adds a token to a hash key, updating ownership and balance
   circuit addTokenTo(toHashKey: Field, tokenId: Uint<64>): [] {
     assert(!tokenExists(tokenId), "Token already exists.");
     assert(toHashKey != default<Field>, "Recipient cannot be empty.");
@@ -285,11 +318,11 @@ module NftZk {
     ownedTokensCount.lookup(toHashKey).increment(1);
   }
 
-  // Removes a token from a public key, updating ownership and balance
+  // Removes a token from a hash key, updating ownership and balance
   circuit removeTokenFrom(fromHashKey: Field, tokenId: Uint<64>): [] {
     assert(fromHashKey != default<Field>, "Sender cannot be empty.");
     assert(fromHashKey == ownerOf(tokenId), "Public key is not the owner.");
-    
+
     // Decrement the owner's token count
     ownedTokensCount.lookup(fromHashKey).decrement(1);
     // Remove the token from the owner
@@ -299,7 +332,7 @@ module NftZk {
   // Clears approval for a token, if any
   circuit clearApproval(ownerHashKey: Field, tokenId: Uint<64>): [] {
     assert(ownerHashKey == ownerOf(tokenId), "Public key is not the owner.");
-    if (ownerOf(tokenId) != default<Field>) {
+    if (tokenApprovals.member(tokenId)) {
       tokenApprovals.remove(tokenId);
     }
   }

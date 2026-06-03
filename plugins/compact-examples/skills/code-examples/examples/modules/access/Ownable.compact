@@ -1,108 +1,74 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Compact Contracts v0.0.1-alpha.1 (access/Ownable.compact)
 
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 // =============================================================================
-//  ⚠  SECURITY WARNING — INSECURE PATTERN — DO NOT COPY  ⚠
+//  SECURE PATTERN — witness-derived identity
 // =============================================================================
-//  This example uses ownPublicKey() for AUTHORIZATION / IDENTITY GATING
-//  (owner/admin/role checks such as assert(ownPublicKey() == admin),
-//  contractAdmin = ownPublicKey(), or authorizations.insert(ownPublicKey())).
-//  THIS IS BYPASSABLE — DO NOT USE THIS PATTERN IN REAL CONTRACTS.
-//
-//  WHY: ownPublicKey() returns the prover-supplied Zswap coin public key (the
-//  coinPublicKey passed into the circuit context by
-//  @midnight-ntwrk/compact-runtime). It is NOT cryptographically bound to the
-//  wallet that signs the transaction. Any caller can supply ANY 32-byte value,
-//  so any authorization or identity check built on it can be trivially
-//  bypassed by reading the public target value off-chain and supplying it.
-//
-//  THE ONLY SAFE USE: routing shielded tokens *to* the caller, e.g.
-//  left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()) as a send/mint
-//  recipient — if the prover lies, they only misroute their own coins.
-//
-//  WHAT TO DO INSTEAD: derive caller identity inside the circuit from a
-//  witness-supplied secret via a domain-separated persistentHash, and pin the
-//  authority at deploy. See the secure reference implementation:
-//    examples/applications/zkloan/zkloan-credit-scorer.compact
-//    examples/applications/zkloan/witnesses.ts
-//  It derives identity with deriveAdminPublicKey(getUserSecret()) instead of
-//  ownPublicKey(); see references/applications.md for the rationale.
-//
-//  A full rework of this example to the secure pattern is tracked as a
-//  follow-up. Until then, every ownPublicKey()-based auth check below is a
-//  demonstration of what NOT to do.
+//  The owner is an `AdminPublicKey` DERIVED inside the ZK circuit from a private
+//  witness secret (see the `Identity` module) and pinned at deploy by the
+//  top-level contract. `assertOnlyOwner` takes the caller's already-derived
+//  `AdminPublicKey` and asserts it equals `_owner` — it NEVER calls
+//  `ownPublicKey()`, which is prover-supplied and bypassable for authorization.
+//  Only the secret holder whose `deriveAdminPublicKey(secret)` was pinned at
+//  deploy can satisfy the check; everyone else fails the equality assertion
+//  inside the proof. The top-level contract computes the caller from the witness
+//  and is the only thing that may call these circuits.
 // =============================================================================
 
 /**
  * @module Ownable
  * @description An unshielded Ownable library.
- * This modules provides a basic access control mechanism, where there is an owner
+ * This module provides a basic access control mechanism, where there is an owner
  * that can be granted exclusive access to specific circuits.
  * This approach is perfectly reasonable for contracts that have a single administrative user.
  *
  * The initial owner must be set by using the `initialize` circuit during construction.
  * This can later be changed with `transferOwnership`.
  *
- * @notice Ownership can only be transferred to ZswapCoinPublicKeys
- * through the main transfer circuits (`transferOwnership` and `_transferOwnership`).
- * In other words, ownership transfers to contract addresses are disallowed through these
- * circuits.
- * This is because Compact currently does not support contract-to-contract calls which means
- * if a contract is granted ownership, the owner contract cannot directly call the protected
- * circuit.
- *
- * @notice This module does offer experimental circuits that allow ownership to be granted
- * to contract addresses (`_unsafeTransferOwnership` and `_unsafeUncheckedTransferOwnership`).
- * Note that the circuit names are very explicit ("unsafe") with these experimental circuits.
- * Until contract-to-contract calls are supported,
- * there is no direct way for a contract to call circuits of other contracts
- * or transfer ownership back to a user.
- *
- * @notice The unsafe circuits are planned to become deprecated once contract-to-contract calls
- * are supported.
+ * @notice The owner is identified by a witness-derived `AdminPublicKey` rather
+ * than an `Either<ZswapCoinPublicKey, ContractAddress>`. Because an
+ * `AdminPublicKey` is a derived 32-byte value (not a routable Zswap/contract
+ * address), the contract-vs-user `_unsafe*` machinery of the address-based
+ * design does not apply here and has been removed.
  */
 module Ownable {
   import CompactStandardLibrary;
   import "../security/Initializable" prefix Initializable_;
-  import "../utils/Utils" prefix Utils_;
+  import "../utils/Identity" prefix Identity_;
 
-  export ledger _owner: Either<ZswapCoinPublicKey, ContractAddress>;
+  export ledger _owner: Identity_AdminPublicKey;
 
   /**
    * @description Initializes the contract by setting the `initialOwner`.
-   * This must be called in the contract's constructor.
-   *
-   * @circuitInfo k=10, rows=258
+   * This must be called in the contract's constructor with the deployer's
+   * DERIVED admin key.
    *
    * Requirements:
    *
    * - Contract is not already initialized.
-   * - `initialOwner` is not a ContractAddress.
-   * - `initialOwner` is not the zero address.
+   * - `initialOwner` is not the zero key.
    *
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} initialOwner - The initial owner of the contract.
+   * @param {AdminPublicKey} initialOwner - The derived admin key of the initial owner.
    * @returns {[]} Empty tuple.
    */
-  export circuit initialize(initialOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
+  export circuit initialize(initialOwner: Identity_AdminPublicKey): [] {
     Initializable_initialize();
-    assert(!Utils_isKeyOrAddressZero(initialOwner), "Ownable: invalid initial owner");
+    assert(initialOwner != default<Identity_AdminPublicKey>, "Ownable: invalid initial owner");
     _transferOwnership(initialOwner);
   }
 
   /**
    * @description Returns the current contract owner.
    *
-   * @circuitInfo k=10, rows=84
-   *
    * Requirements:
    *
    * - Contract is initialized.
    *
-   * @returns {Either<ZswapCoinPublicKey, ContractAddress> } - The contract owner.
+   * @returns {AdminPublicKey} - The contract owner's derived admin key.
    */
-  export circuit owner(): Either<ZswapCoinPublicKey, ContractAddress> {
+  export circuit owner(): Identity_AdminPublicKey {
     Initializable_assertInitialized();
     return _owner;
   }
@@ -110,138 +76,83 @@ module Ownable {
   /**
    * @description Transfers ownership of the contract to `newOwner`.
    *
-   * @circuitInfo k=10, rows=338
-   *
-   * @notice Ownership transfers to contract addresses are currently disallowed until contract-to-contract
-   * interactions are supported in Compact.
-   * This restriction prevents permanently disabling access to a circuit.
+   * @dev `caller` is the DERIVED admin key of the transaction author. It must
+   * equal the current owner.
    *
    * Requirements:
    *
    * - Contract is initialized.
    * - The caller is the current contract owner.
-   * - `newOwner` is not a ContractAddress.
-   * - `newOwner` is not the zero address.
+   * - `newOwner` is not the zero key.
    *
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} newOwner - The new owner.
+   * @param {AdminPublicKey} caller - The derived admin key of the transaction author.
+   * @param {AdminPublicKey} newOwner - The new owner's derived admin key.
    * @returns {[]} Empty tuple.
    */
-  export circuit transferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
+  export circuit transferOwnership(
+                   caller: Identity_AdminPublicKey,
+                   newOwner: Identity_AdminPublicKey
+                   ): [] {
     Initializable_assertInitialized();
-    assert(!Utils_isContractAddress(newOwner), "Ownable: unsafe ownership transfer");
-    _unsafeTransferOwnership(newOwner);
-  }
-
-  /**
-   * @description Unsafe variant of `transferOwnership`.
-   *
-   * @circuitInfo k=10, rows=335
-   *
-   * @warning Ownership transfers to contract addresses are considered unsafe because contract-to-contract
-   * calls are not currently supported.
-   * Ownership privileges sent to a contract address may become uncallable.
-   * Once contract-to-contract calls are supported, this circuit may be deprecated.
-   *
-   * Requirements:
-   *
-   * - Contract is initialized.
-   * - The caller is the current contract owner.
-   * - `newOwner` is not the zero address.
-   *
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} newOwner - The new owner.
-   * @returns {[]} Empty tuple.
-   */
-  export circuit _unsafeTransferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-    Initializable_assertInitialized();
-    assertOnlyOwner();
-    assert(!Utils_isKeyOrAddressZero(newOwner), "Ownable: invalid new owner");
-    _unsafeUncheckedTransferOwnership(newOwner);
+    assertOnlyOwner(caller);
+    assert(newOwner != default<Identity_AdminPublicKey>, "Ownable: invalid new owner");
+    _transferOwnership(newOwner);
   }
 
   /**
    * @description Leaves the contract without an owner.
-   * It will not be possible to call `assertOnlyOnwer` circuits anymore.
+   * It will not be possible to call `assertOnlyOwner` circuits anymore.
    * Can only be called by the current owner.
    *
-   * @circuitInfo k=10, rows=124
+   * @dev `caller` is the DERIVED admin key of the transaction author.
    *
    * Requirements:
    *
    * - Contract is initialized.
    * - The caller is the current contract owner.
    *
+   * @param {AdminPublicKey} caller - The derived admin key of the transaction author.
    * @returns {[]} Empty tuple.
    */
-  export circuit renounceOwnership(): [] {
+  export circuit renounceOwnership(caller: Identity_AdminPublicKey): [] {
     Initializable_assertInitialized();
-    assertOnlyOwner();
-    _transferOwnership(shieldedBurnAddress());
+    assertOnlyOwner(caller);
+    _transferOwnership(default<Identity_AdminPublicKey>);
   }
 
   /**
-   * @description Throws if called by any account other than the owner.
+   * @description Throws if `caller` is not the current owner.
    * Use this to restrict access of specific circuits to the owner.
    *
-   * @circuitInfo k=10, rows=115
+   * @dev `caller` is the DERIVED admin key of the transaction author, computed
+   * by the top-level contract from the witness secret. Authorization holds
+   * because only the secret holder can produce the owner's `AdminPublicKey`.
    *
    * Requirements:
    *
    * - Contract is initialized.
-   * - The caller is the current contract owner.
+   * - `caller` equals the current contract owner.
    *
+   * @param {AdminPublicKey} caller - The derived admin key of the transaction author.
    * @returns {[]} Empty tuple.
    */
-  export circuit assertOnlyOwner(): [] {
+  export circuit assertOnlyOwner(caller: Identity_AdminPublicKey): [] {
     Initializable_assertInitialized();
-    // ⚠ INSECURE: ownPublicKey() is prover-supplied and bypassable for auth — see SECURITY WARNING banner at top of file.
-    const caller = ownPublicKey();
-    assert(caller == _owner.left, "Ownable: caller is not the owner");
+    assert(caller == _owner, "Ownable: caller is not the owner");
   }
 
   /**
    * @description Transfers ownership of the contract to `newOwner` without
-   * enforcing permission checks on the caller.
-   *
-   * @circuitInfo k=10, rows=219
-   *
-   * @notice Ownership transfers to contract addresses are currently disallowed until contract-to-contract
-   * interactions are supported in Compact.
-   * This restriction prevents circuits from being inadvertently locked in contracts.
-   *
-   * Requirements:
-   *
-   * - Contract is initialized.
-   * - `newOwner` is not a ContractAddress.
-   *
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} newOwner - The new owner.
-   * @returns {[]} Empty tuple.
-   */
-  export circuit _transferOwnership(newOwner: Either<ZswapCoinPublicKey, ContractAddress>): [] {
-    Initializable_assertInitialized();
-    assert(!Utils_isContractAddress(newOwner), "Ownable: unsafe ownership transfer");
-    _unsafeUncheckedTransferOwnership(newOwner);
-  }
-
-  /**
-   * @description Unsafe variant of `_transferOwnership`.
-   *
-   * @circuitInfo k=10, rows=216
-   *
-   * @warning Ownership transfers to contract addresses are considered unsafe because contract-to-contract
-   * calls are not currently supported.
-   * Ownership privileges sent to a contract address may become uncallable.
-   * Once contract-to-contract calls are supported, this circuit may be deprecated.
+   * enforcing permission checks on the caller. Internal circuit.
    *
    * Requirements:
    *
    * - Contract is initialized.
    *
-   * @param {Either<ZswapCoinPublicKey, ContractAddress>} newOwner - The new owner.
+   * @param {AdminPublicKey} newOwner - The new owner's derived admin key.
    * @returns {[]} Empty tuple.
    */
-  export circuit _unsafeUncheckedTransferOwnership(
-                   newOwner: Either<ZswapCoinPublicKey, ContractAddress>
-                   ): [] {
+  export circuit _transferOwnership(newOwner: Identity_AdminPublicKey): [] {
     Initializable_assertInitialized();
     _owner = disclose(newOwner);
   }
