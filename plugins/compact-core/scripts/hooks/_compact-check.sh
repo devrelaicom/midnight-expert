@@ -66,8 +66,12 @@ compact_unchecked_files() {
     if [ -n "$latest_compile_ts" ]; then
       ts="${latest_compile_ts%Z}"
       ts="${ts%%.*}"
-      compile_epoch=$(date -d "$ts" "+%s" 2>/dev/null \
-                   || date -j -f "%Y-%m-%dT%H:%M:%S" "$ts" "+%s" 2>/dev/null \
+      # $ts is a UTC wall-clock time with the trailing 'Z' and any
+      # fractional seconds stripped. Parse it back as UTC on both GNU
+      # (re-append Z) and BSD/macOS (-u forces UTC interpretation); never
+      # let the timestamp be reinterpreted in the host's local timezone.
+      compile_epoch=$(date -u -d "${ts}Z" "+%s" 2>/dev/null \
+                   || date -juf "%Y-%m-%dT%H:%M:%S" "$ts" "+%s" 2>/dev/null \
                    || echo 0)
       if [ "$compile_epoch" -ge "$file_mtime" ]; then
         continue
