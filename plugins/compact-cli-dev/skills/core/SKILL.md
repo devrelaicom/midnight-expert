@@ -109,8 +109,8 @@ Place the file under `src/commands/` — the directory structure determines the 
 
 | File | Permissions | Contents |
 |------|------------|----------|
-| `.midnight-expert/wallets.json` | `0o600` | Wallet seeds, addresses, creation dates. Contains secrets — never commit. |
-| `.midnight-expert/deployed-contracts.json` | `0o644` | Contract addresses and deployment timestamps. Safe to share. |
+| `.dapp-state/wallets.json` | `0o600` | Wallet seeds, addresses, creation dates. Contains secrets — never commit. |
+| `.dapp-state/deployed-contracts.json` | `0o644` | Contract addresses and deployment timestamps. Safe to share. |
 
 Both files are stored relative to the project working directory.
 

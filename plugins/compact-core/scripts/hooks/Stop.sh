@@ -37,7 +37,7 @@ if [ -z "$PROJECT_ROOT" ]; then
 fi
 
 # --- Settings file ---
-SETTINGS_DIR="$PROJECT_ROOT/.midnight-expert"
+SETTINGS_DIR="$HOME/.midnight-expert"
 SETTINGS_FILE="$SETTINGS_DIR/settings.local.json"
 
 if [ ! -f "$SETTINGS_FILE" ]; then
@@ -90,8 +90,12 @@ if [ "$TRIGGERS" -lt 5 ]; then
   SHOULD_BLOCK=false
 fi
 if [ "$LAST_TIMESTAMP" != "null" ] && [ -n "$LAST_TIMESTAMP" ]; then
-  LAST_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${LAST_TIMESTAMP%%.*}" "+%s" 2>/dev/null \
-            || date -d "${LAST_TIMESTAMP}" "+%s" 2>/dev/null \
+  # last_block_timestamp is written as UTC (date -u ...Z, see below). Parse
+  # it back as UTC on both GNU (re-append Z) and BSD/macOS (-u forces UTC) so
+  # the cooldown DIFF is never skewed by the host's local timezone offset.
+  LAST_TS="${LAST_TIMESTAMP%Z}"; LAST_TS="${LAST_TS%%.*}"
+  LAST_EPOCH=$(date -u -d "${LAST_TS}Z" "+%s" 2>/dev/null \
+            || date -juf "%Y-%m-%dT%H:%M:%S" "$LAST_TS" "+%s" 2>/dev/null \
             || echo 0)
   NOW_EPOCH=$(date "+%s")
   DIFF=$(( NOW_EPOCH - LAST_EPOCH ))

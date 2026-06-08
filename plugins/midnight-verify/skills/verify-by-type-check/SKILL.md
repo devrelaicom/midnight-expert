@@ -20,13 +20,13 @@ You are verifying an SDK claim or user TypeScript file by running the TypeScript
 
 ## Step 1: Set Up the Workspace
 
-The workspace lives at `.midnight-expert/verify/sdk-workspace/` relative to the project root (same level as `.claude/`). Determine the project root from your working directory or `$CLAUDE_PROJECT_DIR`.
+The workspace lives at `~/.midnight-expert/verify/sdk-workspace/` in your home directory. It is home-based and independent of the project you are working in.
 
 **First time (workspace does not exist):**
 
 ```bash
-mkdir -p .midnight-expert/verify/sdk-workspace
-cd .midnight-expert/verify/sdk-workspace
+mkdir -p "$HOME/.midnight-expert/verify/sdk-workspace"
+cd "$HOME/.midnight-expert/verify/sdk-workspace"
 
 # Initialize Node project
 npm init -y
@@ -73,7 +73,7 @@ TSCONFIG_EOF
 Run a quick integrity check:
 
 ```bash
-cd .midnight-expert/verify/sdk-workspace
+cd "$HOME/.midnight-expert/verify/sdk-workspace"
 npm ls typescript
 ```
 
@@ -83,18 +83,18 @@ If `npm ls` reports errors, run `npm install` to repair.
 
 ```bash
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID"
 ```
 
 ## Wallet SDK Workspace Mode
 
-When the orchestrator passes `domain: 'wallet-sdk'` context, use a separate workspace at `.midnight-expert/verify/wallet-sdk-workspace/` instead of the SDK workspace. This workspace has different packages installed.
+When the orchestrator passes `domain: 'wallet-sdk'` context, use a separate workspace at `~/.midnight-expert/verify/wallet-sdk-workspace/` instead of the SDK workspace. This workspace has different packages installed.
 
 **First time (workspace does not exist):**
 
 ```bash
-mkdir -p .midnight-expert/verify/wallet-sdk-workspace
-cd .midnight-expert/verify/wallet-sdk-workspace
+mkdir -p "$HOME/.midnight-expert/verify/wallet-sdk-workspace"
+cd "$HOME/.midnight-expert/verify/wallet-sdk-workspace"
 
 # Initialize Node project
 npm init -y
@@ -138,7 +138,7 @@ TSCONFIG_EOF
 **Subsequent times (workspace exists):**
 
 ```bash
-cd .midnight-expert/verify/wallet-sdk-workspace
+cd "$HOME/.midnight-expert/verify/wallet-sdk-workspace"
 npm ls typescript
 ```
 
@@ -147,8 +147,8 @@ If `npm ls` reports errors, run `npm install` to repair.
 **Job directory, type assertion writing, tsc execution, interpretation, and cleanup follow the same steps as the standard SDK workspace.** The only difference is the workspace path and the installed packages.
 
 **Mode selection:** When you receive a claim from the orchestrator, check the domain context:
-- `domain: 'wallet-sdk'` → use `.midnight-expert/verify/wallet-sdk-workspace/`
-- Otherwise → use `.midnight-expert/verify/sdk-workspace/` (existing behavior)
+- `domain: 'wallet-sdk'` → use `~/.midnight-expert/verify/wallet-sdk-workspace/`
+- Otherwise → use `~/.midnight-expert/verify/sdk-workspace/` (existing behavior)
 
 ## Ledger API Execution Mode
 
@@ -163,7 +163,7 @@ When the orchestrator passes `domain: 'ledger'` context and the claim is about b
 **Script pattern:**
 
 ```bash
-cat > .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/ledger-exec.mjs << 'EXEC_EOF'
+cat > "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/ledger-exec.mjs" << 'EXEC_EOF'
 // Import the specific function being tested
 import { nativeToken, coinCommitment, CostModel } from '@midnight-ntwrk/ledger';
 
@@ -181,17 +181,17 @@ EXEC_EOF
 Run it:
 
 ```bash
-cd .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+cd "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID"
 node ledger-exec.mjs
 ```
 
 **Report this as "ledger-v8 execution" evidence**, not as type-checking evidence. Include the script source, output, and interpretation in your report.
 
 **Mode selection summary:**
-- `domain: 'wallet-sdk'` → use `.midnight-expert/verify/wallet-sdk-workspace/`
+- `domain: 'wallet-sdk'` → use `~/.midnight-expert/verify/wallet-sdk-workspace/`
 - `domain: 'ledger'` + behavioral claim → use sdk-workspace + ledger execution script
 - `domain: 'ledger'` + type claim → use sdk-workspace + normal tsc type assertions
-- Otherwise → use `.midnight-expert/verify/sdk-workspace/` (existing behavior)
+- Otherwise → use `~/.midnight-expert/verify/sdk-workspace/` (existing behavior)
 
 ## Step 2: Determine the Mode
 
@@ -239,7 +239,7 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 Write the file to the job directory:
 
 ```bash
-cat > .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/test-claim.ts << 'TS_EOF'
+cat > "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/test-claim.ts" << 'TS_EOF'
 <type assertion code>
 TS_EOF
 ```
@@ -265,7 +265,7 @@ TS_EOF
 ## Step 4: Run tsc
 
 ```bash
-cd .midnight-expert/verify/sdk-workspace
+cd "$HOME/.midnight-expert/verify/sdk-workspace"
 npx tsc --noEmit --project tsconfig.json 2>&1
 ```
 
@@ -313,5 +313,5 @@ npx tsc --noEmit jobs/$JOB_ID/test-claim.ts 2>&1
 ## Step 6: Clean Up
 
 ```bash
-rm -rf .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID"
 ```

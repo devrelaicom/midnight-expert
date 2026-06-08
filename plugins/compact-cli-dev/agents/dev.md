@@ -43,7 +43,7 @@ Do not proceed until both skills are loaded. The core skill's reference docs are
 Check whether a CLI package already exists in the project:
 
 1. Search for `oclif` config in any `package.json` within the project — check `./cli/package.json`, `./*/package.json`, and the root `package.json`.
-2. Look for a `.midnight-expert/` state directory (created by the CLI at runtime).
+2. Look for a `.dapp-state/` state directory (created by the CLI at runtime).
 3. Look for the `src/base-command.ts` file pattern that indicates the template was used.
 
 If **any** of these indicators are present, the CLI exists — go to Step 3.

@@ -31,7 +31,7 @@ Generate a run directory:
 4. Create the run directory:
 
 ```bash
-RUN_DIR=".midnight-expert/fact-checker/MM-YY/fast-run-short-name-XXXX"
+RUN_DIR="$HOME/.midnight-expert/fact-checker/MM-YY/fast-run-short-name-XXXX"
 mkdir -p "$RUN_DIR"
 ```
 

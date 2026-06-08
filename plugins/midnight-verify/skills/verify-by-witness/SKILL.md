@@ -21,13 +21,13 @@ You are verifying that a TypeScript witness implementation correctly matches and
 
 ## Phase 1: Setup and Locate Files
 
-The workspace lives at `.midnight-expert/verify/witness-workspace/` relative to the project root.
+The workspace lives at `~/.midnight-expert/verify/witness-workspace/` in your home directory. It is home-based and independent of the project you are working in.
 
 **First time (workspace does not exist):**
 
 ```bash
-mkdir -p .midnight-expert/verify/witness-workspace
-cd .midnight-expert/verify/witness-workspace
+mkdir -p "$HOME/.midnight-expert/verify/witness-workspace"
+cd "$HOME/.midnight-expert/verify/witness-workspace"
 npm init -y
 npm install @midnight-ntwrk/compact-runtime typescript
 ```
@@ -35,7 +35,7 @@ npm install @midnight-ntwrk/compact-runtime typescript
 **Subsequent times:**
 
 ```bash
-cd .midnight-expert/verify/witness-workspace
+cd "$HOME/.midnight-expert/verify/witness-workspace"
 npm ls typescript
 ```
 
@@ -45,7 +45,7 @@ If errors, `npm install` to repair.
 
 ```bash
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/witness-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/witness-workspace/jobs/$JOB_ID"
 ```
 
 **Locate the files:**
@@ -60,13 +60,13 @@ mkdir -p .midnight-expert/verify/witness-workspace/jobs/$JOB_ID
 Compile the contract where it lives, directing build output to the job directory:
 
 ```bash
-compact compile -- --skip-zk <source-path> .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
+compact compile -- --skip-zk <source-path> "$HOME/.midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/"
 ```
 
 If the orchestrator indicated this claim also needs PLONK verification (Witness + ZKIR), compile without `--skip-zk` instead:
 
 ```bash
-compact compile -- <source-path> .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
+compact compile -- <source-path> "$HOME/.midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/"
 ```
 
 This produces `build/contract/index.js` and `build/contract/index.d.ts` which export the generated `Witnesses` type.
@@ -104,7 +104,7 @@ Create a `tsconfig.json` for the job:
 Run the type check:
 
 ```bash
-cd .midnight-expert/verify/witness-workspace/jobs/$JOB_ID
+cd "$HOME/.midnight-expert/verify/witness-workspace/jobs/$JOB_ID"
 npx tsc --noEmit --project tsconfig.json 2>&1
 ```
 
@@ -240,13 +240,13 @@ The orchestrator will decide whether to dispatch @"midnight-verify:sdk-tester (a
 If the orchestrator indicated PLONK verification is needed, include the build output path in the report so the orchestrator can pass it to @"midnight-verify:zkir-checker (agent)":
 
 ```
-**Build output:** .midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
+**Build output:** ~/.midnight-expert/verify/witness-workspace/jobs/$JOB_ID/build/
 ```
 
 ## Clean Up
 
 ```bash
-rm -rf .midnight-expert/verify/witness-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/witness-workspace/jobs/$JOB_ID"
 ```
 
 Do NOT remove the base workspace — it's shared across jobs. If the orchestrator needs the build output for @"midnight-verify:zkir-checker (agent)", do NOT clean up until the orchestrator confirms the zkir-checker is done.

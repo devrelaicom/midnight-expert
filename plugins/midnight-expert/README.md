@@ -22,7 +22,7 @@ Runs comprehensive diagnostics across the midnight-expert ecosystem. Launches fi
 
 ### UserPromptSubmit
 
-On every user prompt, drains the top-level `on_next_user_prompt` array in `.midnight-expert/settings.local.json` and surfaces its formatted contents as additional context for that turn. Each entry is an object with a `type` discriminator; the hook formats known types and silently skips unknown ones (forward-compat).
+On every user prompt, drains the top-level `on_next_user_prompt` array in `~/.midnight-expert/settings.local.json` and surfaces its formatted contents as additional context for that turn. Each entry is an object with a `type` discriminator; the hook formats known types and silently skips unknown ones (forward-compat).
 
 Currently consumed: `compact-not-compiled` entries written by the `compact-core` Stop hook when it detected unchecked Compact contracts but couldn't block (Stop reattempt, or cooldown still active). The format names the contract paths and asks the agent to compile / verify them before treating any related claim as confirmed.
 

@@ -1,7 +1,7 @@
 import path from "node:path";
 
 // File system
-export const STATE_DIR = ".midnight-expert";
+export const STATE_DIR = ".dapp-state";
 export const WALLETS_FILE = "wallets.json";
 export const CONTRACTS_FILE = "deployed-contracts.json";
 export const INIT_MARKER = ".initialized";

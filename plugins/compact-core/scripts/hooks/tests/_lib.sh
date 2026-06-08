@@ -123,9 +123,18 @@ run_hook_at() {
   local out_var="$3" err_var="$4" rc_var="$5"
   local out err rc=0
 
+  # The hooks now write their settings file to $HOME/.midnight-expert rather
+  # than $PROJECT_ROOT/.midnight-expert. To keep the tests hermetic (and the
+  # existing assertions, which look under the temp project root, valid), pin
+  # both HOME and CLAUDE_PROJECT_DIR to the payload's .cwd (the temp project
+  # root). The hook's `find "$PROJECT_ROOT"` then scans the temp root, and the
+  # settings file lands at $HOME/.midnight-expert == <temp root>/.midnight-expert.
+  local hook_root
+  hook_root=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null || echo "")
+
   local tmp_err
   tmp_err=$(mktemp)
-  out=$(printf '%s' "$payload" | bash "$script_path" 2>"$tmp_err") || rc=$?
+  out=$(printf '%s' "$payload" | HOME="${hook_root:-$HOME}" CLAUDE_PROJECT_DIR="${hook_root:-${CLAUDE_PROJECT_DIR:-}}" bash "$script_path" 2>"$tmp_err") || rc=$?
   err=$(cat "$tmp_err")
   rm -f "$tmp_err"
 

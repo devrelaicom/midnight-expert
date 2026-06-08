@@ -22,7 +22,7 @@ version: 0.1.0
 | `[run-short-name]` | Run directory basename | `fast-run-core-concepts-qoMk` |
 | `[timestamp]` | ISO 8601 timestamp from run metadata | `2026-04-02T12:00:00Z` |
 | `[target descriptions]` | Comma-separated list of input file paths or skill names | `compact-core/skills/compact-tokens/SKILL.md` |
-| `[full run directory path]` | Absolute path to run artifacts directory | `.midnight-expert/fact-checker/04-02/fast-run-...` |
+| `[full run directory path]` | Absolute path to run artifacts directory | `~/.midnight-expert/fact-checker/04-02/fast-run-...` |
 | `[claim text]` | The `claim` field from the extracted claim object | `persistentHash returns Bytes<32>` |
 | `[domain]` | The `primary_domain` from classification | `compact` |
 | `[evidence_summary]` | The evidence summary from the verification result | `Compiled and executed — hash length is 32 bytes` |

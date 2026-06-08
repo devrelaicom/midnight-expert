@@ -61,10 +61,10 @@ LANG_VER=$(compact compile --language-version 2>&1)
 
 # Create job directory
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/compact-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID"
 
 # Write minimal contract
-cat > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test.compact << COMPACT_EOF
+cat > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test.compact" << COMPACT_EOF
 pragma language_version $LANG_VER;
 import CompactStandardLibrary;
 
@@ -74,19 +74,19 @@ export circuit test(): Field {
 COMPACT_EOF
 
 # Compile WITHOUT the flag
-compact compile .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test.compact \
-  > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/stdout-without.txt 2>&1
-ls -R .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/build/ \
-  > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/listing-without.txt 2>&1
+compact compile "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test.compact" \
+  > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/stdout-without.txt" 2>&1
+ls -R "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/build/" \
+  > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/listing-without.txt" 2>&1
 
 # Clean compiled output
-rm -rf .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/
+rm -rf "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/"
 
 # Compile WITH the flag
-compact compile --skip-zk .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test.compact \
-  > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/stdout-with.txt 2>&1
-ls -R .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/build/ \
-  > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/listing-with.txt 2>&1
+compact compile --skip-zk "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test.compact" \
+  > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/stdout-with.txt" 2>&1
+ls -R "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/build/" \
+  > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/listing-with.txt" 2>&1
 ```
 
 Compare the two directory listings to identify what the flag changed.
@@ -97,7 +97,7 @@ Compile a minimal contract and inspect the build directory:
 
 ```bash
 # After compilation
-find .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/build/ -type f | sort
+find "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test/build/" -type f | sort
 ```
 
 Compare the actual file tree against the claimed structure.
@@ -108,11 +108,11 @@ Feed invalid input and capture stderr:
 
 ```bash
 # Write intentionally invalid contract
-cat > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/bad.compact << 'COMPACT_EOF'
+cat > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/bad.compact" << 'COMPACT_EOF'
 <intentionally invalid code targeting the claimed error>
 COMPACT_EOF
 
-compact compile .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/bad.compact 2>&1
+compact compile "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/bad.compact" 2>&1
 echo "Exit code: $?"
 ```
 
@@ -192,7 +192,7 @@ Compare the actual output against the claim.
 Remove the job directory if one was created:
 
 ```bash
-rm -rf .midnight-expert/verify/compact-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID"
 ```
 
 Do NOT remove the base compact-workspace — it is shared across jobs.

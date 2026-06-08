@@ -135,7 +135,7 @@ Always call `ctx.facade.stop()` in a `finally` block to clean up WebSocket conne
 
 ## Persistence
 
-Wallets are stored in `.midnight-expert/wallets.json` relative to the project working directory.
+Wallets are stored in `.dapp-state/wallets.json` relative to the project working directory.
 
 ```json
 {
