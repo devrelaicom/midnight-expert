@@ -164,7 +164,7 @@ The `Contract.ledger(state.data)` call deserializes the raw on-chain data into t
 
 ## Address Persistence
 
-Deployed contract addresses are saved to `.midnight-expert/deployed-contracts.json`:
+Deployed contract addresses are saved to `.dapp-state/deployed-contracts.json`:
 
 ```json
 {

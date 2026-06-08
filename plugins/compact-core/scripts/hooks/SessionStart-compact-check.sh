@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # SessionStart hook: snapshot SHA-256 of every *.compact file under the
-# project root into .midnight-expert/settings.local.json so the Stop hook
+# project root into ~/.midnight-expert/settings.local.json so the Stop hook
 # can diff against it. Surface (and clear) any unchecked-contracts list
 # left by the previous SessionEnd as additionalContext.
 
@@ -20,7 +20,7 @@ if [ -z "$PROJECT_ROOT" ]; then
   PROJECT_ROOT="$(pwd)"
 fi
 
-SETTINGS_DIR="$PROJECT_ROOT/.midnight-expert"
+SETTINGS_DIR="$HOME/.midnight-expert"
 SETTINGS_FILE="$SETTINGS_DIR/settings.local.json"
 mkdir -p "$SETTINGS_DIR"
 

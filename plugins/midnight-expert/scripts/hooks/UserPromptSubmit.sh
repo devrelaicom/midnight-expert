@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UserPromptSubmit hook: drain entries from .midnight-expert/settings.local.json's
+# UserPromptSubmit hook: drain entries from ~/.midnight-expert/settings.local.json's
 # top-level `on_next_user_prompt` array and surface them to Claude as
 # additional context for this turn. Each entry is an object with a `type`
 # discriminator; this hook formats known types and silently skips unknown
@@ -14,23 +14,13 @@
 
 set -uo pipefail
 
-# --- Read hook input ---
-INPUT=""
+# Drain hook input (if any) so producers piping JSON don't get SIGPIPE; we no
+# longer derive any paths from it — settings live in a shared home location.
 if [ ! -t 0 ]; then
-  INPUT=$(cat || true)
+  cat >/dev/null || true
 fi
 
-CWD=""
-if [ -n "$INPUT" ] && command -v jq >/dev/null 2>&1; then
-  CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-fi
-
-PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$CWD}"
-if [ -z "$PROJECT_ROOT" ]; then
-  PROJECT_ROOT="$(pwd)"
-fi
-
-SETTINGS_FILE="$PROJECT_ROOT/.midnight-expert/settings.local.json"
+SETTINGS_FILE="$HOME/.midnight-expert/settings.local.json"
 
 if [ ! -f "$SETTINGS_FILE" ] || ! command -v jq >/dev/null 2>&1; then
   exit 0

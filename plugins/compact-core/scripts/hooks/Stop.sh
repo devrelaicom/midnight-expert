@@ -37,7 +37,7 @@ if [ -z "$PROJECT_ROOT" ]; then
 fi
 
 # --- Settings file ---
-SETTINGS_DIR="$PROJECT_ROOT/.midnight-expert"
+SETTINGS_DIR="$HOME/.midnight-expert"
 SETTINGS_FILE="$SETTINGS_DIR/settings.local.json"
 
 if [ ! -f "$SETTINGS_FILE" ]; then

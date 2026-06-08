@@ -22,13 +22,13 @@ You are verifying a Compact contract or ZKIR claim by running the full zero-know
 
 ## Step 1: Set Up the Workspace
 
-The workspace lives at `.midnight-expert/verify/zkir-workspace/` relative to the project root.
+The workspace lives at `~/.midnight-expert/verify/zkir-workspace/` in your home directory. It is home-based and independent of the project you are working in.
 
 **First time (workspace does not exist):**
 
 ```bash
-mkdir -p .midnight-expert/verify/zkir-workspace
-cd .midnight-expert/verify/zkir-workspace
+mkdir -p "$HOME/.midnight-expert/verify/zkir-workspace"
+cd "$HOME/.midnight-expert/verify/zkir-workspace"
 npm init -y
 npm install @midnight-ntwrk/zkir-v2 @midnight-ntwrk/compact-runtime
 ```
@@ -36,7 +36,7 @@ npm install @midnight-ntwrk/zkir-v2 @midnight-ntwrk/compact-runtime
 **Subsequent times (workspace exists):**
 
 ```bash
-cd .midnight-expert/verify/zkir-workspace
+cd "$HOME/.midnight-expert/verify/zkir-workspace"
 npm ls @midnight-ntwrk/zkir-v2
 ```
 
@@ -46,7 +46,7 @@ If `npm ls` reports errors, run `npm install` to repair.
 
 ```bash
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID"
 ```
 
 ## Step 2: Get the Contract
@@ -66,7 +66,7 @@ You may load compact-core skills as hints for writing correct Compact code. The 
 ## Step 3: Compile Without `--skip-zk`
 
 ```bash
-compact compile -- <source-path> .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID/build/
+compact compile -- <source-path> "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID/build/"
 ```
 
 **The source path is the `.compact` file where it lives** (contract mode) or in the job directory (claim mode). The build output always goes to `jobs/$JOB_ID/build/`.
@@ -224,7 +224,7 @@ A rejection in a negative test **confirms** the claim (the constraint is enforce
 ## Step 9: Clean Up
 
 ```bash
-rm -rf .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID"
 ```
 
 Do NOT remove the base workspace — it's shared across jobs.

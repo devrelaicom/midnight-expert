@@ -29,7 +29,7 @@ fi
 
 # Check 2: Any .compact file the agent touched must have been compiled
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$CWD}"
-SETTINGS_FILE="$PROJECT_ROOT/.midnight-expert/settings.local.json"
+SETTINGS_FILE="$HOME/.midnight-expert/settings.local.json"
 
 # shellcheck source=_compact-check.sh
 source "$(dirname "$0")/_compact-check.sh"

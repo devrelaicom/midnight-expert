@@ -182,7 +182,7 @@ Dispatched by /verify when a claim is about opcode semantics, constraint behavio
 
 Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification.
 
-The `.compact` hash-baseline snapshot used by the SubagentStop checks below is taken by the `compact-core` plugin's `SessionStart-compact-check.sh`. The two plugins share the file `.midnight-expert/settings.local.json` (key: `compact_compilation_check_hook`).
+The `.compact` hash-baseline snapshot used by the SubagentStop checks below is taken by the `compact-core` plugin's `SessionStart-compact-check.sh`. The two plugins share the file `~/.midnight-expert/settings.local.json` (key: `compact_compilation_check_hook`).
 
 ### SubagentStop
 

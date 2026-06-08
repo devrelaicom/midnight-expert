@@ -32,7 +32,7 @@ If ANY service is unreachable:
 
 ## Step 2: Set Up the Workspace
 
-Uses the same workspace as the type-checker: `.midnight-expert/verify/sdk-workspace/`.
+Uses the same workspace as the type-checker: `~/.midnight-expert/verify/sdk-workspace/`.
 
 If it doesn't exist, follow the same initialization as `verify-by-type-check` (create workspace, install packages, create tsconfig).
 
@@ -40,7 +40,7 @@ Create a job directory:
 
 ```bash
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID"
 ```
 
 ## Step 3: Choose Your Approach
@@ -149,7 +149,7 @@ Compile it and place the output in the job directory.
 Write the chosen script to the job directory:
 
 ```bash
-cat > .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/test-claim.mjs << 'SCRIPT_EOF'
+cat > "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID/test-claim.mjs" << 'SCRIPT_EOF'
 <script content>
 SCRIPT_EOF
 ```
@@ -157,7 +157,7 @@ SCRIPT_EOF
 Run it:
 
 ```bash
-cd .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+cd "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID"
 node test-claim.mjs
 ```
 
@@ -192,7 +192,7 @@ node test-claim.mjs
 ## Step 7: Clean Up
 
 ```bash
-rm -rf .midnight-expert/verify/sdk-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/sdk-workspace/jobs/$JOB_ID"
 ```
 
 ## Wallet SDK Devnet Mode
@@ -214,7 +214,7 @@ If ANY container is unreachable:
 
 ### Workspace
 
-Reuse the wallet-sdk-workspace at `.midnight-expert/verify/wallet-sdk-workspace/`. It already has all wallet SDK packages installed.
+Reuse the wallet-sdk-workspace at `~/.midnight-expert/verify/wallet-sdk-workspace/`. It already has all wallet SDK packages installed.
 
 ### Script Approach
 

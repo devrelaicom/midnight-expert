@@ -18,7 +18,7 @@ fi
 CONTENT=$(cat "$TRANSCRIPT")
 
 # Check 1: Verify workspace was created
-if ! echo "$CONTENT" | grep -qE 'mkdir -p .midnight-expert/verify/sdk-workspace|mkdir -p .midnight-expert/verify/wallet-sdk-workspace'; then
+if ! echo "$CONTENT" | grep -qE '\.midnight-expert/verify/sdk-workspace|\.midnight-expert/verify/wallet-sdk-workspace'; then
   cat >&2 <<'EOF'
 {"decision":"block","reason":"You must follow the process as described in the `midnight-verify:verify-by-devnet` skill. Do not attempt to take shortcuts. Only verifications which have followed the process will be accepted and not blocked."}
 EOF

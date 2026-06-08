@@ -34,16 +34,16 @@ Load any of these if they would help you write a better test. Do not load them a
 
 ## Step 1: Set Up the Workspace
 
-The workspace lives at `.midnight-expert/verify/compact-workspace/` relative to the project root (same level as `.claude/`). Determine the project root from your working directory or `$CLAUDE_PROJECT_DIR`.
+The workspace lives at `~/.midnight-expert/verify/compact-workspace/` in your home directory. It is home-based and independent of the project you are working in.
 
 **First time (workspace does not exist):**
 
 ```bash
 # Create the workspace
-mkdir -p .midnight-expert/verify/compact-workspace
+mkdir -p "$HOME/.midnight-expert/verify/compact-workspace"
 
 # Initialize and install runtime
-cd .midnight-expert/verify/compact-workspace
+cd "$HOME/.midnight-expert/verify/compact-workspace"
 npm init -y
 npm install @midnight-ntwrk/compact-runtime
 ```
@@ -53,7 +53,7 @@ npm install @midnight-ntwrk/compact-runtime
 Run a quick integrity check:
 
 ```bash
-cd .midnight-expert/verify/compact-workspace
+cd "$HOME/.midnight-expert/verify/compact-workspace"
 npm ls @midnight-ntwrk/compact-runtime
 ```
 
@@ -64,7 +64,7 @@ If `npm ls` reports errors (missing or corrupted packages), run `npm install` to
 ```bash
 # Generate a unique job ID
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/compact-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID"
 ```
 
 All contract files, compilation output, and runner scripts go in this job directory.
@@ -112,7 +112,7 @@ export circuit testClaimName(<params>): <ReturnType> {
 **Write the file:**
 
 ```bash
-cat > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<claim>.compact << 'COMPACT_EOF'
+cat > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<claim>.compact" << 'COMPACT_EOF'
 <contract content>
 COMPACT_EOF
 ```
@@ -122,7 +122,7 @@ COMPACT_EOF
 Load the `midnight-tooling:compact-cli` skill for compilation flags, version management, and troubleshooting.
 
 ```bash
-compact compile .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<claim>.compact --skip-zk
+compact compile "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/test-<claim>.compact" --skip-zk
 ```
 
 **If compilation succeeds:** Proceed to Step 5. The compiled output will be in `test-<claim>/build/` relative to where you ran the command, or in the contract's output directory. Check for the `contract/index.js` file.
@@ -152,7 +152,7 @@ If no `.zkir` output is found (some compilation modes may not produce it), note 
 **Create the runner script in the job directory:**
 
 ```bash
-cat > .midnight-expert/verify/compact-workspace/jobs/$JOB_ID/run.mjs << 'RUNNER_EOF'
+cat > "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID/run.mjs" << 'RUNNER_EOF'
 import { pureCircuits } from './out/contract/index.js';
 
 // Call the test circuit
@@ -171,7 +171,7 @@ Adjust the import path based on where `compact compile` placed the output. The c
 **Run it:**
 
 ```bash
-cd .midnight-expert/verify/compact-workspace/jobs/$JOB_ID
+cd "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID"
 node run.mjs
 ```
 
@@ -219,7 +219,7 @@ Compare the actual output to what the claim predicts.
 Remove the job directory:
 
 ```bash
-rm -rf .midnight-expert/verify/compact-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/compact-workspace/jobs/$JOB_ID"
 ```
 
 Do NOT remove the base workspace — it's shared across jobs.

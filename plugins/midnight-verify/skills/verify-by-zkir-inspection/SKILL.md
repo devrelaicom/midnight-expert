@@ -25,13 +25,13 @@ If the checker method has already compiled the contract, use its build output fo
 
 ## Step 1: Set Up and Compile
 
-Uses the same workspace as the checker method: `.midnight-expert/verify/zkir-workspace/`. Does not require the WASM checker — only the Compact CLI and JSON parsing.
+Uses the same workspace as the checker method: `~/.midnight-expert/verify/zkir-workspace/`. Does not require the WASM checker — only the Compact CLI and JSON parsing.
 
 Create a job directory:
 
 ```bash
 JOB_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-mkdir -p .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID
+mkdir -p "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID"
 ```
 
 Write a minimal `.compact` contract targeting the claim. Only include what's needed to test the specific structural property.
@@ -40,7 +40,7 @@ Get the current language version and compile:
 
 ```bash
 compact compile --language-version
-compact compile -- --skip-zk <source-path> .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID/build/
+compact compile -- --skip-zk <source-path> "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID/build/"
 ```
 
 For user-provided contracts, compile the contract where it lives (it may have imports) and direct only the build output to the job directory.
@@ -48,7 +48,7 @@ For user-provided contracts, compile the contract where it lives (it may have im
 If this inspection will be followed by checker verification, omit `--skip-zk` to avoid recompiling:
 
 ```bash
-compact compile -- <source-path> .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID/build/
+compact compile -- <source-path> "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID/build/"
 ```
 
 Capture the compiler output. Note the compiler version — ZKIR output may change between versions.
@@ -123,5 +123,5 @@ For complex structural claims, write a small Node.js script in the job directory
 ## Step 5: Clean Up
 
 ```bash
-rm -rf .midnight-expert/verify/zkir-workspace/jobs/$JOB_ID
+rm -rf "$HOME/.midnight-expert/verify/zkir-workspace/jobs/$JOB_ID"
 ```
