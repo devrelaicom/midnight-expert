@@ -104,7 +104,7 @@ Two ledger event variants touch `dtime`:
 
 (`chain-indexer/src/infra/storage.rs:710–776`)
 
-The ledger-side `DustGenerationDtimeUpdate` event also carries a `TreeInsertionPath` (`tree_insertion_path: SerializedDustTreeInsertionPath`) stored verbatim in `ledger_events.raw`. Wallets use this path to call `generating_tree.update_from_evidence(...)` locally. The `dtime_update` event is surfaced at the GraphQL layer under `midnight-indexer:indexer-graphql-api` → dust-beta-api.
+The ledger-side `DustGenerationDtimeUpdate` event also carries a `TreeInsertionPath` (`tree_insertion_path: SerializedDustTreeInsertionPath`) stored verbatim in `ledger_events.raw`. Wallets use this path to call `generating_tree.update_from_evidence(...)` locally. The `dtime_update` event is surfaced at the GraphQL layer under `midnight-indexer:indexer-graphql-api` → `references/dust-beta-api.md`.
 (`indexer-common/src/domain.rs:328–335`)
 
 ### A4 — DUST Ledger Events in `ledger_events`
@@ -144,7 +144,7 @@ The same pair exists for the zswap and dust-commitment trees: `zswap_start_index
 Migration 003 adds `zswap_end_index`, `dust_commitment_end_index`, and `dust_generation_end_index` to `blocks`. These are the chain's `*_first_free` values as of the block boundary — i.e., the next available slot in each tree after all transactions in the block have been applied.
 (`003_block_tree_end_indexes.sql:1–19`)
 
-Purpose: lets API clients determine the current tree upper bound from a single `Block` row without scanning `regular_transactions`. For the GraphQL `@beta` surface that uses these, see `midnight-indexer:indexer-graphql-api` → dust-beta-api.
+Purpose: lets API clients determine the current tree upper bound from a single `Block` row without scanning `regular_transactions`. For the GraphQL `@beta` surface that uses these, see `midnight-indexer:indexer-graphql-api` → `references/dust-beta-api.md`.
 
 **Row level** (`dust_generation_info.generation_index`, migration 002):
 
@@ -279,7 +279,7 @@ Rate limiting is implemented as a sleep of `1000 / max_rps` ms between Blockfros
 ## Cross-references
 
 - Full table column listings: `references/database-schema.md`
-- DUST GraphQL beta API (`dustGenerations` subscription, `dustGenerationStatus` query): `midnight-indexer:indexer-graphql-api` → dust-beta-api
+- DUST GraphQL beta API (`dustGenerations` subscription, `dustGenerationStatus` query): `midnight-indexer:indexer-graphql-api` → `references/dust-beta-api.md`
 - NIGHT/DUST token economics and the NIGHT→DUST conversion rationale: `core-concepts:tokenomics`
 - SPO configuration knobs (`period_secs`, `page_size`, `max_rps`): `midnight-indexer:indexer-architecture` → `references/configuration-reference.md`
 - Ledger event types and the EventDetailsV8/V9 variants: `indexer-common/src/domain/ledger/ledger_state.rs:914–970`

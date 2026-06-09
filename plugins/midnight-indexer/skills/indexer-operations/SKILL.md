@@ -28,7 +28,7 @@ The indexer exposes two HTTP probes on the GraphQL port (default **8088**). Both
 | `GET /live` | Liveness | `200 OK` — always, as long as the async runtime is responsive |
 | `GET /ready` | Readiness | `200 OK` when caught up with the node; `503 Service Unavailable` with body `"indexer has not yet caught up with the node"` otherwise |
 
-Source: `indexer-api/src/infra/api.rs:295–309`.
+Source: `indexer-api/src/infra/api.rs:277–309`.
 
 ```bash
 # Liveness — is the process alive?

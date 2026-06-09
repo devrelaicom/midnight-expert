@@ -229,7 +229,7 @@ Used by `chain-indexer`, `wallet-indexer`, and `indexer-api`.
 
 Struct: `indexer-common/src/infra/pub_sub/nats.rs:23–29`. `password` is a `SecretString`.
 
-Sources: `chain-indexer/config.yaml:24–27`, `wallet-indexer/config.yaml:21–24`, `indexer-api/config.yaml:22–25`.
+Sources: `chain-indexer/config.yaml:25–28`, `wallet-indexer/config.yaml:21–24`, `indexer-api/config.yaml:22–25`.
 
 ---
 

@@ -47,6 +47,7 @@ The v3 endpoint paths (`/api/v3/graphql` and `/api/v3/graphql/ws`) still work as
 | `transactions(offset!)` | TransactionOffset (hash or identifier) | Array of Transaction |
 | `contractAction(address!, offset?)` | Contract address + optional block/tx offset | ContractDeploy, ContractCall, or ContractUpdate |
 | `dustGenerationStatus(cardanoRewardAddresses!)` | Array of Cardano stake addresses (max 10) | DUST generation status |
+| `dustGenerations(cardanoRewardAddresses!)` | Array of Cardano stake addresses | DUST generation entries for those addresses (distinct from the `@beta` `dustGenerations` subscription) |
 | `dParameterHistory` | none | D-parameter records |
 | `termsAndConditionsHistory` | none | Terms & Conditions records |
 | `spoIdentities` | all optional: `limit: Int`, `offset: Int` (callable with no args) | SPO identity records |

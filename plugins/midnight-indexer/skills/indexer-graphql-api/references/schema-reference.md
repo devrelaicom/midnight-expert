@@ -41,7 +41,7 @@ For pagination patterns see `references/pagination-and-offsets.md`. For the full
 
 ### Query
 
-31 fields. `schema-v4.graphql:715`
+30 fields. `schema-v4.graphql:715`
 
 #### Block & Transaction queries
 
