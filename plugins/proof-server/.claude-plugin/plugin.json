@@ -1,6 +1,6 @@
 {
   "name": "proof-server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Deep technical reference for the Midnight proof server \u2014 internal architecture, complete API reference, configuration tuning, and operational monitoring",
   "author": {
     "name": "Aaron Bassett",
