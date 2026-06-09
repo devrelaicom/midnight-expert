@@ -24,6 +24,8 @@ The indexer processes every finalized block and extracts nine categories of data
 
 ## Database Schema
 
+The tables below are grouped by purpose. For the **complete** catalog — every table, all columns and types, primary keys, indexes, the full foreign-key map, and the Postgres-vs-SQLite divergences — see `references/database-schema.md`.
+
 ### Core Tables
 
 | Table | Purpose |
@@ -146,6 +148,15 @@ The indexer tracks DUST (Decentralized Unshielded Staking Token) generation:
 - **Generation rate** — How quickly DUST accrues
 - **Capacity** — Maximum DUST that can be generated
 - **Initial UTXOs, dtime updates, spend processing, parameter changes** — All tracked as DUST ledger events
+
+> **Deep dive:** `references/dust-and-spo-data.md` — the cNIGHT→DUST pipeline (registrations, QDO fields, the `dtime` decay model, generation-tree indexes) and the full SPO data model (identity, committee, epochs, Blockfrost stake refresh).
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/database-schema.md` | Complete table catalog from the migrations — every column, PK, index, the foreign-key map, and Postgres-vs-SQLite differences | When writing queries against the schema or reasoning about entity relationships |
+| `references/dust-and-spo-data.md` | DUST-generation and SPO subsystem deep-dive: cNIGHT registrations, QDO/`dtime` model, generation-tree indexes, SPO identity/committee/epoch/stake flow | When working with DUST generation data or SPO/stake indexing |
 
 ## Cross-References
 
