@@ -135,6 +135,8 @@ Use `/health` for liveness (is the process alive?) and `/ready` for readiness (c
 
 ## Log Analysis
 
+> For a structured reference of all log patterns, verbosity levels, and the full monitoring script, see `references/logging-and-monitoring.md`.
+
 ### Enabling Verbose Logs
 
 Start the proof server with `-v` (or `--verbose`) to enable DEBUG-level logging:
@@ -271,6 +273,12 @@ Multiple Instances (horizontal scaling)
 - **I/O minimal:** After startup parameter fetch, the server has negligible disk and network I/O
 - **Latency profile:** First proof may be slow (parameter fetch if `--no-fetch-params`); subsequent proofs have consistent latency determined by circuit complexity
 - **Garbage collection:** Background GC runs every 10 seconds, removing timed-out jobs; negligible CPU overhead
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/logging-and-monitoring.md` | Structured reference for log patterns, verbosity levels, and monitoring script details | When diagnosing proof server behaviour via logs or setting up operational monitoring |
 
 ## Cross-References
 

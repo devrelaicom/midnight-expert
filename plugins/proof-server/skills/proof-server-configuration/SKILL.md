@@ -161,6 +161,10 @@ docker run -d --name midnight-proof-server -p 6300:6300 \
   --job-capacity 5
 ```
 
+## Tuning Rationale
+
+The configuration knobs map directly onto two phases of the proving pipeline. Workers control parallelism at the CPU level: each proof runs inside a `spawn_blocking` closure, pinning one physical core for its entire duration, so `--num-workers` should not exceed the cores available for proving work. The `--no-fetch-params` flag trades startup time for first-proof latency: omitting it causes the server to download ZK public parameters and built-in proving keys before the HTTP listener binds, which means the server is unavailable for several minutes but serves the first proof immediately; passing it inverts this trade-off and defers the fetch cost to the first request for each circuit. For a full description of how parameters and proving keys are stored and loaded at runtime, see `proof-server:proof-server-architecture`.
+
 ## Tuning Guidance
 
 ### Worker Count
