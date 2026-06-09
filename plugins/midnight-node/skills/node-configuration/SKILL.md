@@ -40,6 +40,8 @@ SHOW_CONFIG=1 CFG_PRESET=preview midnight-node
 | `trie_cache_size` | `--trie-cache-size` | `1073741824` (1 GiB) | State trie cache size in bytes |
 | `use_main_chain_follower_mock` | Config file | `false` | Use mock Cardano mainchain follower (for dev/testing) |
 
+> **Full catalog:** these are the most-used keys. For **every** config key across all cfg modules (meta, midnight, substrate, memory-monitor, storage-monitor, chain-spec) with types, defaults, and the env-var mapping, see `references/configuration-reference.md`.
+
 ## Validator Keys
 
 Validator nodes require three cryptographic keys, each loaded from a seed file via environment variable.
@@ -57,6 +59,8 @@ export AURA_SEED_FILE=/keys/aura.seed
 export GRANDPA_SEED_FILE=/keys/grandpa.seed
 export CROSS_CHAIN_SEED_FILE=/keys/cross-chain.seed
 ```
+
+> **Deep dive:** `references/validator-keys.md` — the KeyTypeIds (`aura`/`gran`/`crch`), the `SessionKeys` struct (BEEFY commented out — so exactly 3 keys), `author_insertKey`/`author_rotateKeys`, and the separate libp2p node-key. For the validator operator journey, see `midnight-node:node-validator`.
 
 ## Available Networks
 
@@ -81,6 +85,8 @@ The node loads multiple configuration files that define the chain's genesis stat
 | `ics-config.json` | Illiquid Circulation Supply (ICS) configuration |
 | `federated-authority-config.json` | Initial governance body membership (Council + TechnicalCommittee) |
 | `system-parameters-config.json` | Initial system parameters — D-parameter, Terms & Conditions |
+
+> **Deep dive:** `references/chain-spec-and-presets.md` — the 11 `res/cfg/*.toml` presets, all genesis JSON files, and why `CFG_PRESET=preview` works while `--chain preview` resolves to a missing file path.
 
 ## File Safety and Boot Validation
 
@@ -156,8 +162,17 @@ CFG_PRESET=preview midnight-node \
 midnight-node --dev --tmp
 ```
 
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/configuration-reference.md` | The complete config-key catalog from `node/src/cfg/**` + `res/cfg/default.toml`: every key with type, default, and the `CFG_PRESET`/env-var layering | When looking up any config key or its default |
+| `references/chain-spec-and-presets.md` | The 11 `res/cfg` presets, the genesis JSON files, and the `CFG_PRESET` vs `--chain` selection mechanism | When choosing a network or assembling a chain spec |
+| `references/validator-keys.md` | The 3 validator session keys (AURA/GRANDPA/CROSS_CHAIN), KeyTypeIds, `SessionKeys`, key insertion/rotation, and the BEEFY-not-wired status | When provisioning validator keys |
+
 ## Cross-References
 
 - `midnight-node:node-architecture` — Runtime pallets and consensus mechanisms configured by these parameters
 - `midnight-node:node-operations` — Operational guidance for running configured nodes
+- `midnight-node:node-validator` — The validator operator journey that consumes these keys and candidate settings
 - `midnight-tooling:devnet` — Local development stack that auto-configures node settings
