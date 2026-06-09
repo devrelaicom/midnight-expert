@@ -141,6 +141,8 @@ Key metrics to monitor:
 | `substrate_sync_peers` | Number of sync peers |
 | `substrate_block_verification_time` | Block import verification time |
 
+> **Deep dive:** `references/metrics-and-monitoring.md` — the full metric catalog (with correct upstream `substrate_*` names), the Prometheus **remote-write** push (`PROMETHEUS_PUSH_ENDPOINT` → `/api/v1/receive`), the memory/storage monitors, and the one Midnight-specific metric.
+
 ### Push Endpoint
 
 The node supports pushing metrics to a Prometheus remote write receiver (HTTP POST to `/api/v1/receive`, targeting Thanos, Cortex, or Mimir) via the `PROMETHEUS_PUSH_ENDPOINT` environment variable.
@@ -248,8 +250,23 @@ curl -s -H "Content-Type: application/json" \
   http://localhost:9944
 ```
 
+> **Worked example:** `examples/diagnostics-and-deployment.md` — executed `system_health` / `system_syncState` / `grandpa_roundState` calls with real captured output, plus Docker and systemd deployment templates.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/metrics-and-monitoring.md` | The node's observability surface: Prometheus scrape metrics, remote-write push, memory/storage monitors, and log signals | When setting up monitoring or interpreting metrics |
+
+## Examples
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `examples/diagnostics-and-deployment.md` | Executed diagnostic RPC calls (health, sync, finality) with real output, plus Docker and systemd deployment templates | When checking node health or deploying a node |
+
 ## Cross-References
 
 - `midnight-node:node-configuration` — Detailed configuration flags and environment variables
 - `midnight-node:node-rpc-api` — RPC methods used for monitoring and diagnostics
+- `midnight-node:node-validator` — Running a validator end-to-end (keys, candidacy, committee, block production)
 - `midnight-tooling:devnet` — Local development stack that manages node lifecycle automatically
