@@ -19,7 +19,7 @@ The indexer processes every finalized block and extracts nine categories of data
 5. **Unshielded UTXOs** — Creation and spending tracking, owner addresses, token types, DUST registration status
 6. **Ledger events** — Zswap events (inputs/outputs) and DUST events (initial UTXOs, dtime updates, spend processing, parameter changes)
 7. **DUST generation** — cNIGHT registrations from Cardano, generation rate and capacity tracking
-8. **System parameters** — D-parameter and Terms & Conditions history (both stored in the `system_parameters_d` table)
+8. **System parameters** — D-parameter history (stored in the `system_parameters_d` table) and Terms & Conditions history (stored in the `system_parameters_terms_and_conditions` table)
 9. **SPO data** — Identities, committee membership, epoch performance, stake distribution, pool metadata
 
 ## Database Schema
@@ -62,6 +62,7 @@ When a wallet connects via the `connect` mutation, its viewing key is encrypted 
 | Table | Purpose |
 |-------|---------|
 | `system_parameters_d` | D-parameter history (governance) |
+| `system_parameters_terms_and_conditions` | Terms & Conditions history (governance) |
 | `epochs` | Epoch boundary records |
 | `spo_identity` | Stake pool operator identity records |
 | `committee_membership` | SPO committee membership tracking |
@@ -72,9 +73,9 @@ When a wallet connects via the `connect` mutation, its viewing key is encrypted 
 blocks
   └── transactions (1:N)
         ├── regular_transactions (1:1, for Regular variant)
-        │     └── contract_actions (1:N)
-        │           ├── contract_balances (1:N)
-        │           └── unshielded_utxos (1:N)
+        ├── contract_actions (1:N)
+        │     └── contract_balances (1:N)
+        ├── unshielded_utxos (1:N)
         └── ledger_events (1:N)
               ├── zswap events (inputs/outputs)
               └── dust events
@@ -83,25 +84,24 @@ wallets
   └── relevant_transactions (N:M with transactions)
 ```
 
-## Contract Action Lifecycle
+## Contract Action Types
 
-Contract actions follow a defined lifecycle tracked by the indexer:
+The indexer records three independent kinds of contract action as they occur. They are peer variants, not stages of a fixed sequence: a contract begins with a Deploy, and any number of Call and Update actions can follow in whatever order they happen on-chain. Update is contract maintenance (new verifier keys / state) — it is not a mandatory terminal step that closes out a contract.
 
 ```text
-Deploy ──→ Call ──→ Call ──→ ... ──→ Update
-  │          │        │                 │
-  │          │        │                 │
-  ▼          ▼        ▼                 ▼
-Initial    Entry    Entry           New verifier
-state      point    point           keys / state
-           exec     exec
+Deploy            Call             Update
+  │                │                 │
+  ▼                ▼                 ▼
+Initial          Entry           New verifier
+state            point           keys / state
+                 exec
 ```
 
 | Action | Description |
 |--------|-------------|
 | **Deploy** | Contract is deployed to the network with initial state and verifier keys |
 | **Call** | Contract entry point is invoked, state is updated |
-| **Update** | Contract verifier keys or operations are updated |
+| **Update** | Contract verifier keys or operations are updated (contract maintenance) |
 
 Each action records:
 - The contract address

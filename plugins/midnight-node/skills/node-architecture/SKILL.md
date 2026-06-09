@@ -28,47 +28,47 @@ midnight-node/
 
 The runtime composes approximately 28 pallets organized by function. The exact count depends on how umbrella entries (such as partner chain bridge pallets) are counted individually.
 
-### Standard Substrate
+### Core / System
 
 | Pallet | Purpose |
 |--------|---------|
-| `frame_system` | Core runtime framework — accounts, events, block context |
-| `pallet_timestamp` | On-chain time via inherent extrinsics |
-| `pallet_preimage` | Store and manage preimages for hashed proposals |
-| `pallet_balances` | Account balance management |
-| `pallet_transaction_payment` | Fee calculation and payment |
-| `pallet_sudo` | Superuser dispatch for development/testing |
-| `pallet_utility` | Batch calls and proxy dispatch |
-| `pallet_scheduler` | Scheduled dispatch of calls at future blocks |
+| `frame_system` (System) | Core runtime framework — accounts, events, block context |
+| `pallet_timestamp` (Timestamp) | On-chain time via inherent extrinsics |
+| `pallet_preimage` (Preimage) | Store and manage preimages for hashed proposals |
+| `pallet_scheduler` (Scheduler) | Scheduled dispatch of calls at future blocks |
+| `pallet_migrations` (MultiBlockMigrations) | Multi-block runtime storage migrations |
+| `pallet_tx_pause` (TxPause) | Pause and resume individual dispatchable calls |
 
 ### Consensus
 
 | Pallet | Purpose |
 |--------|---------|
-| `pallet_aura` | AURA block production — round-robin slot assignment |
-| `pallet_grandpa` | GRANDPA deterministic finality gadget |
-| `pallet_beefy` | BEEFY bridge protocol for light client proofs |
-| `pallet_mmr` | Merkle Mountain Range for light client state proofs |
+| `pallet_aura` (Aura) | AURA block production — round-robin slot assignment |
+| `pallet_grandpa` (Grandpa) | GRANDPA deterministic finality gadget |
+| `pallet_beefy` (Beefy) | BEEFY bridge protocol for light client proofs |
+| `pallet_mmr` (Mmr) | Merkle Mountain Range for light client state proofs |
+| `pallet_beefy_mmr` (BeefyMmrLeaf) | BEEFY MMR leaf construction for light client proofs |
 
-### Partner Chains (Cardano Integration)
+### Partner Chains / Session (Cardano Integration)
 
 | Pallet | Purpose |
 |--------|---------|
-| `pallet_sidechain` | Sidechain registration and cross-chain message handling |
-| `pallet_session_validator_management` | Validator set rotation synced from Cardano mainchain |
-| `sp_session_validator_management_query` | Query interface for session/validator data |
-| Partner chain bridge pallets | cNIGHT bridging and cross-chain token transfers |
+| `pallet_sidechain` (Sidechain) | Sidechain registration and cross-chain message handling |
+| `pallet_session_validator_management` (SessionCommitteeManagement) | Validator set rotation synced from Cardano mainchain |
+| `pallet_partner_chains_session` (Session) | Partner Chains session rotation and committee wiring |
+| `pallet_session` (PalletSession) | Stub session pallet — committee writes to `CurrentIndex` |
+| `pallet_partner_chains_bridge` (Bridge) | cNIGHT bridging and cross-chain token transfers |
 
 ### Midnight-Specific
 
 | Pallet | Purpose |
 |--------|---------|
-| `pallet_midnight` | Core Midnight logic — transaction processing, ZK proof verification, ledger API |
-| `pallet_midnight_system` | System-level Midnight operations — epoch transitions, parameter management |
-| `pallet_node_version` | On-chain node version tracking and compatibility checks |
-| `pallet_cnight_observation` | cNIGHT cross-chain observation and validation |
-| `pallet_system_parameters` | On-chain governance parameters — D-parameter, Terms & Conditions |
-| `pallet_throttle` | Per-account transaction rate limiting — max bytes and max transaction count over a rolling block window |
+| `pallet_midnight` (Midnight) | Core Midnight logic — transaction processing, ZK proof verification, ledger API |
+| `pallet_midnight_system` (MidnightSystem) | System-level Midnight operations — epoch transitions, parameter management |
+| `pallet_version` (NodeVersion) | On-chain node version tracking and compatibility checks |
+| `pallet_cnight_observation` (CNightObservation) | cNIGHT cross-chain observation and validation |
+| `pallet_system_parameters` (SystemParameters) | On-chain governance parameters — D-parameter, Terms & Conditions |
+| `pallet_throttle` (Throttle) | Per-account transaction rate limiting — max bytes and max transaction count over a rolling block window |
 
 ### Governance
 
@@ -76,7 +76,12 @@ The runtime composes approximately 28 pallets organized by function. The exact c
 |--------|---------|
 | `pallet_collective` (Council) | Council governance body — motions and voting |
 | `pallet_collective` (TechnicalCommittee) | Technical committee governance body |
-| `pallet_federated_authority` | Two-body federated governance — requires both Council and TechnicalCommittee approval |
+| `pallet_membership` (CouncilMembership) | Manages Council membership set |
+| `pallet_membership` (TechnicalCommitteeMembership) | Manages Technical Committee membership set |
+| `pallet_federated_authority` (FederatedAuthority) | Two-body federated governance — requires both Council and TechnicalCommittee approval |
+| `pallet_federated_authority_observation` (FederatedAuthorityObservation) | Observes and validates federated authority actions |
+
+> `sp_session_validator_management_query` is **not** a pallet — it is a runtime-API / RPC query crate for session and validator data, so it is not listed in the inventory above.
 
 ## Consensus Mechanism
 
@@ -136,7 +141,8 @@ The Midnight node maintains a custom ledger separate from the standard Substrate
 ```text
 Client                    Node                        Runtime
   │                        │                            │
-  │  send_mn_transaction   │                            │
+  │  author_submitExtrinsic                             │
+  │  (send_mn_transaction) │                            │
   │───────────────────────→│                            │
   │                        │  LedgerApi::apply_transaction()
   │                        │───────────────────────────→│
@@ -152,7 +158,7 @@ Client                    Node                        Runtime
   │  Transaction hash      │                            │
 ```
 
-1. **Submission:** Client sends a transaction via `send_mn_transaction` RPC
+1. **Submission:** Client submits the `send_mn_transaction` extrinsic (`MidnightCall::send_mn_transaction`) via the standard `author_submitExtrinsic` RPC — there is no RPC method literally named `send_mn_transaction`
 2. **Pool filtering:** `FilteringTransactionPool` validates the transaction against `CheckCallFilter` rules
 3. **Application:** `LedgerApi::apply_transaction()` processes the transaction in the runtime
 4. **ZK verification:** Zero-knowledge proof is verified against the circuit's verification key

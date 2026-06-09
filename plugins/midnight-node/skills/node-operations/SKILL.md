@@ -12,16 +12,16 @@ Operational guide for running, monitoring, and troubleshooting the Midnight node
 
 ### Validator Node
 
-Produces blocks and participates in consensus. Requires all four validator keys.
+Produces blocks and participates in consensus. Requires all validator keys.
 
 ```bash
-midnight-node --chain preview \
+CFG_PRESET=preview midnight-node \
   --validator \
   --name "my-validator"
 ```
 
 Validator nodes must have:
-- AURA, GRANDPA, CROSS_CHAIN, and BEEFY keys configured (see `node-configuration`)
+- AURA, GRANDPA, and CROSS_CHAIN keys configured (see `node-configuration`)
 - Sufficient peers for consensus participation
 - Stable network connectivity and uptime
 
@@ -30,7 +30,7 @@ Validator nodes must have:
 Syncs and validates the chain without producing blocks. Serves RPC requests and provides network capacity.
 
 ```bash
-midnight-node --chain preview \
+CFG_PRESET=preview midnight-node \
   --name "my-full-node" \
   --rpc-external --rpc-cors all
 ```
@@ -42,7 +42,7 @@ midnight-node --chain preview \
 Retains all historical state. Required for block explorers, indexers, and historical queries.
 
 ```bash
-midnight-node --chain preview \
+CFG_PRESET=preview midnight-node \
   --state-pruning archive \
   --blocks-pruning archive \
   --name "my-archive-node"
@@ -90,8 +90,9 @@ docker run -d --name midnight-node \
   -p 30333:30333 \
   -p 9615:9615 \
   -v midnight-data:/data \
+  -e CFG_PRESET=preview \
   midnightntwrk/midnight-node:<version> \
-  midnight-node --chain preview \
+  midnight-node \
     --rpc-external --rpc-cors all \
     --prometheus-external
 ```
@@ -113,6 +114,8 @@ docker run -d --name midnight-node \
 | `/data` | Chain database and ledger storage |
 | `/keys` | Validator key files (validator mode only) |
 
+> These mount paths are conventions defined by the separate `midnight-node-docker` repository (the Compose tooling), not by the node source itself.
+
 ## Monitoring
 
 ### Prometheus Metrics
@@ -121,7 +124,7 @@ The node exposes Prometheus metrics on port 9615 by default.
 
 ```bash
 # Enable external Prometheus endpoint
-midnight-node --chain preview --prometheus-external
+CFG_PRESET=preview midnight-node --prometheus-external
 
 # Scrape metrics
 curl http://localhost:9615/metrics
@@ -132,27 +135,27 @@ Key metrics to monitor:
 | Metric | Description |
 |--------|-------------|
 | `substrate_block_height` | Current best and finalized block heights |
-| `substrate_number_leaves` | Number of leaves in the state trie |
-| `substrate_peers_count` | Number of connected peers |
+| `substrate_number_leaves` | Number of known chain leaves (aka forks) |
+| `substrate_sub_libp2p_peers_count` | Number of connected peers |
 | `substrate_ready_transactions_number` | Transactions in the ready queue |
 | `substrate_sync_peers` | Number of sync peers |
 | `substrate_block_verification_time` | Block import verification time |
 
 ### Push Endpoint
 
-The node supports pushing metrics to a remote Prometheus Pushgateway via the `PROMETHEUS_PUSH_ENDPOINT` environment variable.
+The node supports pushing metrics to a Prometheus remote write receiver (HTTP POST to `/api/v1/receive`, targeting Thanos, Cortex, or Mimir) via the `PROMETHEUS_PUSH_ENDPOINT` environment variable.
 
 ```bash
-PROMETHEUS_PUSH_ENDPOINT=http://pushgateway:9091 midnight-node --chain preview
+PROMETHEUS_PUSH_ENDPOINT=https://thanos:9091/api/v1/receive CFG_PRESET=preview midnight-node
 ```
 
 ### Memory Monitoring
 
-The node includes a configurable memory monitoring system. When memory usage exceeds the configured threshold, the node initiates a graceful shutdown to prevent out-of-memory crashes.
+The node includes a configurable memory monitoring system. When available memory drops below the configured threshold, the node initiates a graceful shutdown to prevent out-of-memory crashes.
 
 | Parameter | Description |
 |-----------|-------------|
-| `memory_threshold` | Percentage of system memory that triggers shutdown (e.g., `90`) |
+| `memory_threshold` | Required available memory in MiB; the node shuts down gracefully when available memory drops below it. Default `0` (disabled), e.g., `512` |
 
 The node logs memory usage periodically and emits a warning before initiating shutdown, allowing the process manager (systemd, Docker, Kubernetes) to restart it cleanly.
 
@@ -164,7 +167,7 @@ Bootnodes are the initial peers the node contacts to discover the network. Each 
 
 ```bash
 # Add custom bootnodes
-midnight-node --chain preview \
+CFG_PRESET=preview midnight-node \
   --bootnodes /dns4/bootnode.example.com/tcp/30333/p2p/12D3KooW...
 ```
 
@@ -177,7 +180,7 @@ Each node has a unique libp2p identity derived from a node key. The key is auto-
 midnight-node key generate-node-key --file /keys/node.key
 
 # Use a specific node key
-midnight-node --chain preview --node-key-file /keys/node.key
+CFG_PRESET=preview midnight-node --node-key-file /keys/node.key
 ```
 
 ### P2P Port
@@ -185,7 +188,7 @@ midnight-node --chain preview --node-key-file /keys/node.key
 The default P2P port is 30333. Ensure this port is open for inbound connections if the node should be reachable by peers.
 
 ```bash
-midnight-node --chain preview --port 30333 --listen-addr /ip4/0.0.0.0/tcp/30333
+CFG_PRESET=preview midnight-node --port 30333 --listen-addr /ip4/0.0.0.0/tcp/30333
 ```
 
 ## Troubleshooting

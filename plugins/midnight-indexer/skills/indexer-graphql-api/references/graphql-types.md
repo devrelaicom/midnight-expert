@@ -11,7 +11,7 @@ Represents a block on the Midnight blockchain.
 | `hash` | HexEncoded | Block hash (hex-encoded) |
 | `height` | Int | Block height (sequential index) |
 | `protocolVersion` | Int | Protocol version |
-| `timestamp` | Int | Block creation time as a UNIX timestamp (seconds) |
+| `timestamp` | Int | Block creation time as a UNIX timestamp (milliseconds — the raw Substrate moment) |
 | `author` | HexEncoded | Hex-encoded block author (nullable) |
 | `parent` | Block | Parent block (nullable) |
 | `transactions` | [Transaction!]! | Transactions included in this block |
@@ -144,7 +144,8 @@ Invocation of a contract entry point.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `entryPoint` | String | Name of the called entry point |
+| `entryPoint` | String! | Name of the called entry point |
+| `deploy` | ContractDeploy! | The originating deploy this call references |
 
 ### ContractUpdate
 

@@ -8,7 +8,7 @@ version: 0.1.0
 
 The Midnight indexer is a Rust application (edition 2024) built with async-graphql, axum, and subxt. It connects to a Midnight node via WebSocket, indexes on-chain data into a database, and exposes it through a GraphQL API.
 
-**Current version:** 4.3.2 (released 2026-05-15)
+**Current version:** 4.3.3 (released 2026-06-04)
 
 ## Component Overview
 

@@ -58,7 +58,7 @@ docker run -d --name midnight-proof-server -p 6300:6300 \
 
 ### `--num-workers`
 
-Controls how many proof generation tasks can run in parallel. Each worker creates its own tokio runtime and processes one proof at a time using `spawn_blocking`.
+Controls how many proof generation tasks can run in parallel. Workers run on the shared tokio runtime and offload each job via `spawn_blocking`; a fresh current-thread tokio runtime is created per job inside the blocking closure.
 
 ```bash
 # CLI — 4 workers for a quad-core machine
@@ -104,7 +104,7 @@ The default of 600 seconds (10 minutes) is generous for most circuits. Complex c
 
 ### `--no-fetch-params`
 
-Skips the pre-fetching of ZK public parameters (k=10 through k=15) and built-in proving keys (zswap/spend, zswap/output, zswap/sign, dust/spend) on startup. This makes the server available faster but defers the fetch cost to the first proof request for each circuit.
+Skips the pre-fetching of ZK public parameters (k=10 through k=15) and built-in proving keys (midnight/zswap/spend, midnight/zswap/output, midnight/zswap/sign, midnight/dust/spend) on startup. This makes the server available faster but defers the fetch cost to the first proof request for each circuit.
 
 ```bash
 # CLI

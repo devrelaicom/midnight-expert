@@ -32,7 +32,9 @@ const unsubscribe = client.subscribe(
         timestamp
         transactions {
           hash
-          identifiers
+          ... on RegularTransaction {
+            identifiers
+          }
         }
       }
     }`,

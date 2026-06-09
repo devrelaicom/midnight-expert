@@ -39,11 +39,11 @@ These methods are unique to the Midnight node and access ZK ledger state and Mid
 
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
-| `midnight_contractState` | `address: String`, `block_hash?: Hash` | Contract state bytes | Query the state of a deployed Compact contract |
-| `midnight_zswapStateRoot` | `block_hash?: Hash` | Hash | Zswap state Merkle root at a given block |
-| `midnight_ledgerStateRoot` | `block_hash?: Hash` | Hash | Ledger state root at a given block |
-| `midnight_apiVersions` | none | Version map | Supported API versions for all RPC modules |
-| `midnight_ledgerVersion` | `block_hash?: Hash` | u32 | Ledger format version (v7 or v8) |
+| `midnight_contractState` | `contract_address: String` (hex), `block_hash?: Hash` | Hex-encoded `String` | Query the state of a deployed Compact contract |
+| `midnight_zswapStateRoot` | `block_hash?: Hash` | `Vec<u8>` (byte array) | Zswap state Merkle root at a given block |
+| `midnight_ledgerStateRoot` | `block_hash?: Hash` | `Vec<u8>` (byte array) | Ledger state root at a given block |
+| `midnight_apiVersions` | none | `Vec<u32>` (currently `[2]`) | Supported RPC protocol version(s) — distinct from the runtime API version |
+| `midnight_ledgerVersion` | `block_hash?: Hash` | `String` | Ledger implementation version string |
 
 ### Example: Query Contract State
 
@@ -75,7 +75,7 @@ These methods query on-chain governance parameters managed by the `pallet_system
 |--------|-----------|---------|-------------|
 | `systemParameters_getTermsAndConditions` | `block_hash?: Hash` | Terms & Conditions data | Current terms and conditions set by governance |
 | `systemParameters_getDParameter` | `block_hash?: Hash` | D-parameter value | Current D-parameter controlling validator selection |
-| `systemParameters_getAriadneParameters` | `block_hash?: Hash` | Ariadne parameters | Staking and delegation parameters |
+| `systemParameters_getAriadneParameters` | `epoch_number: McEpochNumber`, `d_parameter_at?: Hash` | Ariadne parameters | Staking and delegation parameters (mandatory mainchain epoch; optional block hash sources the D-parameter) |
 
 ### Example: Get D-Parameter
 
@@ -95,10 +95,20 @@ These methods interact with the Cardano partner chain integration.
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `sidechain_getParams` | none | Sidechain parameters | Partner chain configuration |
-| `sidechain_getSignatures` | `hash: Hash` | Signatures | Cross-chain signatures for a given hash |
 | `sidechain_getEpochCommittee` | `epoch: u64` | Committee members | Validator committee for a specific epoch |
 | `sidechain_getStatus` | none | Status object | Partner chain synchronization status |
-| `sidechain_getRegistrations` | `epoch: u64` | Registrations | Validator registrations for an epoch |
+| `sidechain_getRegistrations` | `mc_epoch_number: McEpochNumber`, `mc_public_key: StakePoolPublicKey` | Registrations | Validator registrations for a mainchain epoch and stake-pool public key |
+| `sidechain_getAriadneParameters` | `epoch_number: McEpochNumber` | Ariadne parameters | Staking and delegation parameters (deprecated — use `systemParameters_getAriadneParameters` instead) |
+
+## Peer Reputation RPCs
+
+These methods inspect and manage peer reputation, under the `network` namespace.
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `network_peerReputations` | none | Peer reputation info | Reputation data for all known peers |
+| `network_peerReputation` | `peer_id: String` | Peer reputation info | Reputation data for a specific peer |
+| `network_unbanPeer` | `peer_id: String` | none | Lift a ban on a specific peer |
 
 ## Standard Substrate RPCs
 

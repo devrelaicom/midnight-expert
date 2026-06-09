@@ -55,9 +55,11 @@ This parameter is **required** for the `transactions` query.
 query {
   transactions(offset: { hash: "abc123..." }) {
     hash
-    identifiers
-    transactionResult {
-      status
+    ... on RegularTransaction {
+      identifiers
+      transactionResult {
+        status
+      }
     }
   }
 }
@@ -66,8 +68,10 @@ query {
 query {
   transactions(offset: { identifier: "def456..." }) {
     hash
-    transactionResult {
-      status
+    ... on RegularTransaction {
+      transactionResult {
+        status
+      }
     }
   }
 }

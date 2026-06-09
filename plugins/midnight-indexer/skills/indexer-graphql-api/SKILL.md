@@ -47,10 +47,10 @@ The v3 endpoint paths (`/api/v3/graphql` and `/api/v3/graphql/ws`) still work as
 | `dustGenerationStatus(cardanoRewardAddresses!)` | Array of Cardano stake addresses (max 10) | DUST generation status |
 | `dParameterHistory` | none | D-parameter records |
 | `termsAndConditionsHistory` | none | Terms & Conditions records |
-| `spoIdentities` | none | SPO identity records |
+| `spoIdentities` | all optional: `limit: Int`, `offset: Int` (callable with no args) | SPO identity records |
 | `spoByPoolId` | Pool ID | SPO details |
 | `spoCompositeByPoolId` | Pool ID | Composite SPO data |
-| `stakeDistribution` | none | Stake distribution data |
+| `stakeDistribution` | all optional: `limit: Int`, `offset: Int`, `search: String`, `orderByStakeDesc: Boolean` (callable with no args) | Stake distribution data |
 
 ### Example: Query Latest Block
 
@@ -62,7 +62,9 @@ query {
     timestamp
     transactions {
       hash
-      identifiers
+      ... on RegularTransaction {
+        identifiers
+      }
     }
   }
 }
@@ -218,7 +220,7 @@ All contract actions share these fields:
 | Variant | Additional Fields |
 |---------|-------------------|
 | `ContractDeploy` | (base fields only) |
-| `ContractCall` | `entryPoint: String` |
+| `ContractCall` | `entryPoint: String!` |
 | `ContractUpdate` | (base fields only) |
 
 ### TransactionResult
