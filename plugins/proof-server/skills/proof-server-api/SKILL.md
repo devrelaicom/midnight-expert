@@ -109,7 +109,7 @@ This is returned as plain text, not JSON. The current production default is V2 o
 
 ## Proving Endpoints
 
-All proving endpoints use the custom tagged binary serialization format defined by the `midnight-serialize` crate. Requests and responses are **not JSON** -- they are binary-encoded cryptographic structures.
+All proving endpoints use the custom tagged binary serialization format defined by the `midnight-serialize` crate. Requests and responses are **not JSON** -- they are binary-encoded cryptographic structures. See `references/binary-serialization.md` for the full tag table and per-endpoint request/response type definitions.
 
 ### `POST /prove`
 
@@ -219,7 +219,7 @@ The proof server uses a permissive CORS policy -- all origins are allowed. This 
 
 ## Error Response Format
 
-Health and metadata endpoints return JSON error responses. Proving endpoints return plain text error messages since the normal response format is binary.
+Health and metadata endpoints return JSON error responses. Proving endpoints return plain text error messages since the normal response format is binary. For a complete catalog of HTTP status codes returned by each endpoint (including the 428 Precondition Required response for version mismatches), see `references/status-codes.md`.
 
 ## Usage Patterns
 
@@ -251,3 +251,23 @@ for k in $(seq 10 15); do
   curl -s http://localhost:6300/fetch-params/$k
 done
 ```
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/binary-serialization.md` | Tagged binary wire format and per-endpoint request/response type definitions for the `midnight-serialize` crate | When constructing or parsing raw binary payloads for `/prove`, `/prove-tx`, `/check`, or `/k` |
+| `references/status-codes.md` | Complete HTTP status code catalog for all endpoints, including 428 Precondition Required for version mismatches | When diagnosing unexpected HTTP responses or implementing error handling |
+
+## Examples
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `examples/metadata-endpoints.md` | Runnable curl commands for all metadata endpoints (`/health`, `/version`, `/ready`, `/proof-versions`, `/fetch-params`) | When verifying server health, checking readiness, or testing the metadata API |
+| `examples/constructing-a-prove-request.md` | Worked, executed `/prove` request showing binary serialization end-to-end | When integrating the `/prove` endpoint directly or debugging proof generation issues |
+
+## Cross-References
+
+- `proof-server:proof-server-architecture` — Internal worker pool, queue, and caching architecture
+- `proof-server:proof-server-configuration` — CLI flags including `--no-fetch-params`, `--job-capacity`, and network settings
+- `midnight-tooling:proof-server` — Docker setup, version selection, and operational guidance
