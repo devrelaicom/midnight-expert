@@ -8,6 +8,8 @@ version: 0.1.0
 
 The Midnight node exposes a JSON-RPC API over WebSocket on port 9944. The API provides approximately 68 methods across multiple modules for querying chain state, submitting transactions, and accessing Midnight-specific data.
 
+This skill summarises the API. For the **complete** per-method reference at node 1.0.0 — exact params and return types — see `references/custom-rpcs.md` (the 16 custom methods) and `references/substrate-rpcs.md` (the 52 standard Substrate methods).
+
 ## Connection
 
 | Protocol | Default Port | URL |
@@ -189,6 +191,8 @@ These methods inspect and manage peer reputation, under the `network` namespace.
 | `beefy_getFinalizedHead` | Latest BEEFY-finalized block hash |
 | `beefy_subscribeJustifications` | Subscribe to BEEFY justifications |
 
+> **Full catalog:** `references/substrate-rpcs.md` enumerates all **52** standard Substrate methods (system, chain, state, author, grandpa, mmr, beefy) with their params, derived from `docs/openrpc.json`.
+
 ## Subscription Usage Example
 
 Subscriptions use WebSocket to push updates to the client. The following example subscribes to new block headers via `chain_subscribeNewHeads`.
@@ -226,7 +230,22 @@ The node returns a subscription ID, then pushes notifications as new blocks arri
 
 To unsubscribe, send `chain_unsubscribeNewHeads` with the subscription ID.
 
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/custom-rpcs.md` | The 16 Midnight-specific RPC methods (`midnight_`/`systemParameters_`/`sidechain_`/`network_`) with exact params and return types | When calling a custom RPC or checking its exact signature |
+| `references/substrate-rpcs.md` | The 52 standard Substrate RPC methods grouped by module | When using a standard `system_`/`chain_`/`state_`/`author_` etc. method |
+
+## Examples
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `examples/custom-rpc-calls.md` | Executed `midnight_*` / `systemParameters_*` / `sidechain_*` calls with real captured output, plus the `rpc.discover` version difference | When constructing a custom RPC request or verifying a return type |
+
 ## Cross-References
 
 - `midnight-indexer:indexer-graphql-api` — Higher-level GraphQL API for querying indexed chain data
+- `midnight-node:node-governance` — The governance parameters behind `systemParameters_*` RPCs
+- `midnight-node:node-validator` — How `systemParameters_getAriadneParameters` and the D-parameter drive committee selection
 - `midnight-dapp-dev:midnight-sdk` — DApp provider configuration using node RPC endpoints
