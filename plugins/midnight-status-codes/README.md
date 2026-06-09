@@ -53,7 +53,7 @@ Each entry in `codes.json` has the following fields:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `code` | string | yes | The code, name, or identifier the user pastes (e.g. `"166"`, `"400/JobNotPending"`, `"InvalidNetworkIdError"`). |
+| `code` | string | yes | The code, name, or identifier the user pastes (e.g. `"166"`, `"400/JobNotPending"`, `"ContractRuntimeError"`). |
 | `name` | string | yes | Canonical name. |
 | `source` | string | yes | One of `midnight-node`, `substrate`, `jsonrpc-2.0`, `partner-chains`, `compact-compiler`, `compact-runtime`, `compact-js-sdk`, `midnight-js`, `midnight-wallet`, `midnight-indexer`, `proof-server`, `dapp-connector`. |
 | `category` | string | yes | Used by `--category` filter. |

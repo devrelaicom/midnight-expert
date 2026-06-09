@@ -35,6 +35,10 @@ Covers the local 3-service development network (node, indexer, proof server) lif
 | [network-lifecycle.md](skills/devnet/references/network-lifecycle.md) | Generating, starting, stopping, and monitoring the devnet via Docker Compose | Managing the devnet through its full lifecycle |
 | [version-resolution.md](skills/devnet/references/version-resolution.md) | How Docker image versions are resolved and checked for compatibility | Resolving version conflicts or selecting specific component versions |
 
+### midnight-tooling:devnet-health
+
+Status and health checks for the local 3-service devnet (node, indexer, proof server) -- distinguishing whether each container is running from whether each service is responding to its health endpoint. Used directly or by other agents (doctor, statusline) that need structured per-service status.
+
 ### midnight-tooling:proof-server
 
 Covers working with the Midnight proof server in any context -- local development via devnet, standalone Docker instances, and remote servers on testnet/mainnet. Includes API endpoints, version selection, and environment endpoint lookup.
