@@ -67,7 +67,7 @@ The proof server uses **`Cors::permissive()`**: all origins are accepted, no cre
 | HTTP status | Meaning | What to do |
 |---|---|---|
 | `503 Service Unavailable` | Worker pool saturated; server is too busy | Back off and retry; check `/ready` for utilisation |
-| `429 Too Many Requests` | Rate-limited (if proxy layer enforces limits) | Respect `Retry-After` header |
+| `429 Too Many Requests` | Proof server job queue full (`--job-capacity > 0`); request rejected at intake | Increase `--job-capacity` or add workers — see `proof-server:proof-server-configuration` |
 
 For status-code details, see `proof-server:proof-server-api` (status-codes reference) and `midnight-status-codes:status-codes`.
 

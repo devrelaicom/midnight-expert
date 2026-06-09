@@ -28,7 +28,7 @@ Covers the proof server REST API on port 6300 including the /prove, /check, /k, 
 
 ### proof-server:proof-server-architecture
 
-Covers the proof server's Rust/actix-web internals including the worker pool, job queue, job lifecycle, proving pipeline, ZKIR versioning (V2/V3), key material management, concurrency control, and the component layout of the midnight-proof-server binary.
+Covers the proof server's Rust/actix-web internals including the worker pool, job queue, job lifecycle, proving pipeline, ZKIR IR-format dispatch (`zkir_v2` / `zkir_v3`), key material management, concurrency control, and the component layout of the midnight-proof-server binary.
 
 #### References
 

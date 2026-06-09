@@ -43,7 +43,7 @@ curl -s http://localhost:6300/ready | jq .
 |----------|------|---------|
 | `/health` | 200 | Server process is alive |
 | `/ready` | 200 | Server is accepting proving requests |
-| `/ready` | 503 | Job queue is full, server is busy |
+| `/ready` | 503 | Job queue is full, server is busy (only when `--job-capacity > 0`; default 0 = unlimited, so 503 is never returned from `/ready` by default) |
 | `/prove` | 429 | Request rejected, capacity limit reached |
 
 ### Pre-warming Parameters
@@ -215,7 +215,7 @@ docker stats midnight-proof-server --no-stream
 The proof server, Compact compiler, and wallet SDK must use compatible versions. A version mismatch typically manifests as:
 
 - `/prove` returning 400 (binary deserialization failure)
-- `/check` returning unexpected constraint violations
+- `/check` returning unexpected results, or `/prove` returning 500 (internal circuit error)
 - Proofs that generate successfully but fail on-chain verification
 
 Check versions across all components:

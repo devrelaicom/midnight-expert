@@ -27,7 +27,7 @@ expected header tag '<tag>', got '<received>'
 | `POST /check` | `(ProofPreimageVersioned, Option<WrappedIr>)` | `Vec<Option<u64>>` |
 | `POST /k` | `IrSource` (tagged ZKIR bytes) | `u8` (plain text) |
 
-**`/check` response semantics:** the `Vec<Option<u64>>` values carry branch-omission and padding information from the circuit check, **not** a constraint pass/fail result. See `proof-server:proof-server-integration` → `proving-pipeline.md` for interpretation.
+**`/check` response semantics:** the `Vec<Option<u64>>` values carry branch-omission and padding information from the circuit check, **not** a constraint pass/fail result. See `proof-server:proof-server-architecture` → `proving-pipeline.md` for interpretation.
 
 **`/prove-tx` deprecation:** this endpoint uses the initial (pre-final) cost model and lacks the `Option<Fr>` binding-input parameter. Use `/prove` for all new work.
 
@@ -44,10 +44,11 @@ ProofVersioned          tag: "proof-versioned"            (structure.rs:287)
 
 ## Practical note
 
-Clients rarely construct these bytes by hand. The wallet SDK (`httpClientProofProvider`) serializes and deserializes them automatically. If you are writing a custom client or debugging raw traffic, see `proof-server:proof-server-integration` for end-to-end assembly examples and `examples/constructing-a-prove-request.md` for a worked walkthrough.
+Clients rarely construct these bytes by hand. The wallet SDK (`httpClientProofProvider`) serializes and deserializes them automatically. If you are writing a custom client or debugging raw traffic, see `examples/constructing-a-prove-request.md` for a worked assembly walkthrough, and `proof-server:proof-server-integration` for how the SDK invokes the server end-to-end.
 
 ## Cross-references
 
 - `proof-server:proof-server-api` — endpoint reference with status codes and error messages
-- `proof-server:proof-server-integration` — SDK integration and proving-pipeline walkthrough
+- `proof-server:proof-server-architecture` — proving-pipeline walkthrough (`proving-pipeline.md`), including `check` semantics and ZKIR dispatch
+- `proof-server:proof-server-integration` — SDK integration: how `httpClientProofProvider` invokes the server and the client-server contract
 - `midnight-status-codes:status-codes` — full Midnight ecosystem error code reference

@@ -34,7 +34,7 @@ Health check endpoint. Both routes return identical responses.
 **Response (200):**
 
 ```json
-{"status": "ok", "timestamp": "2024-01-15T10:30:00.000Z"}
+{"status": "ok", "timestamp": "2026-06-09 07:04:11.226 +00:00:00"}
 ```
 
 Use this for basic liveness checks. The server returns 200 as soon as the HTTP listener is ready, even if key material is still being pre-fetched.
@@ -67,7 +67,7 @@ Readiness check that includes worker pool utilization. Use this for load balanci
   "jobsProcessing": 1,
   "jobsPending": 0,
   "jobCapacity": 10,
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2026-06-09 07:04:11.226 +00:00:00"
 }
 ```
 
@@ -79,7 +79,7 @@ Readiness check that includes worker pool utilization. Use this for load balanci
   "jobsProcessing": 2,
   "jobsPending": 10,
   "jobCapacity": 10,
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2026-06-09 07:04:11.226 +00:00:00"
 }
 ```
 
@@ -89,7 +89,7 @@ Readiness check that includes worker pool utilization. Use this for load balanci
 | `jobsProcessing` | number | Jobs currently being proved by workers |
 | `jobsPending` | number | Jobs waiting in the queue for a worker |
 | `jobCapacity` | number | Maximum queue depth (0 = unlimited) |
-| `timestamp` | string | ISO 8601 timestamp |
+| `timestamp` | string | `OffsetDateTime`-style timestamp (`YYYY-MM-DD HH:MM:SS.ssssss +00:00:00`), not ISO-8601 `Z` format |
 
 The HTTP status code reflects the readiness state: **200** when the server can accept new proving requests, **503** when the job queue has reached capacity.
 

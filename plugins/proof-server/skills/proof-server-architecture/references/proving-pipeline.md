@@ -13,7 +13,7 @@ Client
   │                 versioned_ir::check(ppi, ir)
   │                         │
   │                         ▼
-  │                 Vec<Option<usize>>          ← omitted-block / padding info
+  │                 Vec<Option<u64>>            ← omitted-block / padding info
   │                         │
   │                    (returned to client)
   │
@@ -34,12 +34,12 @@ Client
 
 Because Compact circuits compile to JavaScript, untaken branch paths are not evaluated. This means the JavaScript circuit target omits public inputs that occurred inside an untaken branch. The statement vector must still include those positions, padded with zero elements.
 
-`check` groups the statement vector into *blocks*, one block per VM instruction. It returns `Vec<Option<usize>>`:
+`check` groups the statement vector into *blocks*, one block per VM instruction. It returns `Vec<Option<usize>>` (the internal Rust type; serialized as `Vec<Option<u64>>` on the wire — see `proof-server:proof-server-api` → binary-serialization):
 
 | Value | Meaning |
 |-------|---------|
-| `Some(n)` | Block was taken; `n` zero elements to append after it |
-| `None` | Block was omitted (untaken branch); pad the full block with zeros |
+| `Some(n)` | Block was omitted (untaken branch); `n` = number of public inputs skipped, to be zero-padded |
+| `None` | Block was present (branch taken); its public inputs are in the statement vector |
 
 Source: `transient-crypto/src/proofs.rs` ~155–170.
 

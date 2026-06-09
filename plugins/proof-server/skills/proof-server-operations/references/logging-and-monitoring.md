@@ -37,7 +37,7 @@ Monitor the server using two complementary signals:
 | `jobsPending` | Jobs queued but not yet picked up |
 | `jobCapacity` | Configured max queue depth; `0` = unlimited |
 
-Utilization ≈ `jobsProcessing / num-workers` (pass `--workers N` at startup; default = logical CPU count).
+Utilization ≈ `jobsProcessing / num-workers` (pass `--num-workers N` at startup; default = 2).
 
 **2. Access-log latency — proving-time trends**
 
