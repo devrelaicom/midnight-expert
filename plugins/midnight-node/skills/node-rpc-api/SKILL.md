@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Node RPC API
 
-The Midnight node exposes a JSON-RPC API over WebSocket on port 9944. The API provides approximately 68 methods across multiple modules for querying chain state, submitting transactions, and accessing Midnight-specific data.
+The Midnight node exposes a JSON-RPC API over WebSocket on port 9944. The API provides 68 methods (16 custom + 52 standard Substrate) across multiple modules for querying chain state, submitting transactions, and accessing Midnight-specific data.
 
 This skill summarises the API. For the **complete** per-method reference at node 1.0.0 — exact params and return types — see `references/custom-rpcs.md` (the 16 custom methods) and `references/substrate-rpcs.md` (the 52 standard Substrate methods).
 

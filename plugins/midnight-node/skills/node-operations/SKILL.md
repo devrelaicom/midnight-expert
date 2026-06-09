@@ -138,8 +138,8 @@ Key metrics to monitor:
 | `substrate_number_leaves` | Number of known chain leaves (aka forks) |
 | `substrate_sub_libp2p_peers_count` | Number of connected peers |
 | `substrate_ready_transactions_number` | Transactions in the ready queue |
-| `substrate_sync_peers` | Number of sync peers |
-| `substrate_block_verification_time` | Block import verification time |
+| `substrate_sync_is_major_syncing` | Whether the node is in major sync (`1`) or not (`0`) |
+| `substrate_block_verification_and_import_time` | Block verification + import time (histogram) |
 
 > **Deep dive:** `references/metrics-and-monitoring.md` — the full metric catalog (with correct upstream `substrate_*` names), the Prometheus **remote-write** push (`PROMETHEUS_PUSH_ENDPOINT` → `/api/v1/receive`), the memory/storage monitors, and the one Midnight-specific metric.
 

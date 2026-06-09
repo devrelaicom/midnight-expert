@@ -60,7 +60,7 @@ Covers running modes (validator, full node, archive, dev), Docker deployment, Pr
 
 ### midnight-node:node-rpc-api
 
-Covers the JSON-RPC API over WebSocket on port 9944, approximately 68 methods across multiple modules, Midnight-specific endpoints (midnight_contractState, midnight_zswapStateRoot, midnight_ledgerStateRoot), OpenRPC discovery, and subscription support.
+Covers the JSON-RPC API over WebSocket on port 9944, the 68 methods across multiple modules (16 custom + 52 standard), Midnight-specific endpoints (midnight_contractState, midnight_zswapStateRoot, midnight_ledgerStateRoot), OpenRPC discovery, and subscription support.
 
 #### References
 

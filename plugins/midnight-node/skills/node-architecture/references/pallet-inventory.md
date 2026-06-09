@@ -39,7 +39,7 @@ The node-1.0.0 runtime (`spec_version = 001_000_000`) composes **28 pallets** in
 | 50 | `SystemParameters` | `pallet_system_parameters` | Midnight-local | Midnight-Specific |
 | 51 | `Throttle` | `pallet_throttle` | Midnight-local | Midnight-Specific |
 
-Source: `runtime/src/lib.rs` lines 916–1001 (the `#[frame_support::runtime] mod runtime { … }` block).
+Source: `runtime/src/lib.rs` lines 897–1001 (the `#[frame_support::runtime] mod runtime { … }` block).
 
 **Indices are sparse.** Slots 7, 9, 10, 12, 14, 20, 24–29, 31, 33–39, 46–49 are unoccupied. Commented-out entries for `BlockRewards` (9) and `SafeMode` (20) appear in the source but are not compiled in.
 
@@ -319,7 +319,7 @@ Indices are intentionally sparse; there are 28 occupied slots out of a non-conti
 ## Cross-references
 
 - `midnight-node:node-architecture` — overview skill tying consensus, session, and ledger layers together
-- `midnight-node:node-architecture` → `references/runtime-apis.md` — full inventory of `impl_runtime_apis!` endpoints including `MidnightRuntimeApi`
+- `midnight-node:node-rpc-api` — the RPC surface these pallets expose (including `systemParameters_*` and `sidechain_*` methods)
 - `core-concepts:architecture` — Midnight transaction structure, guaranteed/fallible phases, and the privacy model this runtime enforces
 - `core-concepts:protocols` — Kachina / Zswap protocol details that `pallet_midnight` applies via `LedgerApi`
 - `core-concepts:tokenomics` — NIGHT and DUST token economics; `pallet_cnight_observation` is the minting entry point

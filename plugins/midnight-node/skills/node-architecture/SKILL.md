@@ -24,9 +24,9 @@ midnight-node/
 └── ...
 ```
 
-## Runtime Pallets (approximately 28)
+## Runtime Pallets (28)
 
-The runtime composes approximately 28 pallets organized by function. The exact count depends on how umbrella entries (such as partner chain bridge pallets) are counted individually.
+The runtime composes exactly 28 pallets organized by function (the `#[frame_support::runtime]` block has 28 `pallet_index` entries at `node-1.0.0`).
 
 ### Core / System
 

@@ -202,6 +202,5 @@ Source: `Cfg::get_all_config`, `node/src/cfg/mod.rs:419–435`.
 
 ## Cross-references
 
-- `midnight-node:node-configuration` → `references/configuration-reference.md` — full list of all `MidnightCfg`, `SubstrateCfg`, and `MetaCfg` keys with types and defaults
-- `midnight-node:node-configuration` → `references/environment-variables.md` — operator-facing env var reference including `CFG_PRESET`, `SHOW_CONFIG`, and `SHOW_SECRETS`
+- `references/configuration-reference.md` — full list of all `MidnightCfg`, `SubstrateCfg`, and `MetaCfg` keys with types and defaults, including the env-var mapping for `CFG_PRESET`, `SHOW_CONFIG`, and `show_secrets`
 - `core-concepts:tokenomics` — NIGHT/DUST dual-token model and the cNIGHT → DUST redemption mechanism described by `cnight-config.json`

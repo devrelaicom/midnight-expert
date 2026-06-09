@@ -64,7 +64,7 @@ export CROSS_CHAIN_SEED_FILE=/keys/cross-chain.seed
 
 ## Available Networks
 
-Network/preset selection is via the `CFG_PRESET` environment variable. `local`/`dev` map to the built-in `UndeployedNetwork` via `--chain local|dev`, while `qanet`/`preview`/`preprod`/`perfnet` are `CFG_PRESET` presets (`res/cfg/<name>.toml`). The `--chain` flag only accepts `""`, `local`, or `dev` — anything else is treated as a chain-spec JSON file path.
+Network/preset selection is via the `CFG_PRESET` environment variable. `local`/`dev` map to the built-in `UndeployedNetwork` via `--chain local|dev`, while `mainnet`, `qanet`, `preview`, `preprod`, `perfnet` (among others) are `CFG_PRESET` presets (`res/cfg/<name>.toml`). The `--chain` flag only accepts `""`, `local`, or `dev` — anything else is treated as a chain-spec JSON file path.
 
 | Network | Selection | Purpose |
 |---------|-----------|---------|
@@ -73,6 +73,9 @@ Network/preset selection is via the `CFG_PRESET` environment variable. `local`/`
 | `preview` | `CFG_PRESET=preview` (`res/cfg/preview.toml`) | Public preview network (testnet) |
 | `preprod` | `CFG_PRESET=preprod` (`res/cfg/preprod.toml`) | Pre-production network |
 | `perfnet` | `CFG_PRESET=perfnet` (`res/cfg/perfnet.toml`) | Performance testing network |
+| `mainnet` | `CFG_PRESET=mainnet` (`res/cfg/mainnet.toml`) | Production mainnet (GA) |
+
+This is a representative subset. The full set of **11** presets — `ddosnet, default, dev, devnet, govnet, guardnet, mainnet, perfnet, preprod, preview, qanet` — is documented in `references/chain-spec-and-presets.md`.
 
 ## Chain Spec Files
 
