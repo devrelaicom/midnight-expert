@@ -83,6 +83,8 @@ The runtime composes approximately 28 pallets organized by function. The exact c
 
 > `sp_session_validator_management_query` is **not** a pallet — it is a runtime-API / RPC query crate for session and validator data, so it is not listed in the inventory above.
 
+> **Full inventory:** `references/pallet-inventory.md` — all 28 pallets with their `pallet_index`, crate, alias, role (local vs framework), and the key calls/storage of the 8 Midnight-local pallets.
+
 ## Consensus Mechanism
 
 The Midnight node uses a layered consensus architecture.
@@ -126,6 +128,8 @@ The Midnight node uses a layered consensus architecture.
 
 - **Purpose:** Append-only authenticated data structure for light client state proofs
 - **Usage:** Light clients verify on-chain state without downloading the full chain
+
+> **Deep dive:** `references/consensus-and-finality.md` — the four-layer stack with exact key types, slot/epoch parameters, the GRANDPA justification period, the `SessionKeys` struct, and why BEEFY is present as a pallet but **not yet wired** as a validator session key.
 
 ## Ledger Storage
 
@@ -192,13 +196,24 @@ Cardano Node ──→ db-sync ──→ PostgreSQL ←── Midnight Node
 |---------|---------|
 | **Connection** | PostgreSQL connection to Cardano db-sync instance |
 | **cNIGHT bridging** | Observes Cardano UTXOs for cNIGHT lock transactions |
-| **Transfer limits** | Maximum 256 cNIGHT transfers per Midnight block |
+| **Throughput limits** | NIGHT bridge (ICS→Midnight): max **256** transfers/block (`BridgeMaxTransfersPerBlock`, `runtime/src/lib.rs:877`). cNIGHT observation: up to **200** Cardano txs/block (`DEFAULT_CARDANO_TX_CAPACITY_PER_BLOCK`). The 256 limit is the NIGHT bridge's, **not** a cNIGHT limit |
 | **Governance sync** | Council and TechnicalCommittee membership read from Cardano mainchain UTXOs |
 | **Validator management** | Validator set rotation driven by Cardano epoch transitions |
 | **Mock mode** | `use_main_chain_follower_mock=true` for development without Cardano |
 
+> **Deep dive:** `references/cardano-integration.md` — the db-sync follower data sources, cNIGHT observation throughput, the NIGHT bridge limit, Ariadne committee selection, governance-membership sync, and the PostgreSQL SSL modes.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/pallet-inventory.md` | All 28 runtime pallets: `pallet_index`, crate, alias, role, local-vs-framework, and the key calls/storage of the 8 Midnight-local pallets | When identifying which pallet owns a behaviour or auditing the runtime composition |
+| `references/consensus-and-finality.md` | AURA / GRANDPA / BEEFY / MMR deep-dive — key types, slot/epoch params, justification period, `SessionKeys`, and the BEEFY-not-wired status | When reasoning about block production, finality, or light-client proofs |
+| `references/cardano-integration.md` | The Cardano partner-chain integration — db-sync follower, cNIGHT observation, NIGHT bridge, Ariadne committee selection, governance sync, SSL modes | When working on cross-chain data flow or the main-chain follower |
+
 ## Cross-References
 
 - `midnight-tooling:devnet` — Manages the node as part of the local development stack
+- `midnight-node:node-validator` — Running a validator: keys, candidacy, committee selection, and block production
 - `compact-core:compact-transaction-model` — Transaction structure and execution model from the Compact language perspective
 - `core-concepts:architecture` — High-level Midnight network architecture and component relationships
