@@ -18,6 +18,14 @@ Runs comprehensive diagnostics across the midnight-expert ecosystem. Launches fi
 |------|-------------|-----------------|
 | [fix-table.md](skills/doctor/references/fix-table.md) | Maps diagnostic output to actionable fixes, including auto-fix classification for silent vs prompted resolution | When interpreting doctor results and determining how to resolve detected issues |
 
+### midnight-expert:add-to-ecosystem
+
+Walks the user's current project through the four Electric Capital eligibility requirements (on GitHub, public, `midnightntwrk` topic, optional `compact` topic), inserts the canonical Midnight attribution sentence into `README.md`, commits, pushes, and opens a PR.
+
+### midnight-expert:feedback
+
+Routes a user's feedback to a GitHub issue or enhancement on `devrelaicom/midnight-expert`. The user types one paragraph; the skill silently scans the session transcript and environment, applies heavy redaction, and composes a maintainer-ready issue body.
+
 ## Hooks
 
 ### UserPromptSubmit

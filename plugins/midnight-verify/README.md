@@ -116,7 +116,10 @@ A verdict based on source inspection, with an optional background execution chec
 #### Invokes
 
 - `midnight-verify:verify-correctness` (hub skill for domain classification)
-- `midnight-verify:source-investigator` (agent, primary method)
+- `midnight-verify:source-investigator` (agent, primary foreground method for most domains)
+- `midnight-verify:cli-tester` (agent, foreground method for Tooling claims)
+- `midnight-verify:contract-writer` (agent, optional background execution check for Compact claims)
+- `midnight-verify:type-checker` (agent, optional background execution check for SDK claims)
 
 ## Agents
 

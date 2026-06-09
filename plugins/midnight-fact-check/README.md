@@ -35,7 +35,7 @@ A markdown report with an executive summary, results grouped by domain, and a de
 - midnight-fact-check:fact-check-extraction (skill, via claim-extractor agent)
 - midnight-fact-check:fact-check-classification (skill, via domain-classifier agent)
 - midnight-fact-check:fact-check-reporting (skill)
-- midnight-verify:verify-correctness (skill, from midnight-verify plugin)
+- midnight-verify verification agents (dispatched directly, from midnight-verify plugin)
 
 ### midnight-fact-check:fast-check
 
@@ -49,7 +49,7 @@ A markdown report with verification results and a terminal summary. Faster and c
 
 - midnight-fact-check:fact-check-extraction (skill, via claim-extractor agent)
 - midnight-fact-check:fact-check-reporting (skill)
-- midnight-verify:verify-correctness (skill, from midnight-verify plugin)
+- midnight-verify:source-investigator (agent, dispatched directly, from midnight-verify plugin)
 
 ## Agents
 

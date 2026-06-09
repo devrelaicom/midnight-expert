@@ -202,6 +202,17 @@ Review checklists for 10 categories of Compact smart contract review. Each refer
 | [testing-review](skills/compact-review/references/testing-review.md) | Edge cases, negative tests, private state testing, witness mocks | When reviewing testing adequacy |
 | [documentation-review](skills/compact-review/references/documentation-review.md) | Circuit docs, witness contracts, ledger semantics | When reviewing documentation completeness |
 
+### compact-core:compact-security
+
+Threat model and adversarial methodology for reviewing Compact contracts: the three execution contexts (public ledger, ZK circuit, local witness), the witness trust boundary and the ownPublicKey()-for-authorization anti-pattern, sealed-field misuse, disclosure placement, cryptographic-primitive selection, domain separation, and the Verification Requests protocol used by the security-reviewer agent. Routes to the compact-review checklists for granular line-items.
+
+#### References
+
+| Name | Description | When it is used |
+|------|-------------|-----------------|
+| [threat-catalog](skills/compact-security/references/threat-catalog.md) | Catalog of Compact threats with adversarial methodology and the Reuse Map to compact-review checklists | When reasoning about attacks and threat categories |
+| [witness-trust-boundary](skills/compact-security/references/witness-trust-boundary.md) | The witness trust boundary, ownPublicKey()-for-auth anti-pattern, and witness-derived identity | When reviewing authentication and witness-supplied data |
+
 ### compact-core:compact-debugging
 
 Process orchestration for debugging Compact smart contract errors. Routes to domain-specific compact-core skills based on symptom-driven triage, tracks fix attempts, and triggers escalation when consecutive fixes reveal deeper problems.
@@ -213,6 +224,20 @@ Process orchestration for debugging Compact smart contract errors. Routes to dom
 | [debugging-session.md](skills/compact-debugging/examples/debugging-session.md) | Walkthrough of a debugging session with triage and fix tracking | When learning the debugging methodology |
 
 ## Commands
+
+### compact-core:audit-compact
+
+Deep adversarial security audit of Compact smart contract code. Runs a single security-reviewer specialist over the threat model, then confirms Critical/High findings via midnight-verify and synthesizes a consolidated security report. Security-only; for a full 10-category review use /compact-core:review-compact.
+
+#### Output
+
+A consolidated security audit report with severity-sorted findings, each Critical/High finding marked Confirmed, Refuted, or Inconclusive based on mechanical verification.
+
+#### Invokes
+
+- `compact-core:security-reviewer` agent (one deep security pass)
+- `compact-core:compact-security` skill (loaded by the security-reviewer agent for the threat model)
+- `/midnight-verify:verify` (main-thread confirmation of Critical/High findings)
 
 ### compact-core:debug-contract
 
@@ -250,6 +275,14 @@ Compact smart contract developer agent that writes, generates, reviews, and fixe
 #### When to use
 
 When you need to create new contracts, modify existing ones, fix compilation errors, implement privacy patterns, work with shielded tokens, or answer questions about Compact syntax and semantics. Follows a mandatory workflow: gather syntax reference, load skills, research patterns, write code, pre-check, compile, verify, and review.
+
+### security-reviewer
+
+Focused, adversarial security review agent for Compact smart contract code. Performs a single coherent threat-model pass (witness trust boundary, access control, cryptography, tokens, privacy leakage) and reasons across dimensions so compounding issues are caught.
+
+#### When to use
+
+When you need a security-only review of Compact code. Unlike the command-only `reviewer` agent, this agent is directly invocable by users and other agents. It cannot spawn subagents: for Critical/High findings it emits a structured "Verification Requests" block and hands mechanical confirmation back to the caller (typically the /compact-core:audit-compact orchestrator). For a full multi-category review, use /compact-core:review-compact instead.
 
 ### reviewer
 

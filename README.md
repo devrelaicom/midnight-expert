@@ -11,8 +11,8 @@ This project extends the Midnight Network with additional developer tooling.
 ## At a glance
 
 - **13** Plugins
-- **82** Skills / Slash commands
-- **16** Agents
+- **87** Skills / Slash commands
+- **17** Agents
 - **~37,700** Lines of reference documentation
 - **~21,800** Lines of example code
 
