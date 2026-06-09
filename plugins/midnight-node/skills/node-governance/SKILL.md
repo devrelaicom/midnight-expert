@@ -151,9 +151,18 @@ A higher permissioned share makes block production more federated; a higher regi
 
 The D-parameter is stored on-chain via `pallet_system_parameters` and can be queried via the `systemParameters_getDParameter` RPC method. Changes to the D-parameter require governance approval through the federated authority process.
 
+> **Deep dive:** `references/governance-internals.md` — the two `pallet_collective` instances (Council Instance1 / TechnicalCommittee Instance2), `pallet_membership`, the `FederatedAuthorityEnsureProportionAtLeast<1,1>` origin, the `MOTION_DURATION = 5 * DAYS` constant, `motion_close` mechanics, and the D-parameter `(u16,u16)` storage.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/governance-internals.md` | Pallet-level governance mechanics: the two collective instances, membership origins, the federated-authority proportion origin, motion lifecycle, and D-parameter storage | When auditing the governance flow or building governance tooling |
+
 ## Cross-References
 
 - `core-concepts:architecture` — High-level network architecture and the role of governance in the Midnight ecosystem
 - `midnight-indexer:indexer-data-model` — Indexed governance data including D-parameter history and Terms & Conditions
 - `midnight-node:node-architecture` — Governance pallets and their role in the runtime
+- `midnight-node:node-validator` — How the D-parameter drives validator committee selection
 - `midnight-node:node-rpc-api` — RPC methods for querying governance parameters
