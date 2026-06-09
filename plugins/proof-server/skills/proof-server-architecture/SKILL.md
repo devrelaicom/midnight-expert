@@ -80,9 +80,13 @@ When `--job-capacity` is set to a non-zero value, the worker pool enforces a max
 
 A background task runs every 10 seconds and removes jobs that have exceeded their TTL (`--job-timeout`). Workers run on the shared tokio runtime and offload each CPU-intensive proof job via `spawn_blocking`; a fresh current-thread tokio runtime is built per job inside the blocking closure. This isolation prevents a slow proof from starving the HTTP server's event loop.
 
+## Proving Pipeline
+
+A proving request travels from a deserialized `ProofPreimageVersioned` through an optional `/check` call (branch-omission and zero-padding resolution) and then through `/prove`, which resolves the proving key via the `Resolver` chain, selects the matching public-parameter set keyed on the circuit's `k`, and returns `ProofVersioned::V2(proof)`. The `versioned_ir.rs` module dispatches on the ZKIR IR format (`zkir_v2` vs `zkir_v3`) — this is independent of the proof-version enum, which is a binary-serialization concept with only a `V2` variant. See `references/proving-pipeline.md` for the full flow diagram, `check` semantics, and resolver composition detail.
+
 ## Key Material Management
 
-On startup, the proof server pre-fetches cryptographic material required for proof generation:
+On startup, the proof server pre-fetches cryptographic material required for proof generation. Key material is managed by a `PUBLIC_PARAMS` / `MidnightDataProvider(FetchMode::OnDemand)` / `DustResolver` stack: the four built-in circuit proving keys and public parameters for `k = 10..=15` are fetched before the server accepts requests; application-specific proving keys for custom Compact contracts are resolved on first use. See `references/key-material.md` for the full resolver composition diagram, on-demand resolution flow, and the `k` ↔ public-parameters relationship.
 
 ### Public Parameters
 
@@ -155,6 +159,13 @@ The proof server Docker image is built with a multi-stage process:
 | Registries | GHCR (`ghcr.io/midnight-ntwrk/proof-server`, hyphenated), Docker Hub (`midnightntwrk/proof-server`) -- both multi-arch (`amd64`/`arm64`) |
 
 The static musl build ensures the binary runs without any shared library dependencies, making the image portable across Linux distributions. The minimal base image reduces attack surface and image size.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/proving-pipeline.md` | Full flow diagram for the `ProofPreimage` → `/check` → `/prove` → `ProofVersioned` pipeline, including `check` branch-omission semantics, ZKIR IR-format dispatch in `versioned_ir.rs`, and resolver composition | When reasoning about how a proof request is processed end-to-end, debugging `check` output, or understanding the ZKIR dispatch layer |
+| `references/key-material.md` | Startup prefetch ranges (`k = 10..=15`, four built-in keys), `MidnightDataProvider` / `DustResolver` / `PUBLIC_PARAMS` resolver composition, on-demand key resolution flow, and the `k` ↔ public-parameters relationship | When diagnosing slow first-proof latency, understanding key caching behaviour, or tracing how a proving key is resolved for a custom Compact contract |
 
 ## Cross-References
 
