@@ -40,6 +40,23 @@ Work through each step in order. Each step's reference file contains the full pr
 | 5 | Token Transfer | Programmatic NIGHT transfer between wallets | `references/step-5-token-transfer.md` |
 | 6 | Ticket Contract | Privacy-preserving contract with commitments and nullifiers | `references/step-6-ticket-contract.md` |
 
+## When something errors
+
+**Your first stop for any error code or message is `/midnight-status-codes:lookup`.**
+It decodes node rejections (e.g. `1010: Custom error: 117`), SDK/Effect errors,
+Compact compiler diagnostics, proof-server and indexer errors, and more — telling
+you what produced the error and how to fix it.
+
+```
+/midnight-status-codes:lookup 117      # a numeric node/ledger code
+/midnight-status-codes:lookup NotNormalized   # an error name
+```
+
+Common early ones on a fresh devnet: **117** (NotNormalized — set a small
+`additionalFeeOverhead`, see step 4/5) and **1010** (the Substrate envelope that
+wraps the real `Custom(N)` cause). For environment problems, run
+`/midnight-tooling:doctor`.
+
 ## When You're Done
 
 Delete the temporary working directory:
