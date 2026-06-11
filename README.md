@@ -64,6 +64,49 @@ claude plugin install --scope user midnight-expert@midnight-expert
 > [!TIP]
 > Updates are published to [`midnightntwrk.expert`](https://midnightntwrk.expert/) **3–5 days after they're merged into the GitHub repository**. The delay gives the community time for public testing and feedback. If you'd rather live on the bleeding edge, use the GitHub repo directly as your marketplace address — substitute `devrelaicom/midnight-expert` for `https://midnightntwrk.expert/` anywhere it appears in the manual install instructions above.
 
+### Other AI coding tools (opencode, Kiro, Cursor, etc.)
+
+Clone the repo into your tool's config directory:
+
+```bash
+git clone https://github.com/devrelaicom/midnight-expert ~/.config/<your-tool>/midnight-expert
+```
+
+Then add this to your tool's global instructions file (e.g. `AGENTS.md`, `CLAUDE.md`, `.cursorrules`):
+
+```markdown
+## Midnight Network
+When working on Midnight/Compact code, read from
+`~/.config/<your-tool>/midnight-expert/plugins/<plugin>/skills/`
+before answering. Key plugins: `compact-core`, `compact-examples`,
+`core-concepts`, `midnight-tooling`, `midnight-status-codes`, `midnight-verify`.
+```
+
+For **opencode** specifically:
+
+```bash
+git clone https://github.com/devrelaicom/midnight-expert ~/.config/opencode/midnight-expert
+```
+
+```markdown
+## Midnight Network
+When working on Midnight/Compact code, read from
+`~/.config/opencode/midnight-expert/plugins/<plugin>/skills/` before answering.
+Key plugins: `compact-core`, `compact-examples`, `core-concepts`,
+`midnight-tooling`, `midnight-status-codes`, `midnight-verify`.
+```
+
+That's all that's needed — opencode injects `AGENTS.md` as system context on every session, so the AI will read the relevant skill files automatically. The `agents/` subdirectories and `allowed-tools` frontmatter are Claude Code-specific and can be ignored.
+
+Optionally, copy files from `plugins/*/commands/` into your tool's commands directory to get slash commands like `/compact-review`, `/devnet`, `/midnight-lookup`, and `/midnight-verify`.
+
+For **opencode**, you can install them like this:
+
+```bash
+mkdir -p ~/.config/opencode/commands
+cp -r ~/.config/opencode/midnight-expert/plugins/*/commands/* ~/.config/opencode/commands/
+```
+
 ## Plugins
 
 You can install any plugin from inside Claude Code with `/plugin`, or from the terminal with `claude plugin install --scope user <plugin>@midnight-expert`.
