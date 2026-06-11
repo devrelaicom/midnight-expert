@@ -45,6 +45,28 @@ For the exact `registerNightUtxosForDustGeneration` signature, see
 `/tmp/midnight-wallet/packages/facade/src/index.ts` (during plugin
 maintenance).
 
+## Registration is self-funding — it works at a 0 DUST balance
+
+Registration is the step that *starts* DUST generation, so when it runs the
+wallet's DUST balance is still `0`. That is fine: **registration pays its own
+fee from the DUST the registered NIGHT UTXOs generate** (the SDK builds the
+`DustRegistration` with a `feePayment` equal to the coins' `generatedNow` DUST),
+not from the wallet's existing DUST balance. So a freshly-funded wallet registers
+successfully even with `0` accrued DUST — verified on a local devnet at 5, 100,
+and 10,000 NIGHT, all succeeding.
+
+Two consequences:
+
+- A 138 (`BalanceCheckOverspend`) during registration is **not** a NIGHT
+  funding-level problem — do **not** raise the NIGHT amount to fix one. Fees are
+  denominated in DUST, not NIGHT.
+- You do **not** need to set `additionalFeeOverhead` for registration. Setting it
+  is also harmless (registration still self-funds), but `examples/register-dust.ts`
+  leaves it off to keep the point clear. Add `additionalFeeOverhead` on wallets
+  that submit **transfers or contract calls**, which on an idle devnet otherwise
+  compute a zero fee and are rejected as NotNormalized (error **117** — see
+  `/midnight-status-codes:lookup 117`).
+
 ## DUST has expiry
 
 DUST tokens expire. `state.dust.balance(time)` requires a `Date`

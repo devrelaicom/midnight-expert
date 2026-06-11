@@ -65,6 +65,10 @@ const configuration: DefaultConfiguration = {
   networkId: "undeployed",
   costParameters: {
     feeBlocksMargin: 5,
+    // Forces a non-zero DUST fee so transactions normalize on an idle local
+    // devnet (a zero fee is rejected as NotNormalized, error 117). Any positive
+    // amount the wallet can cover in DUST works.
+    additionalFeeOverhead: 1_000_000n,
   },
   relayURL: new URL(`ws://localhost:${NODE_PORT}`),
   provingServerUrl: new URL(`http://localhost:${PROOF_SERVER_PORT}`),

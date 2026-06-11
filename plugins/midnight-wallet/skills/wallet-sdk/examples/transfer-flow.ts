@@ -32,7 +32,10 @@ const PROOF_SERVER_PORT = Number.parseInt(process.env["PROOF_SERVER_PORT"] ?? "6
 
 const configuration: DefaultConfiguration = {
   networkId: "undeployed",
-  costParameters: { feeBlocksMargin: 5 },
+  // additionalFeeOverhead makes the fee non-zero on an idle local devnet, where
+  // feesWithMargin is 0 and a zero-fee transaction is rejected as NotNormalized
+  // (error 117). Any positive amount the wallet can cover in DUST works.
+  costParameters: { feeBlocksMargin: 5, additionalFeeOverhead: 1_000_000n },
   relayURL: new URL(`ws://localhost:${NODE_PORT}`),
   provingServerUrl: new URL(`http://localhost:${PROOF_SERVER_PORT}`),
   indexerClientConnection: {

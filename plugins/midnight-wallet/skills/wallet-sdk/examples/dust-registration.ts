@@ -32,6 +32,11 @@ const PROOF_SERVER_PORT = Number.parseInt(process.env["PROOF_SERVER_PORT"] ?? "6
 
 const configuration: DefaultConfiguration = {
   networkId: "undeployed",
+  // No additionalFeeOverhead needed: DUST registration is self-funding — the fee
+  // is paid by the DUST the registered NIGHT UTXOs generate, not from the wallet's
+  // existing DUST balance, so it succeeds even at a 0 DUST balance. (Verified on a
+  // local devnet.) Add additionalFeeOverhead on wallets that submit transfers or
+  // contract calls — see examples/transfer-flow.ts.
   costParameters: { feeBlocksMargin: 5 },
   relayURL: new URL(`ws://localhost:${NODE_PORT}`),
   provingServerUrl: new URL(`http://localhost:${PROOF_SERVER_PORT}`),

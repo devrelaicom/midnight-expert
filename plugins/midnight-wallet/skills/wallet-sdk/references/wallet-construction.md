@@ -56,6 +56,9 @@ const configuration: DefaultConfiguration = {
   networkId: 'undeployed',
   costParameters: {
     feeBlocksMargin: 5,
+    // Forces a non-zero DUST fee. See "costParameters and additionalFeeOverhead"
+    // below — needed for transfers/contract calls on an idle devnet (error 117).
+    additionalFeeOverhead: 1_000_000n,
   },
   relayURL: new URL('ws://localhost:9944'),
   provingServerUrl: new URL('http://localhost:6300'),
@@ -68,6 +71,32 @@ const configuration: DefaultConfiguration = {
 ```
 
 See [infrastructure-clients.md](infrastructure-clients.md) for details on each URL endpoint and how to configure them for testnet/mainnet.
+
+### `costParameters` and `additionalFeeOverhead`
+
+`costParameters` controls how the wallet computes transaction fees (paid in
+**DUST**, never NIGHT):
+
+- `feeBlocksMargin` — how many blocks of fee headroom to add (5 is a safe default).
+- `additionalFeeOverhead` — a flat DUST amount added on top of the computed fee.
+
+On a freshly-started **local devnet** the per-block fee rate is effectively zero,
+so `feesWithMargin` evaluates to `0`. With no `additionalFeeOverhead` the fee is
+`0`, which makes the wallet build an empty DUST spend set — and the node rejects
+that as **NotNormalized (error 117)**. This bites the **first contract call** in
+particular (a `ContractDeploy` is accepted, the next call fails). Setting a small
+positive `additionalFeeOverhead` forces a real DUST fee so the transaction
+normalizes. Any positive amount the wallet can cover in DUST works; the
+basic-start tutorial and the compact-cli-dev template use `300_000_000_000_000n`.
+
+> **DUST registration does not need `additionalFeeOverhead`.** Registration is
+> self-funding — its fee is paid by the DUST the registered NIGHT UTXOs generate,
+> not from the wallet's existing DUST balance — so it succeeds even at a `0` DUST
+> balance (verified on a local devnet). `examples/register-dust.ts` leaves the
+> overhead off for that reason. Set `additionalFeeOverhead` on the wallets that
+> submit **transfers or contract calls**. See
+> [managing-test-wallets references/dust-registration.md](../../managing-test-wallets/references/dust-registration.md)
+> and `/midnight-status-codes:lookup 117` / `138`.
 
 ## WalletFacade Initialization
 

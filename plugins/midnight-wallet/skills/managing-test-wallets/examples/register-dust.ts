@@ -87,6 +87,11 @@ async function main() {
 
   const configuration: DefaultConfiguration = {
     networkId: "undeployed",
+    // No additionalFeeOverhead needed: DUST registration is self-funding — the fee
+    // is paid by the DUST the registered NIGHT UTXOs generate, not from the wallet's
+    // existing DUST balance, so it succeeds even at a 0 DUST balance. (Verified on
+    // a local devnet.) Add additionalFeeOverhead on wallets that submit transfers
+    // or contract calls — see examples/transfer-night.ts.
     costParameters: { feeBlocksMargin: 5 },
     relayURL: new URL("ws://localhost:9944"),
     provingServerUrl: new URL("http://localhost:6300"),
