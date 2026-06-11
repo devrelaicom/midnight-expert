@@ -1,7 +1,7 @@
 ---
 name: midnight-fact-check:check
 description: Fact-check content against the Midnight ecosystem. Extracts claims, classifies by domain, verifies each via midnight-verify, and produces a report.
-allowed-tools: Agent, AskUserQuestion, Read, Write, Glob, Grep, Bash, Skill
+allowed-tools: Agent, AskUserQuestion, Read, Write, Glob, Grep, Bash, Skill, WebFetch
 argument-hint: "<file, directory, URL, GitHub URL, or glob pattern>"
 ---
 
@@ -58,10 +58,7 @@ Parse `$ARGUMENTS` and resolve each target to readable content. Classify each ta
 
 ### Local directory (non-plugin)
 - Detected by: path exists, is a directory, does NOT contain `.claude-plugin/plugin.json`
-- Run file discovery:
-  ```bash
-  npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils discover "**/*" --cwd "[directory path]"
-  ```
+- Discover files with the **Glob** tool: pattern `**/*` with `path` set to the directory. When presenting the list, ignore noise that is never source content: `node_modules`, `.git`, `dist`/build output, and lock files.
 - Show the matched file list to the user and ask for confirmation before proceeding.
 
 ### Plugin directory
@@ -71,10 +68,8 @@ Parse `$ARGUMENTS` and resolve each target to readable content. Classify each ta
 
 ### URL(s)
 - Detected by: starts with `http://` or `https://`, does NOT match `github.com`
-- For each URL, run:
-  ```bash
-  npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils extract-url "[URL]" > "$RUN_DIR/url-content-N.md"
-  ```
+- For each URL, use the **WebFetch** tool with this prompt: "Return the full readable article/page content converted to clean Markdown. Preserve every technical detail verbatim — code blocks, command lines, version numbers, package names, API signatures, and error strings. Do not summarize, paraphrase, or omit anything."
+- Write the returned Markdown to `$RUN_DIR/url-content-N.md` (one file per URL, N starting at 1), with a leading `> Source: [URL]` line so provenance is preserved.
 - Add the saved markdown files to the content list.
 
 ### GitHub file URL
@@ -98,10 +93,7 @@ Parse `$ARGUMENTS` and resolve each target to readable content. Classify each ta
 
 ### Glob pattern
 - Detected by: contains `*`, `?`, `[`, or `{`
-- Run file discovery:
-  ```bash
-  npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils discover "[pattern]"
-  ```
+- Discover files with the **Glob** tool using the pattern directly. Ignore `node_modules`, `.git`, `dist`/build output, and lock files when presenting the list.
 - Show matched file list to user and ask for confirmation.
 
 ### After all targets are resolved
@@ -143,9 +135,10 @@ Tell the user: `"Resolved N files from M targets"`
    - Instruction to read the files and extract claims
 4. Collect the JSON arrays returned by each extractor.
 5. Write each extractor's output to the run directory: `extracted-chunk-N.json`
-6. Merge all outputs using the merge script in concat mode:
+6. Merge all outputs using the vendored merge script in concat mode. The script (`skills/fact-check-extraction/scripts/merge.mjs`) is dependency-free and needs only Node — there is nothing to install. Re-resolve the plugin root in the same command, since shell variables do not persist between steps:
    ```bash
-   npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils merge --mode concat -o "$RUN_DIR/extracted-claims.json" "$RUN_DIR/extracted-chunk-1.json" "$RUN_DIR/extracted-chunk-2.json" ...
+   PLUGIN_ROOT=$(find ~/.claude -path "*/midnight-fact-check/.claude-plugin/plugin.json" -exec dirname {} \; 2>/dev/null | head -1 | xargs dirname)
+   node "$PLUGIN_ROOT/skills/fact-check-extraction/scripts/merge.mjs" --mode concat -o "$RUN_DIR/extracted-claims.json" "$RUN_DIR/extracted-chunk-1.json" "$RUN_DIR/extracted-chunk-2.json" ...
    ```
 7. Read the merged file. Assign sequential IDs (`claim-001`, `claim-002`, ...) to each claim. Write back.
 8. Tell the user: `"Extracted N claims from M content chunks"`
@@ -168,9 +161,10 @@ If zero claims were extracted, tell the user and stop:
    - The path to its copy of the claims file
    - Instruction to tag claims belonging to its domain
 4. Wait for all classifiers to complete.
-5. Merge all copies:
+5. Merge all copies with the vendored merge script in update mode (re-resolve the plugin root in the same command, since shell variables do not persist between steps):
    ```bash
-   npx --ignore-scripts @aaronbassett/midnight-fact-checker-utils merge --mode update --original "$RUN_DIR/extracted-claims.json" -o "$RUN_DIR/classified-claims.json" "$RUN_DIR/extracted-claims.compact-classifier.json" "$RUN_DIR/extracted-claims.sdk-classifier.json" "$RUN_DIR/extracted-claims.zkir-classifier.json" "$RUN_DIR/extracted-claims.witness-classifier.json"
+   PLUGIN_ROOT=$(find ~/.claude -path "*/midnight-fact-check/.claude-plugin/plugin.json" -exec dirname {} \; 2>/dev/null | head -1 | xargs dirname)
+   node "$PLUGIN_ROOT/skills/fact-check-extraction/scripts/merge.mjs" --mode update --original "$RUN_DIR/extracted-claims.json" -o "$RUN_DIR/classified-claims.json" "$RUN_DIR/extracted-claims.compact-classifier.json" "$RUN_DIR/extracted-claims.sdk-classifier.json" "$RUN_DIR/extracted-claims.zkir-classifier.json" "$RUN_DIR/extracted-claims.witness-classifier.json"
    ```
 6. If the merge fails (validation error), tell the user:
    > "Merge validation failed. Agent copies preserved in [run directory] for debugging."

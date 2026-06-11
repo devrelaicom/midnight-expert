@@ -61,33 +61,37 @@ Construct the template context from the resolved values:
 
 ## Step 4 -- Resolve Template Path
 
-The templates live inside this plugin's installation directory. Since `${CLAUDE_PLUGIN_ROOT}` does not expand in markdown files, resolve the path at runtime:
+The templates and the renderer both live inside this plugin's installation directory. Since `${CLAUDE_PLUGIN_ROOT}` does not expand in markdown files, resolve the path at runtime:
 
 ```bash
 PLUGIN_ROOT=$(find ~/.claude -path "*/compact-cli-dev/.claude-plugin/plugin.json" -exec dirname {} \; 2>/dev/null | head -1 | xargs dirname)
 TEMPLATE_DIR="${PLUGIN_ROOT}/skills/core/templates/cli"
+RENDER_SCRIPT="${PLUGIN_ROOT}/skills/core/scripts/render-template.mjs"
+echo "TEMPLATE_DIR=$TEMPLATE_DIR"
+echo "RENDER_SCRIPT=$RENDER_SCRIPT"
 ```
 
-Verify the template directory exists before proceeding:
+Note the printed `TEMPLATE_DIR` value — you will substitute it as a literal path in Step 5. Verify both the template directory and the renderer exist before proceeding:
 
 ```bash
-[ -d "$TEMPLATE_DIR" ] && echo "Template directory found: $TEMPLATE_DIR" || echo "ERROR: Template directory not found"
+[ -d "$TEMPLATE_DIR" ] && [ -f "$RENDER_SCRIPT" ] && echo "Template directory and renderer found" || echo "ERROR: template directory or renderer not found"
 ```
 
-If the template directory is not found, report the error and stop.
+If either is not found, report the error and stop.
 
-## Step 5 -- Run Template Engine
+## Step 5 -- Render the Template
 
-Invoke the template engine via stdin/stdout. Construct the JSON input with the template directory, output directory, and context object:
+Render the template via the vendored, dependency-free renderer (`skills/core/scripts/render-template.mjs`), which reads a JSON job from stdin. It needs only Node — there is nothing to install. Re-resolve `PLUGIN_ROOT` inside the same command so the path is correct even though shell variables do not persist between steps, then pipe the JSON job in. Substitute the literal `TEMPLATE_DIR` from Step 4, the resolved output `<directory>`, and the Step 3 context values:
 
 ```bash
-echo '{"template":"<TEMPLATE_DIR>","output":"<directory>","context":{"PROJECT_NAME":"...","CLI_PACKAGE_NAME":"...","CONTRACT_NAME":"...","CONTRACT_PACKAGE":"...","CONTRACT_ZK_CONFIG_PATH":"...","GENERATED_AT":"..."}}' | npx --ignore-scripts @aaronbassett/template-engine
+PLUGIN_ROOT=$(find ~/.claude -path "*/compact-cli-dev/.claude-plugin/plugin.json" -exec dirname {} \; 2>/dev/null | head -1 | xargs dirname)
+echo '{"template":"<TEMPLATE_DIR>","output":"<directory>","context":{"PROJECT_NAME":"...","CLI_PACKAGE_NAME":"...","CONTRACT_NAME":"...","CONTRACT_PACKAGE":"...","CONTRACT_ZK_CONFIG_PATH":"...","GENERATED_AT":"..."}}' | node "$PLUGIN_ROOT/skills/core/scripts/render-template.mjs"
 ```
 
-The template engine will:
+The renderer will:
 - Copy all files from the template directory to the output directory
 - Substitute `{{VARIABLE}}` placeholders in `.tmpl` files and rename them (removing `.tmpl`)
-- Copy non-template files as-is
+- Copy non-template (and binary) files as-is
 
 Parse the stdout JSON result. On success it returns `{"output": "<absolute path>", "files": <number>}` where `output` is the resolved output directory and `files` is the count of files created. If it fails, the process exits with code 1 and stderr contains a JSON error like `{"error": "<message>"}` -- report the error message to the user.
 
