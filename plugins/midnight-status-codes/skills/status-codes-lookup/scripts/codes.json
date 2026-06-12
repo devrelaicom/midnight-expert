@@ -1420,22 +1420,29 @@
         "name": "Transaction Malformed Errors (110-139, 166-192)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "The transaction is not in normalized form.",
+      "description": "The transaction is not in normal form. The most common cause on a local devnet is a zero fee: when feesWithMargin evaluates to 0 and no additionalFeeOverhead is set, the wallet builds an empty DustActions, which DustActions::well_formed rejects. A ContractDeploy is accepted but the first contract call fails; there is no special minimum-cost floor on ContractDeploy.",
       "fixes": [
-        "Use the SDK to build normalized transactions"
+        "Set a small positive additionalFeeOverhead (e.g. 1_000_000n) in the wallet's costParameters so a real DUST fee is spent",
+        "Any positive amount the wallet can cover in DUST works (the basic-start tutorial and compact-cli-dev template use 300_000_000_000_000n)",
+        "Build the transaction with the SDK so it is normalized"
       ],
       "aliases": [
         "TransactionMalformed(NotNormalized)",
         "InvalidTransaction::Custom(117)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "138",
+        "173",
+        "1010"
+      ],
+      "reference_anchor": "skills/status-codes/references/node-errors.md#idle-devnet-dust-fee-pitfalls-117-notnormalized-and-138-balancecheckoverspend",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
         "ref": "main",
-        "anchor": "ledger/src/versions/common/types.rs",
+        "anchor": "ledger/src/versions/common/types.rs:435",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04"
+        "verified_at": "2026-06-11"
       }
     },
     {
@@ -1994,22 +2001,29 @@
         "name": "Transaction Malformed Errors (110-139, 166-192)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "The transaction overspends the available balance.",
+      "description": "A token balance went negative after fees were applied (balancing_check, midnight-ledger ledger/src/verify.rs). The transaction or one of its segments spends more of a token than it has once fees are applied. Because fees are paid in DUST, a DUST-side 138 means the DUST fee exceeded available DUST — not a NIGHT funding-level problem. DUST registration does NOT cause this: registration is self-funding (its fee is paid by the DUST the registered NIGHT UTXOs generate, not the wallet's existing DUST balance), so it succeeds even at a 0 DUST balance — verified on a local devnet, including with additionalFeeOverhead set.",
       "fixes": [
-        "Reduce the transaction outputs or add more inputs"
+        "Reduce the transaction outputs or add more inputs of the overspent token",
+        "For a DUST-side overspend, ensure the wallet holds enough DUST for the fee",
+        "Do not raise NIGHT funding to fix this — fees are denominated in DUST, not NIGHT"
       ],
       "aliases": [
         "TransactionMalformed(BalanceCheckOverspend)",
         "InvalidTransaction::Custom(138)"
       ],
       "severity": "error",
-      "see_also": [],
+      "see_also": [
+        "117",
+        "173",
+        "1010"
+      ],
+      "reference_anchor": "skills/status-codes/references/node-errors.md#idle-devnet-dust-fee-pitfalls-117-notnormalized-and-138-balancecheckoverspend",
       "verified_against": {
         "source_repo": "midnightntwrk/midnight-node",
         "ref": "main",
-        "anchor": "ledger/src/versions/common/types.rs",
+        "anchor": "ledger/src/versions/common/types.rs:462",
         "anchor_modified": "2026-05-01",
-        "verified_at": "2026-05-04"
+        "verified_at": "2026-06-11"
       }
     },
     {

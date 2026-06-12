@@ -14,7 +14,10 @@ import { WalletEntrySchema, type DefaultConfiguration } from '@midnight-ntwrk/wa
 
 const configuration: DefaultConfiguration = {
   networkId: 'undeployed',
-  costParameters: { feeBlocksMargin: 5 },
+  // additionalFeeOverhead keeps the fee non-zero on an idle devnet for transfers
+  // and contract calls (else error 117). DUST registration is self-funding and
+  // doesn't need it. Full explanation in wallet-sdk/references/wallet-construction.md.
+  costParameters: { feeBlocksMargin: 5, additionalFeeOverhead: 1_000_000n },
   relayURL: new URL('ws://localhost:9944'),
   provingServerUrl: new URL('http://localhost:6300'),
   indexerClientConnection: {
@@ -56,6 +59,18 @@ const configuration: DefaultConfiguration = {
   txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
 };
 ```
+
+## `costParameters.additionalFeeOverhead`
+
+The `preprod`/`preview` examples above omit `additionalFeeOverhead` because public
+networks have a real, non-zero fee rate. It is the **local devnet** that needs it:
+there the per-block fee rate is ~0, so without an overhead a transfer's or contract
+call's fee is 0 and the node rejects it as `NotNormalized` (error 117). DUST
+registration is the one operation that does not need it on any network — it is
+self-funding (paid by the DUST the registered NIGHT UTXOs generate), so it works
+even at a 0 DUST balance. See
+[wallet-sdk/references/wallet-construction.md](../../wallet-sdk/references/wallet-construction.md)
+for the full mechanism.
 
 ## Node WebSocket polyfill
 
