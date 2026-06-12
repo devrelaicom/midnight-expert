@@ -61,7 +61,7 @@ export function classifyError(err: unknown): ClassifiedError {
 		};
 	}
 
-	if (lower.includes("stale") || lower.includes("utxo") && lower.includes("spent")) {
+	if (lower.includes("stale") || (lower.includes("utxo") && lower.includes("spent"))) {
 		return {
 			code: ErrorCode.STALE_UTXO,
 			message,

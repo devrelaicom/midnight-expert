@@ -101,7 +101,11 @@ cp -r "$TEMPLATES_DIR/api" "$API_DIR"
 
 # Run substitution across all files
 find "$UI_DIR" "$API_DIR" -type f | while read -r file; do
-  if file "$file" | grep -q text; then
+  # Substitute placeholders in text files only. `grep -Iq .` is a portable text
+  # test (the -I flag treats binary files as non-matching); avoid `file | grep
+  # text`, which skips JSON on macOS (libmagic reports "JSON data", not "text"),
+  # leaving package.json placeholders like {{UI_PACKAGE_NAME}} unsubstituted.
+  if grep -Iq . "$file"; then
     sed -i'' -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" "$file"
     sed -i'' -e "s|{{UI_PACKAGE_NAME}}|$UI_PACKAGE_NAME|g" "$file"
     sed -i'' -e "s|{{API_PACKAGE_NAME}}|$API_PACKAGE_NAME|g" "$file"

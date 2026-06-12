@@ -1,5 +1,6 @@
-import * as ledger from "@midnight-ntwrk/ledger-v8";
 import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
+import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
+import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
 import type { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
 import type { UnshieldedKeystore } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
 import * as Rx from "rxjs";
@@ -9,8 +10,8 @@ import {
 	FUND_POLL_INTERVAL,
 	GENESIS_SEED,
 } from "./constants.js";
-import { buildFacade, type WalletContext } from "./wallet.js";
 import { withSpinner } from "./progress.js";
+import { buildFacade } from "./wallet.js";
 
 export async function waitForFunds(facade: WalletFacade): Promise<bigint> {
 	return Rx.firstValueFrom(
@@ -28,17 +29,14 @@ export async function waitForDust(facade: WalletFacade): Promise<bigint> {
 		facade.state().pipe(
 			Rx.throttleTime(DUST_POLL_INTERVAL),
 			Rx.filter((s) => s.isSynced),
-			Rx.map((s) => s.dust.walletBalance(new Date())),
+			Rx.map((s) => s.dust.balance(new Date())),
 			Rx.filter((balance) => balance > 0n),
 			Rx.timeout(DUST_GENERATION_TIMEOUT),
 		),
 	);
 }
 
-export async function airdropFromGenesis(
-	targetAddress: string,
-	amount: bigint,
-): Promise<string> {
+export async function airdropFromGenesis(targetAddress: string, amount: bigint): Promise<string> {
 	return withSpinner("Airdropping from genesis wallet...", async () => {
 		const genesis = await buildFacade(GENESIS_SEED);
 		try {
@@ -52,6 +50,12 @@ export async function airdropFromGenesis(
 			);
 
 			const ttl = new Date(Date.now() + 10 * 60 * 1000);
+			// Addresses are branded types in the 4.x SDK: decode the bech32m
+			// string into a typed UnshieldedAddress for the transfer output.
+			const receiverAddress = MidnightBech32m.parse(targetAddress).decode(
+				UnshieldedAddress,
+				getNetworkId(),
+			);
 			const recipe = await genesis.facade.transferTransaction(
 				[
 					{
@@ -59,7 +63,7 @@ export async function airdropFromGenesis(
 						outputs: [
 							{
 								amount,
-								receiverAddress: targetAddress,
+								receiverAddress,
 								type: unshieldedToken().raw,
 							},
 						],
@@ -89,17 +93,14 @@ export async function registerDust(
 	keystore: UnshieldedKeystore,
 ): Promise<string | null> {
 	return withSpinner("Registering for DUST generation...", async () => {
-		const state = await Rx.firstValueFrom(
-			facade.state().pipe(Rx.filter((s) => s.isSynced)),
-		);
+		const state = await Rx.firstValueFrom(facade.state().pipe(Rx.filter((s) => s.isSynced)));
 
 		if (state.dust.availableCoins.length > 0) {
 			return null; // Already has DUST
 		}
 
 		const nightUtxos = state.unshielded.availableCoins.filter(
-			(coin: { meta?: { registeredForDustGeneration?: boolean } }) =>
-				!coin.meta?.registeredForDustGeneration,
+			(coin) => !coin.meta.registeredForDustGeneration,
 		);
 
 		if (nightUtxos.length === 0) {
@@ -109,12 +110,16 @@ export async function registerDust(
 		const dustState = state.dust;
 		const ttl = new Date(Date.now() + 10 * 60 * 1000);
 
+		// createDustGenerationTransaction expects the Dust wallet's UtxoWithMeta
+		// shape (the ledger Utxo flattened with its `ctime`). `ctime` is already a
+		// Date on the unshielded wallet's UtxoWithMeta.
 		const recipe = await facade.dust.createDustGenerationTransaction(
 			new Date(),
 			ttl,
-			nightUtxos.map((u: { utxo: unknown; meta: { ctime: string } }) => ({
+			nightUtxos.map((u) => ({
 				...u.utxo,
-				ctime: new Date(u.meta.ctime),
+				ctime: u.meta.ctime,
+				registeredForDustGeneration: u.meta.registeredForDustGeneration,
 			})),
 			keystore.getPublicKey(),
 			dustState.address,

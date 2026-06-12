@@ -37,7 +37,7 @@ export default class DevnetStatus extends BaseCommand {
 			proofServer: services[2],
 		};
 
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			for (const svc of services) {
 				const icon = svc.healthy ? "+" : "x";
 				this.log(`  [${icon}] ${svc.name}: ${svc.url}`);

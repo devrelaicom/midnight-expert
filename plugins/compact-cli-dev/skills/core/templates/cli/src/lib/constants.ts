@@ -13,6 +13,11 @@ export const FILE_MODE_PUBLIC = 0o644;
 export const GENESIS_SEED = "0000000000000000000000000000000000000000000000000000000000000001";
 export const SEED_LENGTH = 64; // hex chars = 32 bytes
 
+// Local devnet private-state encryption. The level private-state provider
+// encrypts persisted private state at rest; on a throwaway local devnet a fixed
+// dev password is fine. Replace with a real secret for any non-local network.
+export const LOCAL_PRIVATE_STATE_PASSWORD = "midnight-local-devnet";
+
 // Network
 export const DEFAULT_TTL_MINUTES = 10;
 
@@ -36,12 +41,9 @@ export const NIGHT_DECIMALS = 6;
 export const DUST_DECIMALS = 15;
 
 // Devnet compose file search order
-export const COMPOSE_SEARCH_PATHS = [
-	"devnet.yml",
-	path.join(".midnight", "devnet.yml"),
-];
+export const COMPOSE_SEARCH_PATHS = ["devnet.yml", path.join(".midnight", "devnet.yml")];
 export const COMPOSE_FALLBACK = path.join(
-	process.env["HOME"] ?? "~",
+	process.env.HOME ?? "~",
 	".midnight-expert",
 	"devnet",
 	"devnet.yml",

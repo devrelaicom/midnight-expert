@@ -8,16 +8,16 @@ export default class DevnetStart extends BaseCommand {
 	async run(): Promise<void> {
 		const composeFile = findComposeFile();
 
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			this.log(`  Using: ${composeFile}`);
 		}
 
 		execSync(`docker compose -f "${composeFile}" up -d`, {
-			stdio: this.jsonEnabled ? "pipe" : "inherit",
+			stdio: this.jsonEnabled() ? "pipe" : "inherit",
 		});
 
 		const result = { composePath: composeFile, started: true };
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			this.log("  Devnet started.");
 		}
 		this.outputResult(result);

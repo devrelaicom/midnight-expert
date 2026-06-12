@@ -9,7 +9,7 @@ export default class WalletList extends BaseCommand {
 		const entries = Object.entries(store);
 
 		if (entries.length === 0) {
-			if (!this.jsonEnabled) {
+			if (!this.jsonEnabled()) {
 				this.log("No wallets found. Run `wallet:create` to create one.");
 			}
 			this.outputResult([]);
@@ -18,7 +18,7 @@ export default class WalletList extends BaseCommand {
 
 		const result = entries.map(([name, w]) => ({ name, address: w.address }));
 
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			for (const { name, address } of result) {
 				this.log(`  ${name}: ${address}`);
 			}
