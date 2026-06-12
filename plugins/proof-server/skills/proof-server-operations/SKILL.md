@@ -43,7 +43,7 @@ curl -s http://localhost:6300/ready | jq .
 |----------|------|---------|
 | `/health` | 200 | Server process is alive |
 | `/ready` | 200 | Server is accepting proving requests |
-| `/ready` | 503 | Job queue is full, server is busy |
+| `/ready` | 503 | Job queue is full, server is busy (only when `--job-capacity > 0`; default 0 = unlimited, so 503 is never returned from `/ready` by default) |
 | `/prove` | 429 | Request rejected, capacity limit reached |
 
 ### Pre-warming Parameters
@@ -108,7 +108,7 @@ services:
       start_period: 300s
 ```
 
-The `start_period` of 300 seconds (5 minutes) accounts for the parameter pre-fetch phase during which `/health` returns 200 but `/ready` may not yet be fully operational.
+The `start_period` of 300 seconds (5 minutes) accounts for the parameter pre-fetch phase. The pre-fetch runs *before* the HTTP listener binds, so during this phase the health check cannot connect at all (`/health` itself is unreachable, not just slow to become ready). The generous `start_period` prevents these expected connection failures from marking the container unhealthy until the port is bound and `/health` starts answering.
 
 ### Kubernetes Probes
 
@@ -131,9 +131,11 @@ readinessProbe:
 
 Use `/health` for liveness (is the process alive?) and `/ready` for readiness (can it handle proving requests?). The readiness probe returns 503 when the server is at capacity, which causes Kubernetes to stop routing traffic to the pod.
 
-> **Note:** During startup, while the server is pre-fetching ZK parameters (the default behavior without `--no-fetch-params`), `/ready` may return 503. This is expected behavior, not an error. The server becomes fully ready once parameter pre-fetch completes, which can take 2-5 minutes depending on network speed and cache state.
+> **Note:** During startup, while the server is pre-fetching ZK parameters (the default behavior without `--no-fetch-params`), the HTTP listener is not yet bound — the parameter pre-fetch completes *before* the server starts listening. As a result, **both** `/health` and `/ready` are unreachable (connection refused) during pre-fetch, rather than returning 200/503. This is expected behavior, not an error. Once parameter pre-fetch completes the server binds its port and both endpoints become reachable; pre-fetch can take 2-5 minutes depending on network speed and cache state. `/ready` returns 503 only after the server is listening, when the job queue is full.
 
 ## Log Analysis
+
+> For a structured reference of all log patterns, verbosity levels, and the full monitoring script, see `references/logging-and-monitoring.md`.
 
 ### Enabling Verbose Logs
 
@@ -159,15 +161,11 @@ docker logs --timestamps midnight-proof-server
 
 ### Key Log Patterns
 
-| Log Pattern | Meaning |
-|-------------|---------|
-| `Listening on 0.0.0.0:6300` | Server started and accepting connections |
-| `Fetching public params for k=...` | Pre-fetching ZK parameters (startup) |
-| `Job submitted` | New proving request accepted |
-| `Job completed` | Proof generated successfully |
-| `Job failed` | Proving error (check subsequent lines for details) |
-| `Job cancelled (timeout)` | Job exceeded TTL and was garbage collected |
-| `Capacity limit reached` | Queue full, returning 429 |
+| Log Pattern | Level | Meaning |
+|-------------|-------|---------|
+| `Ensuring zswap key material is available...` | INFO | Startup parameter pre-fetch beginning (logged before the HTTP port binds) |
+| `Starting to process request for /k...` | INFO | A `/k` request has been received and is being processed (analogous lines exist for `/check`, `/prove`, and `/prove-tx`) |
+| `Received request: ...` | DEBUG | Hex dump of the raw request body (only emitted in verbose mode) |
 
 ## Troubleshooting
 
@@ -177,8 +175,8 @@ docker logs --timestamps midnight-proof-server
 |---------|-------------|------------|
 | `/ready` returns 503 continuously | All workers busy and queue full | Increase `--num-workers` or `--job-capacity` |
 | `/prove` returns 429 | Job capacity limit reached | Increase `--job-capacity` or add more workers |
-| `/prove` returns 400 | Malformed request or unsupported proof version | Check that client SDK version matches proof server version |
-| `/prove` returns 500 | Internal proving error | Enable verbose mode (`-v`), check logs for stack trace |
+| `/prove` returns 400 | Malformed or undeserializable binary request (the tagged payload failed to parse) | Check that the client SDK version matches the proof server version |
+| `/prove` returns 500 | Internal proving error (including a genuinely unsupported, non-V2 proof version, which trips an internal `unreachable!()` rather than a clean 400) | Enable verbose mode (`-v`), check logs for stack trace |
 | Proofs take very long | Complex circuit or insufficient CPU | Check k-value of circuit; increase `--num-workers` |
 | Server exits on startup | Insufficient memory or port conflict | Check Docker memory allocation (min 4 GB); verify port 6300 is free |
 | First proof is slow | Parameter fetch on first use (`--no-fetch-params`) | Pre-warm with `/fetch-params/{k}` or remove `--no-fetch-params` |
@@ -217,7 +215,7 @@ docker stats midnight-proof-server --no-stream
 The proof server, Compact compiler, and wallet SDK must use compatible versions. A version mismatch typically manifests as:
 
 - `/prove` returning 400 (binary deserialization failure)
-- `/check` returning unexpected constraint violations
+- `/check` returning unexpected results, or `/prove` returning 500 (internal circuit error)
 - Proofs that generate successfully but fail on-chain verification
 
 Check versions across all components:
@@ -275,6 +273,12 @@ Multiple Instances (horizontal scaling)
 - **I/O minimal:** After startup parameter fetch, the server has negligible disk and network I/O
 - **Latency profile:** First proof may be slow (parameter fetch if `--no-fetch-params`); subsequent proofs have consistent latency determined by circuit complexity
 - **Garbage collection:** Background GC runs every 10 seconds, removing timed-out jobs; negligible CPU overhead
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/logging-and-monitoring.md` | Structured reference for log patterns, verbosity levels, and monitoring script details | When diagnosing proof server behaviour via logs or setting up operational monitoring |
 
 ## Cross-References
 

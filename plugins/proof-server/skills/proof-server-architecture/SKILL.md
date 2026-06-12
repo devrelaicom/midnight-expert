@@ -16,7 +16,7 @@ midnight-proof-server binary
 ├── lib.rs           HTTP server setup (actix-web v4)
 ├── endpoints.rs     Request handlers for all API routes
 ├── worker_pool.rs   Async channel-based job queue
-└── versioned_ir.rs  ZKIR version dispatch (V2/V3)
+└── versioned_ir.rs  ZKIR IR-format dispatch (zkir_v2 / zkir_v3)
 ```
 
 ### Component Responsibilities
@@ -27,7 +27,7 @@ midnight-proof-server binary
 | `lib.rs` | Configures actix-web server, sets up routes, manages app state |
 | `endpoints.rs` | Implements all HTTP endpoint handlers (`/prove`, `/check`, `/k`, etc.) |
 | `worker_pool.rs` | Manages async job queue with configurable parallelism and capacity |
-| `versioned_ir.rs` | Dispatches proving requests to the correct ZKIR version handler |
+| `versioned_ir.rs` | Dispatches proving requests on the ZKIR IR format (`zkir_v2` / `zkir_v3`) to the correct handler |
 
 ## Worker Pool Architecture
 
@@ -45,7 +45,7 @@ HTTP Request ──→ endpoints.rs ──→ Worker Pool Channel
                           ┌──────────┼──────────┐
                           ▼          ▼          ▼
                       Worker 1   Worker 2   Worker N
-                      (own rt)   (own rt)   (own rt)
+                  (spawn_blocking, per-job current-thread rt)
 ```
 
 ### Configuration
@@ -67,7 +67,7 @@ Pending ──→ Processing ──→ Success
 ```
 
 1. **Pending** -- Job is submitted to the channel and waits for an available worker
-2. **Processing** -- A worker picks up the job, creates its own tokio runtime, and begins proof generation
+2. **Processing** -- A worker picks up the job and offloads it via `spawn_blocking`; inside the blocking closure a fresh current-thread tokio runtime is built for that single job, and proof generation begins
 3. **Success** -- Proof generated and returned to the caller
 4. **Error** -- Proving failed (invalid input, internal error)
 5. **Cancelled** -- Job exceeded its TTL and was removed by garbage collection
@@ -78,11 +78,15 @@ When `--job-capacity` is set to a non-zero value, the worker pool enforces a max
 
 ### Garbage Collection
 
-A background task runs every 10 seconds and removes jobs that have exceeded their TTL (`--job-timeout`). Each worker creates its own tokio runtime for CPU-intensive proof generation using `spawn_blocking` threads. This isolation prevents a slow proof from starving the HTTP server's event loop.
+A background task runs every 10 seconds and removes jobs that have exceeded their TTL (`--job-timeout`). Workers run on the shared tokio runtime and offload each CPU-intensive proof job via `spawn_blocking`; a fresh current-thread tokio runtime is built per job inside the blocking closure. This isolation prevents a slow proof from starving the HTTP server's event loop.
+
+## Proving Pipeline
+
+A proving request travels from a deserialized `ProofPreimageVersioned` through an optional `/check` call (branch-omission and zero-padding resolution) and then through `/prove`, which resolves the proving key via the `Resolver` chain, selects the matching public-parameter set keyed on the circuit's `k`, and returns `ProofVersioned::V2(proof)`. The `versioned_ir.rs` module dispatches on the ZKIR IR format (`zkir_v2` vs `zkir_v3`) — this is independent of the proof-version enum, which is a binary-serialization concept with only a `V2` variant. See `references/proving-pipeline.md` for the full flow diagram, `check` semantics, and resolver composition detail.
 
 ## Key Material Management
 
-On startup, the proof server pre-fetches cryptographic material required for proof generation:
+On startup, the proof server pre-fetches cryptographic material required for proof generation. Key material is managed by a `PUBLIC_PARAMS` / `MidnightDataProvider(FetchMode::OnDemand)` / `DustResolver` stack: the four built-in circuit proving keys and public parameters for `k = 10..=15` are fetched before the server accepts requests; application-specific proving keys for custom Compact contracts are resolved on first use. See `references/key-material.md` for the full resolver composition diagram, on-demand resolution flow, and the `k` ↔ public-parameters relationship.
 
 ### Public Parameters
 
@@ -94,10 +98,10 @@ Pre-fetches proving keys for 4 built-in circuits:
 
 | Circuit | Purpose |
 |---------|---------|
-| `zswap/spend` | Spending a shielded coin (nullifier creation) |
-| `zswap/output` | Creating a shielded coin (commitment creation) |
-| `zswap/sign` | Schnorr signature proof for transaction binding |
-| `dust/spend` | Spending native DUST tokens |
+| `midnight/zswap/spend` | Spending a shielded coin (nullifier creation) |
+| `midnight/zswap/output` | Creating a shielded coin (commitment creation) |
+| `midnight/zswap/sign` | Schnorr signature proof for transaction binding |
+| `midnight/dust/spend` | Spending native DUST tokens |
 
 ### Data Provider
 
@@ -109,14 +113,14 @@ Pre-fetching parameters and keys can take several minutes depending on network s
 
 ## ZKIR Versioning
 
-The proof server supports multiple versions of the Zero-Knowledge Intermediate Representation (ZKIR):
+The proof-version enums (`ProofVersioned` / `ProofPreimageVersioned`) have a single `V2` variant -- there is no V2/V3 proof-version enum. "V3" refers to the separate experimental `zkir-v3` crate, which is an optional dependency gated behind the proof server's `experimental` Cargo feature (default off, not enabled in standard builds).
 
-| Version | Status | Notes |
-|---------|--------|-------|
-| V2 | Default | Production-ready, used by current Compact compiler output |
-| V3 | Experimental | Behind feature flag, not enabled in standard builds |
+| ZKIR IR format | Status | Notes |
+|----------------|--------|-------|
+| `zkir_v2` | Default | Production-ready, used by current Compact compiler output |
+| `zkir_v3` | Experimental | Provided by the optional `zkir-v3` crate behind the `experimental` Cargo feature (default off) |
 
-The `versioned_ir.rs` module dispatches proving requests to the correct backend based on the ZKIR version embedded in the proof preimage. The `/proof-versions` endpoint reports which versions the running server supports (typically `["V2"]`).
+The `versioned_ir.rs` module dispatches proving requests on the ZKIR IR format (`zkir_v2` vs `zkir_v3`), not on a proof-version enum. The `/proof-versions` endpoint reports which proof versions the running server supports (typically `["V2"]`).
 
 ## Binary Serialization
 
@@ -152,9 +156,16 @@ The proof server Docker image is built with a multi-stage process:
 | Binary linking | Statically linked (musl) |
 | Base image | Minimal (bash + coreutils + CA certificates) |
 | Architectures | `amd64`, `arm64` (multi-arch manifest) |
-| Registries | `ghcr.io`, Docker Hub (`midnightntwrk/proof-server`) |
+| Registries | GHCR (`ghcr.io/midnight-ntwrk/proof-server`, hyphenated), Docker Hub (`midnightntwrk/proof-server`) -- both multi-arch (`amd64`/`arm64`) |
 
 The static musl build ensures the binary runs without any shared library dependencies, making the image portable across Linux distributions. The minimal base image reduces attack surface and image size.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/proving-pipeline.md` | Full flow diagram for the `ProofPreimage` → `/check` → `/prove` → `ProofVersioned` pipeline, including `check` branch-omission semantics, ZKIR IR-format dispatch in `versioned_ir.rs`, and resolver composition | When reasoning about how a proof request is processed end-to-end, debugging `check` output, or understanding the ZKIR dispatch layer |
+| `references/key-material.md` | Startup prefetch ranges (`k = 10..=15`, four built-in keys), `MidnightDataProvider` / `DustResolver` / `PUBLIC_PARAMS` resolver composition, on-demand key resolution flow, and the `k` ↔ public-parameters relationship | When diagnosing slow first-proof latency, understanding key caching behaviour, or tracing how a proving key is resolved for a custom Compact contract |
 
 ## Cross-References
 

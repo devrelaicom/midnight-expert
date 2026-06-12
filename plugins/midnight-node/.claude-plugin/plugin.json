@@ -1,6 +1,6 @@
 {
   "name": "midnight-node",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Technical reference for the Midnight node \u2014 Substrate-based architecture, runtime pallets, RPC interface, configuration, operations, and governance",
   "author": {
     "name": "Aaron Bassett",

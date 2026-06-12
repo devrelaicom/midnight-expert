@@ -60,6 +60,18 @@
     {
       "name": "midnight-status-codes",
       "source": "./plugins/midnight-status-codes"
+    },
+    {
+      "name": "proof-server",
+      "source": "./plugins/proof-server"
+    },
+    {
+      "name": "midnight-indexer",
+      "source": "./plugins/midnight-indexer"
+    },
+    {
+      "name": "midnight-node",
+      "source": "./plugins/midnight-node"
     }
   ]
 }

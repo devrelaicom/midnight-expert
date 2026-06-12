@@ -32,19 +32,19 @@ Two distinct errors can be returned for the `sessionId` passed to the `shieldedT
 
 ### Malformed session ID
 
-If the supplied id cannot be decoded into a 32-byte session ID, `decode_session_id` fails and the error is wrapped with the lowercase message `"invalid session ID"`. The full message is a chain joined with `:`, where the suffix is the underlying decode failure:
+If the supplied id cannot be decoded into a 32-byte session ID, `decode_session_id` fails and the error is wrapped with the lowercase message `"invalid session ID"`. The full message is a chain joined with `": "`, where the suffix is the underlying decode failure:
 
 ```json
 {
   "errors": [
     {
-      "message": "invalid session ID:cannot hex-decode session ID:..."
+      "message": "invalid session ID: cannot hex-decode session ID: ..."
     }
   ]
 }
 ```
 
-A value that is valid hex but the wrong length yields `"invalid session ID:cannot convert into session ID:..."` instead.
+A value that is valid hex but the wrong length yields `"invalid session ID: cannot convert into session ID: ..."` instead.
 
 ### Unknown or expired session ID
 

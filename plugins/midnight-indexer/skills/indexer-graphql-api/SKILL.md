@@ -8,6 +8,8 @@ version: 0.1.0
 
 The Midnight indexer exposes a GraphQL API for querying on-chain state, managing wallet sessions, and subscribing to real-time events.
 
+This skill summarises the most-used parts of the API. For the **complete** schema — every query, mutation, subscription, object type, interface, union, scalar, enum, and directive transcribed from `schema-v4.graphql` — see `references/schema-reference.md`.
+
 ## Endpoints
 
 | Protocol | Path | Notes |
@@ -45,12 +47,13 @@ The v3 endpoint paths (`/api/v3/graphql` and `/api/v3/graphql/ws`) still work as
 | `transactions(offset!)` | TransactionOffset (hash or identifier) | Array of Transaction |
 | `contractAction(address!, offset?)` | Contract address + optional block/tx offset | ContractDeploy, ContractCall, or ContractUpdate |
 | `dustGenerationStatus(cardanoRewardAddresses!)` | Array of Cardano stake addresses (max 10) | DUST generation status |
+| `dustGenerations(cardanoRewardAddresses!)` | Array of Cardano stake addresses | DUST generation entries for those addresses (distinct from the `@beta` `dustGenerations` subscription) |
 | `dParameterHistory` | none | D-parameter records |
 | `termsAndConditionsHistory` | none | Terms & Conditions records |
-| `spoIdentities` | none | SPO identity records |
+| `spoIdentities` | all optional: `limit: Int`, `offset: Int` (callable with no args) | SPO identity records |
 | `spoByPoolId` | Pool ID | SPO details |
 | `spoCompositeByPoolId` | Pool ID | Composite SPO data |
-| `stakeDistribution` | none | Stake distribution data |
+| `stakeDistribution` | all optional: `limit: Int`, `offset: Int`, `search: String`, `orderByStakeDesc: Boolean` (callable with no args) | Stake distribution data |
 
 ### Example: Query Latest Block
 
@@ -62,7 +65,9 @@ query {
     timestamp
     transactions {
       hash
-      identifiers
+      ... on RegularTransaction {
+        identifiers
+      }
     }
   }
 }
@@ -139,6 +144,8 @@ The indexer provides 9 subscriptions for real-time event streaming over WebSocke
 
 > **`dustGenerations` index range:** `[startIndex, endIndex]` is **inclusive** at the subscription level. Note the off-by-one against the natural source value `Block.dustGenerationEndIndex`, which is **exclusive** — to cover up to a block's end, pass `endIndex: dustGenerationEndIndex - 1`.
 
+> **`@beta` DUST surface:** `dustGenerations` and the DUST commitment/generation Merkle-tree fields are marked `@beta` (unstable, may change). See `references/dust-beta-api.md` for the full preview-API inventory.
+
 ### Example: Subscribe to Blocks
 
 ```graphql
@@ -197,7 +204,7 @@ subscription {
 }
 ```
 
-> **See also:** `references/pagination-and-offsets.md` — offset-based resumption for each subscription. `examples/websocket-subscriptions.md` — TypeScript examples using graphql-ws.
+> **See also:** `references/pagination-and-offsets.md` — offset-based resumption for each subscription. `examples/websocket-subscriptions.md` — TypeScript examples using graphql-ws. `examples/subscription-examples.md` — executed `blocks`/`zswapLedgerEvents`/`dustLedgerEvents` walkthroughs with real captured output.
 
 ## Key Types
 
@@ -218,7 +225,7 @@ All contract actions share these fields:
 | Variant | Additional Fields |
 |---------|-------------------|
 | `ContractDeploy` | (base fields only) |
-| `ContractCall` | `entryPoint: String` |
+| `ContractCall` | `entryPoint: String!` |
 | `ContractUpdate` | (base fields only) |
 
 ### TransactionResult
@@ -244,8 +251,27 @@ The current fee field on a transaction is `fee: String!` (SPECK, the atomic unit
 
 > **See also:** `references/graphql-types.md` — complete type definitions including Block, Transaction, ContractBalance, RelevantTransaction, and UnshieldedTransaction.
 
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/schema-reference.md` | Complete schema reference transcribed from `schema-v4.graphql`: all queries, mutations, subscriptions, object types, interfaces, unions, scalars, the enum, and directives | When you need the exact shape, arguments, or nullability of any type or field |
+| `references/graphql-types.md` | Key response types (Block, Transaction, ContractBalance, RelevantTransaction, UnshieldedTransaction) | When constructing queries or understanding response shapes |
+| `references/pagination-and-offsets.md` | Offset-based addressing for queries and subscriptions (BlockOffset and other offset types) | When paginating results or specifying subscription start points |
+| `references/dust-beta-api.md` | The in-flight `@beta` DUST API surface: `dustGenerations`, the commitment/generation Merkle-tree updates, and the index model | When working with the preview DUST-generation API |
+| `references/error-handling.md` | Common error responses and how to resolve them | When troubleshooting complexity, depth, or request-size errors |
+
+## Examples
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `examples/http-requests.md` | Complete curl examples for the HTTP POST endpoint | When making HTTP queries and mutations |
+| `examples/websocket-subscriptions.md` | TypeScript `graphql-ws` client examples | When wiring subscriptions in a TypeScript client |
+| `examples/subscription-examples.md` | Executed `blocks` / `zswapLedgerEvents` / `dustLedgerEvents` walkthroughs with real captured output over `graphql-transport-ws` | When verifying subscription behaviour or debugging the WebSocket protocol |
+
 ## Cross-References
 
 - `midnight-indexer:indexer-architecture` — Deployment modes and configuration
 - `midnight-indexer:indexer-data-model` — What gets indexed and database schema
+- `midnight-indexer:indexer-operations` — Health checks, monitoring, and the wallet-session lifecycle
 - `midnight-dapp-dev:midnight-sdk` — DApp provider configuration using indexer endpoints

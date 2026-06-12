@@ -34,7 +34,7 @@ Health check endpoint. Both routes return identical responses.
 **Response (200):**
 
 ```json
-{"status": "ok", "timestamp": "2024-01-15T10:30:00.000Z"}
+{"status": "ok", "timestamp": "2026-06-09 07:04:11.226 +00:00:00"}
 ```
 
 Use this for basic liveness checks. The server returns 200 as soon as the HTTP listener is ready, even if key material is still being pre-fetched.
@@ -67,7 +67,7 @@ Readiness check that includes worker pool utilization. Use this for load balanci
   "jobsProcessing": 1,
   "jobsPending": 0,
   "jobCapacity": 10,
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2026-06-09 07:04:11.226 +00:00:00"
 }
 ```
 
@@ -79,7 +79,7 @@ Readiness check that includes worker pool utilization. Use this for load balanci
   "jobsProcessing": 2,
   "jobsPending": 10,
   "jobCapacity": 10,
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2026-06-09 07:04:11.226 +00:00:00"
 }
 ```
 
@@ -89,7 +89,7 @@ Readiness check that includes worker pool utilization. Use this for load balanci
 | `jobsProcessing` | number | Jobs currently being proved by workers |
 | `jobsPending` | number | Jobs waiting in the queue for a worker |
 | `jobCapacity` | number | Maximum queue depth (0 = unlimited) |
-| `timestamp` | string | ISO 8601 timestamp |
+| `timestamp` | string | `OffsetDateTime`-style timestamp (`YYYY-MM-DD HH:MM:SS.ssssss +00:00:00`), not ISO-8601 `Z` format |
 
 The HTTP status code reflects the readiness state: **200** when the server can accept new proving requests, **503** when the job queue has reached capacity.
 
@@ -109,7 +109,7 @@ This is returned as plain text, not JSON. The current production default is V2 o
 
 ## Proving Endpoints
 
-All proving endpoints use the custom tagged binary serialization format defined by the `midnight-serialize` crate. Requests and responses are **not JSON** -- they are binary-encoded cryptographic structures.
+All proving endpoints use the custom tagged binary serialization format defined by the `midnight-serialize` crate. Requests and responses are **not JSON** -- they are binary-encoded cryptographic structures. See `references/binary-serialization.md` for the full tag table and per-endpoint request/response type definitions.
 
 ### `POST /prove`
 
@@ -151,6 +151,7 @@ Prove an entire transaction by generating proofs for all its contract calls. **T
 | Status | Meaning |
 |--------|---------|
 | 400 | Invalid request |
+| 429 | Capacity limit reached (job queue full, `--job-capacity` is set) |
 | 500 | Internal proving error |
 
 ### `POST /check`
@@ -164,13 +165,17 @@ Validate a proof preimage against its IR without generating a proof. Useful for 
 | `ProofPreimageVersioned` | binary | The proof preimage to validate |
 | `Option<WrappedIr>` | binary | Optional IR to check against (None = use embedded IR) |
 
-**Response (200, binary):** Serialized `Vec<Option<u64>>` -- validation results per constraint. `None` entries indicate satisfied constraints; `Some(value)` entries indicate constraint violations with the failing value.
+**Response (200, binary):** Serialized `Vec<Option<u64>>` -- proving-prep information from running the circuit, **not** a per-constraint pass/fail validator. The vector has one entry per public-input "block" (each block corresponds to one VM instruction). An entry reports whether that block was omitted because its branch was not taken, and if so how many zero-padding elements are needed: roughly, `None` means the block is present, while `Some(n)` means the block was omitted and needs `n` zero-padding elements. This is the same branch-omission / zero-padding data the prover uses to assemble the final transcript -- it does not report which constraints were satisfied or violated, and there are no "failing values".
 
 **Error responses:**
 
+`/check` runs through the worker pool like `/prove`, so it is not limited to 400 errors:
+
 | Status | Meaning |
 |--------|---------|
-| 400 | Invalid request |
+| 400 | Invalid request (malformed binary data, unsupported proof version) |
+| 429 | Capacity limit reached (job queue full, `--job-capacity` is set) |
+| 500 | Internal proving error |
 
 ### `POST /k`
 
@@ -188,7 +193,7 @@ Get the k-value (circuit size parameter) for a given IR source. The k-value dete
 
 ### `GET /fetch-params/{k}`
 
-Trigger fetching of public parameters for the specified k-value. This endpoint is only available when the server was **not** started with `--no-fetch-params`.
+Trigger fetching of public parameters for the specified k-value. This route is only **registered** when the server was **not** started with `--no-fetch-params`. When `--no-fetch-params` is set the route is not registered at all, so requests to this path get an HTTP 404.
 
 **Path parameter:** `k` -- integer from 0 to 25
 
@@ -206,7 +211,7 @@ success
 
 This endpoint is useful for pre-warming the parameter cache for specific circuit sizes without waiting for a proving request to trigger the fetch.
 
-> **Note:** This endpoint is only available when the server was started **without** `--no-fetch-params`. When `--no-fetch-params` is set, the parameter-fetching subsystem is disabled entirely and this endpoint returns an error. In that mode, parameters are fetched on-demand when the first `/prove` request for each k-value arrives. See `proof-server:proof-server-configuration` for details on the flag.
+> **Note:** This route is only registered when the server was started **without** `--no-fetch-params`. When `--no-fetch-params` is set, the route is never registered, so requests to `/fetch-params/{k}` get an HTTP 404 from the unregistered route (not a handler error). In that mode, parameters are fetched on-demand when the first `/prove` request for each k-value arrives. See `proof-server:proof-server-configuration` for details on the flag.
 
 ## CORS Policy
 
@@ -214,7 +219,7 @@ The proof server uses a permissive CORS policy -- all origins are allowed. This 
 
 ## Error Response Format
 
-Health and metadata endpoints return JSON error responses. Proving endpoints return plain text error messages since the normal response format is binary.
+Health and metadata endpoints return JSON error responses. Proving endpoints return plain text error messages since the normal response format is binary. For a complete catalog of HTTP status codes returned by each endpoint (including the 428 Precondition Required response for version mismatches), see `references/status-codes.md`.
 
 ## Usage Patterns
 
@@ -246,3 +251,23 @@ for k in $(seq 10 15); do
   curl -s http://localhost:6300/fetch-params/$k
 done
 ```
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/binary-serialization.md` | Tagged binary wire format and per-endpoint request/response type definitions for the `midnight-serialize` crate | When constructing or parsing raw binary payloads for `/prove`, `/prove-tx`, `/check`, or `/k` |
+| `references/status-codes.md` | Complete HTTP status code catalog for all endpoints, including 428 Precondition Required for version mismatches | When diagnosing unexpected HTTP responses or implementing error handling |
+
+## Examples
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `examples/metadata-endpoints.md` | Runnable curl commands for all metadata endpoints (`/health`, `/version`, `/ready`, `/proof-versions`, `/fetch-params`) | When verifying server health, checking readiness, or testing the metadata API |
+| `examples/constructing-a-prove-request.md` | Worked, executed `/prove` request showing binary serialization end-to-end | When integrating the `/prove` endpoint directly or debugging proof generation issues |
+
+## Cross-References
+
+- `proof-server:proof-server-architecture` — Internal worker pool, queue, and caching architecture
+- `proof-server:proof-server-configuration` — CLI flags including `--no-fetch-params`, `--job-capacity`, and network settings
+- `midnight-tooling:proof-server` — Docker setup, version selection, and operational guidance

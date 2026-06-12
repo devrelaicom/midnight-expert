@@ -8,7 +8,7 @@ version: 0.1.0
 
 The Midnight indexer is a Rust application (edition 2024) built with async-graphql, axum, and subxt. It connects to a Midnight node via WebSocket, indexes on-chain data into a database, and exposes it through a GraphQL API.
 
-**Current version:** 4.3.2 (released 2026-05-15)
+**Current version:** 4.3.3 (released 2026-06-04)
 
 ## Component Overview
 
@@ -86,9 +86,13 @@ Midnight Node (ws://localhost:9944)
 | Scaling | Single process | Horizontal (separate services) |
 | Use case | Local dev, devnet, testing | Production, high availability |
 
+> **See also:** `references/deployment-and-crates.md` — the seven workspace crates, which binary each deployment runs, the `cloud`/`standalone` feature gates, and the two databases (main storage DB + the separate ledger DB).
+
 ## NATS Messaging (Cloud Mode)
 
 In cloud mode, the indexer components run as separate processes and use [NATS](https://nats.io/) (v2.12.x) as a lightweight pub-sub bus for inter-component event notification. In standalone mode, the same pub-sub interface is implemented with in-process Tokio broadcast channels — NATS is not used.
+
+> **Deep dive:** `references/nats-messaging.md` — the `Publisher`/`Subscriber` trait abstraction and its two implementations, exact payload struct fields, the 100ms self-healing resubscribe loop, and per-component publish/subscribe wiring.
 
 ### Message Types
 
@@ -139,7 +143,7 @@ In Docker deployments, the NATS server runs with `--user indexer --pass <passwor
 
 ## Configuration
 
-All configuration uses environment variables with the `APP__` prefix and double-underscore nesting.
+All configuration uses environment variables with the `APP__` prefix and double-underscore nesting. The keys below are the most common; for the **complete** catalog (storage pooling, per-subscription batch sizes, quota, ledger DB, SPO refresh, telemetry) see `references/configuration-reference.md`.
 
 ### Core Environment Variables
 
@@ -177,7 +181,16 @@ Both telemetry systems are disabled by default.
 | OpenTelemetry | OTLP | — | Distributed tracing |
 | Prometheus | HTTP scrape | 9000 | Metrics collection |
 
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/deployment-and-crates.md` | The seven workspace crates, each binary's role, the `cloud`/`standalone` feature gates, standalone vs cloud topology, and the main-DB / ledger-DB split | When choosing a deployment mode or understanding which component does what |
+| `references/nats-messaging.md` | NATS pub-sub deep-dive: the trait abstraction, both implementations, payload fields, the self-healing subscriber loop, and per-component wiring | When debugging inter-component messaging or implementing against the pub-sub layer |
+| `references/configuration-reference.md` | The complete `APP__*` env/config catalog from the serde structs and `config.yaml` files, with defaults and standalone-vs-cloud differences | When configuring any indexer component or looking up a specific key's default |
+
 ## Cross-References
 
 - `midnight-tooling:devnet` — Manages the indexer as part of the local development stack
+- `midnight-indexer:indexer-operations` — Running, health-checking, monitoring, and troubleshooting the indexer
 - `midnight-dapp-dev:midnight-sdk` — Uses the indexer as a provider for contract state queries
