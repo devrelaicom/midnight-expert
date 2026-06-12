@@ -58,6 +58,9 @@ claude plugin install --scope user midnight-expert@midnight-expert
 /midnight-expert:doctor
 ```
 
+> [!NOTE]
+> Slash commands (like `/midnight-expert:doctor`) from a plugin installed mid-session only register after you **restart Claude Code**. Skills and agents activate right away, but the slash-command list is read at startup — if a command isn't found immediately after installing, restart and try again.
+
 > [!IMPORTANT]
 > Use `--scope user` to install the plugin **globally for your user** (available in every project), `--scope project` to install only for the current project, or `--scope local` for an unmanaged local install.
 

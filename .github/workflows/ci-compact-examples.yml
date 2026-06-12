@@ -1,0 +1,51 @@
+name: CI - compact examples
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'plugins/compact-examples/skills/code-examples/examples/**'
+      - 'plugins/compact-examples/scripts/compile-examples.sh'
+      - '.github/workflows/ci-compact-examples.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'plugins/compact-examples/skills/code-examples/examples/**'
+      - 'plugins/compact-examples/scripts/compile-examples.sh'
+      - '.github/workflows/ci-compact-examples.yml'
+
+jobs:
+  compile-examples:
+    # ubuntu-latest is a CASE-SENSITIVE filesystem, so this also catches
+    # import-path case mismatches (e.g. `import Crypto;` that only resolves to
+    # `crypto.compact` on case-insensitive macOS) that local dev would miss.
+    name: Compile examples (case-sensitive FS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Compact toolchain
+        run: |
+          set -euxo pipefail
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          # The installer updates the shell profile, but this job's later steps
+          # don't reload it — expose the bin dir(s) where `compact` actually landed.
+          found=0
+          for d in "$HOME/.local/bin" "$HOME/.compact/bin"; do
+            if [ -x "$d/compact" ]; then echo "$d" >> "$GITHUB_PATH"; found=1; fi
+          done
+          [ "$found" = 1 ] || { echo "::error::compact binary not found after install"; exit 1; }
+
+      - name: Download the latest compiler
+        env:
+          # Authenticates GitHub release listing/downloads to avoid API rate limits.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          compact --version
+          compact update
+
+      - name: Compile all examples
+        run: bash plugins/compact-examples/scripts/compile-examples.sh
