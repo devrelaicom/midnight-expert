@@ -4,209 +4,239 @@
 
 ### What this verifies
 
-Programmatic NIGHT token transfers between wallets using the WalletFacade SDK.
+Programmatic NIGHT token transfers between wallets using the `WalletFacade` SDK.
+
+This step reuses the project and dependencies from Steps 3-4 (`@midnight-ntwrk/wallet-sdk-*` and `@midnight-ntwrk/wallet-sdk-address-format` are already installed) and the deployer seed saved in Step 3.
 
 ### Procedure
 
-1. Create a second wallet using the `midnight_wallet_generate` MCP tool:
-   - `name`: `"alice"`
-   - `network`: `"undeployed"`
+1. **Write a small wallet-info script** you can reuse to create a wallet and to read balances. Create `src/wallet-info.ts`:
 
-2. Check deployer balance using the `midnight_balance` MCP tool with `wallet: "deployer"`.
+   ```typescript
+   import WebSocket from "ws";
+   (globalThis as any).WebSocket = WebSocket;
 
-3. Add the address format package to dependencies:
+   import { Buffer } from "buffer";
+   import { HDWallet, Roles, generateRandomSeed } from "@midnight-ntwrk/wallet-sdk-hd";
+   import {
+     WalletFacade,
+     WalletEntrySchema,
+     type DefaultConfiguration,
+   } from "@midnight-ntwrk/wallet-sdk-facade";
+   import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+   import {
+     UnshieldedWallet,
+     createKeystore,
+     PublicKey,
+   } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+   import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
+   import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+   import * as ledger from "@midnight-ntwrk/ledger-v8";
+   import { MidnightBech32m } from "@midnight-ntwrk/wallet-sdk-address-format";
 
-```bash
-npm install @midnight-ntwrk/wallet-sdk-address-format@3.1.0
-```
+   // Optional seed arg. With no arg, generates a fresh wallet and prints the seed.
+   let seedHex = process.argv[2];
+   if (!seedHex) {
+     seedHex = Buffer.from(generateRandomSeed()).toString("hex");
+     console.log(`New wallet seed (save this): ${seedHex}`);
+   }
 
-4. Write `src/transfer.ts` with the following complete content:
+   function buildKeysFromSeed(hex: string) {
+     const hd = HDWallet.fromSeed(Buffer.from(hex, "hex"));
+     if (hd.type !== "seedOk") throw new Error(`HDWallet.fromSeed failed: ${hd.type}`);
+     const derived = hd.hdWallet
+       .selectAccount(0)
+       .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
+       .deriveKeysAt(0);
+     if (derived.type !== "keysDerived") throw new Error(`deriveKeysAt failed: ${derived.type}`);
+     hd.hdWallet.clear();
+     const k = derived.keys as Record<number, Uint8Array>;
+     return {
+       shieldedSecretKeys: ledger.ZswapSecretKeys.fromSeed(k[Roles.Zswap]),
+       dustSecretKey: ledger.DustSecretKey.fromSeed(k[Roles.Dust]),
+       unshieldedKeystore: createKeystore(k[Roles.NightExternal], "undeployed"),
+     };
+   }
 
-```typescript
-import { WebSocket } from "ws";
-// @ts-expect-error WebSocket polyfill for apollo client
-globalThis.WebSocket = WebSocket;
+   const configuration: DefaultConfiguration = {
+     networkId: "undeployed",
+     costParameters: { feeBlocksMargin: 5 },
+     relayURL: new URL("ws://localhost:9944"),
+     provingServerUrl: new URL("http://localhost:6300"),
+     indexerClientConnection: {
+       indexerHttpUrl: "http://localhost:8088/api/v4/graphql",
+       indexerWsUrl: "ws://localhost:8088/api/v4/graphql/ws",
+     },
+     txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+   };
 
-import { setNetworkId, getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
-import {
-  createKeystore,
-  InMemoryTransactionHistoryStorage,
-  PublicKey,
-  UnshieldedWallet,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
-import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
-import * as Rx from "rxjs";
+   async function main() {
+     const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+     const keys = buildKeysFromSeed(seedHex);
+     const wallet = await WalletFacade.init({
+       configuration,
+       shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(keys.shieldedSecretKeys),
+       unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(keys.unshieldedKeystore)),
+       dust: (cfg) => DustWallet(cfg).startWithSecretKey(keys.dustSecretKey, ledger.LedgerParameters.initialParameters().dust),
+     });
+     try {
+       await wallet.start(keys.shieldedSecretKeys, keys.dustSecretKey);
+       const state = await wallet.waitForSyncedState();
+       const address = MidnightBech32m.encode("undeployed", state.unshielded.address).asString();
+       const night = state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
+       const dust = state.dust.balance(new Date());
+       console.log(`Address:       ${address}`);
+       console.log(`NIGHT balance: ${Number(night) / 1_000_000}`);
+       console.log(`DUST balance:  ${dust}`);
+     } finally {
+       await wallet.stop();
+     }
+   }
+   main().catch((e) => { console.error("Failed:", e); process.exit(1); });
+   ```
 
-// --- Config ---
-const NETWORK_ID = "undeployed";
-const INDEXER_HTTP = "http://127.0.0.1:8088/api/v3/graphql";
-const INDEXER_WS = "ws://127.0.0.1:8088/api/v3/graphql/ws";
-const NODE_URL = "ws://127.0.0.1:9944";
-const PROOF_SERVER = "http://127.0.0.1:6300";
+2. **Create a second wallet (`alice`)** by running the script with no seed argument. **Save the printed seed and address** — you need alice's address as the transfer recipient:
 
-// --- Parse args ---
-const SENDER_SEED = process.argv[2];
-const RECIPIENT_ADDRESS = process.argv[3];
-const AMOUNT = process.argv[4];
+   ```bash
+   node --import tsx src/wallet-info.ts
+   ```
 
-if (!SENDER_SEED || !RECIPIENT_ADDRESS || !AMOUNT) {
-  console.error("Usage: node --import tsx src/transfer.ts <sender-seed> <recipient-address> <amount-night>");
-  process.exit(1);
-}
+3. **Check the deployer's balance** by running the same script with the deployer seed from Step 3:
 
-const amountMicroNight = BigInt(Math.round(parseFloat(AMOUNT) * 1_000_000));
+   ```bash
+   node --import tsx src/wallet-info.ts <deployer-seed>
+   ```
 
-function deriveKeys(seed: string) {
-  const hdWallet = HDWallet.fromSeed(Buffer.from(seed, "hex"));
-  if (hdWallet.type !== "seedOk") throw new Error("Invalid seed");
-  const result = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-  if (result.type !== "keysDerived") throw new Error("Key derivation failed");
-  hdWallet.hdWallet.clear();
-  return {
-    zswap: result.keys[Roles.Zswap],
-    nightExternal: result.keys[Roles.NightExternal],
-    dust: result.keys[Roles.Dust],
-  };
-}
+   It should show roughly 10000 NIGHT and a positive DUST balance.
 
-async function main() {
-  console.log(`Transferring ${AMOUNT} NIGHT to ${RECIPIENT_ADDRESS.slice(0, 30)}...`);
+4. **Write the transfer script.** Create `src/transfer.ts`:
 
-  setNetworkId(NETWORK_ID);
-  const networkId = getNetworkId();
+   ```typescript
+   import WebSocket from "ws";
+   (globalThis as any).WebSocket = WebSocket;
 
-  const keys = deriveKeys(SENDER_SEED);
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(keys.zswap);
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(keys.dust);
-  const keystore = createKeystore(keys.nightExternal, networkId);
+   import { Buffer } from "buffer";
+   import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
+   import {
+     WalletFacade,
+     WalletEntrySchema,
+     type DefaultConfiguration,
+     type CombinedTokenTransfer,
+   } from "@midnight-ntwrk/wallet-sdk-facade";
+   import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+   import {
+     UnshieldedWallet,
+     createKeystore,
+     PublicKey,
+   } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+   import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
+   import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+   import * as ledger from "@midnight-ntwrk/ledger-v8";
+   import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
 
-  console.log("Initializing wallet...");
-  const facade = await WalletFacade.init({
-    configuration: {
-      networkId,
-      indexerClientConnection: {
-        indexerHttpUrl: INDEXER_HTTP,
-        indexerWsUrl: INDEXER_WS,
-      },
-      provingServerUrl: new URL(PROOF_SERVER),
-      relayURL: new URL(NODE_URL),
-      costParameters: {
-        additionalFeeOverhead: 300_000_000_000_000n,
-        feeBlocksMargin: 5,
-      },
-      txHistoryStorage: new InMemoryTransactionHistoryStorage(),
-    },
-    shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
-    unshielded: (cfg) =>
-      UnshieldedWallet({
-        ...cfg,
-        txHistoryStorage: new InMemoryTransactionHistoryStorage(),
-      }).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
-    dust: (cfg) =>
-      DustWallet(cfg).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust,
-      ),
-  });
+   const SENDER_SEED = process.argv[2];
+   const RECIPIENT_ADDRESS = process.argv[3];
+   const AMOUNT = process.argv[4];
+   if (!SENDER_SEED || !RECIPIENT_ADDRESS || !AMOUNT) {
+     console.error("Usage: node --import tsx src/transfer.ts <sender-seed> <recipient-address> <amount-night>");
+     process.exit(1);
+   }
+   const amountMicroNight = BigInt(Math.round(parseFloat(AMOUNT) * 1_000_000));
 
-  try {
-    console.log("Starting and syncing wallet...");
-    await facade.start(shieldedSecretKeys, dustSecretKey);
-    const state = await Rx.firstValueFrom(
-      facade.state().pipe(
-        Rx.filter((s) => s.isSynced),
-        Rx.timeout(120_000),
-      ),
-    );
+   function buildKeysFromSeed(hex: string) {
+     const hd = HDWallet.fromSeed(Buffer.from(hex, "hex"));
+     if (hd.type !== "seedOk") throw new Error(`HDWallet.fromSeed failed: ${hd.type}`);
+     const derived = hd.hdWallet
+       .selectAccount(0)
+       .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
+       .deriveKeysAt(0);
+     if (derived.type !== "keysDerived") throw new Error(`deriveKeysAt failed: ${derived.type}`);
+     hd.hdWallet.clear();
+     const k = derived.keys as Record<number, Uint8Array>;
+     return {
+       shieldedSecretKeys: ledger.ZswapSecretKeys.fromSeed(k[Roles.Zswap]),
+       dustSecretKey: ledger.DustSecretKey.fromSeed(k[Roles.Dust]),
+       unshieldedKeystore: createKeystore(k[Roles.NightExternal], "undeployed"),
+     };
+   }
 
-    // Check balance
-    const token = ledger.unshieldedToken().raw;
-    const balance = state.unshielded?.balances?.[token] ?? 0n;
-    const balanceNight = Number(balance) / 1_000_000;
-    console.log(`  Sender balance: ${balanceNight} NIGHT`);
+   const configuration: DefaultConfiguration = {
+     networkId: "undeployed",
+     // The sender spends, so additionalFeeOverhead keeps the fee non-zero on the
+     // idle devnet (a zero fee is rejected as NotNormalized, error 117).
+     costParameters: { feeBlocksMargin: 5, additionalFeeOverhead: 300_000_000_000_000n },
+     relayURL: new URL("ws://localhost:9944"),
+     provingServerUrl: new URL("http://localhost:6300"),
+     indexerClientConnection: {
+       indexerHttpUrl: "http://localhost:8088/api/v4/graphql",
+       indexerWsUrl: "ws://localhost:8088/api/v4/graphql/ws",
+     },
+     txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+   };
 
-    if (balance < amountMicroNight) {
-      throw new Error(`Insufficient balance: ${balanceNight} NIGHT, need ${AMOUNT} NIGHT`);
-    }
+   async function main() {
+     const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+     const keys = buildKeysFromSeed(SENDER_SEED);
+     const wallet = await WalletFacade.init({
+       configuration,
+       shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(keys.shieldedSecretKeys),
+       unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(keys.unshieldedKeystore)),
+       dust: (cfg) => DustWallet(cfg).startWithSecretKey(keys.dustSecretKey, ledger.LedgerParameters.initialParameters().dust),
+     });
+     try {
+       await wallet.start(keys.shieldedSecretKeys, keys.dustSecretKey);
+       const state = await wallet.waitForSyncedState();
+       const balance = state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
+       console.log(`Sender NIGHT balance: ${Number(balance) / 1_000_000}`);
+       if (balance < amountMicroNight) throw new Error("Insufficient balance for transfer");
 
-    // Decode bech32m address to raw unshielded address
-    const decodedAddress = MidnightBech32m.parse(RECIPIENT_ADDRESS).decode(UnshieldedAddress, NETWORK_ID);
+       // Bech32m addresses must be decoded before passing to transferTransaction
+       const recipient = MidnightBech32m.parse(RECIPIENT_ADDRESS).decode(UnshieldedAddress, "undeployed");
+       const outputs: CombinedTokenTransfer[] = [{
+         type: "unshielded",
+         outputs: [{ type: NIGHT_TOKEN_TYPE, receiverAddress: recipient, amount: amountMicroNight }],
+       }];
 
-    // Build transfer transaction
-    console.log("Building transfer transaction...");
-    const ttl = new Date(Date.now() + 10 * 60 * 1000);
-    const recipe = await facade.transferTransaction(
-      [
-        {
-          type: "unshielded",
-          outputs: [
-            {
-              amount: amountMicroNight,
-              receiverAddress: decodedAddress,
-              type: token,
-            },
-          ],
-        },
-      ],
-      {
-        shieldedSecretKeys,
-        dustSecretKey,
-      },
-      { ttl, payFees: true },
-    );
+       // Flow: transferTransaction -> signRecipe -> finalizeRecipe -> submitTransaction
+       const recipe = await wallet.transferTransaction(
+         outputs,
+         { shieldedSecretKeys: keys.shieldedSecretKeys, dustSecretKey: keys.dustSecretKey },
+         { ttl: new Date(Date.now() + 60 * 60 * 1000), payFees: true },
+       );
+       const signed = await wallet.signRecipe(recipe, (p) => keys.unshieldedKeystore.signData(p));
+       const txId = await wallet.submitTransaction(await wallet.finalizeRecipe(signed));
+       console.log(`Transfer submitted: ${txId}`);
+     } finally {
+       await wallet.stop();
+     }
+   }
+   main().catch((e) => { console.error("Transfer failed:", e); process.exit(1); });
+   ```
 
-    // Sign the transaction
-    console.log("Signing transaction...");
-    const signed = await facade.signRecipe(recipe, (msg: Uint8Array) =>
-      keystore.signData(msg),
-    );
+   Key points:
+   - Bech32m addresses are decoded before use: `MidnightBech32m.parse(address).decode(UnshieldedAddress, "undeployed")`.
+   - Transfer amounts are micro-NIGHT (1 NIGHT = 1,000,000) as `bigint`.
+   - The sender needs `additionalFeeOverhead` set (the deployer registered DUST in Step 3, so it can pay the fee).
 
-    // Finalize and submit
-    console.log("Finalizing and submitting...");
-    const finalized = await facade.finalizeRecipe(signed);
-    const txHash = await facade.submitTransaction(finalized);
+5. **Run the transfer** (replace `<deployer-seed>` with the seed from Step 3, and `<alice-address>` with alice's address from sub-step 2):
 
-    console.log(`\nTransfer successful!`);
-    console.log(`  TX Hash: ${txHash}`);
-    console.log(`  Amount:  ${AMOUNT} NIGHT`);
-    console.log(`  To:      ${RECIPIENT_ADDRESS}`);
-  } finally {
-    await facade.stop();
-  }
-}
+   ```bash
+   node --import tsx src/transfer.ts <deployer-seed> <alice-address> 25
+   ```
 
-main().catch((err) => {
-  console.error("Transfer failed:", err);
-  process.exit(1);
-});
-```
+   Use `node --import tsx` not `npx tsx` — some `@midnight-ntwrk/wallet-sdk-*` packages have ESM export issues with tsx's CJS loader.
 
-Key points to note:
+6. **Verify both balances** with the wallet-info script — once with the deployer seed (down by ~25 plus fees) and once with alice's seed (now holds 25 NIGHT):
 
-- Bech32m addresses must be decoded before passing to `transferTransaction`: `MidnightBech32m.parse(address).decode(UnshieldedAddress, "undeployed")`
-- Transfer amounts are in micro-NIGHT (1 NIGHT = 1,000,000 micro-NIGHT) as bigint
-- The flow is: `transferTransaction` -> `signRecipe` -> `finalizeRecipe` -> `submitTransaction`
-
-5. Run the transfer (replace `<deployer-seed>` with the seed from step 3, and `<alice-address>` with alice's undeployed address):
-
-```bash
-node --import tsx src/transfer.ts <deployer-seed> <alice-address> 25
-```
-
-Use `node --import tsx` not `npx tsx` — some `@midnight-ntwrk/wallet-sdk-*` packages have ESM export issues with tsx's CJS loader.
-
-6. Verify both balances using `midnight_balance` MCP tool for both `deployer` and `alice`. Deployer should be down by 25, alice should have 25 NIGHT.
+   ```bash
+   node --import tsx src/wallet-info.ts <deployer-seed>
+   node --import tsx src/wallet-info.ts <alice-seed>
+   ```
 
 ### Expected output
 
-Transfer tx hash printed. Deployer balance decreased by 25 NIGHT. Alice balance is 25 NIGHT.
+A transfer tx id is printed. The deployer's NIGHT balance has decreased by 25 (plus fees), and alice's NIGHT balance is 25.
+
+> **If anything errors,** your first stop is `/midnight-status-codes:lookup <code>`. A `1010: Custom error: 117` on submission means the fee computed to zero — confirm the sender's `additionalFeeOverhead` is set and the sender has accrued DUST.
 
 > **EPHEMERAL** — All code and files produced by this walkthrough are disposable. Do not commit, push, or retain any of it. Delete everything when done.

@@ -207,12 +207,12 @@ import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-pri
 import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
 import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+import { WalletFacade, WalletEntrySchema } from "@midnight-ntwrk/wallet-sdk-facade";
 import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
 import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
 import {
   createKeystore,
-  InMemoryTransactionHistoryStorage,
   PublicKey,
   UnshieldedWallet,
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
@@ -226,8 +226,8 @@ import { ticketWitnesses, createTicketState, type TicketPrivateState } from "./t
 
 // --- Config ---
 const NETWORK_ID = "undeployed";
-const INDEXER_HTTP = "http://127.0.0.1:8088/api/v3/graphql";
-const INDEXER_WS = "ws://127.0.0.1:8088/api/v3/graphql/ws";
+const INDEXER_HTTP = "http://127.0.0.1:8088/api/v4/graphql";
+const INDEXER_WS = "ws://127.0.0.1:8088/api/v4/graphql/ws";
 const NODE_URL = "ws://127.0.0.1:9944";
 const PROOF_SERVER = "http://127.0.0.1:6300";
 
@@ -274,13 +274,13 @@ async function main() {
         additionalFeeOverhead: 300_000_000_000_000n,
         feeBlocksMargin: 5,
       },
-      txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
     },
     shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
     unshielded: (cfg) =>
       UnshieldedWallet({
         ...cfg,
-        txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+        txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
       }).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
     dust: (cfg) =>
       DustWallet(cfg).startWithSecretKey(

@@ -71,7 +71,9 @@ This generates ZK proving/verifying keys in `keys/`. Required for deployment.
 
 **4.5. Set up the Node.js project**
 
-Create `package.json`:
+> If you completed Step 3, this project and all of its dependencies already exist in the working directory — you can **skip `npm install`** below. Just add the `compile` / `compile:full` / `deploy` scripts (shown in the `package.json` here) to your existing `package.json`, and create the `tsconfig.json`.
+
+Create `package.json` (this is the full manifest, identical to the one from Step 3 plus the contract scripts):
 
 ```json
 {
@@ -84,21 +86,23 @@ Create `package.json`:
     "deploy": "node --import tsx src/deploy.ts"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-js": "2.5.0",
+    "@midnight-ntwrk/compact-js": "2.5.1",
     "@midnight-ntwrk/compact-runtime": "0.16.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
-    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-types": "4.0.4",
-    "@midnight-ntwrk/wallet-sdk-dust-wallet": "3.0.0",
-    "@midnight-ntwrk/wallet-sdk-facade": "3.0.0",
-    "@midnight-ntwrk/wallet-sdk-hd": "3.0.1",
-    "@midnight-ntwrk/wallet-sdk-shielded": "2.1.0",
-    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "2.1.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "4.1.1",
+    "@midnight-ntwrk/wallet-sdk-abstractions": "2.1.0",
+    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.2",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "4.1.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "4.0.1",
+    "@midnight-ntwrk/wallet-sdk-hd": "3.0.2",
+    "@midnight-ntwrk/wallet-sdk-shielded": "3.0.1",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "3.1.0",
     "rxjs": "^7.8.0",
     "ws": "^8.18.0"
   },
@@ -152,12 +156,12 @@ import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-pri
 import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
 import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+import { WalletFacade, WalletEntrySchema } from "@midnight-ntwrk/wallet-sdk-facade";
 import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
 import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
 import {
   createKeystore,
-  InMemoryTransactionHistoryStorage,
   PublicKey,
   UnshieldedWallet,
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
@@ -171,8 +175,8 @@ import { witnesses } from "./witnesses.js";
 
 // --- Config ---
 const NETWORK_ID = "undeployed"; // MUST be lowercase — "Undeployed" causes error 166 (InvalidNetworkId)
-const INDEXER_HTTP = "http://127.0.0.1:8088/api/v3/graphql";
-const INDEXER_WS = "ws://127.0.0.1:8088/api/v3/graphql/ws";
+const INDEXER_HTTP = "http://127.0.0.1:8088/api/v4/graphql";
+const INDEXER_WS = "ws://127.0.0.1:8088/api/v4/graphql/ws";
 const NODE_URL = "ws://127.0.0.1:9944"; // MUST be ws://, not http://
 const PROOF_SERVER = "http://127.0.0.1:6300";
 
@@ -220,13 +224,13 @@ async function main() {
         additionalFeeOverhead: 300_000_000_000_000n,
         feeBlocksMargin: 5,
       },
-      txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
     },
     shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
     unshielded: (cfg) =>
       UnshieldedWallet({
         ...cfg,
-        txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+        txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
       }).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
     dust: (cfg) =>
       DustWallet(cfg).startWithSecretKey(
@@ -338,12 +342,12 @@ import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-pri
 import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
 import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+import { WalletFacade, WalletEntrySchema } from "@midnight-ntwrk/wallet-sdk-facade";
 import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
 import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
 import {
   createKeystore,
-  InMemoryTransactionHistoryStorage,
   PublicKey,
   UnshieldedWallet,
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
@@ -356,8 +360,8 @@ import { Contract, ledger as counterLedger } from "./managed/counter/contract/in
 import { witnesses } from "./witnesses.js";
 
 const NETWORK_ID = "undeployed";
-const INDEXER_HTTP = "http://127.0.0.1:8088/api/v3/graphql";
-const INDEXER_WS = "ws://127.0.0.1:8088/api/v3/graphql/ws";
+const INDEXER_HTTP = "http://127.0.0.1:8088/api/v4/graphql";
+const INDEXER_WS = "ws://127.0.0.1:8088/api/v4/graphql/ws";
 const NODE_URL = "ws://127.0.0.1:9944";
 const PROOF_SERVER = "http://127.0.0.1:6300";
 
@@ -402,11 +406,11 @@ async function main() {
       provingServerUrl: new URL(PROOF_SERVER),
       relayURL: new URL(NODE_URL),
       costParameters: { additionalFeeOverhead: 300_000_000_000_000n, feeBlocksMargin: 5 },
-      txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
     },
     shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
     unshielded: (cfg) =>
-      UnshieldedWallet({ ...cfg, txHistoryStorage: new InMemoryTransactionHistoryStorage() })
+      UnshieldedWallet({ ...cfg, txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema) })
         .startWithPublicKey(PublicKey.fromKeyStore(keystore)),
     dust: (cfg) =>
       DustWallet(cfg).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust),
