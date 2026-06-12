@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { COMPOSE_SEARCH_PATHS, COMPOSE_FALLBACK } from "./constants.js";
+import { COMPOSE_FALLBACK, COMPOSE_SEARCH_PATHS } from "./constants.js";
 
 export function findComposeFile(): string {
 	for (const relative of COMPOSE_SEARCH_PATHS) {
@@ -9,7 +9,6 @@ export function findComposeFile(): string {
 	}
 	if (fs.existsSync(COMPOSE_FALLBACK)) return COMPOSE_FALLBACK;
 	throw new Error(
-		"No devnet.yml found. Generate one with the midnight-tooling:devnet skill.\n" +
-			"Search paths: " + [...COMPOSE_SEARCH_PATHS, COMPOSE_FALLBACK].join(", "),
+		`No devnet.yml found. Generate one with the midnight-tooling:devnet skill.\nSearch paths: ${[...COMPOSE_SEARCH_PATHS, COMPOSE_FALLBACK].join(", ")}`,
 	);
 }

@@ -1,16 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
-import type { Providers } from "./providers.js";
+import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import {
-	CONTRACT_NAME,
 	CONTRACTS_FILE,
+	CONTRACT_NAME,
 	FILE_MODE_PUBLIC,
 	STATE_DIR,
 	ZK_CONFIG_PATH,
 } from "./constants.js";
 import { withSpinner } from "./progress.js";
+import type { Providers } from "./providers.js";
 
 // NOTE: The contract module is imported dynamically at runtime because
 // the import path depends on the compiled contract output.
@@ -23,12 +23,21 @@ export async function loadCompiledContract() {
 	);
 }
 
+// The contract type, recovered from loadCompiledContract above. Providers are
+// typed against this (see ./providers.ts) so deployContract / findDeployedContract
+// accept them — they require providers whose circuit-id set matches the contract.
+export type AppContract = Awaited<
+	ReturnType<typeof loadCompiledContract>
+> extends CompiledContract.CompiledContract<infer C, infer _PS, infer _R>
+	? C
+	: never;
+
 // --- Deploy / Join ---
 
 export interface DeployResult {
 	contractAddress: string;
 	txId: string;
-	blockHeight: bigint;
+	blockHeight: number;
 }
 
 export async function deploy(
@@ -105,7 +114,7 @@ function saveDeployedContract(name: string, result: DeployResult): void {
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir, { recursive: true });
 	}
-	fs.writeFileSync(contractsPath(), JSON.stringify(store, null, "\t") + "\n", {
+	fs.writeFileSync(contractsPath(), `${JSON.stringify(store, null, "\t")}\n`, {
 		mode: FILE_MODE_PUBLIC,
 	});
 }

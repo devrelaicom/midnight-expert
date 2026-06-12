@@ -1,8 +1,8 @@
 import { Args, Flags } from "@oclif/core";
 import { BaseCommand } from "../../base-command.js";
-import { buildFacade, getWallet } from "../../lib/wallet.js";
-import { airdropFromGenesis, registerDust, waitForFunds, waitForDust } from "../../lib/funding.js";
+import { airdropFromGenesis, registerDust, waitForDust, waitForFunds } from "../../lib/funding.js";
 import { withSpinner } from "../../lib/progress.js";
+import { buildFacade, getWallet } from "../../lib/wallet.js";
 
 export default class WalletFund extends BaseCommand {
 	static override description = "Fund a wallet from the genesis account and register for DUST";
@@ -29,7 +29,7 @@ export default class WalletFund extends BaseCommand {
 
 		// Step 1: Airdrop from genesis
 		const txId = await airdropFromGenesis(wallet.address, amount);
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			this.log(`  Airdrop tx: ${txId}`);
 		}
 
@@ -41,13 +41,13 @@ export default class WalletFund extends BaseCommand {
 			// Step 3: Register for DUST
 			const dustTx = await registerDust(ctx.facade, ctx.keystore);
 			if (dustTx) {
-				if (!this.jsonEnabled) {
+				if (!this.jsonEnabled()) {
 					this.log(`  DUST registration tx: ${dustTx}`);
 				}
 				await withSpinner("Waiting for DUST generation...", () => waitForDust(ctx.facade));
 			}
 
-			if (!this.jsonEnabled) {
+			if (!this.jsonEnabled()) {
 				this.log(`  Wallet "${args.name}" funded and DUST registered.`);
 			}
 

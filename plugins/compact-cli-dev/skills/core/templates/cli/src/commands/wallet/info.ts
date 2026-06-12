@@ -22,7 +22,7 @@ export default class WalletInfo extends BaseCommand {
 			createdAt: wallet.createdAt,
 		};
 
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			this.log(`Wallet: ${args.name}`);
 			this.log(`  Address:    ${wallet.address}`);
 			this.log(`  Created:    ${wallet.createdAt}`);

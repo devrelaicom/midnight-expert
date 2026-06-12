@@ -1,8 +1,8 @@
 import { Args } from "@oclif/core";
 import { BaseCommand } from "../../base-command.js";
-import { buildFacade, getWallet } from "../../lib/wallet.js";
 import { registerDust, waitForDust, waitForFunds } from "../../lib/funding.js";
 import { withSpinner } from "../../lib/progress.js";
+import { buildFacade, getWallet } from "../../lib/wallet.js";
 
 export default class DustRegister extends BaseCommand {
 	static override description = "Register NIGHT UTXOs for DUST generation";
@@ -22,12 +22,12 @@ export default class DustRegister extends BaseCommand {
 
 			if (txId) {
 				await withSpinner("Waiting for DUST...", () => waitForDust(ctx.facade));
-				if (!this.jsonEnabled) {
+				if (!this.jsonEnabled()) {
 					this.log(`  DUST registered. tx: ${txId}`);
 				}
 				this.outputResult({ txId, registered: true });
 			} else {
-				if (!this.jsonEnabled) {
+				if (!this.jsonEnabled()) {
 					this.log("  DUST already available.");
 				}
 				this.outputResult({ txId: null, registered: false });

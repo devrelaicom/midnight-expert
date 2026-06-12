@@ -1,11 +1,11 @@
 import { Flags } from "@oclif/core";
 import { BaseCommand } from "../base-command.js";
-import { buildFacade, getWallet } from "../lib/wallet.js";
-import { createProviders } from "../lib/providers.js";
-import { deploy } from "../lib/contract.js";
 import { CONTRACT_NAME } from "../lib/constants.js";
-import { withSpinner } from "../lib/progress.js";
+import { deploy } from "../lib/contract.js";
 import { waitForFunds } from "../lib/funding.js";
+import { withSpinner } from "../lib/progress.js";
+import { createProviders } from "../lib/providers.js";
+import { buildFacade, getWallet } from "../lib/wallet.js";
 
 export default class Deploy extends BaseCommand {
 	static override description = "Deploy the compiled contract to devnet";
@@ -38,8 +38,8 @@ export default class Deploy extends BaseCommand {
 
 			const result = await deploy(providers, {});
 
-			if (!this.jsonEnabled) {
-				this.log(`  Contract deployed!`);
+			if (!this.jsonEnabled()) {
+				this.log("  Contract deployed!");
 				this.log(`  Address:      ${result.contractAddress}`);
 				this.log(`  Transaction:  ${result.txId}`);
 				this.log(`  Block:        ${result.blockHeight.toString()}`);

@@ -1,11 +1,11 @@
 import { Args, Flags } from "@oclif/core";
 import { BaseCommand } from "../base-command.js";
-import { buildFacade, getWallet } from "../lib/wallet.js";
-import { createProviders } from "../lib/providers.js";
-import { join } from "../lib/contract.js";
 import { CONTRACT_NAME } from "../lib/constants.js";
-import { withSpinner } from "../lib/progress.js";
+import { join } from "../lib/contract.js";
 import { waitForFunds } from "../lib/funding.js";
+import { withSpinner } from "../lib/progress.js";
+import { createProviders } from "../lib/providers.js";
+import { buildFacade, getWallet } from "../lib/wallet.js";
 
 export default class Join extends BaseCommand {
 	static override description = "Join an existing deployed contract";
@@ -43,7 +43,7 @@ export default class Join extends BaseCommand {
 
 			await join(providers, args.address, {});
 
-			if (!this.jsonEnabled) {
+			if (!this.jsonEnabled()) {
 				this.log(`  Joined contract at: ${args.address}`);
 			}
 

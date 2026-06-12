@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Command, Flags } from "@oclif/core";
-import { classifyError, formatError } from "./lib/errors.js";
+import { Command } from "@oclif/core";
 import { initializeNetwork } from "./lib/config.js";
+import { INIT_MARKER, STATE_DIR } from "./lib/constants.js";
+import { classifyError, formatError } from "./lib/errors.js";
 import { setJsonMode } from "./lib/progress.js";
-import { STATE_DIR, INIT_MARKER } from "./lib/constants.js";
 
 const WELCOME_BANNER = `
   ┌─────────────────────────────────────────────────────────────┐
@@ -15,26 +15,20 @@ const WELCOME_BANNER = `
 `;
 
 export abstract class BaseCommand extends Command {
-	static baseFlags = {
-		json: Flags.boolean({
-			description: "Output result as JSON",
-			default: false,
-		}),
-	};
+	// Opt in to oclif's built-in `--json` flag. When `--json` is passed,
+	// `this.jsonEnabled()` returns true. (In @oclif/core v4 `jsonEnabled` is a
+	// method on the base Command, so we must call it, not assign to it.)
+	static override enableJsonFlag = true;
 
-	protected jsonEnabled = false;
-
-	async init(): Promise<void> {
+	override async init(): Promise<void> {
 		await super.init();
-		const { flags } = await this.parse(this.constructor as typeof BaseCommand);
-		this.jsonEnabled = flags.json;
-		setJsonMode(this.jsonEnabled);
+		setJsonMode(this.jsonEnabled());
 		initializeNetwork();
 		this.showWelcomeBanner();
 	}
 
 	private showWelcomeBanner(): void {
-		if (this.jsonEnabled) return;
+		if (this.jsonEnabled()) return;
 
 		const markerPath = path.join(process.cwd(), STATE_DIR, INIT_MARKER);
 		if (fs.existsSync(markerPath)) return;
@@ -49,14 +43,14 @@ export abstract class BaseCommand extends Command {
 	}
 
 	protected outputResult(result: unknown): void {
-		if (this.jsonEnabled) {
+		if (this.jsonEnabled()) {
 			this.log(JSON.stringify(result, null, "\t"));
 		}
 	}
 
-	async catch(err: unknown): Promise<void> {
+	override async catch(err: unknown): Promise<void> {
 		const classified = classifyError(err);
-		if (this.jsonEnabled) {
+		if (this.jsonEnabled()) {
 			this.log(
 				JSON.stringify(
 					{ error: classified.code, message: classified.message, action: classified.action },
