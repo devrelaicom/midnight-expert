@@ -24,51 +24,51 @@ midnight-node/
 └── ...
 ```
 
-## Runtime Pallets (approximately 28)
+## Runtime Pallets (28)
 
-The runtime composes approximately 28 pallets organized by function. The exact count depends on how umbrella entries (such as partner chain bridge pallets) are counted individually.
+The runtime composes exactly 28 pallets organized by function (the `#[frame_support::runtime]` block has 28 `pallet_index` entries at `node-1.0.0`).
 
-### Standard Substrate
+### Core / System
 
 | Pallet | Purpose |
 |--------|---------|
-| `frame_system` | Core runtime framework — accounts, events, block context |
-| `pallet_timestamp` | On-chain time via inherent extrinsics |
-| `pallet_preimage` | Store and manage preimages for hashed proposals |
-| `pallet_balances` | Account balance management |
-| `pallet_transaction_payment` | Fee calculation and payment |
-| `pallet_sudo` | Superuser dispatch for development/testing |
-| `pallet_utility` | Batch calls and proxy dispatch |
-| `pallet_scheduler` | Scheduled dispatch of calls at future blocks |
+| `frame_system` (System) | Core runtime framework — accounts, events, block context |
+| `pallet_timestamp` (Timestamp) | On-chain time via inherent extrinsics |
+| `pallet_preimage` (Preimage) | Store and manage preimages for hashed proposals |
+| `pallet_scheduler` (Scheduler) | Scheduled dispatch of calls at future blocks |
+| `pallet_migrations` (MultiBlockMigrations) | Multi-block runtime storage migrations |
+| `pallet_tx_pause` (TxPause) | Pause and resume individual dispatchable calls |
 
 ### Consensus
 
 | Pallet | Purpose |
 |--------|---------|
-| `pallet_aura` | AURA block production — round-robin slot assignment |
-| `pallet_grandpa` | GRANDPA deterministic finality gadget |
-| `pallet_beefy` | BEEFY bridge protocol for light client proofs |
-| `pallet_mmr` | Merkle Mountain Range for light client state proofs |
+| `pallet_aura` (Aura) | AURA block production — round-robin slot assignment |
+| `pallet_grandpa` (Grandpa) | GRANDPA deterministic finality gadget |
+| `pallet_beefy` (Beefy) | BEEFY bridge protocol for light client proofs |
+| `pallet_mmr` (Mmr) | Merkle Mountain Range for light client state proofs |
+| `pallet_beefy_mmr` (BeefyMmrLeaf) | BEEFY MMR leaf construction for light client proofs |
 
-### Partner Chains (Cardano Integration)
+### Partner Chains / Session (Cardano Integration)
 
 | Pallet | Purpose |
 |--------|---------|
-| `pallet_sidechain` | Sidechain registration and cross-chain message handling |
-| `pallet_session_validator_management` | Validator set rotation synced from Cardano mainchain |
-| `sp_session_validator_management_query` | Query interface for session/validator data |
-| Partner chain bridge pallets | cNIGHT bridging and cross-chain token transfers |
+| `pallet_sidechain` (Sidechain) | Sidechain registration and cross-chain message handling |
+| `pallet_session_validator_management` (SessionCommitteeManagement) | Validator set rotation synced from Cardano mainchain |
+| `pallet_partner_chains_session` (Session) | Partner Chains session rotation and committee wiring |
+| `pallet_session` (PalletSession) | Stub session pallet — committee writes to `CurrentIndex` |
+| `pallet_partner_chains_bridge` (Bridge) | cNIGHT bridging and cross-chain token transfers |
 
 ### Midnight-Specific
 
 | Pallet | Purpose |
 |--------|---------|
-| `pallet_midnight` | Core Midnight logic — transaction processing, ZK proof verification, ledger API |
-| `pallet_midnight_system` | System-level Midnight operations — epoch transitions, parameter management |
-| `pallet_node_version` | On-chain node version tracking and compatibility checks |
-| `pallet_cnight_observation` | cNIGHT cross-chain observation and validation |
-| `pallet_system_parameters` | On-chain governance parameters — D-parameter, Terms & Conditions |
-| `pallet_throttle` | Per-account transaction rate limiting — max bytes and max transaction count over a rolling block window |
+| `pallet_midnight` (Midnight) | Core Midnight logic — transaction processing, ZK proof verification, ledger API |
+| `pallet_midnight_system` (MidnightSystem) | System-level Midnight operations — epoch transitions, parameter management |
+| `pallet_version` (NodeVersion) | On-chain node version tracking and compatibility checks |
+| `pallet_cnight_observation` (CNightObservation) | cNIGHT cross-chain observation and validation |
+| `pallet_system_parameters` (SystemParameters) | On-chain governance parameters — D-parameter, Terms & Conditions |
+| `pallet_throttle` (Throttle) | Per-account transaction rate limiting — max bytes and max transaction count over a rolling block window |
 
 ### Governance
 
@@ -76,7 +76,14 @@ The runtime composes approximately 28 pallets organized by function. The exact c
 |--------|---------|
 | `pallet_collective` (Council) | Council governance body — motions and voting |
 | `pallet_collective` (TechnicalCommittee) | Technical committee governance body |
-| `pallet_federated_authority` | Two-body federated governance — requires both Council and TechnicalCommittee approval |
+| `pallet_membership` (CouncilMembership) | Manages Council membership set |
+| `pallet_membership` (TechnicalCommitteeMembership) | Manages Technical Committee membership set |
+| `pallet_federated_authority` (FederatedAuthority) | Two-body federated governance — requires both Council and TechnicalCommittee approval |
+| `pallet_federated_authority_observation` (FederatedAuthorityObservation) | Observes and validates federated authority actions |
+
+> `sp_session_validator_management_query` is **not** a pallet — it is a runtime-API / RPC query crate for session and validator data, so it is not listed in the inventory above.
+
+> **Full inventory:** `references/pallet-inventory.md` — all 28 pallets with their `pallet_index`, crate, alias, role (local vs framework), and the key calls/storage of the 8 Midnight-local pallets.
 
 ## Consensus Mechanism
 
@@ -122,6 +129,8 @@ The Midnight node uses a layered consensus architecture.
 - **Purpose:** Append-only authenticated data structure for light client state proofs
 - **Usage:** Light clients verify on-chain state without downloading the full chain
 
+> **Deep dive:** `references/consensus-and-finality.md` — the four-layer stack with exact key types, slot/epoch parameters, the GRANDPA justification period, the `SessionKeys` struct, and why BEEFY is present as a pallet but **not yet wired** as a validator session key.
+
 ## Ledger Storage
 
 The Midnight node maintains a custom ledger separate from the standard Substrate state trie. This ledger stores ZK-specific state including commitment trees, nullifier sets, and contract states.
@@ -136,7 +145,8 @@ The Midnight node maintains a custom ledger separate from the standard Substrate
 ```text
 Client                    Node                        Runtime
   │                        │                            │
-  │  send_mn_transaction   │                            │
+  │  author_submitExtrinsic                             │
+  │  (send_mn_transaction) │                            │
   │───────────────────────→│                            │
   │                        │  LedgerApi::apply_transaction()
   │                        │───────────────────────────→│
@@ -152,7 +162,7 @@ Client                    Node                        Runtime
   │  Transaction hash      │                            │
 ```
 
-1. **Submission:** Client sends a transaction via `send_mn_transaction` RPC
+1. **Submission:** Client submits the `send_mn_transaction` extrinsic (`MidnightCall::send_mn_transaction`) via the standard `author_submitExtrinsic` RPC — there is no RPC method literally named `send_mn_transaction`
 2. **Pool filtering:** `FilteringTransactionPool` validates the transaction against `CheckCallFilter` rules
 3. **Application:** `LedgerApi::apply_transaction()` processes the transaction in the runtime
 4. **ZK verification:** Zero-knowledge proof is verified against the circuit's verification key
@@ -186,13 +196,24 @@ Cardano Node ──→ db-sync ──→ PostgreSQL ←── Midnight Node
 |---------|---------|
 | **Connection** | PostgreSQL connection to Cardano db-sync instance |
 | **cNIGHT bridging** | Observes Cardano UTXOs for cNIGHT lock transactions |
-| **Transfer limits** | Maximum 256 cNIGHT transfers per Midnight block |
+| **Throughput limits** | NIGHT bridge (ICS→Midnight): max **256** transfers/block (`BridgeMaxTransfersPerBlock`, `runtime/src/lib.rs:877`). cNIGHT observation: up to **200** Cardano txs/block (`DEFAULT_CARDANO_TX_CAPACITY_PER_BLOCK`). The 256 limit is the NIGHT bridge's, **not** a cNIGHT limit |
 | **Governance sync** | Council and TechnicalCommittee membership read from Cardano mainchain UTXOs |
 | **Validator management** | Validator set rotation driven by Cardano epoch transitions |
 | **Mock mode** | `use_main_chain_follower_mock=true` for development without Cardano |
 
+> **Deep dive:** `references/cardano-integration.md` — the db-sync follower data sources, cNIGHT observation throughput, the NIGHT bridge limit, Ariadne committee selection, governance-membership sync, and the PostgreSQL SSL modes.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/pallet-inventory.md` | All 28 runtime pallets: `pallet_index`, crate, alias, role, local-vs-framework, and the key calls/storage of the 8 Midnight-local pallets | When identifying which pallet owns a behaviour or auditing the runtime composition |
+| `references/consensus-and-finality.md` | AURA / GRANDPA / BEEFY / MMR deep-dive — key types, slot/epoch params, justification period, `SessionKeys`, and the BEEFY-not-wired status | When reasoning about block production, finality, or light-client proofs |
+| `references/cardano-integration.md` | The Cardano partner-chain integration — db-sync follower, cNIGHT observation, NIGHT bridge, Ariadne committee selection, governance sync, SSL modes | When working on cross-chain data flow or the main-chain follower |
+
 ## Cross-References
 
 - `midnight-tooling:devnet` — Manages the node as part of the local development stack
+- `midnight-node:node-validator` — Running a validator: keys, candidacy, committee selection, and block production
 - `compact-core:compact-transaction-model` — Transaction structure and execution model from the Compact language perspective
 - `core-concepts:architecture` — High-level Midnight network architecture and component relationships

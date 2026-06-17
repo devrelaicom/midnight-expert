@@ -120,37 +120,49 @@ The federated authority model governs the following critical operations:
 
 ### Runtime Upgrades
 
-Runtime upgrades replace the on-chain WASM runtime without requiring a hard fork. Both governance bodies must approve the upgrade motion containing the new runtime blob.
+Runtime upgrades replace the on-chain WASM runtime without requiring a hard fork. Both governance bodies must approve the upgrade motion containing the new runtime blob. The two bodies approve independently and in any order — there is no required Council-then-TechnicalCommittee sequence. The upgrade executes once the required proportion is reached in both bodies at close.
 
 ```text
-New Runtime WASM
-    │
-    ▼
-Council Motion (propose + 2/3 approve)
-    │
-    ▼
-TechnicalCommittee Motion (propose + 2/3 approve)
-    │
-    ▼
-Runtime Upgrade Executed
-(new WASM runtime active at next block)
+              New Runtime WASM
+                    │
+        ┌───────────┴───────────┐
+        ▼                       ▼
+Council Motion          TechnicalCommittee Motion
+(propose + 2/3 approve) (propose + 2/3 approve)
+        │                       │
+        └───────────┬───────────┘
+                    │  (independent, any order;
+                    │   both required at close)
+                    ▼
+          Runtime Upgrade Executed
+     (new WASM runtime active at next block)
 ```
 
 ## D-Parameter
 
-The D-parameter controls the balance between permissioned (federated) validators and permissionless (staked) validators in block production.
+The D-parameter controls the balance between permissioned (federated) candidates and registered (staked) candidates selected into the block-producing committee. It is not a single `0.0`–`1.0` scalar. It is stored as a `(u16, u16)` tuple — an Ariadne T/P ratio that sets how many permissioned versus registered candidates are selected for each committee.
 
-| D Value | Effect |
-|---------|--------|
-| `1.0` | Fully federated — only permissioned validators produce blocks |
-| `0.0` | Fully permissionless — only staked validators produce blocks |
-| Between | Mixed — proportional blend of permissioned and permissionless validators |
+| Field | Meaning |
+|-------|---------|
+| `num_permissioned_candidates` (`u16`) | Expected number of permissioned (federated) candidates selected into a committee |
+| `num_registered_candidates` (`u16`) | Expected number of registered (staked) candidates selected into a committee |
+
+A higher permissioned share makes block production more federated; a higher registered share makes it more permissionless. The two values together define the proportional blend used by the Ariadne selection algorithm — there is no single combined value.
 
 The D-parameter is stored on-chain via `pallet_system_parameters` and can be queried via the `systemParameters_getDParameter` RPC method. Changes to the D-parameter require governance approval through the federated authority process.
+
+> **Deep dive:** `references/governance-internals.md` — the two `pallet_collective` instances (Council Instance1 / TechnicalCommittee Instance2), `pallet_membership`, the `FederatedAuthorityEnsureProportionAtLeast<1,1>` origin, the `MOTION_DURATION = 5 * DAYS` constant, `motion_close` mechanics, and the D-parameter `(u16,u16)` storage.
+
+## References
+
+| Name | Description | When used |
+|------|-------------|-----------|
+| `references/governance-internals.md` | Pallet-level governance mechanics: the two collective instances, membership origins, the federated-authority proportion origin, motion lifecycle, and D-parameter storage | When auditing the governance flow or building governance tooling |
 
 ## Cross-References
 
 - `core-concepts:architecture` — High-level network architecture and the role of governance in the Midnight ecosystem
 - `midnight-indexer:indexer-data-model` — Indexed governance data including D-parameter history and Terms & Conditions
 - `midnight-node:node-architecture` — Governance pallets and their role in the runtime
+- `midnight-node:node-validator` — How the D-parameter drives validator committee selection
 - `midnight-node:node-rpc-api` — RPC methods for querying governance parameters

@@ -8,11 +8,11 @@ Complete `curl` examples for the indexer GraphQL HTTP endpoint. All examples tar
 curl -X POST http://localhost:8088/api/v4/graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "{ block { hash height timestamp transactions { hash identifiers } } }"
+    "query": "{ block { hash height timestamp transactions { hash ... on RegularTransaction { identifiers } } } }"
   }'
 ```
 
-Expected response (note: `timestamp` is a UNIX timestamp in seconds, and `identifiers` is an array):
+Expected response (note: `timestamp` is a UNIX timestamp in milliseconds, and `identifiers` is an array):
 
 ```json
 {
@@ -20,7 +20,7 @@ Expected response (note: `timestamp` is a UNIX timestamp in seconds, and `identi
     "block": {
       "hash": "1a2b3c...",
       "height": 12345,
-      "timestamp": 1736937000,
+      "timestamp": 1736937000000,
       "transactions": [
         {
           "hash": "abc123...",
