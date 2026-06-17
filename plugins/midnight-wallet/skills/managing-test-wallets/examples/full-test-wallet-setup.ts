@@ -130,11 +130,22 @@ function buildKeysFromSeed(seed: Uint8Array, networkId: Network) {
 
 // ─── Helper: build configuration ─────────────────────────────────────────────
 
-function buildConfiguration(network: Network): DefaultConfiguration {
+// `feeOverhead`, when provided, is added as additionalFeeOverhead so the fee is
+// non-zero on an idle local devnet (a zero fee is rejected as NotNormalized, 117).
+// Pass it for a wallet that SPENDS (e.g. the genesis sender below). The wallet that
+// only registers DUST does not need it: DUST registration is self-funding (the fee
+// is paid by the DUST the registered NIGHT UTXOs generate), so it succeeds at a 0
+// DUST balance with or without the overhead.
+function buildConfiguration(network: Network, feeOverhead?: bigint): DefaultConfiguration {
+  const costParameters =
+    feeOverhead === undefined
+      ? { feeBlocksMargin: 5 }
+      : { feeBlocksMargin: 5, additionalFeeOverhead: feeOverhead };
+
   if (network === "undeployed") {
     return {
       networkId: "undeployed",
-      costParameters: { feeBlocksMargin: 5 },
+      costParameters,
       relayURL: new URL("ws://localhost:9944"),
       provingServerUrl: new URL("http://localhost:6300"),
       indexerClientConnection: {
@@ -148,7 +159,7 @@ function buildConfiguration(network: Network): DefaultConfiguration {
   const netCfg = NETWORK_CONFIG[network];
   return {
     networkId: network,
-    costParameters: { feeBlocksMargin: 5 },
+    costParameters,
     relayURL: netCfg.relayURL,
     // Proof server runs locally even for public testnets.
     provingServerUrl: new URL("http://localhost:6300"),
@@ -244,6 +255,9 @@ async function main() {
     unshieldedKeystore,
   } = buildKeysFromSeed(seed, network);
 
+  // No fee overhead: this wallet only registers DUST below (Step 7), which is
+  // self-funding (paid by the DUST the registered NIGHT UTXOs generate), so it
+  // needs no overhead even at a 0 DUST balance.
   const configuration = buildConfiguration(network);
 
   const wallet = await initWallet(
@@ -284,7 +298,9 @@ async function main() {
       unshieldedKeystore: genKeystore,
     } = buildKeysFromSeed(genesisSeed, "undeployed");
 
-    const senderConfiguration = buildConfiguration("undeployed");
+    // The genesis sender spends (transfers NIGHT) and already holds DUST, so it
+    // gets a fee overhead to keep the fee non-zero on the idle devnet (error 117).
+    const senderConfiguration = buildConfiguration("undeployed", 1_000_000n);
     const sender = await initWallet(
       senderConfiguration,
       genShielded,

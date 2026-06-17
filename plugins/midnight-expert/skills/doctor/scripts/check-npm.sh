@@ -28,20 +28,6 @@ else
   exit 0
 fi
 
-# Helper: probe a package's published version, emit a row.
-# Args: <pkg> <reason-needed>
-check_package() {
-  local pkg="$1"
-  local needed_by="$2"
-  local ver
-  ver="$(npm view "$pkg" version 2>/dev/null)" || ver=""
-  if [ -n "$ver" ]; then
-    emit "$pkg" "pass" "v${ver} on npm"
-  else
-    emit "$pkg" "critical" "not published — $needed_by will fail"
-  fi
-}
-
 # Canary check on @midnight-ntwrk scope (no custom registry config required).
 canary_version="$(npm view @midnight-ntwrk/compact-runtime version 2>/dev/null)" || canary_version=""
 if [ -n "$canary_version" ]; then
@@ -50,6 +36,6 @@ else
   emit "@midnight-ntwrk scope" "warn" "could not resolve @midnight-ntwrk/compact-runtime — check npm config (no custom registry needed)"
 fi
 
-# Workflow-published utility packages used by plugin commands.
-check_package "@aaronbassett/midnight-fact-checker-utils" "midnight-fact-check commands (check, fast-check)"
-check_package "@aaronbassett/template-engine" "compact-cli-dev:init"
+# Note: /midnight-fact-check (check, fast-check) and /compact-cli-dev:init no
+# longer depend on any external npm package — their helpers are vendored into
+# the plugins (dependency-free Node scripts), so there is nothing to probe here.

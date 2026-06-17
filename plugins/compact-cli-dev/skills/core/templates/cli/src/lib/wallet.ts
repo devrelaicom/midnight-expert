@@ -2,23 +2,23 @@ import fs from "node:fs";
 import path from "node:path";
 import * as ledger from "@midnight-ntwrk/ledger-v8";
 import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
 import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
+import { WalletEntrySchema, WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
 import { HDWallet, Roles, generateRandomSeed } from "@midnight-ntwrk/wallet-sdk-hd";
 import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
 import {
-	createKeystore,
-	InMemoryTransactionHistoryStorage,
 	PublicKey,
-	UnshieldedWallet,
 	type UnshieldedKeystore,
+	UnshieldedWallet,
+	createKeystore,
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
 import { WebSocket } from "ws";
 import {
 	ADDITIONAL_FEE_OVERHEAD,
+	DIR_MODE,
 	FEE_BLOCKS_MARGIN,
 	FILE_MODE_PRIVATE,
-	DIR_MODE,
 	SEED_LENGTH,
 	STATE_DIR,
 	WALLETS_FILE,
@@ -59,7 +59,9 @@ export function deriveKeys(seed: string): {
 	dust: Uint8Array;
 } {
 	if (seed.length !== SEED_LENGTH) {
-		throw new Error(`Invalid seed length: expected ${String(SEED_LENGTH)} hex chars, got ${String(seed.length)}`);
+		throw new Error(
+			`Invalid seed length: expected ${String(SEED_LENGTH)} hex chars, got ${String(seed.length)}`,
+		);
 	}
 	const hdWallet = HDWallet.fromSeed(Buffer.from(seed, "hex"));
 	if (hdWallet.type !== "seedOk") {
@@ -96,11 +98,15 @@ export async function buildFacade(seed: string): Promise<WalletContext> {
 			indexerHttpUrl: "http://127.0.0.1:8088/api/v4/graphql",
 			indexerWsUrl: "ws://127.0.0.1:8088/api/v4/graphql/ws",
 		},
+		// The default submission service submits via the node's RPC relay.
+		relayURL: new URL("http://127.0.0.1:9944"),
 		costParameters: {
 			additionalFeeOverhead: ADDITIONAL_FEE_OVERHEAD,
 			feeBlocksMargin: FEE_BLOCKS_MARGIN,
 		},
-		txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+		// In the 4.x SDK the in-memory storage lives in wallet-sdk-abstractions
+		// and takes the entry schema (WalletEntrySchema) so it can serialize.
+		txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
 	};
 
 	const facade = await WalletFacade.init({
@@ -109,7 +115,7 @@ export async function buildFacade(seed: string): Promise<WalletContext> {
 		unshielded: (cfg) =>
 			UnshieldedWallet({
 				...cfg,
-				txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+				txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
 			}).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
 		dust: (cfg) =>
 			DustWallet(cfg).startWithSecretKey(
@@ -146,7 +152,7 @@ export function loadWallets(): WalletStore {
 export function saveWallets(store: WalletStore): void {
 	ensureStateDir();
 	const filePath = walletsPath();
-	fs.writeFileSync(filePath, JSON.stringify(store, null, "\t") + "\n", {
+	fs.writeFileSync(filePath, `${JSON.stringify(store, null, "\t")}\n`, {
 		mode: FILE_MODE_PRIVATE,
 	});
 }
@@ -155,9 +161,7 @@ export function getWallet(name: string): StoredWallet {
 	const store = loadWallets();
 	const wallet = store[name];
 	if (!wallet) {
-		throw new Error(
-			`Wallet "${name}" not found. Run \`wallet:create ${name}\` to create it.`,
-		);
+		throw new Error(`Wallet "${name}" not found. Run \`wallet:create ${name}\` to create it.`);
 	}
 	return wallet;
 }

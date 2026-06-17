@@ -59,7 +59,7 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 |---|---|
 | Path | `applications/midnight-rwa/` |
 | Description | Privacy-gated real-world asset contract. Users must prove passport identity, issuer authorization (via Merkle tree), user authorization (via second Merkle tree), legal age, and nationality — all in zero-knowledge. On success, the user receives shielded tBTC and tHF tokens as reward. **Authorization uses the secure witness-derived identity pattern**: the user's authorization key is a `UserPublicKey` derived in-circuit from a single private witness secret (`getUserSecret`), never `ownPublicKey()` (which is retained only as the safe recipient of token sends). |
-| Files | `midnight-rwa.compact`, `crypto.compact`, `passportidentity.compact`, `witnesses.ts` |
+| Files | `midnight-rwa.compact`, `Crypto.compact`, `PassportIdentity.compact`, `witnesses.ts` |
 | Witnesses | `witnesses.ts` — implements `localSecretKey()`, `getUserSecret()`, `findIssuerPath(pk)`, `findAuthorizationPath(pk: UserPublicKey)`, `reduceChallenge(r)` |
 | Complexity | Advanced |
 
@@ -70,7 +70,7 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 - Multi-step identity proof circuit using `PassportData` + `SignedCredential`, Merkle path verification, age check, and nationality check
 - Shielded token rewards via `mintShieldedToken`
 
-**`crypto.compact`** and **`passportidentity.compact`** are local copies of their respective `modules/` counterparts.
+**`Crypto.compact`** and **`PassportIdentity.compact`** are local copies of their respective `modules/` counterparts. (Their filenames are capitalized to match the `module Crypto` / `module PassportIdentity` declarations they contain — Compact resolves `import Crypto;` to `Crypto.compact` case-sensitively, so a lowercase filename only resolves on case-insensitive filesystems.)
 
 ---
 
@@ -100,7 +100,7 @@ These applications illustrate several important composition patterns:
 
 4. **Merkle tree authorization with witness-derived identity** — `midnight-rwa` uses `HistoricMerkleTree` for two independent authorization registries, each with a separate Merkle proof witness. The user registry (`authorizations`) keys on a `UserPublicKey` **derived in-circuit from a private witness secret**, never `ownPublicKey()`. The gate binds the membership proof to the caller (`assert(authPath.leaf == caller)`) so a prover cannot pass another onboarded member's valid path for an identity they do not control.
 
-5. **Multi-module DApp** — `midnight-rwa` combines three `.compact` files (`midnight-rwa.compact`, `crypto.compact`, `passportidentity.compact`) in a single deployment.
+5. **Multi-module DApp** — `midnight-rwa` combines three `.compact` files (`midnight-rwa.compact`, `Crypto.compact`, `PassportIdentity.compact`) in a single deployment.
 
 ---
 

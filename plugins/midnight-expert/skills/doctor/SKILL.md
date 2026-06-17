@@ -169,7 +169,7 @@ Present a final summary:
 - `${CLAUDE_SKILL_DIR}/scripts/check-mcp-servers.sh` — MCP server configuration and connectivity
 - `${CLAUDE_SKILL_DIR}/scripts/check-ext-tools.sh` — External CLI tool availability and versions
 - `${CLAUDE_SKILL_DIR}/scripts/check-cross-refs.sh` — Cross-plugin skill / agent / command reference validation
-- `${CLAUDE_SKILL_DIR}/scripts/check-npm.sh` — NPM registry reachability, @midnight-ntwrk scope, and per-package availability for `@aaronbassett/midnight-fact-checker-utils` and `@aaronbassett/template-engine`
+- `${CLAUDE_SKILL_DIR}/scripts/check-npm.sh` — NPM registry reachability and @midnight-ntwrk scope accessibility
 
 ### References
 - `references/fix-table.md` — Fix recipes for all issue types with platform-specific commands

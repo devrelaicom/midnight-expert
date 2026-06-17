@@ -85,5 +85,3 @@ The cross-refs check resolves three reference types: skills (`skills/<name>/SKIL
 |-------|-----|
 | Registry unreachable | Check network connection and proxy settings |
 | @midnight-ntwrk scope inaccessible | Check npm config — no custom registry configuration is needed for @midnight-ntwrk packages |
-| `@aaronbassett/midnight-fact-checker-utils` not published | Trigger the `Publish - Fact Checker Utils` workflow on GitHub (Actions tab → Run workflow). Until published, `/midnight-fact-check:check` and `/midnight-fact-check:fast-check` cannot run. |
-| `@aaronbassett/template-engine` not published | Trigger the `Publish - Template Engine` workflow on GitHub. Until published, `/compact-cli-dev:init` cannot run. |

@@ -9,10 +9,10 @@ export default class DevnetStop extends BaseCommand {
 		const composeFile = findComposeFile();
 
 		execSync(`docker compose -f "${composeFile}" down`, {
-			stdio: this.jsonEnabled ? "pipe" : "inherit",
+			stdio: this.jsonEnabled() ? "pipe" : "inherit",
 		});
 
-		if (!this.jsonEnabled) {
+		if (!this.jsonEnabled()) {
 			this.log("  Devnet stopped.");
 		}
 		this.outputResult({ stopped: true });

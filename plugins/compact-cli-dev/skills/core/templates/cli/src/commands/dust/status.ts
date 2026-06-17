@@ -2,8 +2,8 @@ import { Args } from "@oclif/core";
 import * as Rx from "rxjs";
 import { BaseCommand } from "../../base-command.js";
 import { DUST_POLL_INTERVAL } from "../../lib/constants.js";
-import { buildFacade, getWallet } from "../../lib/wallet.js";
 import { withSpinner } from "../../lib/progress.js";
+import { buildFacade, getWallet } from "../../lib/wallet.js";
 
 export default class DustStatus extends BaseCommand {
 	static override description = "Check DUST balance and registration status";
@@ -25,7 +25,7 @@ export default class DustStatus extends BaseCommand {
 				),
 			);
 
-			const balance = state.dust.walletBalance(new Date());
+			const balance = state.dust.balance(new Date());
 			const available = state.dust.availableCoins.length;
 			const registered = state.unshielded.availableCoins.filter(
 				(c: { meta?: { registeredForDustGeneration?: boolean } }) =>
@@ -38,7 +38,7 @@ export default class DustStatus extends BaseCommand {
 				registered,
 			};
 
-			if (!this.jsonEnabled) {
+			if (!this.jsonEnabled()) {
 				this.log(`  DUST balance:    ${balance.toString()}`);
 				this.log(`  Available coins: ${String(available)}`);
 				this.log(`  Registered:      ${String(registered)}`);

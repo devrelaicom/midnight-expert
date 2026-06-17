@@ -68,6 +68,24 @@ Where `N` is the inner `LedgerApiError` u8 (0–255). To diagnose:
 
 > **Note on protocol versions.** The 1010 envelope is stable upstream substrate. The inner u8 mapping is Midnight-specific and **changes across ledger versions**: codes get added, retired, and (rarely) renumbered. Treat the tables below as the mapping for the current ledger only; archived chains/explorers may show u8 values from earlier mappings.
 
+### Idle-devnet DUST-fee pitfalls: 117 (NotNormalized) and 138 (BalanceCheckOverspend)
+
+These two are the most common early stumbling blocks on a freshly-started **local devnet**, where the per-block fee rate is effectively zero. Both come down to **how much DUST a transaction spends on fees** — all fees are denominated in **DUST**, never NIGHT.
+
+**117 — the fee computed to zero, so the DUST spend set was empty.** The wallet computes a transaction's fee as roughly `feesWithMargin(ledgerParams, feeBlocksMargin) + (additionalFeeOverhead ?? 0n)` (`calculateFee`, midnight-wallet `packages/dust-wallet/src/v1/Transacting.ts`). On an idle devnet `feesWithMargin` evaluates to `0`, so with no `additionalFeeOverhead` the fee is `0`. A zero fee gives the balancer no imbalance to cover, so it adds no DUST inputs and the transaction is built with an **empty `DustActions`**. `DustActions::well_formed` (midnight-ledger `ledger/src/dust.rs:773`) rejects empty dust actions, which the node maps to `NotNormalized` = **117** (midnight-node `ledger/src/versions/common/types.rs:435`). On submission it surfaces as `1010: Invalid Transaction: Custom error: 117`.
+
+In practice a `ContractDeploy` is accepted but the **first contract call fails** with 117. This deploy/call asymmetry is empirical — there is **no special minimum-cost floor on `ContractDeploy`** in the source, so don't assume one.
+
+**Fix:** give the wallet a small positive `additionalFeeOverhead` so a real DUST fee is spent:
+
+```ts
+costParameters: { feeBlocksMargin: 5, additionalFeeOverhead: 1_000_000n }
+```
+
+Any positive amount the wallet can cover in DUST works (the basic-start tutorial and the compact-cli-dev template use `300_000_000_000_000n`). The fix is verified end-to-end on a local devnet: with overhead `0n` the first contract call is rejected with 117; with `1_000_000n` both the deploy and the call succeed.
+
+**138 — a token balance went negative after fees.** `BalanceCheckOverspend` = **138** (midnight-node `ledger/src/versions/common/types.rs:462`) fires from `balancing_check` (midnight-ledger `ledger/src/verify.rs:1297`) when a transaction (or one of its segments) spends more of a token than it has available once fees are applied. Because fees are paid in **DUST**, a DUST-side 138 means the transaction's DUST fee exceeded the wallet's available DUST — raising NIGHT does **not** fix it. **DUST registration does not trigger this**, despite running at a `0` DUST balance: registration is self-funding — its fee is paid by the DUST the registered NIGHT UTXOs generate (`generatedNow`), not from the wallet's existing DUST balance. A wallet funded with as little as 5 NIGHT registers successfully (verified on a local devnet at 5, 100, and 10,000 NIGHT — all succeeded; setting `additionalFeeOverhead` during registration was also verified not to change this). See also 173 (`InsufficientDustForRegistrationFee`).
+
 ---
 
 ## Error Tables by Code Range
@@ -159,7 +177,7 @@ Group: "Structural validity errors caught before applying the transaction to led
 | 114 | ContractNotPresent | Transaction references a non-existent contract | Verify contract address; deploy the contract first |
 | 115 | InvalidProof | Zero-knowledge proof verification failed | Regenerate the proof; ensure proof server is compatible |
 | 116 | BindingCommitmentOpeningInvalid | Binding commitment was incorrectly opened | Internal Zswap error — rebuild the transaction |
-| 117 | NotNormalized | Transaction is not in normal form | Rebuild with the SDK; transactions must be normalized |
+| 117 | NotNormalized | Transaction is not in normal form — most often an idle-devnet zero fee that produced an empty DUST spend set | Set a small positive `additionalFeeOverhead` (e.g. `1_000_000n`) at wallet construction; see the idle-devnet DUST-fee deep dive above |
 | 118 | FallibleWithoutCheckpoint | Fallible transcript missing initial checkpoint | Add kernel.checkpoint() at the start of fallible sections |
 | 119 | ClaimReceiveFailed | Failed to claim a coin commitment receive | Coin commitment format error; rebuild the transaction |
 | 120 | ClaimSpendFailed | Failed to claim a coin commitment spend | Coin commitment format error; rebuild the transaction |
@@ -180,7 +198,7 @@ Group: "Structural validity errors caught before applying the transaction to led
 | 135 | InvalidCommitteeSignature | Committee signature verification failed | Verify the signing key and signature |
 | 136 | ThresholdMissed | Committee approval threshold not met | Gather more committee signatures |
 | 137 | TooManyZswapEntries | Too many Zswap entries (>=2^16) | Reduce the number of shielded operations |
-| 138 | BalanceCheckOverspend | Negative balance in a transaction segment | Segment spends more than available; check amounts |
+| 138 | BalanceCheckOverspend | A token balance went negative after fees — the tx (or a segment) spends more than it has once fees are applied; fees are paid in DUST, not NIGHT | Reduce outputs or add inputs; for a DUST-side 138 ensure enough DUST (raising NIGHT won't help). DUST registration is self-funding and does not cause this. See the idle-devnet DUST-fee deep dive above |
 | 139 | UnknownError | Unclassified malformed transaction error | Check node logs for details |
 | 166 | InvalidNetworkId | Transaction's network ID doesn't match the node's network | Verify networkId matches the target (e.g., 'undeployed' for devnet); check setNetworkId() |
 | 167 | IllegallyDeclaredGuaranteed | Guaranteed segment (0) used where forbidden | Don't use segment_id 0 for intents |

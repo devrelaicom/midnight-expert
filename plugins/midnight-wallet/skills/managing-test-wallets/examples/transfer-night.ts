@@ -117,7 +117,10 @@ async function main() {
 
   const configuration: DefaultConfiguration = {
     networkId: "undeployed",
-    costParameters: { feeBlocksMargin: 5 },
+    // additionalFeeOverhead makes the fee non-zero on an idle local devnet, where
+    // feesWithMargin is 0 and a zero-fee transaction is rejected as NotNormalized
+    // (error 117). Any positive amount the wallet can cover in DUST works.
+    costParameters: { feeBlocksMargin: 5, additionalFeeOverhead: 1_000_000n },
     relayURL: new URL("ws://localhost:9944"),
     provingServerUrl: new URL("http://localhost:6300"),
     indexerClientConnection: {

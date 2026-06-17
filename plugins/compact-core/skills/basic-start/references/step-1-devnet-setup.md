@@ -37,7 +37,7 @@ Docker is running and the three devnet services (node, indexer, proof server) st
 
 6. Health check — Indexer. This is a GraphQL endpoint (POST only), so use an introspection query:
    ```bash
-   curl -sf -X POST http://localhost:8088/api/v3/graphql \
+   curl -sf -X POST http://localhost:8088/api/v4/graphql \
      -H "Content-Type: application/json" \
      -d '{"query": "{ __typename }"}'
    ```
@@ -55,7 +55,7 @@ Docker is running and the three devnet services (node, indexer, proof server) st
 
    Indexer height:
    ```bash
-   curl -sf -X POST http://localhost:8088/api/v3/graphql \
+   curl -sf -X POST http://localhost:8088/api/v4/graphql \
      -H "Content-Type: application/json" \
      -d '{"query": "{ block { height } }"}' \
      | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['block']['height'])"

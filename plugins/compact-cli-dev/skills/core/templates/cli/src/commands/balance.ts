@@ -1,10 +1,10 @@
-import { Args } from "@oclif/core";
 import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
+import { Args } from "@oclif/core";
 import * as Rx from "rxjs";
 import { BaseCommand } from "../base-command.js";
 import { DUST_POLL_INTERVAL } from "../lib/constants.js";
-import { buildFacade, getWallet } from "../lib/wallet.js";
 import { withSpinner } from "../lib/progress.js";
+import { buildFacade, getWallet } from "../lib/wallet.js";
 
 export default class Balance extends BaseCommand {
 	static override description = "Check NIGHT and DUST balances for a wallet";
@@ -27,14 +27,14 @@ export default class Balance extends BaseCommand {
 			);
 
 			const night = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
-			const dust = state.dust.walletBalance(new Date());
+			const dust = state.dust.balance(new Date());
 
 			const result = {
 				night: night.toString(),
 				dust: dust.toString(),
 			};
 
-			if (!this.jsonEnabled) {
+			if (!this.jsonEnabled()) {
 				this.log(`  NIGHT: ${night.toString()}`);
 				this.log(`  DUST:  ${dust.toString()}`);
 			}
