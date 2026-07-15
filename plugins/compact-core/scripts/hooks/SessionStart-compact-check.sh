@@ -126,27 +126,38 @@ for sib in "${SOURCES_TO_CLEAR[@]+"${SOURCES_TO_CLEAR[@]}"}"; do
     && mv "$sib.tmp" "$sib"
 done
 
-# --- 6. Write own state file: full skeleton, fresh compact_files snapshot ---
-COMPACT_FILES_JSON=$(compact_snapshot_files "$PROJECT_ROOT")
-CREATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+# --- 6. Write own state file: full skeleton, fresh compact_files snapshot --
+#     ONLY if it doesn't already exist. SessionStart fires (matcher "*") on
+#     resume and on context auto-compaction too, with the SAME session_id --
+#     not just on a brand-new session. Unconditionally overwriting here would
+#     wipe any pending on_next_user_prompt defer entry (before
+#     UserPromptSubmit can drain it), flag_events, trigger/cooldown counters,
+#     and re-baseline compact_files so a file modified-but-uncompiled before
+#     the re-fire would never be flagged again. Steps 2-5 above stay
+#     unconditional -- GC and handoff collection/consumption are idempotent
+#     and must still run on every fire. ---
+if [ ! -f "$STATE_FILE" ]; then
+  COMPACT_FILES_JSON=$(compact_snapshot_files "$PROJECT_ROOT")
+  CREATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-jq -n \
-  --arg root "$PROJECT_ROOT" \
-  --arg sid "$SESSION_ID" \
-  --arg created "$CREATED_AT" \
-  --argjson cf "$COMPACT_FILES_JSON" \
-  '{
-    schema_version: 1,
-    project_root: $root,
-    session_id: $sid,
-    created_at: $created,
-    compact_files: $cf,
-    triggers_since_last_block: 0,
-    last_block_timestamp: null,
-    flag_events: [],
-    on_next_user_prompt: [],
-    unchecked_from_previous_session: []
-  }' > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+  jq -n \
+    --arg root "$PROJECT_ROOT" \
+    --arg sid "$SESSION_ID" \
+    --arg created "$CREATED_AT" \
+    --argjson cf "$COMPACT_FILES_JSON" \
+    '{
+      schema_version: 1,
+      project_root: $root,
+      session_id: $sid,
+      created_at: $created,
+      compact_files: $cf,
+      triggers_since_last_block: 0,
+      last_block_timestamp: null,
+      flag_events: [],
+      on_next_user_prompt: [],
+      unchecked_from_previous_session: []
+    }' > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+fi
 
 # --- 7. Emit additionalContext only if there is something to say ---
 SURVIVING_COUNT=$(printf '%s' "$SURVIVING_JSON" | jq 'length')

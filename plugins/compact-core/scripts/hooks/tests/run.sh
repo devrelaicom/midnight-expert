@@ -36,6 +36,8 @@ run_step "test-sessionend-persists-unchecked.sh" \
   bash "$TESTS_DIR/test-sessionend-persists-unchecked.sh"
 run_step "test-sessionstart-surfaces-prev-and-clears.sh" \
   bash "$TESTS_DIR/test-sessionstart-surfaces-prev-and-clears.sh"
+run_step "test-sessionstart-refire-preserves-state.sh" \
+  bash "$TESTS_DIR/test-sessionstart-refire-preserves-state.sh"
 run_step "test-userpromptsubmit-prints-and-drains.sh" \
   bash "$TESTS_DIR/test-userpromptsubmit-prints-and-drains.sh"
 run_step "test-userpromptsubmit-noop-when-empty.sh" \

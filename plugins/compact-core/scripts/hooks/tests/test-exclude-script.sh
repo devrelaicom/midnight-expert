@@ -80,5 +80,33 @@ chk_jq "priv.compact recorded under CLAUDE_PROJECT_DIR config" "$ROOT2/.claude/c
 # --- final sorted, deduped exclude list for ROOT ---
 chk_jq "exclude list is sorted" "$CONFIG_FILE" '.exclude == (.exclude | sort)' "true"
 
-rm -rf "$ROOT" "$ROOT2"
+# --- gitignored .claude/: warns, but never touches .gitignore itself ---
+ROOT3=$(mk_project_root)
+write_compact "$ROOT3" "gi.compact" "contract gi v1"
+git -C "$ROOT3" init -q
+printf '.claude/\n' > "$ROOT3/.gitignore"
+GITIGNORE_BEFORE=$(cat "$ROOT3/.gitignore")
+
+set +e
+OUT=$(bash "$EXCLUDE_SCRIPT" --project-root "$ROOT3" "$ROOT3/gi.compact" 2>&1)
+RC=$?
+set -e
+chk_eq "gitignored .claude/: still exits 0" "0" "$RC"
+chk_contains "gitignored .claude/: warns" "$OUT" "is gitignored"
+chk_contains "gitignored .claude/: warning suggests git add -f" "$OUT" "git add -f"
+chk_eq "gitignored .claude/: .gitignore untouched" "$GITIGNORE_BEFORE" "$(cat "$ROOT3/.gitignore")"
+
+# --- git repo WITHOUT a gitignore for .claude/: no warning ---
+ROOT4=$(mk_project_root)
+write_compact "$ROOT4" "ok.compact" "contract ok v1"
+git -C "$ROOT4" init -q
+
+set +e
+OUT=$(bash "$EXCLUDE_SCRIPT" --project-root "$ROOT4" "$ROOT4/ok.compact" 2>&1)
+RC=$?
+set -e
+chk_eq "not gitignored: exits 0" "0" "$RC"
+chk_eq "not gitignored: no warning" "0" "$(printf '%s' "$OUT" | grep -c "is gitignored" || true)"
+
+rm -rf "$ROOT" "$ROOT2" "$ROOT3" "$ROOT4"
 summary

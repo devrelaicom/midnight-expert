@@ -122,3 +122,13 @@ jq --argjson new "$NEW_ENTRIES_JSON" '
 
 echo "Excluded paths for $PROJECT_ROOT_ABS (.claude/compact-check.json -- commit this file):"
 jq -r '.exclude[]' "$CONFIG_FILE"
+
+# Many end-user projects gitignore .claude/ wholesale, which would silently
+# untrack this file despite the "commit this file" guidance above. Warn
+# (informational only -- never touches .gitignore) if git is available and
+# reports the config as ignored.
+if command -v git >/dev/null 2>&1 \
+  && git -C "$PROJECT_ROOT_ABS" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+  && git -C "$PROJECT_ROOT_ABS" check-ignore -q -- "$CONFIG_FILE" 2>/dev/null; then
+  echo "warning: $CONFIG_FILE is gitignored, so it will not be shared with your team. Run \`git add -f .claude/compact-check.json\`, or add a \`!.claude/compact-check.json\` negation to your .gitignore." >&2
+fi
