@@ -86,6 +86,28 @@ settings_path() {
   printf '%s/.midnight-expert/settings.local.json' "$1"
 }
 
+# state_path <project_root> <session_id>
+# Mirrors compact_state_file's path scheme (hash16 of project_root, under
+# .midnight-expert/state/). Tests drive hooks via run_hook_at, which pins
+# HOME to the payload's .cwd (the temp project root) for the duration of the
+# hook call, so the resulting state file lands at
+# <project_root>/.midnight-expert/state/<hash16>/<session_id>.json.
+state_path() {
+  local root="$1" sid="$2"
+  local hash
+  hash=$(printf '%s' "$root" | sha256sum | awk '{print $1}' | cut -c1-16)
+  printf '%s/.midnight-expert/state/%s/%s.json\n' "$root" "$hash" "$sid"
+}
+
+# hook_payload <cwd> <session_id> [extra_json]
+# Builds hook stdin JSON: {cwd, session_id} merged with an optional extra
+# JSON object (e.g. {transcript_path, stop_hook_active}).
+hook_payload() {
+  local cwd="$1" sid="$2" extra="${3:-{\}}"
+  jq -cn --arg cwd "$cwd" --arg sid "$sid" --argjson extra "$extra" \
+    '{cwd: $cwd, session_id: $sid} + $extra'
+}
+
 # Build a JSONL transcript line representing a Bash tool_use with the given
 # command and ISO-8601 timestamp.
 #

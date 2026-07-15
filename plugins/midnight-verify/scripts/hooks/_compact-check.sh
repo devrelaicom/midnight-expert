@@ -1,30 +1,238 @@
 #!/usr/bin/env bash
 # Sourced helper. Exposes:
 #
-#   compact_unchecked_files <project_root> <transcript> <settings>
-#     Prints every *.compact file that is new or has changed hash since the
-#     SessionStart snapshot AND is not covered by a Bash `compact compile` /
+#   compact_state_file <project_root> <session_id>
+#     Echoes the per-session state file path:
+#     $HOME/.midnight-expert/state/<hash16>/<session_id>.json, where <hash16>
+#     is the first 16 hex chars of sha256(project_root). mkdir -p's the
+#     directory. Empty session_id -> prints nothing, returns 0.
+#
+#   compact_state_init <state_file> <project_root> <session_id>
+#     If <state_file> is missing, writes the schema skeleton (schema_version,
+#     project_root, session_id, created_at, compact_files, and the empty
+#     tracking fields) with compact_files set to the CURRENT sha256 snapshot
+#     of every non-excluded *.compact file under project_root. This is the
+#     "quiet on doubt" baseline: a hook that finds no state file treats the
+#     tree as clean this time rather than flagging from an empty baseline.
+#     No-op if the file already exists.
+#
+#   compact_snapshot_files <project_root>
+#     Prints the {absolute_path: sha256} JSON object for every non-excluded
+#     *.compact file under project_root.
+#
+#   compact_exclusions <project_root>
+#     Prints excluded project-relative paths, one per line, read from
+#     <project_root>/.claude/compact-check.json's `.exclude` array. Missing
+#     or invalid config file -> prints nothing.
+#
+#   compact_is_excluded <project_root> <abs_path>
+#     Returns 0 (true) if <abs_path>'s project-relative form exactly matches
+#     an excluded file entry, or is under an excluded directory entry
+#     (trailing `/`). Paths outside project_root are never excluded (returns
+#     1/false).
+#
+#   compact_filter_excluded <project_root>
+#     Filter: reads absolute paths on stdin (one per line), prints only the
+#     ones that are not excluded.
+#
+#   compact_transcript_compile_ts <transcript_path> <filename>
+#     Prints the latest ISO-8601 timestamp of a Bash `compact compile` /
+#     `compactc` tool call naming <filename>, searching both
+#     <transcript_path> and its subagent transcripts
+#     (<dir>/<session-id>/subagents/*.jsonl, where <session-id> is
+#     <transcript_path>'s basename without .jsonl). Missing subagent dir is a
+#     no-op. Empty if no match.
+#
+#   compact_unchecked_files <project_root> <transcript_path> <state_file>
+#     Prints every *.compact file under project_root that is (a) not
+#     excluded, (b) new or changed since the baseline in <state_file>'s flat
+#     `.compact_files`, and (c) not covered by a Bash `compact compile` /
 #     `compactc` tool call (containing the file's basename, with timestamp >=
-#     the file's mtime) in <transcript>. One path per line; empty if none.
+#     the file's mtime) per compact_transcript_compile_ts. One path per line;
+#     empty if none. Missing state file -> prints nothing (callers must
+#     compact_state_init first).
 #
-#   compact_block_reason_for_files
+#   compact_block_reason_for_files [extra_text]
 #     Reads newline-separated file paths from stdin and prints a
-#     {decision:"block",reason:...} JSON object built from them. Always 0.
+#     {decision:"block",reason:...} JSON object built from them. When
+#     <extra_text> is non-empty, it is appended after the standard reason.
+#     Always returns 0.
 #
-#   compact_changed_check <project_root> <transcript> <settings>
+#   compact_changed_check <project_root> <transcript> <state_file>
 #     Convenience: pipes compact_unchecked_files into
 #     compact_block_reason_for_files. Prints a block JSON iff at least one
 #     unchecked file exists; otherwise prints nothing. Always returns 0 --
 #     callers branch on stdout being empty.
 #
-# CANONICAL COPY: this file lives in two plugins (compact-core and
-# midnight-verify) and a CI job (.github/workflows/ci-compact-core-hooks.yml)
-# enforces that both copies are byte-identical via sha256sum.
+# CANONICAL COPY: this file lives in three plugins (compact-core,
+# midnight-verify, and midnight-expert) and a CI job
+# (.github/workflows/ci-compact-core-hooks.yml) enforces that all three
+# copies are byte-identical via sha256sum.
+
+compact_state_file() {
+  local project_root="$1"
+  local session_id="$2"
+
+  if [ -z "$session_id" ]; then
+    return 0
+  fi
+
+  local hash dir
+  hash=$(printf '%s' "$project_root" | sha256sum | awk '{print $1}' | cut -c1-16)
+  dir="$HOME/.midnight-expert/state/$hash"
+  mkdir -p "$dir"
+  printf '%s/%s.json\n' "$dir" "$session_id"
+}
+
+compact_snapshot_files() {
+  local project_root="$1"
+  local snapshot_json
+
+  snapshot_json=$(
+    find "$project_root" -type f -name '*.compact' -print0 2>/dev/null \
+      | tr '\0' '\n' \
+      | compact_filter_excluded "$project_root" \
+      | tr '\n' '\0' \
+      | xargs -0 -r sha256sum 2>/dev/null \
+      | jq -Rn '
+          reduce inputs as $line (
+            {};
+            ($line | capture("^(?<hash>[a-f0-9]+)\\s+(?<path>.*)$")) as $m
+            | . + {($m.path): $m.hash}
+          )
+        '
+  )
+  printf '%s\n' "${snapshot_json:-{\}}"
+}
+
+compact_state_init() {
+  local state_file="$1"
+  local project_root="$2"
+  local session_id="$3"
+
+  if [ -f "$state_file" ]; then
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$state_file")"
+
+  local compact_files_json created_at
+  compact_files_json=$(compact_snapshot_files "$project_root")
+  created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+  jq -n \
+    --arg root "$project_root" \
+    --arg sid "$session_id" \
+    --arg created "$created_at" \
+    --argjson cf "$compact_files_json" \
+    '{
+      schema_version: 1,
+      project_root: $root,
+      session_id: $sid,
+      created_at: $created,
+      compact_files: $cf,
+      triggers_since_last_block: 0,
+      last_block_timestamp: null,
+      flag_events: [],
+      on_next_user_prompt: [],
+      unchecked_from_previous_session: []
+    }' > "$state_file.tmp" && mv "$state_file.tmp" "$state_file"
+}
+
+compact_exclusions() {
+  local project_root="$1"
+  local config="$project_root/.claude/compact-check.json"
+
+  [ -f "$config" ] || return 0
+
+  jq -r '(.exclude // [])[]?' "$config" 2>/dev/null || true
+  return 0
+}
+
+compact_is_excluded() {
+  local project_root="$1"
+  local abs_path="$2"
+  local root="${project_root%/}"
+  local rel
+
+  case "$abs_path" in
+    "$root"/*)
+      rel="${abs_path#"$root"/}"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  local entry
+  while IFS= read -r entry; do
+    [ -z "$entry" ] && continue
+    if [ "$entry" = "$rel" ]; then
+      return 0
+    fi
+    case "$entry" in
+      */)
+        case "$rel" in
+          "$entry"*) return 0 ;;
+        esac
+        ;;
+    esac
+  done < <(compact_exclusions "$project_root")
+
+  return 1
+}
+
+compact_filter_excluded() {
+  local project_root="$1"
+  local path
+
+  while IFS= read -r path; do
+    [ -z "$path" ] && continue
+    if ! compact_is_excluded "$project_root" "$path"; then
+      printf '%s\n' "$path"
+    fi
+  done
+}
+
+compact_transcript_compile_ts() {
+  local transcript_path="$1"
+  local filename="$2"
+
+  [ -f "$transcript_path" ] || return 0
+
+  local dir sid subagent_dir filter
+  dir=$(dirname "$transcript_path")
+  sid=$(basename "$transcript_path" .jsonl)
+  subagent_dir="$dir/$sid/subagents"
+
+  filter='
+    select((.message.content // []) | type == "array")
+    | select(any(.message.content[]?;
+        .type? == "tool_use"
+        and .name? == "Bash"
+        and ((.input.command? // "") | test("compact[[:space:]]+compile|compactc"))
+        and ((.input.command? // "") | contains($fn))
+      ))
+    | .timestamp // empty
+  '
+
+  {
+    jq -r --arg fn "$filename" "$filter" "$transcript_path" 2>/dev/null
+
+    if [ -d "$subagent_dir" ]; then
+      local f
+      for f in "$subagent_dir"/*.jsonl; do
+        [ -e "$f" ] || continue
+        jq -r --arg fn "$filename" "$filter" "$f" 2>/dev/null
+      done
+    fi
+  } | sort | tail -1
+}
 
 compact_unchecked_files() {
   local project_root="$1"
   local transcript_path="$2"
-  local settings_file="$3"
+  local state_file="$3"
 
   if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
     return 0
@@ -32,16 +240,19 @@ compact_unchecked_files() {
   if [ -z "$project_root" ] || [ ! -d "$project_root" ]; then
     return 0
   fi
-  if [ ! -f "$settings_file" ]; then
+  if [ ! -f "$state_file" ]; then
     return 0
   fi
 
   local file current_hash stored_hash filename file_mtime latest_compile_ts compile_epoch ts
 
   while IFS= read -r -d '' file; do
+    if compact_is_excluded "$project_root" "$file"; then
+      continue
+    fi
+
     current_hash=$(sha256sum "$file" | awk '{print $1}')
-    stored_hash=$(jq -r --arg f "$file" '.compact_compilation_check_hook.compact_files[$f] // empty' \
-                  "$settings_file")
+    stored_hash=$(jq -r --arg f "$file" '.compact_files[$f] // empty' "$state_file")
 
     if [ -n "$stored_hash" ] && [ "$current_hash" = "$stored_hash" ]; then
       continue
@@ -52,16 +263,7 @@ compact_unchecked_files() {
               || stat -f "%m" "$file" 2>/dev/null \
               || echo 0)
 
-    latest_compile_ts=$(jq -r --arg fn "$filename" '
-      select((.message.content // []) | type == "array")
-      | select(any(.message.content[]?;
-          .type? == "tool_use"
-          and .name? == "Bash"
-          and ((.input.command? // "") | test("compact[[:space:]]+compile|compactc"))
-          and ((.input.command? // "") | contains($fn))
-        ))
-      | .timestamp // empty
-    ' "$transcript_path" 2>/dev/null | tail -1)
+    latest_compile_ts=$(compact_transcript_compile_ts "$transcript_path" "$filename")
 
     if [ -n "$latest_compile_ts" ]; then
       ts="${latest_compile_ts%Z}"
@@ -83,6 +285,7 @@ compact_unchecked_files() {
 }
 
 compact_block_reason_for_files() {
+  local extra_text="${1:-}"
   local list="" f
   while IFS= read -r f; do
     [ -z "$f" ] && continue
@@ -97,6 +300,10 @@ compact_block_reason_for_files() {
 
 ${list}
 Run /verify on these contracts -- or invoke \`compact compile\` / \`compactc\` against them -- before finishing. This is a reminder; you decide whether verification is needed here."
+
+  if [ -n "$extra_text" ]; then
+    reason="${reason}"$'\n\n'"${extra_text}"
+  fi
 
   jq -n --arg r "$reason" '{decision: "block", reason: $r}'
 }
