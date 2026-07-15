@@ -134,6 +134,8 @@ Read `references/fix-table.md` for the fix recipes.
 
 For each FAIL or WARN item in the report, determine the appropriate fix from the fix-table. Use the `platform` info line from check-ext-tools.sh to select macOS vs Linux commands.
 
+**Platform support:** Midnight Expert is developed and tested on macOS and Linux only. If the `platform` line reports `windows` (a `platform support` FAIL is also emitted), the user is on native Windows (Git Bash/MSYS2/Cygwin), which is untested and unsupported. Do not attempt tool-by-tool fixes — instead recommend they run everything inside WSL, per the **Platform Support** section of `references/fix-table.md`. WSL reports as `linux`, so this never fires for WSL users.
+
 **If `$ARGUMENTS` contains `--auto-fix`:**
 - Apply auto-fixable items silently (installs, enables, MCP adds via `claude mcp add`)
 - Always prompt before upgrading outdated tools — show current vs latest version
