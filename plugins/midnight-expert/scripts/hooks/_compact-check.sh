@@ -136,7 +136,7 @@ compact_state_init() {
       flag_events: [],
       on_next_user_prompt: [],
       unchecked_from_previous_session: []
-    }' > "$state_file"
+    }' > "$state_file.tmp" && mv "$state_file.tmp" "$state_file"
 }
 
 compact_exclusions() {
