@@ -185,7 +185,7 @@ Dispatched by /verify when a claim is about opcode semantics, constraint behavio
 
 Injects a warning at session start reminding the model that its training data about Midnight, Compact, and the Midnight SDK is unreliable and should not be trusted without verification.
 
-The `.compact` hash baseline used by the SubagentStop checks below is the CURRENT session's own per-session state file, written by the `compact-core` plugin's `SessionStart-compact-check.sh` at `~/.midnight-expert/state/<hash16>/<session-id>.json` (`<hash16>` = first 16 hex chars of `sha256(project_root)`). The plugins share that state directory, not a single settings file.
+The `.compact` hash baseline used by the SubagentStop checks below is the CURRENT session's own per-session state file at `~/.midnight-expert/state/<hash16>/<session-id>.json` (`<hash16>` = first 16 hex chars of `sha256(project_root)`). It is normally written by the `compact-core` plugin's `SessionStart-compact-check.sh`, but each of the four SubagentStop hooks below that use it (contract-writer, witness-verifier, zkir-checker, cli-tester) also self-initializes the state file -- quiet-on-doubt: baseline = current file hashes, nothing flagged this time -- if it doesn't exist yet, so this plugin's compile checks work even without `compact-core` installed. The plugins share that state directory, not a single settings file.
 
 ### SubagentStop
 
