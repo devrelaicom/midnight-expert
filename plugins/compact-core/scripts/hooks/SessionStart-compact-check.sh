@@ -64,8 +64,16 @@ shopt -u nullglob
 FILTERED_ENTRIES=$(mktemp)
 while IFS= read -r entry; do
   [ -z "$entry" ] && continue
-  path=$(printf '%s' "$entry" | jq -r '.path')
-  sha=$(printf '%s' "$entry" | jq -r '.sha256')
+  # A malformed sibling entry (not shaped {path,sha256,flagged_at}) must be
+  # skipped, not fatal -- jq errors on e.g. a bare string/number element, so
+  # this extraction is guarded the same way every other sibling-data read in
+  # this file is guarded.
+  path=$(printf '%s' "$entry" | jq -r '.path' 2>/dev/null || echo "")
+  sha=$(printf '%s' "$entry" | jq -r '.sha256' 2>/dev/null || echo "")
+
+  if [ -z "$path" ] || [ "$path" = "null" ]; then
+    continue
+  fi
 
   if compact_is_excluded "$PROJECT_ROOT" "$path"; then
     continue
