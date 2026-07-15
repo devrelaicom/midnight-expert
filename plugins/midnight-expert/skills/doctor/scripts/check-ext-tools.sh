@@ -9,11 +9,14 @@ emit() {
   printf '%s | %s | %s\n' "$name" "$status" "$detail"
 }
 
-# Detect OS for fix suggestions
+# Detect OS for fix suggestions.
+# WSL reports "Linux" from uname -s and is fully supported. Native Windows
+# shells (Git Bash/MSYS2, Cygwin) report MINGW*/MSYS*/CYGWIN* and are not.
 OS="unknown"
 case "$(uname -s)" in
-  Darwin*) OS="macos" ;;
-  Linux*)  OS="linux" ;;
+  Darwin*)               OS="macos" ;;
+  Linux*)                OS="linux" ;;
+  MINGW*|MSYS*|CYGWIN*)  OS="windows" ;;
 esac
 
 # Helper: fetch latest GitHub release tag
@@ -165,6 +168,13 @@ fi
 
 # --- OS info ---
 emit "platform" "info" "$OS ($(uname -m))"
+
+# Native Windows is untested and unsupported — recommend WSL. WSL itself reports
+# "Linux" above, so this only fires on Git Bash/MSYS2/Cygwin on the Windows host.
+if [ "$OS" = "windows" ]; then
+  emit "platform support" "critical" "native Windows (Git Bash/MSYS2/Cygwin) is untested and unsupported — run Midnight Expert inside WSL instead; see the fix table"
+  fail=1
+fi
 
 if [ "$fail" -eq 0 ]; then
   emit "ALL_TOOLS_PASS" "pass" "all required tools installed"

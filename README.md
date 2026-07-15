@@ -18,6 +18,11 @@ This project extends the Midnight Network with additional developer tooling.
 
 ## Install
 
+> [!IMPORTANT]
+> **Platform support: macOS and Linux.** Midnight Expert is developed and tested on macOS and Linux only. Native Windows (PowerShell, CMD, Git Bash/MSYS2, Cygwin) is **untested and unsupported** — the plugins' hooks and shell scripts assume a POSIX environment and are known to misbehave there (for example, a bare `compact` resolving to the unrelated Windows `compact.exe`, and path/encoding handling breaking under Git Bash).
+>
+> **Windows users should run everything inside [WSL](https://learn.microsoft.com/windows/wsl/) (WSL2 recommended).** Install a Linux distribution, then install Node.js, the Compact toolchain, Claude Code, and Midnight Expert *inside* the WSL environment — not on the Windows host. Under WSL the plugins behave exactly as they do on native Linux.
+
 ### Automatic install for Claude Code
 
 Run this in your terminal and follow the prompts:

@@ -17,6 +17,14 @@ Reference for resolving issues found by midnight-expert:doctor. Each section map
 - Docker daemon start on macOS
 - Network/proxy configuration
 
+## Platform Support
+
+Midnight Expert is developed and tested on **macOS and Linux only**. Native Windows (PowerShell, CMD, Git Bash/MSYS2, Cygwin) is untested and unsupported — the plugins' hooks and shell scripts assume a POSIX environment and misbehave on the Windows host.
+
+| Issue | Fix |
+|-------|-----|
+| platform support: native Windows (critical) | Not auto-fixable. Recommend the user run everything inside **WSL** (WSL2 recommended): install a Linux distribution (https://learn.microsoft.com/windows/wsl/install), then install Node.js, the Compact toolchain, Claude Code, and Midnight Expert *inside* the WSL environment — not on the Windows host. Under WSL, `doctor` reports the platform as `linux` and the plugins behave as on native Linux. |
+
 ## Plugin Issues
 
 Plugin not-installed and not-enabled rows are emitted as **info** — install only the plugins you actually need.
