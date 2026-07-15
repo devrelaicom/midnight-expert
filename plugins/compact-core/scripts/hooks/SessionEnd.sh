@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SessionEnd hook: run the same .compact hash + compile-found check as the
-# Stop hook. Persist any unchecked files under
-# compact_compilation_check_hook.unchecked_from_previous_session so the next
-# session's SessionStart can surface them, then drop the SessionStart hash
-# baseline. Configured async in hooks.json so it does not delay session
-# shutdown.
+# SessionEnd hook (per-session state): run the same .compact hash +
+# compile-found check as the Stop hook. Persist any unchecked files as
+# structured {path, sha256, flagged_at} handoff entries in OWN state file's
+# unchecked_from_previous_session so a sibling session's SessionStart can
+# collect them. compact_files is kept as-is (GC in SessionStart reaps the
+# whole state file after 7 days). Configured async in hooks.json so it does
+# not delay session shutdown -- this hook always exits 0.
 
 INPUT=""
 if [ ! -t 0 ]; then
@@ -14,9 +15,11 @@ if [ ! -t 0 ]; then
 fi
 TRANSCRIPT_PATH=""
 CWD=""
+SESSION_ID=""
 if [ -n "$INPUT" ]; then
   TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
   CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
+  SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 fi
 
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$CWD}"
@@ -24,30 +27,32 @@ if [ -z "$PROJECT_ROOT" ]; then
   PROJECT_ROOT="$(pwd)"
 fi
 
-SETTINGS_DIR="$HOME/.midnight-expert"
-SETTINGS_FILE="$SETTINGS_DIR/settings.local.json"
-
-if [ ! -f "$SETTINGS_FILE" ]; then
-  exit 0
-fi
-
 # shellcheck source=_compact-check.sh
 source "$(dirname "$0")/_compact-check.sh"
 
-UNCHECKED=$(compact_unchecked_files "$PROJECT_ROOT" "$TRANSCRIPT_PATH" "$SETTINGS_FILE")
-
-if [ -n "$UNCHECKED" ]; then
-  UNCHECKED_JSON=$(printf '%s\n' "$UNCHECKED" | jq -R . | jq -s 'map(select(. != ""))')
-else
-  UNCHECKED_JSON='[]'
+# --- 1. Resolve state file; missing -> nothing tracked, no-op ---
+STATE_FILE=$(compact_state_file "$PROJECT_ROOT" "$SESSION_ID")
+if [ -z "$STATE_FILE" ] || [ ! -f "$STATE_FILE" ]; then
+  exit 0
 fi
 
-# Persist the unchecked list and drop the SessionStart baseline atomically.
-jq --argjson u "$UNCHECKED_JSON" '
-  .compact_compilation_check_hook = (.compact_compilation_check_hook // {})
-  | .compact_compilation_check_hook.unchecked_from_previous_session = $u
-  | del(.compact_compilation_check_hook.compact_files)
-' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" \
-  && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
+# --- 2. Run the check and persist structured handoff entries ---
+UNCHECKED=$(compact_unchecked_files "$PROJECT_ROOT" "$TRANSCRIPT_PATH" "$STATE_FILE")
+
+NOW_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+UNCHECKED_JSON='[]'
+if [ -n "$UNCHECKED" ]; then
+  UNCHECKED_JSON=$(
+    while IFS= read -r f; do
+      [ -z "$f" ] && continue
+      h=$(sha256sum "$f" 2>/dev/null | awk '{print $1}')
+      jq -n --arg p "$f" --arg h "$h" --arg fa "$NOW_ISO" '{path: $p, sha256: $h, flagged_at: $fa}'
+    done <<< "$UNCHECKED" | jq -s '.'
+  )
+fi
+
+jq --argjson u "$UNCHECKED_JSON" '.unchecked_from_previous_session = $u' \
+  "$STATE_FILE" > "$STATE_FILE.tmp" 2>/dev/null \
+  && mv "$STATE_FILE.tmp" "$STATE_FILE" || true
 
 exit 0

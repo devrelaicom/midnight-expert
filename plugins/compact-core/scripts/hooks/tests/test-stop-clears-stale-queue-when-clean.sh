@@ -11,28 +11,30 @@ ROOT=$(mk_project_root)
 trap 'rm -rf "$ROOT"' EXIT
 
 write_compact "$ROOT" "a.compact" "contract a v1"
-PAYLOAD=$(jq -cn --arg cwd "$ROOT" '{cwd: $cwd}')
+SID="sess-1"
+STATE_FILE=$(state_path "$ROOT" "$SID")
+
+PAYLOAD=$(hook_payload "$ROOT" "$SID")
 run_hook "SessionStart-compact-check.sh" "$PAYLOAD" _ _ _
 
 # Pre-populate a stale queue entry from a prior turn.
-SETTINGS=$(settings_path "$ROOT")
 jq '.on_next_user_prompt = [
       { type: "compact-not-compiled", files: ["stale.compact"] },
       { type: "some-other-thing", payload: "keep me" }
-    ]' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
+    ]' "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
 
 # No file modifications => check is clean.
 TRANSCRIPT="$ROOT/transcript.jsonl"
 transcript_no_compile "$TRANSCRIPT"
 
-PAYLOAD=$(jq -cn --arg cwd "$ROOT" --arg t "$TRANSCRIPT" \
-  '{cwd: $cwd, transcript_path: $t, stop_hook_active: false}')
+PAYLOAD=$(hook_payload "$ROOT" "$SID" \
+  "$(jq -cn --arg t "$TRANSCRIPT" '{transcript_path: $t, stop_hook_active: false}')")
 run_hook "Stop.sh" "$PAYLOAD" OUT ERR RC
 
 chk_eq "Stop exits 0 when clean" "0" "$RC"
-chk_jq "compact-not-compiled entry removed" "$SETTINGS" \
+chk_jq "compact-not-compiled entry removed" "$STATE_FILE" \
   '[.on_next_user_prompt[]? | select(.type == "compact-not-compiled")] | length' "0"
-chk_jq "unrelated queue entry preserved" "$SETTINGS" \
+chk_jq "unrelated queue entry preserved" "$STATE_FILE" \
   '[.on_next_user_prompt[]? | select(.type == "some-other-thing")] | length' "1"
 
 summary
