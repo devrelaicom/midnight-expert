@@ -50,6 +50,8 @@ run_step "test-state-isolation.sh" \
   bash "$TESTS_DIR/test-state-isolation.sh"
 run_step "test-stop-escalation-after-2-flags.sh" \
   bash "$TESTS_DIR/test-stop-escalation-after-2-flags.sh"
+run_step "test-stop-escalation-defer-path.sh" \
+  bash "$TESTS_DIR/test-stop-escalation-defer-path.sh"
 run_step "test-sessionstart-gc.sh" \
   bash "$TESTS_DIR/test-sessionstart-gc.sh"
 run_step "test-handoff-staleness.sh" \

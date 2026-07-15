@@ -45,7 +45,10 @@ COUNT=$(printf '%s' "$ENTRIES" | jq 'length' 2>/dev/null) || COUNT=0
 # --- Re-filter each compact-not-compiled entry's files through the current
 # exclusion config; entries left with no files are dropped entirely. Other
 # entry types pass through unchanged (message formatting below ignores
-# unrecognized types). ---
+# unrecognized types). An optional `escalation` string (set by Stop.sh once
+# the 30-min flag-event threshold is reached) is carried through unchanged;
+# its absence is forward-compat-safe (formatting below treats missing/empty
+# the same). ---
 FILTERED_JSON="[]"
 while IFS= read -r entry; do
   [ -z "$entry" ] && continue
@@ -54,8 +57,11 @@ while IFS= read -r entry; do
     FILES_FILTERED=$(printf '%s' "$entry" | jq -r '(.files? // [])[]?' 2>/dev/null \
       | compact_filter_excluded "$PROJECT_ROOT")
     [ -n "$FILES_FILTERED" ] || continue
+    ESCALATION=$(printf '%s' "$entry" | jq -r '.escalation? // empty' 2>/dev/null) || ESCALATION=""
     entry=$(printf '%s\n' "$FILES_FILTERED" | jq -R . 2>/dev/null \
-      | jq -s --arg t "$ETYPE" '{type: $t, files: .}' 2>/dev/null) || continue
+      | jq -s --arg t "$ETYPE" --arg esc "$ESCALATION" \
+        '{type: $t, files: .} + (if ($esc | length) > 0 then {escalation: $esc} else {} end)' \
+        2>/dev/null) || continue
   fi
   NEXT_FILTERED_JSON=$(printf '%s' "$FILTERED_JSON" | jq --argjson e "$entry" '. + [$e]' 2>/dev/null) \
     && FILTERED_JSON="$NEXT_FILTERED_JSON"
@@ -69,6 +75,7 @@ MESSAGE=$(printf '%s' "$FILTERED_JSON" | jq -r '
       "## Heads up: uncompiled Compact contracts from the previous turn\n\nThe previous turn ended without verifying that these Compact contracts compile:\n\n"
       + ((.files // []) | map("- " + .) | join("\n"))
       + "\n\nRun `compact compile <file>` (or `/verify <file>`) on each before treating any related claim as confirmed."
+      + (if ((.escalation? // "") != "") then "\n\n" + .escalation else "" end)
     else
       empty
     end

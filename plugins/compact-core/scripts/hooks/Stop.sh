@@ -152,14 +152,23 @@ if [ "$SHOULD_BLOCK" = "true" ]; then
   exit 2
 fi
 
-# --- Defer path: replace the compact-not-compiled queue entry, exit 0 ---
+# --- Defer path: replace the compact-not-compiled queue entry, exit 0.
+# When the escalation threshold was reached (ESCALATION_TEXT non-empty), the
+# same escalation text carried by the block path is attached to the queued
+# entry as an optional `escalation` field so UserPromptSubmit can surface it
+# on the next turn. Below threshold, the field is omitted entirely (never
+# written as null/empty) so older/forward-compat consumers see no change. ---
 FILES_JSON=$(printf '%s\n' "$UNCHECKED" | jq -R . | jq -s 'map(select(. != ""))')
 
-jq --argjson files "$FILES_JSON" '
-  .on_next_user_prompt = (
-    [(.on_next_user_prompt // [])[] | select(.type? != "compact-not-compiled")]
-    + [{ type: "compact-not-compiled", files: $files }]
-  )
+jq --argjson files "$FILES_JSON" --arg escalation "$ESCALATION_TEXT" '
+  ($escalation | length > 0) as $has_escalation
+  | .on_next_user_prompt = (
+      [(.on_next_user_prompt // [])[] | select(.type? != "compact-not-compiled")]
+      + [
+          { type: "compact-not-compiled", files: $files }
+          + (if $has_escalation then { escalation: $escalation } else {} end)
+        ]
+    )
 ' "$STATE_FILE" > "$STATE_FILE.tmp" \
   && mv "$STATE_FILE.tmp" "$STATE_FILE"
 
