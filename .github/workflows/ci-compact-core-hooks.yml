@@ -36,17 +36,20 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Drift check — _compact-check.sh copies must be byte-identical
-        # The helper is duplicated in compact-core (canonical) and midnight-verify
-        # (used by the four SubagentStop hooks). Both copies must stay in lockstep
-        # so the rename / behavior changes can never diverge silently.
+        # The helper is duplicated in compact-core (canonical), midnight-verify
+        # (used by the SubagentStop hooks), and midnight-expert. All three
+        # copies must stay in lockstep so behavior changes can never diverge
+        # silently.
         run: |
           a=$(sha256sum plugins/compact-core/scripts/hooks/_compact-check.sh | cut -d' ' -f1)
           b=$(sha256sum plugins/midnight-verify/scripts/hooks/_compact-check.sh | cut -d' ' -f1)
+          c=$(sha256sum plugins/midnight-expert/scripts/hooks/_compact-check.sh | cut -d' ' -f1)
           echo "compact-core:    $a"
           echo "midnight-verify: $b"
-          if [ "$a" != "$b" ]; then
-            echo "::error::_compact-check.sh has drifted between compact-core and midnight-verify."
-            echo "::error::Sync the two copies (cp the canonical compact-core file over the midnight-verify one)."
+          echo "midnight-expert: $c"
+          if [ "$a" != "$b" ] || [ "$a" != "$c" ]; then
+            echo "::error::_compact-check.sh has drifted between compact-core, midnight-verify, and midnight-expert."
+            echo "::error::Sync all three copies (cp the canonical compact-core file over the other two)."
             exit 1
           fi
 

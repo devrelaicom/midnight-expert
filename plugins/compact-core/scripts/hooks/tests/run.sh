@@ -40,6 +40,12 @@ run_step "test-userpromptsubmit-prints-and-drains.sh" \
   bash "$TESTS_DIR/test-userpromptsubmit-prints-and-drains.sh"
 run_step "test-userpromptsubmit-noop-when-empty.sh" \
   bash "$TESTS_DIR/test-userpromptsubmit-noop-when-empty.sh"
+run_step "test-helper-exclusions.sh" \
+  bash "$TESTS_DIR/test-helper-exclusions.sh"
+run_step "test-reset-script.sh" \
+  bash "$TESTS_DIR/test-reset-script.sh"
+run_step "test-exclude-script.sh" \
+  bash "$TESTS_DIR/test-exclude-script.sh"
 
 echo
 if [ "${#FAILED[@]}" -gt 0 ]; then
