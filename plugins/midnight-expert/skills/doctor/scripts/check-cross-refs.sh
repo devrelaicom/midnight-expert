@@ -98,6 +98,11 @@ get_cached_version() {
   grep "^$1|" "$CACHE_FILE" 2>/dev/null | head -1 | cut -d'|' -f3
 }
 
+# Marketplace whose plugins this repo ships. References into any other
+# marketplace are optional integrations, not requirements — see the
+# not-installed branch below.
+OWN_MARKETPLACE="midnight-expert"
+
 # Cross-plugin reference map
 # Format: source_plugin|target_plugin@marketplace|ref_type|ref_name
 # ref_type: skill | agent | command
@@ -156,7 +161,16 @@ for ref in "${REFS[@]}"; do
 
   # Check if target plugin is installed
   if [ -z "$target_path" ]; then
-    emit "$source → $target_name:$ref_name" "critical" "$target_name not installed"
+    # A missing plugin from another marketplace is a skipped optional
+    # integration, not a broken install: the sources that reference these
+    # define their own fallbacks (midnight-verify falls back to `npm view`
+    # when devs:deps-maintenance is absent). Report it as info, matching how
+    # check-plugins.sh reports a plugin the user chose not to install.
+    if [ "${target#*@}" != "$OWN_MARKETPLACE" ]; then
+      emit "$source → $target_name:$ref_name" "info" "$target_name not installed (optional, from ${target#*@})"
+    else
+      emit "$source → $target_name:$ref_name" "critical" "$target_name not installed"
+    fi
     fail=1
     continue
   fi

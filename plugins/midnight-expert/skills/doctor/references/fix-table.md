@@ -80,10 +80,13 @@ Always prompt the user before upgrading, even with --auto-fix.
 
 The cross-refs check resolves three reference types: skills (`skills/<name>/SKILL.md`), agents (`agents/<name>.md`), and slash commands (`commands/<name>.md`).
 
+References into a marketplace other than `midnight-expert` are optional integrations, and a missing one is reported as **info**, not a failure — the sources that reference them define their own fallbacks (`midnight-verify` falls back to `npm view` when `devs:deps-maintenance` is absent). Nothing needs fixing unless you want the extra capability.
+
 | Issue | Fix |
 |-------|-----|
 | Target marketplace not installed | Install the marketplace first (see Plugin Issues) |
-| Target plugin not installed | Install from the correct marketplace |
+| Target plugin not installed (info, external marketplace) | Optional — install it only if you want that integration (e.g. `devs` from `aaronbassett/agent-foundry`) |
+| Target plugin not installed (critical, midnight-expert) | Install from this marketplace (see Plugin Issues) |
 | Skill / agent / command not found in installed plugin | Plugin may be outdated — run `claude plugin update <name>` |
 | Reference points to renamed or removed item | Source plugin's prose is stale; report to the plugin maintainer or open an issue against this repo |
 
